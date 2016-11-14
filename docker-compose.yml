@@ -2,8 +2,8 @@ version: "2"
 services:
   pg:
      image: postgres
-  mongo:
-    image: mongo
+  redis:
+    image: redis
     volumes:
       - ./mongo_data:/data/db
   mc:
@@ -17,7 +17,7 @@ services:
        - "8000:8000"
      depends_on:
        - pg
-       - mongo
+       - redis
      environment:
        DJANGO_SETTINGS_MODULE: 'mc.settings'
        MC_DB_NAME: postgres
