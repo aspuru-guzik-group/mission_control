@@ -1,0 +1,26 @@
+version: "2"
+services:
+  pg:
+     image: postgres
+  mongo:
+    image: mongo
+    volumes:
+      - ./mongo_data:/data/db
+  mc:
+     build:
+       context: ./
+       dockerfile: mc.Dockerfile
+     command: python manage.py runserver 0.0.0.0:8000
+     volumes:
+       - ./mc:/mc
+     ports:
+       - "8000:8000"
+     depends_on:
+       - pg
+       - mongo
+     environment:
+       DJANGO_SETTINGS_MODULE: 'mc.settings'
+       MC_DB_NAME: postgres
+       MC_DB_USER: postgres
+       MC_DB_PASSWORD: postgres
+       MC_DB_HOST: pg

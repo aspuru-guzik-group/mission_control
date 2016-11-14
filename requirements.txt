@@ -1,0 +1,4 @@
+Django
+django-extensions
+psycopg2
+FireWorks
