@@ -7,12 +7,8 @@ app = Celery('mc', broker='redis://redis:6379')
 app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
 
+app.conf.beat_schedule = {}
+app.conf.timezone = 'UTC'
+
 from . import tasks
 
-app.conf.beat_schedule = {
-    'add_firework_every_5s': {
-        'task': tasks.add_firework.name,
-        'schedule': 5.0,
-    },
-}
-app.conf.timezone = 'UTC'
