@@ -35,7 +35,7 @@ class OdysseyClient(object):
         self._ensure_remote_jobs_dir()
         remote_job_dir = os.path.join(
             REMOTE_JOBS_DIR, '%s.%s' % (basename, datetime.now().timestamp()))
-        self.ssh_client.scp(
+        self.ssh_client.scp_to(
             src=local_job_dir,
             dst=remote_job_dir,
             flags='-r')

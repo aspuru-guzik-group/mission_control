@@ -56,11 +56,18 @@ class SSHControlSocketClient(object):
             check=check,
             universal_newlines=True)
 
+    def scp_to(self, src=None, dst=None, flags=''):
+        prefixed_dst = '%s@%s:%s' % (self.user, self.host, dst)
+        self.scp(src=src, dst=prefixed_dst, flags=flags)
+
+    def scp_from(self, src=None, dst=None, flags=''):
+        prefixed_src = '%s@%s:%s' % (self.user, self.host, src)
+        self.scp(src=prefixed_src, dst=dst, flags=flags)
+
     def scp(self, src=None, dst=None, flags=''):
         self._ensure_authorized()
-        prefixed_dst = '%s@%s:%s' % (self.user, self.host, dst)
         subprocess.run(['scp', '-o ControlPath=%s' % self.control_socket,
-                        flags, src, prefixed_dst], check=True)
+                        flags, src, dst], check=True)
 
     def _ensure_authorized(self):
         self._is_authorized(check=True)

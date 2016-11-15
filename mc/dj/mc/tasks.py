@@ -62,3 +62,19 @@ celery_app.conf.beat_schedule['odyssey_job_polls'] =  {
         'category': 'odyssey_job_polls',
     }
 }
+
+celery_app.conf.beat_schedule['odyssey_transfers'] =  {
+    'task': run_fworker.name,
+    'schedule': 15.0,
+    'kwargs': {
+        'category': 'odyssey_transfers',
+    }
+}
+
+celery_app.conf.beat_schedule['completed_job_processing'] =  {
+    'task': run_fworker.name,
+    'schedule': 16.0,
+    'kwargs': {
+        'category': 'completed_job_processing',
+    }
+}

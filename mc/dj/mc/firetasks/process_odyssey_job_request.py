@@ -29,7 +29,7 @@ class ProcessOdysseyJobRequestFireTask(FireTaskBase):
                #!/bin/bash
                date >> ~/ody_test.txt
                echo start >> ~/ody_test.txt
-               sleep 60
+               sleep 20
                date >> ~/ody_test.txt
                echo end >> ~/ody_test.txt
                """).strip())
