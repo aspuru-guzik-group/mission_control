@@ -2,4 +2,5 @@ Django
 django-extensions
 psycopg2
 Celery
+redis
 Fireworks
