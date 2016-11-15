@@ -1,26 +1,47 @@
 version: "2"
 services:
   pg:
-     image: postgres
+    image: postgres
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongo_data:/data/db
   redis:
     image: redis
     volumes:
       - ./mongo_data:/data/db
+  mc_base:
+    build:
+      context: ./
+      dockerfile: mc.Dockerfile
+    environment:
+      DJANGO_SETTINGS_MODULE: 'mc.settings'
+      FW_CONFIG_FILE: '/mc/fireworks/FW_config.yaml'
+      MC_DB_NAME: postgres
+      MC_DB_USER: postgres
+      MC_DB_PASSWORD: postgres
+      MC_DB_HOST: pg
   mc:
-     build:
-       context: ./
-       dockerfile: mc.Dockerfile
-     command: python manage.py runserver 0.0.0.0:8000
-     volumes:
-       - ./mc:/mc
-     ports:
-       - "8000:8000"
-     depends_on:
-       - pg
-       - redis
-     environment:
-       DJANGO_SETTINGS_MODULE: 'mc.settings'
-       MC_DB_NAME: postgres
-       MC_DB_USER: postgres
-       MC_DB_PASSWORD: postgres
-       MC_DB_HOST: pg
+    extends:
+      service: mc_base
+    command: python manage.py runserver 0.0.0.0:8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./mc:/mc
+    depends_on:
+      - pg
+      - redis
+      - mongo
+  beat:
+    extends:
+      service: mc_base
+    command: celery -A mc beat -l info -S django
+    volumes:
+      - ./mc:/mc
+    depends_on:
+      - pg
+      - redis
+      - mongo

@@ -2,3 +2,4 @@ Django
 django-extensions
 psycopg2
 Celery
+Fireworks
