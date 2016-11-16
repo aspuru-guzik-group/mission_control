@@ -30,6 +30,22 @@ class JobsAPITestCase(APITestCase):
         self.assertEqual(sorted(response.data, key=lambda j: j['uuid']),
                          sorted(expected_data, key=lambda j:j['uuid']))
 
+    def test_patch_job(self):
+        job_to_patch = self.jobs[0]
+        new_values = {'name': 'new_name'}
+        response = self.client.patch('/jobs/%s/' % job_to_patch.uuid,
+                                     new_values)
+        self.assertEqual(response.status_code, 200)
+        patched_job = Job.objects.get(uuid=job_to_patch.uuid)
+        patched_job_attrs = {attr: getattr(patched_job, attr)
+                             for attr in new_values.keys()}
+        self.assertEqual(patched_job_attrs, new_values)
+
+    def test_patch_with_bad_status(self):
+        response = self.client.patch('/jobs/%s/' % self.jobs[0].uuid,
+                                     {'status': 'BADDO!'})
+        self.assertEqual(response.status_code, 400)
+
 @override_settings(ROOT_URLCONF='jobs.urls')
 class ClaimJobTestCase(TestCase):
     def setUp(self):
