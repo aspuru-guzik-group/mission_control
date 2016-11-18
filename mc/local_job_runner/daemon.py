@@ -5,11 +5,12 @@ import time
 
 class LocalJobRunnerDaemon(object):
     def __init__(self, job_client=None, job_dir_factory=None, interval=120,
-                 max_running_jobs=3):
+                 max_running_jobs=3, transfer_client=None):
         self.job_client = job_client
         self.job_dir_factory = job_dir_factory
         self.interval = interval
         self.max_running_jobs = max_running_jobs
+        self.transfer_client = transfer_client
 
         self._ticking = False
         self.running_jobs = {}
@@ -50,10 +51,11 @@ class LocalJobRunnerDaemon(object):
         claimed = self.claim_job_spec(job_spec)
         if not claimed: return
         dir_meta = self.build_job_dir(job_spec=job_spec)
-        partial_job = {'job_spec': job_spec, 'dir': dir_meta}
-        spec_meta = self.run_job(job=partial_job)
+        partial_job = {'key': job_spec['uuid'], 'job_spec': job_spec,
+                       'dir': dir_meta}
+        spec_meta = self.start_job_run(job=partial_job)
         full_job = {**partial_job, 'proc': spec_meta}
-        self.running_jobs[job_spec['uuid']] = full_job
+        self.running_jobs[partial_job['key']] = full_job
 
     def claim_job_spec(self, job_spec=None):
         claim_results = self.job_client.claim_jobs(uuids=[job_spec['uuid']])
@@ -63,37 +65,63 @@ class LocalJobRunnerDaemon(object):
         job_dir_meta = self.job_dir_factory.build_job_dir(job_spec=job_spec)
         return job_dir_meta
 
-    def run_job(self, job=None):
+    def start_job_run(self, job=None):
         cmd = 'cd {dir}; {entrypoint}'.format(**job['dir'])
         proc = subprocess.Popen(cmd, shell=True)
         return {'pid': proc.pid}
 
     def process_running_jobs(self):
-        current_running_job_states = self.get_running_job_states()
-        completed_jobs = [job for job_uuid, job in self.running_jobs.items()
-                          if current_running_job_states[job_uuid] is None]
+        job_run_states = self.get_job_run_states()
+        completed_jobs = [job for job_key, job in self.running_jobs.items()
+                          if job_run_states[job_key] is None]
         for completed_job in completed_jobs:
             self.process_completed_job(job=completed_job)
 
-    def get_running_job_states(self):
-        job_states = {}
-        for job_uuid, running_job in self.running_jobs.items():
+    def get_job_run_states(self):
+        job_run_states = {}
+        for job_key, job in self.running_jobs.items():
             try:
-                job_state = psutil.Process(
-                    pid=running_job['proc']['pid']).as_dict()
+                job_run_state = psutil.Process(
+                    pid=job['proc']['pid']).as_dict()
             except psutil.NoSuchProcess:
-                job_state = None
-            job_states[job_uuid] = job_state
-        return job_states
+                job_run_state = None
+            job_run_states[job_key] = job_run_state
+        return job_run_states
 
     def process_completed_job(self, job=None):
-        transfer_meta = self.transfer_job(job=job)
-        self.transferring_jobs[job['job_spec']['uuid']] = {
-            **job, 'transfer': transfer_meta}
-        del self.running_jobs[job['job_spec']['uuid']]
+        transfer_meta = self.start_job_transfer(job=job)
+        self.transferring_jobs[job['key']] = {**job, 'transfer': transfer_meta}
+        del self.running_jobs[job['key']]
 
-    def transfer_job(self, job=None, job_dir_meta=None):
-        pass
+    def start_job_transfer(self, job=None):
+        transfer_meta = self.transfer_client.start_transfer(job=job)
+        return transfer_meta
 
     def process_transferring_jobs(self):
+        job_transfer_states = self.get_job_transfer_states()
+        transferred_jobs = [
+            job for job_key, job in self.transferring_jobs.items()
+            if job_transfer_states[job_key] is None
+        ]
+        for transferred_job in transferred_jobs:
+            self.process_transferred_job(job=transferred_job)
         pass
+
+    def get_job_transfer_states(self):
+        job_transfer_states = {}
+        for job_key, job in self.transferring_jobs.items():
+            job_transfer_state = self.transfer_client.get_transfer_state(
+                key=job['transfer']['key'])
+            job_transfer_states[job_key] = job_transfer_state
+        return job_transfer_states
+
+    def process_transferred_job(self, job=None):
+        self.update_job_spec(job_spec=job['job_spec'], updates={
+            'status': self.job_client.statuses.TRANSFERRED,
+            'transfer_meta': job['transfer'],
+        })
+        del self.transferring_jobs[job['key']]
+
+    def update_job_spec(self, job_spec=None, updates=None):
+        self.job_client.update_job(uuid=job_spec['uuid'], updates=updates)
+
