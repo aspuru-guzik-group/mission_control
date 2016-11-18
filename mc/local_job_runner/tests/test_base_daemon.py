@@ -111,8 +111,9 @@ class BuildJobDirTestCase(DaemonBaseTestCase):
     def test_build_job_dir(self):
         job_spec = {'uuid': 'abcd'}
         self.daemon.build_job_dir(job_spec=job_spec)
-        self.assertTrue(self.daemon.job_dir_factory.build_job_dir.call_args,
-                        call(job_spec=job_spec))
+        self.assertEqual(
+            self.daemon.job_dir_factory.build_dir_for_spec.call_args,
+            call(job_spec=job_spec))
 
 class StartJobExecutionTestCase(DaemonBaseTestCase):
     def setUp(self):

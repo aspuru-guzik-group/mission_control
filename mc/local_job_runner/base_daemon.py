@@ -63,7 +63,8 @@ class BaseDaemon(object):
         return claim_results.get(job_spec['uuid'], False)
 
     def build_job_dir(self, job_spec=None):
-        job_dir_meta = self.job_dir_factory.build_job_dir(job_spec=job_spec)
+        job_dir_meta = self.job_dir_factory.build_dir_for_spec(
+            job_spec=job_spec)
         return job_dir_meta
 
     def start_job_execution(self, job=None):
