@@ -5,3 +5,4 @@ Celery
 redis
 Fireworks
 djangorestframework
+psutil
