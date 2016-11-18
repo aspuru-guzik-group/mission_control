@@ -6,11 +6,11 @@ from ..base_daemon import BaseDaemon
 
 class DaemonBaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.job_client = MagicMock()
+        self.job_spec_client = MagicMock()
         self.job_dir_factory = MagicMock()
         self.transfer_client = MagicMock()
         self.daemon = BaseDaemon(
-            job_client=self.job_client,
+            job_spec_client=self.job_spec_client,
             job_dir_factory=self.job_dir_factory,
             transfer_client=self.transfer_client)
 
@@ -67,7 +67,7 @@ class TickTestCase(DaemonBaseTestCase):
 class FetchCandidateJobsTestCase(DaemonBaseTestCase):
     def test_fetch_candidate_job_specs(self):
         self.daemon.fetch_candidate_job_specs()
-        self.assertEqual(self.job_client.fetch_jobs.call_count, 1)
+        self.assertEqual(self.job_spec_client.fetch_jobs.call_count, 1)
 
 class ProcessCandidateJobSpecTestCase(DaemonBaseTestCase):
     def setUp(self):
@@ -81,7 +81,7 @@ class ProcessCandidateJobSpecTestCase(DaemonBaseTestCase):
 
     def test_claimable_job_spec(self):
         job_spec = {'uuid': 'abcd'}
-        self.job_client.claim_jobs.return_value = {job_spec['uuid']: True}
+        self.job_spec_client.claim_jobs.return_value = {job_spec['uuid']: True}
         self.daemon.process_candidate_job_spec(job_spec=job_spec)
         expected_job_dir_meta = self.mocks['build_job_dir'].return_value
         expected_job_proc_meta = self.mocks['start_job_execution'].return_value
@@ -101,7 +101,7 @@ class ProcessCandidateJobSpecTestCase(DaemonBaseTestCase):
 
     def test_unclaimable_job_spec(self):
         job_spec = {'uuid': 'abcd'}
-        self.job_client.claim_jobs.return_value = {job_spec['uuid']: False}
+        self.job_spec_client.claim_jobs.return_value = {job_spec['uuid']: False}
         self.daemon.process_candidate_job_spec(job_spec)
         self.assertEqual(self.mocks['start_job_execution'].call_count, 0)
 
@@ -306,7 +306,7 @@ class ProcessTransferredJobTestCase(DaemonBaseTestCase):
         self.assertEqual(
             self.mocks['update_job_spec'].call_args,
             call(job_spec=self.transferred_job['job_spec'], updates={
-                'status': self.job_client.statuses.TRANSFERRED,
+                'status': self.job_spec_client.statuses.TRANSFERRED,
                 'transfer_meta': self.transferred_job['transfer']
             }))
         self.assertTrue(self.job_key not in self.daemon.transferring_jobs)
@@ -316,7 +316,7 @@ class UpdateJobSpecTestCase(DaemonBaseTestCase):
         job_spec = {'uuid': 'abcd'}
         updates = {'pie': 'blueberry', 'meat': 'beef'}
         self.daemon.update_job_spec(job_spec=job_spec, updates=updates)
-        self.assertEqual(self.job_client.update_job.call_args, 
+        self.assertEqual(self.job_spec_client.update_job.call_args, 
                          call(uuid=job_spec['uuid'], updates=updates))
 
 if __name__ == '__main__':
