@@ -45,7 +45,7 @@ class BaseDaemon(object):
         self.process_transferring_jobs()
 
     def fetch_candidate_job_specs(self):
-        return self.job_spec_client.fetch_jobs()
+        return self.job_spec_client.fetch_job_specs()
 
     def process_candidate_job_spec(self, job_spec=None):
         claimed = self.claim_job_spec(job_spec)
@@ -58,7 +58,8 @@ class BaseDaemon(object):
         self.executing_jobs[partial_job['key']] = full_job
 
     def claim_job_spec(self, job_spec=None):
-        claim_results = self.job_spec_client.claim_jobs(uuids=[job_spec['uuid']])
+        claim_results = self.job_spec_client.claim_job_specs(
+            uuids=[job_spec['uuid']])
         return claim_results.get(job_spec['uuid'], False)
 
     def build_job_dir(self, job_spec=None):
@@ -122,5 +123,6 @@ class BaseDaemon(object):
         del self.transferring_jobs[job['key']]
 
     def update_job_spec(self, job_spec=None, updates=None):
-        self.job_spec_client.update_job(uuid=job_spec['uuid'], updates=updates)
+        self.job_spec_client.update_job_specs(updates_by_uuid={
+            job_spec['uuid']: updates})
 
