@@ -3,7 +3,7 @@ import subprocess
 import time
 
 
-class LocalJobRunnerDaemon(object):
+class BaseDaemon(object):
     def __init__(self, job_client=None, job_dir_factory=None, interval=120,
                  max_executing_jobs=3, transfer_client=None):
         self.job_client = job_client

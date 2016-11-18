@@ -2,14 +2,14 @@ import operator
 import unittest
 from unittest.mock import call, DEFAULT, MagicMock, patch
 
-from ..daemon import LocalJobRunnerDaemon
+from ..base_daemon import BaseDaemon
 
 class DaemonBaseTestCase(unittest.TestCase):
     def setUp(self):
         self.job_client = MagicMock()
         self.job_dir_factory = MagicMock()
         self.transfer_client = MagicMock()
-        self.daemon = LocalJobRunnerDaemon(
+        self.daemon = BaseDaemon(
             job_client=self.job_client,
             job_dir_factory=self.job_dir_factory,
             transfer_client=self.transfer_client)
