@@ -42,7 +42,7 @@ class PutTestCase(FileSystemStorageClientBaseTestCase):
 
     def test_generates_key(self):
         key = self.client.put(src_path=self.src_path)
-        self.assertEqual(key, self.mocks['uuid']['uuid4'].return_value)
+        self.assertEqual(key, str(self.mocks['uuid']['uuid4'].return_value))
 
     def test_starts_copy(self):
         key = self.client.put(src_path=self.src_path)
