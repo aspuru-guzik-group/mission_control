@@ -11,8 +11,9 @@ class FileSystemStorageClientBaseTestCase(unittest.TestCase):
     def setUp(self):
         self.dirs = self._generate_dirs()
         self.client = FileSystemStorageClient(
-            root_path=self.dirs['storage_root'],
-            serialization_dir=self.dirs['serialization']
+            storage_root_path=self.dirs['storage_root'],
+            state_file_path=os.path.join(self.dirs['serialization'],
+                                         'state.json')
         )
 
     def _generate_dirs(self):
@@ -45,7 +46,7 @@ class PutTestCase(FileSystemStorageClientBaseTestCase):
 
     def test_starts_copy(self):
         key = self.client.put(src_path=self.src_path)
-        expected_tgt_path = os.path.join(self.client.root_path, key)
+        expected_tgt_path = os.path.join(self.client.storage_root_path, key)
         self.assertEqual(
             self.mocks['client']['start_copy'].call_args,
             call(src_path=self.src_path, tgt_path=expected_tgt_path))
@@ -92,14 +93,14 @@ class StateSerializationTestCase(FileSystemStorageClientBaseTestCase):
     def test_serialize_state(self):
         self.client.state = {'pie': 'rhubarb'}
         self.client.serialize_state()
-        with open(self.client.serialized_state_path) as f:
+        with open(self.client.state_file_path) as f:
             serialized_state = f.read()
         expected_serialized_state = json.dumps(self.client.state)
         self.assertEqual(serialized_state, expected_serialized_state)
 
     def test_deserialize_state(self):
         serialized_state = {"pie": "rhubarb"}
-        with open(self.client.serialized_state_path, 'w') as f:
+        with open(self.client.state_file_path, 'w') as f:
             json.dump(serialized_state, f)
         deserialized_state = self.client.deserialize_state()
         expected_deserialized_state = {**serialized_state,

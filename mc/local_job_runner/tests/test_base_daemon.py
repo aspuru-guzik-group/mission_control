@@ -1,8 +1,8 @@
-import operator
 import unittest
 from unittest.mock import call, DEFAULT, MagicMock, patch
 
 from ..base_daemon import BaseDaemon
+from .. import process_utils
 
 class DaemonBaseTestCase(unittest.TestCase):
     def setUp(self):
@@ -16,14 +16,15 @@ class DaemonBaseTestCase(unittest.TestCase):
 
 class RunTestCase(DaemonBaseTestCase):
     def test_run(self):
-        intervals = [1, 2]
-        self.daemon.interval = 10
+        tick_intervals = [1, 2]
+        self.daemon.tick_interval = 10
         with patch('time.sleep') as mock_sleep:
-            for interval in intervals:
-                self.daemon.interval = interval
+            for tick_interval in tick_intervals:
+                self.daemon.tick_interval = tick_interval
                 self.daemon.run(ntimes=1)
-            self.assertEqual(mock_sleep.call_args_list,
-                             [call(interval) for interval in intervals])
+            self.assertEqual(
+                mock_sleep.call_args_list,
+                [call(tick_interval) for tick_interval in tick_intervals])
 
 class TickTestCase(DaemonBaseTestCase):
 
@@ -149,7 +150,7 @@ class ProcessExecutingJobsTestCase(DaemonBaseTestCase):
         }
         self.mock_job_execution_states = {
             **{j['key']: None for j in self.executed_jobs},
-            **{j['key']: {'mock': 'state'} for j in self.executing_jobs}
+            **{j['key']: {'running': True} for j in self.executing_jobs}
         }
         self.patcher = patch.multiple(self.daemon,
                                       get_job_execution_states=DEFAULT,
@@ -192,11 +193,11 @@ class ProcessCompletedJobTestCase(DaemonBaseTestCase):
             {**self.executed_job,
              'transfer': self.mocks['start_job_transfer'].return_value})
 
-class GetJobRunStatesTestCase(DaemonBaseTestCase):
+class GetJobExecutionStatesTestCase(DaemonBaseTestCase):
     def setUp(self):
         super().setUp()
-        self.patcher = patch('psutil.Process')
-        self.mocks = {'psutil.Process': self.patcher.start()}
+        self.patcher = patch.object(process_utils, 'get_process_state')
+        self.mocks = {'get_process_state': self.patcher.start()}
 
         self.daemon.executing_jobs = {}
         for i in range(3):
@@ -209,12 +210,14 @@ class GetJobRunStatesTestCase(DaemonBaseTestCase):
 
     def test_get_job_execution_states(self):
         job_execution_states = self.daemon.get_job_execution_states()
-        expected_psutil_calls = [call(pid=j['proc']['pid'])
-                                 for j in self.daemon.executing_jobs.values()]
-        self.assertEqual(self.mocks['psutil.Process'].call_args_list,
-                         expected_psutil_calls)
-        mock_job_execution_state = operator.attrgetter(
-            'return_value.as_dict.return_value')(self.mocks['psutil.Process'])
+        expected_get_process_state_calls = [
+            call(pid=j['proc']['pid'])
+            for j in self.daemon.executing_jobs.values()
+        ]
+        self.assertEqual(
+            self.mocks['get_process_state'].call_args_list,
+            expected_get_process_state_calls)
+        mock_job_execution_state = self.mocks['get_process_state'].return_value
         expected_job_states = {job_key: mock_job_execution_state
                                for job_key in self.daemon.executing_jobs.keys()}
         self.assertEqual(job_execution_states, expected_job_states)
@@ -243,7 +246,7 @@ class ProcessTransferringJobsTestCase(DaemonBaseTestCase):
         }
         self.mock_job_transfer_states = {
             **{j['key']: None for j in self.transferred_jobs},
-            **{j['key']: {'mock': 'state'} for j in self.transferring_jobs}
+            **{j['key']: {'transferring': True} for j in self.transferring_jobs}
         }
         self.patcher = patch.multiple(self.daemon,
                                       get_job_transfer_states=DEFAULT,
@@ -278,7 +281,7 @@ class GetJobTransferStatesTestCase(DaemonBaseTestCase):
 
     def test_get_job_transfer_states(self):
         job_transfer_states = self.daemon.get_job_transfer_states()
-        expected_calls = [call(key=j['transfer']['key'])
+        expected_calls = [call(job=j)
                           for j in self.daemon.transferring_jobs.values()]
         self.assertEqual(self.transfer_client.get_transfer_state.call_args_list,
                          expected_calls)
@@ -309,7 +312,7 @@ class ProcessTransferredJobTestCase(DaemonBaseTestCase):
         self.assertEqual(
             self.mocks['update_job_spec'].call_args,
             call(job_spec=self.transferred_job['job_spec'], updates={
-                'status': self.job_spec_client.statuses.TRANSFERRED,
+                'status': self.job_spec_client.Statuses.TRANSFERRED,
                 'transfer_meta': self.transferred_job['transfer']
             }))
         self.assertTrue(self.job_key not in self.daemon.transferring_jobs)

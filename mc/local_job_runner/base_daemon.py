@@ -1,18 +1,23 @@
-import psutil
+import json
+import logging
 import subprocess
 import time
+from . import process_utils
 
 
 class BaseDaemon(object):
-    def __init__(self, job_spec_client=None, job_dir_factory=None, interval=120,
-                 max_executing_jobs=3, transfer_client=None):
+    def __init__(self, job_spec_client=None, job_dir_factory=None,
+                 tick_interval=120, max_executing_jobs=3, transfer_client=None,
+                 logger=None):
         self.job_spec_client = job_spec_client
         self.job_dir_factory = job_dir_factory
-        self.interval = interval
+        self.tick_interval = tick_interval
         self.max_executing_jobs = max_executing_jobs
         self.transfer_client = transfer_client
+        self.logger = logger or logging
 
         self._ticking = False
+        self.tick_counter = 0
         self.executing_jobs = {}
         self.transferring_jobs = {}
 
@@ -33,13 +38,18 @@ class BaseDaemon(object):
 
     def _tick_and_sleep(self):
         self.tick()
-        time.sleep(self.interval)
+        time.sleep(self.tick_interval)
 
     def tick(self):
+        self.tick_counter += 1
+        print("tick %s:\n" % self.tick_counter, json.dumps({
+            'executing': self.executing_jobs,
+            'transferring': self.transferring_jobs
+        }, indent=2))
         num_job_slots = self.max_executing_jobs - len(self.executing_jobs)
         if num_job_slots <= 0: return
         candidate_job_specs = self.fetch_candidate_job_specs()
-        for candidate_job_spec in candidate_job_specs[:-num_job_slots]:
+        for candidate_job_spec in candidate_job_specs[:num_job_slots]:
             self.process_candidate_job_spec(job_spec=candidate_job_spec)
         self.process_executing_jobs()
         self.process_transferring_jobs()
@@ -74,8 +84,11 @@ class BaseDaemon(object):
 
     def process_executing_jobs(self):
         job_execution_states = self.get_job_execution_states()
-        executed_jobs = [job for job_key, job in self.executing_jobs.items()
-                          if job_execution_states[job_key] is None]
+        executed_jobs = [
+            job for job in self.executing_jobs.values()
+            if not self.job_is_executing(
+                job=job, job_execution_states=job_execution_states)
+        ]
         for executed_job in executed_jobs:
             self.process_executed_job(job=executed_job)
 
@@ -83,12 +96,19 @@ class BaseDaemon(object):
         job_execution_states = {}
         for job_key, job in self.executing_jobs.items():
             try:
-                job_execution_state = psutil.Process(
-                    pid=job['proc']['pid']).as_dict()
-            except psutil.NoSuchProcess:
-                job_execution_state = None
-            job_execution_states[job_key] = job_execution_state
+                process_state = process_utils.get_process_state(
+                    pid=job['proc']['pid'])
+            except process_utils.NoSuchProcess:
+                process_state = None
+            job_execution_states[job_key] = process_state
         return job_execution_states
+
+    def job_is_executing(self, job=None, job_execution_states=None):
+        if not job_execution_states.get(job['key']):
+            is_executing = False
+        else:
+            is_executing = job_execution_states[job['key']]['running']
+        return is_executing
 
     def process_executed_job(self, job=None):
         transfer_meta = self.start_job_transfer(job=job)
@@ -102,8 +122,9 @@ class BaseDaemon(object):
     def process_transferring_jobs(self):
         job_transfer_states = self.get_job_transfer_states()
         transferred_jobs = [
-            job for job_key, job in self.transferring_jobs.items()
-            if job_transfer_states[job_key] is None
+            job for job in self.transferring_jobs.values()
+            if not self.job_is_transferring(
+                job=job, job_transfer_states=job_transfer_states)
         ]
         for transferred_job in transferred_jobs:
             self.process_transferred_job(job=transferred_job)
@@ -112,13 +133,20 @@ class BaseDaemon(object):
         job_transfer_states = {}
         for job_key, job in self.transferring_jobs.items():
             job_transfer_state = self.transfer_client.get_transfer_state(
-                key=job['transfer']['key'])
+                job=job)
             job_transfer_states[job_key] = job_transfer_state
         return job_transfer_states
 
+    def job_is_transferring(self, job=None, job_transfer_states=None):
+        if not job_transfer_states.get(job['key']):
+            is_transferring = False
+        else:
+            is_transferring = job_transfer_states[job['key']]['transferring']
+        return is_transferring
+
     def process_transferred_job(self, job=None):
         self.update_job_spec(job_spec=job['job_spec'], updates={
-            'status': self.job_spec_client.statuses.TRANSFERRED,
+            'status': self.job_spec_client.Statuses.TRANSFERRED,
             'transfer_meta': job['transfer'],
         })
         del self.transferring_jobs[job['key']]
