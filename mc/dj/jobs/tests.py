@@ -19,7 +19,7 @@ class JobTestCase(TestCase):
         self.assertTrue(job.modified is not None)
 
 @override_settings(ROOT_URLCONF='jobs.urls')
-class JobsAPITestCase(APITestCase):
+class ListJobsTestCase(APITestCase):
     def setUp(self):
         self.jobs = [Job.objects.create(name="job_%s" % i)
                      for i in range(1)]
@@ -29,6 +29,12 @@ class JobsAPITestCase(APITestCase):
         expected_data = [JobSerializer(job).data for job in self.jobs]
         self.assertEqual(sorted(response.data, key=lambda j: j['uuid']),
                          sorted(expected_data, key=lambda j:j['uuid']))
+
+@override_settings(ROOT_URLCONF='jobs.urls')
+class PatchJobTestCase(APITestCase):
+    def setUp(self):
+        self.jobs = [Job.objects.create(name="job_%s" % i)
+                     for i in range(1)]
 
     def test_patch_job(self):
         job_to_patch = self.jobs[0]
