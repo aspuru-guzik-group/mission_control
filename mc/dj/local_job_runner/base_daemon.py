@@ -1,16 +1,14 @@
-import json
 import logging
-import subprocess
 import time
-from . import process_utils
 
 
 class BaseDaemon(object):
     def __init__(self, job_spec_client=None, job_dir_factory=None,
-                 tick_interval=120, max_executing_jobs=3, transfer_client=None,
-                 logger=None):
+                 execution_client=None, tick_interval=120, max_executing_jobs=3,
+                 transfer_client=None, logger=None):
         self.job_spec_client = job_spec_client
         self.job_dir_factory = job_dir_factory
+        self.execution_client = execution_client
         self.tick_interval = tick_interval
         self.max_executing_jobs = max_executing_jobs
         self.transfer_client = transfer_client
@@ -42,10 +40,6 @@ class BaseDaemon(object):
 
     def tick(self):
         self.tick_counter += 1
-        print("tick %s:\n" % self.tick_counter, json.dumps({
-            'executing': self.executing_jobs,
-            'transferring': self.transferring_jobs
-        }, indent=2))
         num_job_slots = self.max_executing_jobs - len(self.executing_jobs)
         if num_job_slots <= 0: return
         candidate_job_specs = self.fetch_candidate_job_specs()
@@ -78,9 +72,8 @@ class BaseDaemon(object):
         return job_dir_meta
 
     def start_job_execution(self, job=None):
-        cmd = 'cd {dir}; {entrypoint}'.format(**job['dir'])
-        proc = subprocess.Popen(cmd, shell=True)
-        return {'pid': proc.pid}
+        execution_meta = self.execution_client.start_execution(job=job)
+        return execution_meta
 
     def process_executing_jobs(self):
         job_execution_states = self.get_job_execution_states()
@@ -95,19 +88,16 @@ class BaseDaemon(object):
     def get_job_execution_states(self):
         job_execution_states = {}
         for job_key, job in self.executing_jobs.items():
-            try:
-                process_state = process_utils.get_process_state(
-                    pid=job['proc']['pid'])
-            except process_utils.NoSuchProcess:
-                process_state = None
-            job_execution_states[job_key] = process_state
+            job_execution_state = self.execution_client.get_execution_state(
+                job=job)
+            job_execution_states[job_key] = job_execution_state
         return job_execution_states
 
     def job_is_executing(self, job=None, job_execution_states=None):
         if not job_execution_states.get(job['key']):
             is_executing = False
         else:
-            is_executing = job_execution_states[job['key']]['running']
+            is_executing = job_execution_states[job['key']]['executing']
         return is_executing
 
     def process_executed_job(self, job=None):

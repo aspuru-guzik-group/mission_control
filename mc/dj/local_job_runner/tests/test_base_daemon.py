@@ -1,15 +1,16 @@
 import unittest
 from unittest.mock import call, DEFAULT, MagicMock, patch
-
 from ..base_daemon import BaseDaemon
-from .. import process_utils
+
 
 class DaemonBaseTestCase(unittest.TestCase):
     def setUp(self):
         self.job_spec_client = MagicMock()
         self.job_dir_factory = MagicMock()
+        self.execution_client = MagicMock()
         self.transfer_client = MagicMock()
         self.daemon = BaseDaemon(
+            execution_client=self.execution_client,
             job_spec_client=self.job_spec_client,
             job_dir_factory=self.job_dir_factory,
             transfer_client=self.transfer_client)
@@ -117,28 +118,13 @@ class BuildJobDirTestCase(DaemonBaseTestCase):
             call(job_spec=job_spec))
 
 class StartJobExecutionTestCase(DaemonBaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.patcher = patch('subprocess.Popen')
-        self.mocks = {'subprocess.Popen': self.patcher.start()}
-
-    def tearDown(self):
-        self.patcher.stop()
-
     def test_start_job_execution(self):
-        # calls Popen w/ cd job dir, command.
-        job = {
-            'key': 'abcd',
-            'dir': {'dir': 'mock_dir', 'entrypoint': 'job.sh'},
-        }
-        proc_meta = self.daemon.start_job_execution(job=job)
-        expected_cmd = 'cd {dir}; {entrypoint}'.format(**job['dir'])
-        expected_popen_call = call(expected_cmd, shell=True)
-        self.assertEqual(self.mocks['subprocess.Popen'].call_args,
-                         expected_popen_call)
-        expected_proc_meta = {
-            'pid': self.mocks['subprocess.Popen'].return_value.pid}
-        self.assertEqual(proc_meta, expected_proc_meta)
+        job = {'key': 'abcd'}
+        execution_meta = self.daemon.start_job_execution(job=job)
+        self.assertEqual(self.execution_client.start_execution.call_args,
+                         call(job=job))
+        self.assertEqual(execution_meta,
+                         self.execution_client.start_execution.return_value)
 
 class ProcessExecutingJobsTestCase(DaemonBaseTestCase):
     def setUp(self):
@@ -150,7 +136,7 @@ class ProcessExecutingJobsTestCase(DaemonBaseTestCase):
         }
         self.mock_job_execution_states = {
             **{j['key']: None for j in self.executed_jobs},
-            **{j['key']: {'running': True} for j in self.executing_jobs}
+            **{j['key']: {'executing': True} for j in self.executing_jobs}
         }
         self.patcher = patch.multiple(self.daemon,
                                       get_job_execution_states=DEFAULT,
@@ -196,31 +182,24 @@ class ProcessCompletedJobTestCase(DaemonBaseTestCase):
 class GetJobExecutionStatesTestCase(DaemonBaseTestCase):
     def setUp(self):
         super().setUp()
-        self.patcher = patch.object(process_utils, 'get_process_state')
-        self.mocks = {'get_process_state': self.patcher.start()}
-
         self.daemon.executing_jobs = {}
         for i in range(3):
             job_key = 'job_key_%s' % i
-            self.daemon.executing_jobs[job_key] = {'key': job_key,
-                                                 'proc': {'pid': i}}
-
-    def tearDown(self):
-        self.patcher.stop()
+            self.daemon.executing_jobs[job_key] = {'key': job_key}
 
     def test_get_job_execution_states(self):
         job_execution_states = self.daemon.get_job_execution_states()
-        expected_get_process_state_calls = [
-            call(pid=j['proc']['pid'])
-            for j in self.daemon.executing_jobs.values()
+        expected_get_job_execution_state_calls = [
+            call(job=job) for job in self.daemon.executing_jobs.values()
         ]
         self.assertEqual(
-            self.mocks['get_process_state'].call_args_list,
-            expected_get_process_state_calls)
-        mock_job_execution_state = self.mocks['get_process_state'].return_value
-        expected_job_states = {job_key: mock_job_execution_state
-                               for job_key in self.daemon.executing_jobs.keys()}
-        self.assertEqual(job_execution_states, expected_job_states)
+            self.execution_client.get_execution_state.call_args_list,
+            expected_get_job_execution_state_calls)
+        expected_execution_states = {
+            job['key']: self.execution_client.get_execution_state.return_value
+            for job in self.daemon.executing_jobs.values()
+        }
+        self.assertEqual(job_execution_states, expected_execution_states)
 
 class TransferJobTestCase(DaemonBaseTestCase):
     def setUp(self):

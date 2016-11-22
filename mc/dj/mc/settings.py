@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'missions',
     'jobs',
+    'e2e',
 ]
 
 MIDDLEWARE = [
