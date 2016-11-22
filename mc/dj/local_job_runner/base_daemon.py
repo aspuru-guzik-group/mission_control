@@ -40,16 +40,16 @@ class BaseDaemon(object):
 
     def tick(self):
         self.tick_counter += 1
+        self.process_transferring_jobs()
+        self.process_executing_jobs()
         num_job_slots = self.max_executing_jobs - len(self.executing_jobs)
         if num_job_slots <= 0: return
         candidate_job_specs = self.fetch_candidate_job_specs()
         for candidate_job_spec in candidate_job_specs[:num_job_slots]:
             self.process_candidate_job_spec(job_spec=candidate_job_spec)
-        self.process_executing_jobs()
-        self.process_transferring_jobs()
 
     def fetch_candidate_job_specs(self):
-        return self.job_spec_client.fetch_job_specs()
+        return self.job_spec_client.fetch_claimable_job_specs()
 
     def process_candidate_job_spec(self, job_spec=None):
         claimed = self.claim_job_spec(job_spec)

@@ -1,16 +1,17 @@
+import copy
 from django.conf.urls import url, include
 from django.test import TestCase, override_settings
 from local_job_runner.base_daemon import BaseDaemon
 from jobs.models import Job
-from job_spec_client import MissionControlJobSpecClient
+from job_spec_client.job_spec_client import MissionControlJobSpecClient
 
-BASE_URL = 'test_api'
+BASE_PATH = 'test_api'
 
 urlpatterns = [
-    url(r'^%s' % BASE_URL, include('jobs.urls')),
+    url(r'^%s' % BASE_PATH, include('jobs.urls')),
 ]
 
-@override_settings(ROOT_URLCONF='__main__')
+@override_settings(ROOT_URLCONF=__name__)
 class ClientDaemon_X_Api_TestCase(TestCase):
     def setUp(self):
         self.num_jobs = 10
@@ -23,17 +24,29 @@ class ClientDaemon_X_Api_TestCase(TestCase):
             jobs.append(Job.objects.create())
 
     def generate_runner(self):
-        class StubTransferClient(object):
-            pass
-
         class StubJobDirFactory(object):
             def build_dir_for_spec(self, job_spec=None):
-                dir_meta = {'dir': 'test_dir', 'entrypoint': 'job.sh'}
-                return dir_meta
+                return {}
+
+        class StubTransferClient(object):
+            def start_transfer(self, job=None):
+                return {}
+
+            def get_transfer_state(self, job=None):
+                return {}
+
+        class StubExecutionClient(object):
+            def start_execution(self, job=None):
+                return {}
+
+            def get_execution_state(self, job=None):
+                return {}
 
         runner = BaseDaemon(
+            execution_client=StubExecutionClient(),
             job_spec_client=MissionControlJobSpecClient(
-                base_url=BASE_URL + '/'
+                base_url='/%s' % BASE_PATH,
+                request_client=self.client
             ),
             job_dir_factory=StubJobDirFactory(),
             transfer_client=StubTransferClient()
@@ -41,14 +54,71 @@ class ClientDaemon_X_Api_TestCase(TestCase):
         return runner
 
     def test_job_cycle(self):
-        # Tick 1: should request and claim jobs.
-        # Tick 2: should be executing jobs, should not be fetching new jobs
-        # (running jobs maxed out)
-        # <set jobs to finish executing>
-        # Tick 3: should start transferring jobs, fetching new jobs.
-        # <set jobs to finish transferring>
-        # Tick 4: should update job status.
-        pass
-        self.fail()
+        states = {0: self.get_current_state()}
 
+        for i in range(1, 5):
+            self.runner.tick()
+            prev_state = states[i - 1]
+            states[i] = self.get_current_state(prev_state=prev_state)
+            self.check_state(state=states[i], prev_state=prev_state)
 
+    def get_current_state(self, prev_state=None):
+        state = {}
+        state['jobs'] = {j.uuid: j for j in Job.objects.all()}
+        state['claimed_jobs'] = {key:j for key, j in state['jobs'].items()
+                                 if j.status == Job.STATUSES.CLAIMED.name}
+        state['pending_jobs'] = {key:j for key, j in state['jobs'].items()
+                                 if j.status == Job.STATUSES.PENDING.name}
+        state['completed_jobs'] = {key:j for key, j in state['jobs'].items()
+                                   if j.status == Job.STATUSES.COMPLETED.name}
+        state['executing_jobs'] = copy.deepcopy(self.runner.executing_jobs)
+        state['transferring_jobs'] = copy.deepcopy(
+            self.runner.transferring_jobs)
+        if prev_state:
+            state['newly_claimed_jobs'] = {
+                key:j for key, j in state['claimed_jobs'].items()
+                if key not in prev_state['claimed_jobs']
+            }
+            state['newly_completed_jobs'] = {
+                key:j for key, j in state['completed_jobs'].items()
+                if key not in prev_state['completed_jobs']
+            }
+            state['newly_executing_jobs'] = {
+                key:j for key, j in state['executing_jobs'].items()
+                if key not in prev_state['executing_jobs']
+            }
+            state['newly_executed_jobs'] = {
+                key:j for key, j in prev_state['executing_jobs'].items()
+                if key not in state['executing_jobs']
+            }
+            state['newly_transferring_jobs'] = {
+                key:j for key, j in state['transferring_jobs'].items()
+                if key not in prev_state['transferring_jobs']
+            }
+            state['newly_transferred_jobs'] = {
+                key:j for key, j in prev_state['transferring_jobs'].items()
+                if key not in state['transferring_jobs']
+            }
+        return state
+
+    def check_state(self, state=None, prev_state=None):
+        self.assertEqual(
+            len(state.get('newly_transferring_jobs', {})),
+            len(state.get('newly_executed_jobs', {}))
+        )
+        self.assertEqual(
+            len(state.get('newly_executing_jobs', {})),
+            len(state.get('newly_claimed_jobs', {}))
+        )
+        self.assertEqual(
+            len(state.get('newly_claimed_jobs', {})),
+            min(
+                len(prev_state['pending_jobs']),
+                (self.runner.max_executing_jobs - \
+                 len(state.get('newly_executed_jobs', {})))
+            )
+        )
+        self.assertEqual(
+            len(state.get('newly_completed_jobs', {})),
+            len(prev_state.get('newly_transferred_jobs', {}))
+        )
