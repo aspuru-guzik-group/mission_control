@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import call, DEFAULT, patch
-
+from jobs.models import Job
 from .job_spec_client import MissionControlJobSpecClient
 
 
@@ -28,6 +28,13 @@ class FetchJobSpecsTestCase(JobSpecClientBaseTestCase):
         self.assertEqual(self.mocks['requests']['get'].call_args,
                          expected_get_call)
 
+    def test_filters(self):
+        filters = {'filter1': 'junk'}
+        self.client.fetch_job_specs(filters=filters)
+        expected_url = self.base_url + 'jobs/'
+        self.assertEqual(self.mocks['requests']['get'].call_args,
+                         call(expected_url, filters))
+
     def test_handles_populated_response(self):
         jobs = [{'uuid': i} for i in range(3)]
         self.mocks['requests']['get'].return_value.json.return_value = jobs
@@ -39,6 +46,13 @@ class FetchJobSpecsTestCase(JobSpecClientBaseTestCase):
         self.mocks['requests']['get'].return_value.json.return_value = jobs
         fetched_job_specs = self.client.fetch_job_specs()
         self.assertEqual(fetched_job_specs, jobs)
+
+class FetchClaimableJobSpecsTest(JobSpecClientBaseTestCase):
+    def test_calls_fetch_job_specs_with_filters(self):
+        with patch.multiple(self.client, fetch_job_specs=DEFAULT):
+            self.client.fetch_claimable_job_specs()
+            self.assertEqual(self.client.fetch_job_specs.call_args,
+                             call(filters={'status': Job.STATUSES.PENDING}))
 
 class ClaimJobSpecsTestCase(JobSpecClientBaseTestCase):
     def setUp(self):

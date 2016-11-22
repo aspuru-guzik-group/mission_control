@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'missions',
     'jobs',
     'e2e',
+    'job_spec_client',
 ]
 
 MIDDLEWARE = [
