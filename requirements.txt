@@ -7,3 +7,4 @@ Fireworks
 djangorestframework
 psutil
 requests
+django-filter

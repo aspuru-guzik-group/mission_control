@@ -20,15 +20,26 @@ class JobTestCase(TestCase):
 
 @override_settings(ROOT_URLCONF='jobs.urls')
 class ListJobsTestCase(APITestCase):
-    def setUp(self):
-        self.jobs = [Job.objects.create(name="job_%s" % i)
-                     for i in range(1)]
-
     def test_list_jobs(self):
+        jobs = [Job.objects.create(name="job_%s" % i) for i in range(3)]
         response = self.client.get('/jobs/')
-        expected_data = [JobSerializer(job).data for job in self.jobs]
+        expected_data = [JobSerializer(job).data for job in jobs]
         self.assertEqual(sorted(response.data, key=lambda j: j['uuid']),
                          sorted(expected_data, key=lambda j:j['uuid']))
+
+    def test_status_filtering(self):
+        statuses = [Job.STATUSES.PENDING.name, Job.STATUSES.CLAIMED.name]
+        jobs_by_status = {
+            status: [Job.objects.create(name="job_%s" % i, status=status)
+                     for i in range(3)]
+            for status in statuses
+        }
+        for status in statuses:
+            response = self.client.get('/jobs/', {'status': status})
+            expected_data = [JobSerializer(job).data
+                             for job in jobs_by_status[status]]
+            self.assertEqual(sorted(response.data, key=lambda j: j['uuid']),
+                             sorted(expected_data, key=lambda j: j['uuid']))
 
 @override_settings(ROOT_URLCONF='jobs.urls')
 class PatchJobTestCase(APITestCase):
@@ -66,7 +77,7 @@ class ClaimJobTestCase(TestCase):
         self._claimJobs()
 
     def _claimJobs(self):
-        csv_uuids = ','.join([str(job.uuid) for job in self.jobs_to_claim])
+        csv_uuids = ','.join([job.uuid for job in self.jobs_to_claim])
         self.response = self.client.post('/claim_jobs/', {'uuids': csv_uuids})
 
     def test_response_data(self):
@@ -84,6 +95,6 @@ class ClaimJobTestCase(TestCase):
                 expected_status = Job.STATUSES.CLAIMED.name
             else:
                 expected_status = Job.STATUSES.PENDING.name
-            expected_statuses[job.uuid] = expected_status
+            expected_statuses[str(job.uuid)] = expected_status
         self.assertEqual(statuses, expected_statuses)
 

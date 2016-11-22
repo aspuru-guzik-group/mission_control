@@ -8,6 +8,7 @@ class Job(TimeStampedModel):
     class STATUSES(enum.Enum):
         PENDING = {'label': 'pending'}
         CLAIMED = {'label': 'claimed'}
+        COMPLETED = {'label': 'completed'}
 
     uuid = models.CharField(primary_key=True, default=uuid.uuid4,
                             editable=False, max_length=64)
