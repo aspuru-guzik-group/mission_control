@@ -58,9 +58,13 @@ class BaseJobRunner(object):
         partial_job = {'key': claimed_spec['uuid'],
                        'job_spec': claimed_spec,
                        'dir': dir_meta}
-        spec_meta = self.start_job_execution(job=partial_job)
-        full_job = {**partial_job, 'proc': spec_meta}
-        self.executing_jobs[partial_job['key']] = full_job
+        try:
+            execution_meta = self.start_job_execution(job=partial_job)
+            full_job = {**partial_job, 'execution': execution_meta}
+            self.executing_jobs[partial_job['key']] = full_job
+        except Exception as exception:
+            self.update_job_spec(job_spec=claimed_spec,
+                                 updates={'status': 'Failed'})
 
     def claim_job_spec(self, job_spec=None):
         claimed_specs = self.job_spec_client.claim_job_specs(

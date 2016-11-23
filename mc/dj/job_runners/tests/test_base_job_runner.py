@@ -76,7 +76,8 @@ class ProcessClaimableJobSpecTestCase(JobRunnerBaseTestCase):
     def setUp(self):
         super().setUp()
         self.patcher = patch.multiple(self.runner, build_job_dir=DEFAULT,
-                                      start_job_execution=DEFAULT)
+                                      start_job_execution=DEFAULT,
+                                      update_job_spec=DEFAULT)
         self.mocks = self.patcher.start()
 
     def tearDown(self):
@@ -89,7 +90,7 @@ class ProcessClaimableJobSpecTestCase(JobRunnerBaseTestCase):
             job_spec['uuid']: mock_claimed_spec}
         self.runner.process_claimable_job_spec(job_spec=job_spec)
         expected_job_dir_meta = self.mocks['build_job_dir'].return_value
-        expected_job_proc_meta = self.mocks['start_job_execution'].return_value
+        expected_execution_meta = self.mocks['start_job_execution'].return_value
         self.assertEqual(self.mocks['build_job_dir'].call_count, 1)
         expected_partial_job = {
             'key': mock_claimed_spec['uuid'],
@@ -99,7 +100,7 @@ class ProcessClaimableJobSpecTestCase(JobRunnerBaseTestCase):
         self.assertEqual(self.mocks['start_job_execution'].call_args,
                          call(job=expected_partial_job))
         expected_full_job = {**expected_partial_job,
-                             'proc': expected_job_proc_meta}
+                             'execution': expected_execution_meta}
         self.assertEqual(
             self.runner.executing_jobs[expected_partial_job['key']],
             expected_full_job)
@@ -110,6 +111,18 @@ class ProcessClaimableJobSpecTestCase(JobRunnerBaseTestCase):
             job_spec['uuid']: None}
         self.runner.process_claimable_job_spec(job_spec)
         self.assertEqual(self.mocks['start_job_execution'].call_count, 0)
+
+    def test_handles_start_execution_exception(self):
+        job_spec = MagicMock()
+        mock_claimed_spec = MagicMock()
+        self.job_spec_client.claim_job_specs.return_value = {
+            job_spec['uuid']: mock_claimed_spec}
+        exception = Exception("some exception")
+        self.mocks['start_job_execution'].side_effect = exception
+        self.runner.process_claimable_job_spec(job_spec)
+        self.assertEqual(
+            self.mocks['update_job_spec'].call_args,
+            call(job_spec=mock_claimed_spec, updates={'status': 'Failed'}))
 
 class BuildJobDirTestCase(JobRunnerBaseTestCase):
     def test_build_job_dir(self):
