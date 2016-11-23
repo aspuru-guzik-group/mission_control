@@ -3,7 +3,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 from rest_framework.test import APITestCase
 
-from .models import Job
+from .models import Job, JobStatuses
 from .serializers import JobSerializer
 
 class JobTestCase(TestCase):
@@ -13,7 +13,7 @@ class JobTestCase(TestCase):
         }
         job = Job.objects.create(**kwargs)
         self.assertEqual(job.name, kwargs['name'])
-        self.assertEqual(job.status, Job.STATUSES.PENDING.name)
+        self.assertEqual(job.status, JobStatuses.Pending.name)
         self.assertTrue(job.uuid is not None)
         self.assertTrue(job.created is not None)
         self.assertTrue(job.modified is not None)
@@ -28,7 +28,7 @@ class ListJobsTestCase(APITestCase):
                          sorted(expected_data, key=lambda j:j['uuid']))
 
     def test_status_filtering(self):
-        statuses = [Job.STATUSES.PENDING.name, Job.STATUSES.CLAIMED.name]
+        statuses = [JobStatuses.Pending.name, JobStatuses.Claimed.name]
         jobs_by_status = {
             status: [Job.objects.create(name="job_%s" % i, status=status)
                      for i in range(3)]
@@ -69,7 +69,7 @@ class ClaimJobTestCase(TestCase):
         self.unclaimed_jobs = [Job.objects.create(name="job_%s" % i)
                                for i in range(1)]
         self.claimed_jobs = [Job.objects.create(
-            name="job_%s" % i, status=Job.STATUSES.CLAIMED.name)
+            name="job_%s" % i, status=JobStatuses.Claimed.name)
             for i in range(1)]
         self.all_jobs = self.unclaimed_jobs + self.claimed_jobs
         self.jobs_to_claim = [j for j in self.unclaimed_jobs[:-1]] + [
@@ -82,7 +82,7 @@ class ClaimJobTestCase(TestCase):
 
     def test_response_data(self):
         self.assertEqual(self.response.status_code, 200)
-        expected_data = {str(job.uuid): (job in self.unclaimed_jobs)
+        expected_data = {str(job.uuid): JobSerializer(job).data
                          for job in self.jobs_to_claim}
         self.assertEqual(json.loads(self.response.content.decode()),
                          expected_data)
@@ -92,9 +92,9 @@ class ClaimJobTestCase(TestCase):
         expected_statuses = {}
         for job in self.all_jobs:
             if job in set(self.jobs_to_claim + self.claimed_jobs):
-                expected_status = Job.STATUSES.CLAIMED.name
+                expected_status = JobStatuses.Claimed.name
             else:
-                expected_status = Job.STATUSES.PENDING.name
+                expected_status = JobStatuses.Pending.name
             expected_statuses[str(job.uuid)] = expected_status
         self.assertEqual(statuses, expected_statuses)
 
