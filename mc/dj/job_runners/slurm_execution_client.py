@@ -30,13 +30,14 @@ class SlurmExecutionClient(object):
         cmd = ['scontrol', 'show', '--details', '--oneliner', 'job', job_id]
         completed_proc = self.process_runner.run_process(cmd=cmd, check=True)
         slurm_job_meta = self.parse_scontrol_output(completed_proc.stdout)
+        run_state = self.get_execution_state_for_slurm_job_meta(slurm_job_meta)
         execution_state = {
-            'running': self.get_run_state_for_slurm_job_meta(slurm_job_meta),
+            'executing': (run_state == 'running'),
             'slurm_job_meta': slurm_job_meta,
         }
         return execution_state
 
-    def get_run_state_for_slurm_job_meta(self, slurm_job_meta=None):
+    def get_execution_state_for_slurm_job_meta(self, slurm_job_meta=None):
         slurm_job_state = slurm_job_meta['JobState']
         if slurm_job_state in SLURM_JOB_STATES_TO_RUN_STATES['running']:
             run_state = 'running'

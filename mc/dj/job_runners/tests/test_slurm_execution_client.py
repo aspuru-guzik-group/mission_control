@@ -94,7 +94,7 @@ class GetExecutionStateTestCase(SlurmExecutionClientBaseTestCase):
         self.process_runner.run_process.return_value = \
                 self.generate_successful_scontrol_proc()
         execution_state = self.slurm_client.get_execution_state(job=self.job)
-        expected_state_keys = ['running', 'slurm_job_meta']
+        expected_state_keys = ['executing', 'slurm_job_meta']
         self.assertTrue(sorted(execution_state.keys()),
                         sorted(expected_state_keys))
 
@@ -107,19 +107,19 @@ class GetExecutionStateTestCase(SlurmExecutionClientBaseTestCase):
 
 class MapSlurmJobStateTestCase(SlurmExecutionClientBaseTestCase):
     def test_maps_running_job(self):
-        run_states = {}
-        expected_run_states = {}
+        ex_states = {}
+        expected_ex_states = {}
         for job_state in SLURM_JOB_STATES_TO_RUN_STATES['running']:
             slurm_job_meta = {'JobState': job_state}
-            run_state = self.slurm_client.get_run_state_for_slurm_job_meta(
+            ex_state = self.slurm_client.get_execution_state_for_slurm_job_meta(
                 slurm_job_meta)
-            run_states[job_state] = run_state
-            expected_run_states[job_state] = 'running'
-        self.assertEqual(run_states, expected_run_states)
+            ex_states[job_state] = ex_state
+            expected_ex_states[job_state] = 'running'
+        self.assertEqual(ex_states, expected_ex_states)
 
     def test_maps_nonrunning_job(self):
         slurm_job_meta = {'JobState': 'some nonrunning job state'}
-        run_state = self.slurm_client.get_run_state_for_slurm_job_meta(
+        run_state = self.slurm_client.get_execution_state_for_slurm_job_meta(
             slurm_job_meta)
         self.assertEqual(run_state, 'completed')
 
