@@ -32,30 +32,30 @@ class TickTestCase(DaemonBaseTestCase):
     def setUp(self):
         super().setUp()
         self.patcher = patch.multiple(
-            self.daemon, fetch_candidate_job_specs=DEFAULT,
-            process_candidate_job_spec=DEFAULT, process_executing_jobs=DEFAULT,
+            self.daemon, fetch_claimable_job_specs=DEFAULT,
+            process_claimable_job_spec=DEFAULT, process_executing_jobs=DEFAULT,
             process_transferring_jobs=DEFAULT)
         self.mocks = self.patcher.start()
 
     def tearDown(self):
         self.patcher.stop()
 
-    def test_fetches_candidate_job_spec(self):
+    def test_fetches_claimable_job_spec(self):
         self.daemon.tick()
-        self.assertTrue(self.mocks['fetch_candidate_job_specs'].called)
+        self.assertTrue(self.mocks['fetch_claimable_job_specs'].called)
 
-    def test_processes_candidate_job_specs(self):
+    def test_processes_claimable_job_specs(self):
         self.daemon.max_executing_jobs = 3
         extra_jobs = 2
         job_specs = [
             {'uuid': i}
             for i in range(self.daemon.max_executing_jobs + extra_jobs)
         ]
-        self.mocks['fetch_candidate_job_specs'].return_value = job_specs
+        self.mocks['fetch_claimable_job_specs'].return_value = job_specs
         self.daemon.tick()
         expected_call_args = [call(job_spec=job_spec)
                               for job_spec in job_specs[:-1 * extra_jobs]]
-        self.assertTrue(self.mocks['process_candidate_job_spec'].call_args_list,
+        self.assertTrue(self.mocks['process_claimable_job_spec'].call_args_list,
                         expected_call_args)
 
     def test_processes_executing_jobs(self):
@@ -66,12 +66,13 @@ class TickTestCase(DaemonBaseTestCase):
         self.daemon.tick()
         self.assertEqual(self.mocks['process_transferring_jobs'].call_count, 1)
 
-class FetchCandidateJobsTestCase(DaemonBaseTestCase):
-    def test_fetch_candidate_job_specs(self):
-        self.daemon.fetch_candidate_job_specs()
-        self.assertEqual(self.job_spec_client.fetch_job_specs.call_count, 1)
+class FetchClaimableJobsTestCase(DaemonBaseTestCase):
+    def test_fetch_claimable_job_specs(self):
+        self.daemon.fetch_claimable_job_specs()
+        self.assertEqual(
+            self.job_spec_client.fetch_claimable_job_specs.call_count, 1)
 
-class ProcessCandidateJobSpecTestCase(DaemonBaseTestCase):
+class ProcessClaimableJobSpecTestCase(DaemonBaseTestCase):
     def setUp(self):
         super().setUp()
         self.patcher = patch.multiple(self.daemon, build_job_dir=DEFAULT,
@@ -83,15 +84,16 @@ class ProcessCandidateJobSpecTestCase(DaemonBaseTestCase):
 
     def test_claimable_job_spec(self):
         job_spec = {'uuid': 'abcd'}
+        mock_claimed_spec = MagicMock()
         self.job_spec_client.claim_job_specs.return_value = {
-            job_spec['uuid']: True}
-        self.daemon.process_candidate_job_spec(job_spec=job_spec)
+            job_spec['uuid']: mock_claimed_spec}
+        self.daemon.process_claimable_job_spec(job_spec=job_spec)
         expected_job_dir_meta = self.mocks['build_job_dir'].return_value
         expected_job_proc_meta = self.mocks['start_job_execution'].return_value
         self.assertEqual(self.mocks['build_job_dir'].call_count, 1)
         expected_partial_job = {
-            'key': job_spec['uuid'],
-            'job_spec': job_spec,
+            'key': mock_claimed_spec['uuid'],
+            'job_spec': mock_claimed_spec,
             'dir': expected_job_dir_meta,
         }
         self.assertEqual(self.mocks['start_job_execution'].call_args,
@@ -105,8 +107,8 @@ class ProcessCandidateJobSpecTestCase(DaemonBaseTestCase):
     def test_unclaimable_job_spec(self):
         job_spec = {'uuid': 'abcd'}
         self.job_spec_client.claim_job_specs.return_value = {
-            job_spec['uuid']: False}
-        self.daemon.process_candidate_job_spec(job_spec)
+            job_spec['uuid']: None}
+        self.daemon.process_claimable_job_spec(job_spec)
         self.assertEqual(self.mocks['start_job_execution'].call_count, 0)
 
 class BuildJobDirTestCase(DaemonBaseTestCase):
@@ -291,7 +293,7 @@ class ProcessTransferredJobTestCase(DaemonBaseTestCase):
         self.assertEqual(
             self.mocks['update_job_spec'].call_args,
             call(job_spec=self.transferred_job['job_spec'], updates={
-                'status': self.job_spec_client.Statuses.TRANSFERRED,
+                'status': self.job_spec_client.Statuses.Completed.name,
                 'transfer_meta': self.transferred_job['transfer']
             }))
         self.assertTrue(self.job_key not in self.daemon.transferring_jobs)

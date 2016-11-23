@@ -44,27 +44,28 @@ class BaseDaemon(object):
         self.process_executing_jobs()
         num_job_slots = self.max_executing_jobs - len(self.executing_jobs)
         if num_job_slots <= 0: return
-        candidate_job_specs = self.fetch_candidate_job_specs()
-        for candidate_job_spec in candidate_job_specs[:num_job_slots]:
-            self.process_candidate_job_spec(job_spec=candidate_job_spec)
+        claimable_job_specs = self.fetch_claimable_job_specs()
+        for claimable_job_spec in claimable_job_specs[:num_job_slots]:
+            self.process_claimable_job_spec(job_spec=claimable_job_spec)
 
-    def fetch_candidate_job_specs(self):
+    def fetch_claimable_job_specs(self):
         return self.job_spec_client.fetch_claimable_job_specs()
 
-    def process_candidate_job_spec(self, job_spec=None):
-        claimed = self.claim_job_spec(job_spec)
-        if not claimed: return
-        dir_meta = self.build_job_dir(job_spec=job_spec)
-        partial_job = {'key': job_spec['uuid'], 'job_spec': job_spec,
+    def process_claimable_job_spec(self, job_spec=None):
+        claimed_spec = self.claim_job_spec(job_spec)
+        if not claimed_spec: return
+        dir_meta = self.build_job_dir(job_spec=claimed_spec)
+        partial_job = {'key': claimed_spec['uuid'],
+                       'job_spec': claimed_spec,
                        'dir': dir_meta}
         spec_meta = self.start_job_execution(job=partial_job)
         full_job = {**partial_job, 'proc': spec_meta}
         self.executing_jobs[partial_job['key']] = full_job
 
     def claim_job_spec(self, job_spec=None):
-        claim_results = self.job_spec_client.claim_job_specs(
+        claimed_specs = self.job_spec_client.claim_job_specs(
             uuids=[job_spec['uuid']])
-        return claim_results.get(job_spec['uuid'], False)
+        return claimed_specs.get(job_spec['uuid'], False)
 
     def build_job_dir(self, job_spec=None):
         job_dir_meta = self.job_dir_factory.build_dir_for_spec(
@@ -136,7 +137,7 @@ class BaseDaemon(object):
 
     def process_transferred_job(self, job=None):
         self.update_job_spec(job_spec=job['job_spec'], updates={
-            'status': self.job_spec_client.Statuses.TRANSFERRED,
+            'status': self.job_spec_client.Statuses.Completed.name,
             'transfer_meta': job['transfer'],
         })
         del self.transferring_jobs[job['key']]

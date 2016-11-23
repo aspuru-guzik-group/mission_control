@@ -1,6 +1,7 @@
 import copy
 from django.conf.urls import url, include
 from django.test import TestCase, override_settings
+import json
 from local_job_runner.base_daemon import BaseDaemon
 from jobs.models import Job
 from job_spec_client.job_spec_client import MissionControlJobSpecClient
@@ -17,6 +18,11 @@ class ClientDaemon_X_Api_TestCase(TestCase):
         self.num_jobs = 10
         self.jobs = self.generate_jobs()
         self.runner = self.generate_runner()
+        orig_patch = self.client.patch
+        def json_patch(path, data=None, **kwargs):
+            return orig_patch(path, json.dumps(data),
+                              content_type='application/json', **kwargs)
+        self.client.patch = json_patch
 
     def generate_jobs(self):
         jobs = []
@@ -55,22 +61,24 @@ class ClientDaemon_X_Api_TestCase(TestCase):
 
     def test_job_cycle(self):
         states = {0: self.get_current_state()}
-
-        for i in range(1, 5):
+        for i in range(1, 10):
             self.runner.tick()
             prev_state = states[i - 1]
             states[i] = self.get_current_state(prev_state=prev_state)
             self.check_state(state=states[i], prev_state=prev_state)
 
     def get_current_state(self, prev_state=None):
-        state = {}
+        state = {'tick_counter': self.runner.tick_counter}
         state['jobs'] = {j.uuid: j for j in Job.objects.all()}
-        state['claimed_jobs'] = {key:j for key, j in state['jobs'].items()
-                                 if j.status == Job.STATUSES.CLAIMED.name}
-        state['pending_jobs'] = {key:j for key, j in state['jobs'].items()
-                                 if j.status == Job.STATUSES.PENDING.name}
-        state['completed_jobs'] = {key:j for key, j in state['jobs'].items()
-                                   if j.status == Job.STATUSES.COMPLETED.name}
+        state['claimed_jobs'] = {
+            key:j for key, j in state['jobs'].items()
+            if j.status == self.runner.job_spec_client.Statuses.Claimed.name}
+        state['pending_jobs'] = {
+            key:j for key, j in state['jobs'].items()
+            if j.status == self.runner.job_spec_client.Statuses.Pending.name}
+        state['completed_jobs'] = {
+            key:j for key, j in state['jobs'].items()
+            if j.status == self.runner.job_spec_client.Statuses.Completed.name}
         state['executing_jobs'] = copy.deepcopy(self.runner.executing_jobs)
         state['transferring_jobs'] = copy.deepcopy(
             self.runner.transferring_jobs)
@@ -110,15 +118,15 @@ class ClientDaemon_X_Api_TestCase(TestCase):
             len(state.get('newly_executing_jobs', {})),
             len(state.get('newly_claimed_jobs', {}))
         )
-        self.assertEqual(
-            len(state.get('newly_claimed_jobs', {})),
-            min(
-                len(prev_state['pending_jobs']),
-                (self.runner.max_executing_jobs - \
-                 len(state.get('newly_executed_jobs', {})))
-            )
-        )
+        if state['tick_counter'] == 1:
+            expected_execution_slots = self.runner.max_executing_jobs
+        else:
+            expected_execution_slots = \
+                    len(state.get('newly_executed_jobs', {}))
+        self.assertEqual(len(state.get('newly_claimed_jobs', {})),
+                         min(len(prev_state['pending_jobs']),
+                             expected_execution_slots))
         self.assertEqual(
             len(state.get('newly_completed_jobs', {})),
-            len(prev_state.get('newly_transferred_jobs', {}))
+            len(state.get('newly_transferred_jobs', {}))
         )
