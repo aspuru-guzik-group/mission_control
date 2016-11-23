@@ -41,7 +41,7 @@ INSTALLED_APPS = [
     'jobs',
     'e2e',
     'job_spec_client',
-    'local_job_runner',
+    'job_runners',
 ]
 
 MIDDLEWARE = [

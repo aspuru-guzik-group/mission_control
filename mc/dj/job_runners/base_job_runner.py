@@ -2,7 +2,7 @@ import logging
 import time
 
 
-class BaseDaemon(object):
+class BaseJobRunner(object):
     def __init__(self, job_spec_client=None, job_dir_factory=None,
                  execution_client=None, tick_interval=120, max_executing_jobs=3,
                  transfer_client=None, logger=None):

@@ -1,9 +1,8 @@
 import requests
-from local_job_runner.job_spec_client import JobSpecClient
 from jobs.models import JobStatuses
 
 
-class MissionControlJobSpecClient(JobSpecClient):
+class MissionControlJobSpecClient(object):
 
     Statuses = JobStatuses
 

@@ -2,7 +2,7 @@ import copy
 from django.conf.urls import url, include
 from django.test import TestCase, override_settings
 import json
-from local_job_runner.base_daemon import BaseDaemon
+from job_runners.base_job_runner import BaseJobRunner
 from jobs.models import Job
 from job_spec_client.job_spec_client import MissionControlJobSpecClient
 
@@ -13,7 +13,7 @@ urlpatterns = [
 ]
 
 @override_settings(ROOT_URLCONF=__name__)
-class ClientDaemon_X_Api_TestCase(TestCase):
+class ClientJobRunner_X_Api_TestCase(TestCase):
     def setUp(self):
         self.num_jobs = 10
         self.jobs = self.generate_jobs()
@@ -48,7 +48,7 @@ class ClientDaemon_X_Api_TestCase(TestCase):
             def get_execution_state(self, job=None):
                 return {}
 
-        runner = BaseDaemon(
+        runner = BaseJobRunner(
             execution_client=StubExecutionClient(),
             job_spec_client=MissionControlJobSpecClient(
                 base_url='/%s' % BASE_PATH,
