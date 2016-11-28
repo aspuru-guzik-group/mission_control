@@ -172,28 +172,6 @@ class ProcessExecutingJobsTestCase(JobRunnerBaseTestCase):
         sorted_expected_calls = sorted(expected_calls, key=calls_sort_key_fn)
         self.assertEqual(sorted_calls, sorted_expected_calls)
 
-class ProcessCompletedJobTestCase(JobRunnerBaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.patcher = patch.multiple(self.runner, start_job_transfer=DEFAULT)
-        self.mocks = self.patcher.start()
-        self.job_key = 'abcd'
-        self.executed_job = {'key': self.job_key}
-        self.runner.executing_jobs[self.job_key] = self.executed_job
-
-    def tearDown(self):
-        self.patcher.stop()
-
-    def test_transfers_executed_jobs(self):
-        self.runner.process_executed_job(job=self.executed_job)
-        self.assertEqual(self.mocks['start_job_transfer'].call_args_list,
-                         [call(job=self.executed_job)])
-        self.assertTrue(self.job_key not in self.runner.executing_jobs)
-        self.assertEqual(
-            self.runner.transferring_jobs[self.job_key],
-            {**self.executed_job,
-             'transfer': self.mocks['start_job_transfer'].return_value})
-
 class GetJobExecutionStatesTestCase(JobRunnerBaseTestCase):
     def setUp(self):
         super().setUp()
@@ -215,6 +193,28 @@ class GetJobExecutionStatesTestCase(JobRunnerBaseTestCase):
             for job in self.runner.executing_jobs.values()
         }
         self.assertEqual(job_execution_states, expected_execution_states)
+
+class ProcessExecutedJobTestCase(JobRunnerBaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.patcher = patch.multiple(self.runner, start_job_transfer=DEFAULT)
+        self.mocks = self.patcher.start()
+        self.job_key = 'abcd'
+        self.executed_job = {'key': self.job_key}
+        self.runner.executing_jobs[self.job_key] = self.executed_job
+
+    def tearDown(self):
+        self.patcher.stop()
+
+    def test_transfers_executed_jobs(self):
+        self.runner.process_executed_job(job=self.executed_job)
+        self.assertEqual(self.mocks['start_job_transfer'].call_args_list,
+                         [call(job=self.executed_job)])
+        self.assertTrue(self.job_key not in self.runner.executing_jobs)
+        self.assertEqual(
+            self.runner.transferring_jobs[self.job_key],
+            {**self.executed_job,
+             'transfer': self.mocks['start_job_transfer'].return_value})
 
 class TransferJobTestCase(JobRunnerBaseTestCase):
     def setUp(self):

@@ -1,5 +1,4 @@
 import os
-import shutil
 from .slurm_execution_client import SlurmExecutionClient
 
 class RemoteSlurmExecutionClient(object):
@@ -25,7 +24,8 @@ class RemoteSlurmExecutionClient(object):
         self.ensure_remote_workdir()
         local_src = job['dir']['dir']
         remote_dest = os.path.join(self.remote_workdir, job['uuid'])
-        self.ssh_client.scp_to(src=local_src, dest=remote_dest, flags='-r')
+        self.ssh_client.rsync_to_remote(src=local_src + '/', dest=remote_dest,
+                                        flags='-a')
         remote_dir_meta = {'dir': remote_dest}
         return remote_dir_meta
 
@@ -41,13 +41,10 @@ class RemoteSlurmExecutionClient(object):
         return execution_state
 
     def on_job_completed(self, job=None):
-        self.rm_orig_job_dir(job=job)
         self.download_job(job=job)
-
-    def rm_orig_job_dir(self, job=None):
-        shutil.rmtree(job['dir']['dir'])
 
     def download_job(self, job=None):
         remote_src = job['remote_dir']['dir']
         local_dest = job['dir']['dir']
-        self.ssh_client.scp_from(src=remote_src, dest=local_dest, flags='-r')
+        self.ssh_client.rsync_from_remote(src=remote_src + '/', dest=local_dest,
+                                          flags='-a')

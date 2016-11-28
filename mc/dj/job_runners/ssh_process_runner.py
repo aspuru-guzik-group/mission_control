@@ -61,16 +61,35 @@ class SSHControlSocketClient(object):
         subprocess.run(['scp', '-o ControlPath=%s' % self.control_socket,
                         flags, src, dest], check=True)
 
-    def get_file(self, remote_src_path=None, local_dest_path=None, flags=''):
+    def scp_from_remote(self, remote_src_path=None, local_dest_path=None,
+                        flags=''):
         prefixed_src_path = '%s@%s:%s' % (self.user, self.host, remote_src_path)
         return self.scp(src=prefixed_src_path, dest=local_dest_path,
                         flags=flags)
 
-    def put_file(self, local_src_path=None, remote_dest_path=None, flags=''):
+    def scp_to_remote(self, local_src_path=None, remote_dest_path=None,
+                      flags=''):
         prefixed_dest_path = '%s@%s:%s' % (self.user, self.host,
                                            remote_dest_path)
         return self.scp(src=local_src_path, dest=prefixed_dest_path,
                         flags=flags)
+
+    def rsync(self, src=None, dest=None, flags=''):
+        self._ensure_authorized()
+        subprocess.run(['rsync', '-o ControlPath=%s' % self.control_socket,
+                        flags, src, dest], check=True)
+
+    def rsync_from_remote(self, remote_src_path=None, local_dest_path=None,
+                          flags=''):
+        prefixed_src_path = '%s@%s:%s' % (self.user, self.host, remote_src_path)
+        return self.rsync(src=prefixed_src_path, dest=local_dest_path,
+                        flags=flags)
+
+    def rsync_to_remote(self, local_src_path=None, remote_dest_path=None, flags=''):
+        prefixed_dest_path = '%s@%s:%s' % (self.user, self.host,
+                                           remote_dest_path)
+        return self.rsync(src=local_src_path, dest=prefixed_dest_path,
+                          flags=flags)
 
     def _ensure_authorized(self):
         self._is_authorized(check=True)

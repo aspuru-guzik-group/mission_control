@@ -59,14 +59,14 @@ class UploadJobDirTestCase(BaseTestCase):
             call(cmd=['mkdir', '-p', self.rsclient.remote_workdir], check=True)
         )
 
-    def test_calls_scp(self):
+    def test_calls_rsync(self):
         self.rsclient.upload_job(job=self.job)
         self.assertEqual(
-            self.rsclient.ssh_client.scp_to.call_args,
-            call(src=self.job['dir']['dir'],
+            self.rsclient.ssh_client.rsync_to_remote.call_args,
+            call(src=self.job['dir']['dir'] + '/',
                  dest=os.path.join(self.rsclient.remote_workdir,
                                    self.job['uuid']),
-                 flags='-r')
+                 flags='-a')
         )
 
     def test_returns_remote_dir_meta(self):
@@ -106,14 +106,8 @@ class OnCompletedTestCase(BaseTestCase):
         super().setUp()
         self.patchers = {
             'rsclient': patch.multiple(self.rsclient, download_job=DEFAULT),
-            'shutil': patch.multiple('shutil', rmtree=DEFAULT)
         }
         self.start_patchers()
-
-    def test_removes_original_job_dir(self):
-        self.rsclient.on_job_completed(job=self.job)
-        self.assertEqual(self.mocks['shutil']['rmtree'].call_args,
-                         call(self.job['dir']['dir']))
 
     def test_downloads_job_dir(self):
         self.rsclient.on_job_completed(job=self.job)
@@ -121,12 +115,12 @@ class OnCompletedTestCase(BaseTestCase):
                          call(job=self.job))
 
 class DownloadJobTestCase(BaseTestCase):
-    def test_calls_scp(self):
+    def test_calls_rsync(self):
         self.rsclient.download_job(job=self.job)
         self.assertEqual(
-            self.rsclient.ssh_client.scp_from.call_args,
-            call(src=self.job['remote_dir']['dir'],
-                 dest=self.job['dir']['dir'], flags='-r')
+            self.rsclient.ssh_client.rsync_from_remote.call_args,
+            call(src=self.job['remote_dir']['dir'] + '/',
+                 dest=self.job['dir']['dir'], flags='-a')
         )
 
 if __name__ == '__main__':
