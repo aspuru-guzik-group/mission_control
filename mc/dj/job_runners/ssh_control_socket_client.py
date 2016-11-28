@@ -2,6 +2,7 @@ import os
 import string
 import random
 import subprocess
+import sys
 import pexpect
 
 
@@ -33,6 +34,7 @@ class SSHControlSocketClient(object):
             child = pexpect.spawn("ssh -fNMS %s %s@%s" % (
                 self.control_socket, self.user, self.host))
             child.interact()
+        print("connected", file=sys.stderr)
 
     def _is_authorized(self, check=False):
         completed_process = self._run_ssh_control_cmd('check', check=check)
@@ -43,9 +45,10 @@ class SSHControlSocketClient(object):
             self._run_ssh_control_cmd('exit')
 
     def _run_ssh_control_cmd(self, control_cmd, check=False):
-        return subprocess.run(
+        p = subprocess.run(
             ['ssh', '-S', self.control_socket, '-O', control_cmd, 'go'],
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=check)
+        return p
 
     def run_process(self, cmd=None, check=False):
         self._ensure_authorized()
@@ -76,8 +79,9 @@ class SSHControlSocketClient(object):
 
     def rsync(self, src=None, dest=None, flags=''):
         self._ensure_authorized()
-        subprocess.run(['rsync', '-o ControlPath=%s' % self.control_socket,
-                        flags, src, dest], check=True)
+        cmd = ['rsync', '-e', 'ssh -o "ControlPath=%s"' % self.control_socket,
+               flags, src, dest]
+        subprocess.run(cmd, check=True)
 
     def rsync_from_remote(self, remote_src_path=None, local_dest_path=None,
                           flags=''):

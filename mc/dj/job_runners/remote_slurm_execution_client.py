@@ -7,24 +7,21 @@ class RemoteSlurmExecutionClient(object):
         self.remote_workdir = '.remote_slurm_execution_client'
         self.slurm_execution_client = SlurmExecutionClient(
             process_runner=self.ssh_client)
-        self.remote_dir_key = '_%s:remote_dir' % id(self)
 
     def start_execution(self, job=None):
         remote_dir_meta = self.upload_job(job=job)
         # Execute job, but use remote dir instead of local dir.
-        executing_job = self.slurm_execution_client.start_execution(
+        execution_meta = self.slurm_execution_client.start_execution(
             job={**job, 'dir': {**job['dir'], 'dir': remote_dir_meta['dir']}})
-        # Return modified executing job, so that it has its original 'dir'
-        # value.
-        wrapped_executing_job = {**executing_job, 'dir': job['dir'],
-                                 self.remote_dir_key: remote_dir_meta}
-        return wrapped_executing_job
+        execution_meta['remote_dir'] = remote_dir_meta
+        return execution_meta
 
     def upload_job(self, job=None):
         self.ensure_remote_workdir()
         local_src = job['dir']['dir']
-        remote_dest = os.path.join(self.remote_workdir, job['uuid'])
-        self.ssh_client.rsync_to_remote(src=local_src + '/', dest=remote_dest,
+        remote_dest = os.path.join(self.remote_workdir, job['key'])
+        self.ssh_client.rsync_to_remote(local_src_path=local_src + '/',
+                                        remote_dest_path=remote_dest,
                                         flags='-a')
         remote_dir_meta = {'dir': remote_dest}
         return remote_dir_meta
@@ -44,7 +41,8 @@ class RemoteSlurmExecutionClient(object):
         self.download_job(job=job)
 
     def download_job(self, job=None):
-        remote_src = job['remote_dir']['dir']
+        remote_src = job['execution']['remote_dir']
         local_dest = job['dir']['dir']
-        self.ssh_client.rsync_from_remote(src=remote_src + '/', dest=local_dest,
+        self.ssh_client.rsync_from_remote(remote_src_path=remote_src + '/',
+                                          local_dest_path=local_dest,
                                           flags='-a')

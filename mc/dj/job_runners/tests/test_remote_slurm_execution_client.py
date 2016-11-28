@@ -63,9 +63,9 @@ class UploadJobDirTestCase(BaseTestCase):
         self.rsclient.upload_job(job=self.job)
         self.assertEqual(
             self.rsclient.ssh_client.rsync_to_remote.call_args,
-            call(src=self.job['dir']['dir'] + '/',
-                 dest=os.path.join(self.rsclient.remote_workdir,
-                                   self.job['uuid']),
+            call(local_src_path=self.job['dir']['dir'] + '/',
+                 remote_dest_path=os.path.join(self.rsclient.remote_workdir,
+                                               self.job['uuid']),
                  flags='-a')
         )
 
@@ -119,8 +119,8 @@ class DownloadJobTestCase(BaseTestCase):
         self.rsclient.download_job(job=self.job)
         self.assertEqual(
             self.rsclient.ssh_client.rsync_from_remote.call_args,
-            call(src=self.job['remote_dir']['dir'] + '/',
-                 dest=self.job['dir']['dir'], flags='-a')
+            call(remote_src_path=(self.job['execution']['remote_dir'] + '/'),
+                 local_dest_path=self.job['dir']['dir'], flags='-a')
         )
 
 if __name__ == '__main__':

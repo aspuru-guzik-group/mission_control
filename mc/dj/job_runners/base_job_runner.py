@@ -40,6 +40,7 @@ class BaseJobRunner(object):
 
     def tick(self):
         self.tick_counter += 1
+        logging.debug('tick #%s' % self.tick_counter)
         self.process_transferring_jobs()
         self.process_executing_jobs()
         num_job_slots = self.max_executing_jobs - len(self.executing_jobs)
@@ -49,9 +50,11 @@ class BaseJobRunner(object):
             self.process_claimable_job_spec(job_spec=claimable_job_spec)
 
     def fetch_claimable_job_specs(self):
+        logging.debug('fetch_claimable_job_specs')
         return self.job_spec_client.fetch_claimable_job_specs()
 
     def process_claimable_job_spec(self, job_spec=None):
+        logging.debug('process_claimable_job_spec')
         claimed_spec = self.claim_job_spec(job_spec)
         if not claimed_spec: return
         dir_meta = self.build_job_dir(job_spec=claimed_spec)
@@ -63,20 +66,24 @@ class BaseJobRunner(object):
             full_job = {**partial_job, 'execution': execution_meta}
             self.executing_jobs[partial_job['key']] = full_job
         except Exception as exception:
+            logging.exception(exception)
             self.update_job_spec(job_spec=claimed_spec,
                                  updates={'status': 'Failed'})
 
     def claim_job_spec(self, job_spec=None):
+        logging.debug('claim_job_spec')
         claimed_specs = self.job_spec_client.claim_job_specs(
             uuids=[job_spec['uuid']])
         return claimed_specs.get(job_spec['uuid'], False)
 
     def build_job_dir(self, job_spec=None):
+        logging.debug('build_job_dir')
         job_dir_meta = self.job_dir_factory.build_dir_for_spec(
             job_spec=job_spec)
         return job_dir_meta
 
     def start_job_execution(self, job=None):
+        logging.debug('start_job_execution')
         execution_meta = self.execution_client.start_execution(job=job)
         return execution_meta
 
@@ -140,6 +147,7 @@ class BaseJobRunner(object):
         return is_transferring
 
     def process_transferred_job(self, job=None):
+        logging.debug('process_transferred_job')
         self.update_job_spec(job_spec=job['job_spec'], updates={
             'status': self.job_spec_client.Statuses.Completed.name,
             'transfer_meta': job['transfer'],

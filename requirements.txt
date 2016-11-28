@@ -8,3 +8,4 @@ djangorestframework
 psutil
 requests
 django-filter
+pexpect
