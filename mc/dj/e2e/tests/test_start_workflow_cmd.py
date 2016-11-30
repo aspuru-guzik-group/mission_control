@@ -6,6 +6,7 @@ import json
 from jobs.models import Job, JobStatuses
 from .stub_runner import generate_stub_runner
 from missions.models import Workflow
+from missions import utils as mission_utils
 
 BASE_PATH = 'test_api'
 urlpatterns = [
@@ -24,8 +25,8 @@ class JobRunner_X_Workflow_TestCase(TestCase):
                               content_type='application/json', **kwargs)
         self.client.patch = json_patch
 
-    def test_run_workflow(self):
-        call_command('run_workflow')
+    def test_start_workflow(self):
+        call_command('start_workflow')
 
         workflows = Workflow.objects.all()
         self.assertEqual(len(workflows), 1)
@@ -36,13 +37,16 @@ class JobRunner_X_Workflow_TestCase(TestCase):
         self.job_runner.run(ntimes=3)
 
         # Second workflow tick: IngestNames.
+        mission_utils.poll_workflow_jobs()
         jobs = Job.objects.order_by('modified')
         self.assertEqual(len(jobs), 2)
         self.assertEqual(jobs[1].type, 'IngestNames')
         self.assertEqual(jobs[1].status, JobStatuses.Pending.name)
         self.job_runner.run(ntimes=3)
+        jobs = Job.objects.order_by('modified')
         self.assertEqual(jobs[1].status, JobStatuses.Completed.name)
 
-        # Finalized.
+        # Final tick.
+        mission_utils.poll_workflow_jobs()
         workflows = Workflow.objects.all()
         self.assertEqual(workflows[0].finished, True)

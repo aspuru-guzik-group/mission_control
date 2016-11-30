@@ -50,10 +50,16 @@ class StubPopulateNamesWorkflowRunner(object):
                 self.finalize(workflow=workflow)
 
     def generate_GenerateNames_job(self, workflow=None):
-        Job.objects.create(workflow=workflow, type='GenerateNames')
+        WorkflowJob.objects.create(
+            workflow=workflow,
+            job=Job.objects.create(type='GenerateNames')
+        )
 
     def generate_IngestNames_job(self, workflow=None):
-        Job.objects.create(workflow=workflow, type='IngestNames')
+        WorkflowJob.objects.create(
+            workflow=workflow,
+            job=Job.objects.create(type='IngestNames')
+        )
 
     def finalize(self, workflow=None):
         workflow.finished = True
