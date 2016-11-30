@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 from jobs.models import Job
-from ..models import Mission, Task, Workflow, WorkflowJob
+from ..models import Mission, Task, Workflow, WorkflowJob, WorkflowRunner
 
 class MissionTestCase(TestCase):
     def test_has_expected_fields(self):
@@ -65,3 +65,17 @@ class WorkflowJobTestCase(TestCase):
         self.assertTrue(workflow_job.workflow is kwargs['workflow'])
         self.assertTrue(workflow_job.job is kwargs['job'])
         self.assertEqual(workflow_job.finished, False)
+
+class WorkflowRunnerTestCase(TestCase):
+    def test_has_expected_fields(self):
+        kwargs = {
+            'key': 'some key',
+            'path': 'some path',
+            'label': 'some label',
+        }
+        workflow_runner = WorkflowRunner.objects.create(**kwargs)
+        self.assertTrue(workflow_runner.uuid is not None)
+        self.assertTrue(workflow_runner.created is not None)
+        self.assertTrue(workflow_runner.modified is not None)
+        for attr, value in kwargs.items():
+            self.assertEqual(getattr(workflow_runner, attr), value)

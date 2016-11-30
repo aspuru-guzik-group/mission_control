@@ -54,3 +54,16 @@ class WorkflowJob(TimeStampedModel):
             class_name=self.__class__.__name__,
             wf=self.workflow_id,
             j=self.job_id)
+
+class WorkflowRunner(TimeStampedModel):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4,
+                            editable=False)
+    key = models.CharField(null=True, max_length=1024)
+    path = models.CharField(null=True, max_length=1024)
+    label = models.CharField(null=True, max_length=1024)
+
+    def __str__(self):
+        return '<{class_name}: {{label: {label}, uuid: {uuid}}}>'.format(
+            class_name=self.__class__.__name__,
+            label=self.label,
+            uuid=self.uuid)
