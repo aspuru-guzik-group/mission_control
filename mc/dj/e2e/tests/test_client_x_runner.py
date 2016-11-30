@@ -2,12 +2,11 @@ import copy
 from django.conf.urls import url, include
 from django.test import TestCase, override_settings
 import json
-from job_runners.base_job_runner import BaseJobRunner
 from jobs.models import Job
-from job_spec_client.job_spec_client import MissionControlJobSpecClient
+
+from .stub_runner import generate_stub_runner
 
 BASE_PATH = 'test_api'
-
 urlpatterns = [
     url(r'^%s' % BASE_PATH, include('jobs.urls')),
 ]
@@ -17,7 +16,8 @@ class ClientJobRunner_X_Api_TestCase(TestCase):
     def setUp(self):
         self.num_jobs = 10
         self.jobs = self.generate_jobs()
-        self.runner = self.generate_runner()
+        self.runner = generate_stub_runner(base_url='/%s' % BASE_PATH,
+                                           request_client=self.client)
         orig_patch = self.client.patch
         def json_patch(path, data=None, **kwargs):
             return orig_patch(path, json.dumps(data),
@@ -28,36 +28,6 @@ class ClientJobRunner_X_Api_TestCase(TestCase):
         jobs = []
         for i in range(self.num_jobs):
             jobs.append(Job.objects.create())
-
-    def generate_runner(self):
-        class StubJobDirFactory(object):
-            def build_dir_for_spec(self, job_spec=None):
-                return {}
-
-        class StubTransferClient(object):
-            def start_transfer(self, job=None):
-                return {}
-
-            def get_transfer_state(self, job=None):
-                return {}
-
-        class StubExecutionClient(object):
-            def start_execution(self, job=None):
-                return {}
-
-            def get_execution_state(self, job=None):
-                return {}
-
-        runner = BaseJobRunner(
-            execution_client=StubExecutionClient(),
-            job_spec_client=MissionControlJobSpecClient(
-                base_url='/%s' % BASE_PATH,
-                request_client=self.client
-            ),
-            job_dir_factory=StubJobDirFactory(),
-            transfer_client=StubTransferClient()
-        )
-        return runner
 
     def test_job_cycle(self):
         states = {0: self.get_current_state()}

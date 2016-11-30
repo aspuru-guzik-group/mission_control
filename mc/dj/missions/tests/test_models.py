@@ -1,6 +1,7 @@
 from django.test import TestCase
 
-from ..models import (Mission, Task, Workflow, WorkflowRunner)
+from jobs.models import Job
+from ..models import Mission, Task, Workflow, WorkflowJob
 
 class MissionTestCase(TestCase):
     def test_has_expected_fields(self):
@@ -36,17 +37,31 @@ class WorkflowTestCase(TestCase):
         self.assertTrue(workflow.uuid is not None)
         self.assertTrue(workflow.created is not None)
         self.assertTrue(workflow.modified is not None)
+        self.assertTrue(workflow.jobs is not None)
 
     def test_last_finished_job(self):
-        self.fail()
+        workflow = Workflow.objects.create()
+        for i in range(3):
+            WorkflowJob.objects.create(
+                workflow=workflow,
+                job=Job.objects.create(),
+                finished=True,
+                modified=i)
+        last_finished_job = workflow.last_finished_job
+        expected_last_finished_job = workflow.workflow_jobs.order_by(
+            '-modified').first().job
+        self.assertEqual(last_finished_job, expected_last_finished_job)
 
-class WorkflowRunnerTestCase(TestCase):
+class WorkflowJobTestCase(TestCase):
     def test_has_expected_fields(self):
         kwargs = {
-            'name': 'test_name',
+            'workflow': Workflow.objects.create(),
+            'job': Job.objects.create(),
         }
-        runner = WorkflowRunner.objects.create(**kwargs)
-        self.assertEqual(runner.name, kwargs['name'])
-        self.assertTrue(runner.uuid is not None)
-        self.assertTrue(runner.created is not None)
-        self.assertTrue(runner.modified is not None)
+        workflow_job = WorkflowJob.objects.create(**kwargs)
+        self.assertTrue(workflow_job.uuid is not None)
+        self.assertTrue(workflow_job.created is not None)
+        self.assertTrue(workflow_job.modified is not None)
+        self.assertTrue(workflow_job.workflow is kwargs['workflow'])
+        self.assertTrue(workflow_job.job is kwargs['job'])
+        self.assertEqual(workflow_job.finished, False)

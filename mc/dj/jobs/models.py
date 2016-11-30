@@ -17,6 +17,3 @@ class Job(TimeStampedModel):
                               choices=[(status.name, status.value['label'])
                                        for status in JobStatuses],
                               default=JobStatuses.Pending.name)
-    finished = models.NullBooleanField(null=True, editable=False)
-    workflow = models.ForeignKey('missions.Workflow', on_delete=models.CASCADE,
-                                 null=True, related_name='jobs')

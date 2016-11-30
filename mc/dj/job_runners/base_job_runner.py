@@ -26,17 +26,19 @@ class BaseJobRunner(object):
     def stop(self):
         self._ticking = False
 
-    def run(self, ntimes=None):
+    def run(self, ntimes=None, tick_interval=None):
         if ntimes:
             for i in range(ntimes):
-                self._tick_and_sleep()
+                self._tick_and_sleep(tick_interval=tick_interval)
         else:
             while self._ticking:
-                self._tick_and_sleep()
+                self._tick_and_sleep(tick_interval=tick_interval)
 
-    def _tick_and_sleep(self):
+    def _tick_and_sleep(self, tick_interval=None):
+        if tick_interval is None:
+            tick_interval = self.tick_interval
         self.tick()
-        time.sleep(self.tick_interval)
+        time.sleep(tick_interval)
 
     def tick(self):
         self.tick_counter += 1
