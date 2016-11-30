@@ -1,4 +1,7 @@
 import glob
+import os
+
+from django.conf import settings
 
 from jobs.models import Job, JobStatuses
 from .models import Workflow, WorkflowJob, WorkflowRunner
@@ -104,8 +107,20 @@ def find_runner_files(dirs=None):
                                                 recursive=True)))
     return runner_file_paths
 
+RUNNER_DIRS_SETTING_KEY = 'MISSION_CONTROL_WORKFLOW_RUNNER_DIRS'
+
 def get_default_runner_dirs():
-    raise NotImplementedError()
+    raw_runner_dirs = os.getenv(RUNNER_DIRS_SETTING_KEY)
+    if raw_runner_dirs:
+        runner_dirs = raw_runner_dirs.split(';')
+    else:
+        runner_dirs = None
+    if not runner_dirs:
+        runner_dirs = getattr(settings, RUNNER_DIRS_SETTING_KEY, None)
+    if not runner_dirs:
+        runner_dirs = [os.path.join(settings.BASE_DIR, 'mission_control',
+                                    'workflow_runners')]
+    return runner_dirs
 
 def add_workflow_runner(runner_path=None):
     raise NotImplementedError()

@@ -3,7 +3,8 @@ import os
 import tempfile
 from unittest.mock import call, patch, DEFAULT
 
-from django.test import TestCase
+from django.conf import settings
+from django.test import TestCase, override_settings
 
 from ..models import WorkflowRunner
 from .. import utils
@@ -105,3 +106,39 @@ class SyncWorkflowRunnersTestCase(TestCase):
             {runner.path: mock_sync_fn.side_effect
              for runner in existing_runners}
         )
+
+class GetDefaultRunnerDirsTestCase(TestCase):
+    def setUp(self):
+        super().setUp()
+        self.patchers = {
+            'os': patch.multiple(os, getenv=DEFAULT),
+        }
+        self.mocks = {key: patcher.start()
+                      for key, patcher in self.patchers.items()}
+
+    def tearDown(self):
+        for patcher in self.patchers.values(): patcher.stop()
+        super().tearDown()
+
+    def test_has_env_var(self):
+        mock_value = 'some value'
+        self.mocks['os']['getenv'].return_value = mock_value
+        result = utils.get_default_runner_dirs()
+        self.assertEqual(result, [mock_value])
+
+    @override_settings()
+    def test_has_settings_var(self):
+        self.mocks['os']['getenv'].return_value = None
+        mock_value = ['some value']
+        setattr(settings, utils.RUNNER_DIRS_SETTING_KEY, mock_value)
+        result = utils.get_default_runner_dirs()
+        self.assertEqual(result, mock_value)
+
+    @override_settings()
+    def test_falls_back_to_default_dir(self):
+        self.mocks['os']['getenv'].return_value = None
+        delattr(settings, utils.RUNNER_DIRS_SETTING_KEY)
+        result = utils.get_default_runner_dirs()
+        expected_fallback_value = [os.path.join(
+            settings.BASE_DIR, 'mission_control', 'workflow_runners')]
+        self.assertEqual(result, expected_fallback_value)
