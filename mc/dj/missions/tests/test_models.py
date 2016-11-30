@@ -79,3 +79,4 @@ class WorkflowRunnerTestCase(TestCase):
         self.assertTrue(workflow_runner.modified is not None)
         for attr, value in kwargs.items():
             self.assertEqual(getattr(workflow_runner, attr), value)
+        self.assertTrue(hasattr(workflow_runner, 'error'))

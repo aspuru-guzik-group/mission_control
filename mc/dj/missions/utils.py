@@ -1,6 +1,7 @@
-from jobs.models import Job, JobStatuses
+import glob
 
-from .models import Workflow, WorkflowJob
+from jobs.models import Job, JobStatuses
+from .models import Workflow, WorkflowJob, WorkflowRunner
 
 
 def start_workflow(runner_key=None, mission=None):
@@ -64,3 +65,52 @@ class StubPopulateNamesWorkflowRunner(object):
     def finalize(self, workflow=None):
         workflow.finished = True
         workflow.save()
+
+def sync_workflow_runners(runner_dirs=None):
+    result = {'created': {}, 'synced': {}, 'missing': {}, 'errors': {}}
+    if not runner_dirs:
+        runner_dirs = get_default_runner_dirs()
+    paths_in_dirs = set(find_runner_files(dirs=runner_dirs))
+    paths_in_db = set([runner.path for runner in WorkflowRunner.objects.all()])
+
+    paths_in_dirs_only = paths_in_dirs.difference(paths_in_db)
+    for path in paths_in_dirs_only:
+        try:
+            result['created'][path] = add_workflow_runner(runner_path=path)
+        except Exception as error:
+            result['errors'][path] = error
+
+    paths_in_db_only = paths_in_db.difference(paths_in_dirs)
+    for path in paths_in_db_only:
+        error = MissingRunnerFileError(path)
+        WorkflowRunner.objects.filter(path=path).update(error=error)
+        result['errors'][path] = error
+
+    paths_in_dirs_and_db = paths_in_dirs.intersection(paths_in_db)
+    for path in paths_in_dirs_and_db:
+        try: result['synced'][path] = sync_workflow_runner(runner_path=path)
+        except Exception as error:
+            WorkflowRunner.objects.filter(path=path).update(error=error)
+            result['errors'][path] = error
+
+    return result
+
+class MissingRunnerFileError(Exception): pass
+
+def find_runner_files(dirs=None):
+    runner_file_paths = []
+    for _dir in dirs:
+        runner_file_paths.extend(list(glob.glob('%s/**/*_wf_runner.py' % _dir,
+                                                recursive=True)))
+    return runner_file_paths
+
+def get_default_runner_dirs():
+    raise NotImplementedError()
+
+def add_workflow_runner(runner_path=None):
+    raise NotImplementedError()
+
+def sync_workflow_runner(runner_path=None):
+    raise NotImplementedError()
+
+

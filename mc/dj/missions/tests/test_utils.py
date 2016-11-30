@@ -1,5 +1,6 @@
-from django.test import TestCase
 from unittest.mock import call, MagicMock, patch, DEFAULT
+
+from django.test import TestCase
 
 from jobs.models import Job, JobStatuses
 from ..models import Workflow, WorkflowJob
@@ -145,16 +146,3 @@ class RunWorkflowJobsWorkflowTicksTestCase(TestCase):
             sorted(call_args_list, key=lambda c: c[1]['workflow'].uuid),
             sorted(expected_call_args_list, key=lambda c: c[2]['workflow'].uuid)
         )
-
-class SyncWorkflowRunnerRegistryTestCase(TestCase):
-    def test_registers_new_runners(self):
-        utils.sync_workflow_runner_registry()
-        runners = WorkflowRunner.objects.all()
-        expected_runners = None
-        self.assertEqual(set(runners), set(expected_runners))
-
-    def test_removes_deleted_runners(self):
-        self.fail()
-
-    def test_handles_registration_errors(self):
-        self.fail()

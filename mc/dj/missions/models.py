@@ -61,6 +61,7 @@ class WorkflowRunner(TimeStampedModel):
     key = models.CharField(null=True, max_length=1024)
     path = models.CharField(null=True, max_length=1024)
     label = models.CharField(null=True, max_length=1024)
+    error = models.CharField(null=True, max_length=1024)
 
     def __str__(self):
         return '<{class_name}: {{label: {label}, uuid: {uuid}}}>'.format(
