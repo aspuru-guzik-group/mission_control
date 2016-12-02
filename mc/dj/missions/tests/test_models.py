@@ -1,7 +1,8 @@
 from django.test import TestCase
 
 from jobs.models import Job
-from ..models import Mission, Task, Workflow, WorkflowJob, WorkflowSpec
+from ..models import (Mission, WorkflowStatuses, Workflow, WorkflowJob,
+                      WorkflowSpec)
 
 class MissionTestCase(TestCase):
     def test_has_expected_fields(self):
@@ -14,24 +15,12 @@ class MissionTestCase(TestCase):
         self.assertTrue(mission.created is not None)
         self.assertTrue(mission.modified is not None)
 
-class TaskTestCase(TestCase):
-    def test_has_expected_fields(self):
-        kwargs = {
-            'name': 'name',
-            'mission': Mission.objects.create(name='name'),
-        }
-        task = Task.objects.create(**kwargs)
-        self.assertEqual(task.mission, kwargs['mission'])
-        self.assertTrue(task.uuid is not None)
-        self.assertTrue(task.created is not None)
-        self.assertTrue(task.modified is not None)
-
 class WorkflowTestCase(TestCase):
     def test_has_expected_fields(self):
         kwargs = {
             'spec': WorkflowSpec.objects.create(),
             'mission': Mission.objects.create(name='mission'),
-            'json_serialization': '{}',
+            'serialization': 'some serialization',
         }
         workflow = Workflow.objects.create(**kwargs)
         for kwarg, value in kwargs.items():
@@ -39,6 +28,7 @@ class WorkflowTestCase(TestCase):
         self.assertTrue(workflow.uuid is not None)
         self.assertTrue(workflow.created is not None)
         self.assertTrue(workflow.modified is not None)
+        self.assertEqual(workflow.status, WorkflowStatuses.Pending.name)
         self.assertTrue(hasattr(workflow, 'jobs'))
 
     def test_last_finished_job(self):
@@ -72,7 +62,7 @@ class WorkflowSpecTestCase(TestCase):
     def test_has_expected_fields(self):
         kwargs = {
             'key': 'some key',
-            'json_serialization': '{}',
+            'serialization': 'some serialization',
         }
         workflow_spec = WorkflowSpec.objects.create(**kwargs)
         self.assertTrue(workflow_spec.uuid is not None)

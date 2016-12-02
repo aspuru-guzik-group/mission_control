@@ -1,54 +1,86 @@
-from unittest.mock import call, MagicMock, patch, DEFAULT
+from unittest.mock import call, patch, MagicMock, DEFAULT
 
 from django.test import TestCase
 
 from jobs.models import Job, JobStatuses
-from ..models import Workflow, WorkflowJob
+from ..models import Workflow, WorkflowJob, WorkflowSpec, WorkflowStatuses
 from .. import utils
 
-class StartWorkflowTestCase(TestCase):
-    def setUp(self):
-        super().setUp()
-        self.patchers = {
-            'utils': patch.multiple(utils, get_workflow_runner=DEFAULT)
-        }
-        self.mocks = {key: patcher.start()
-                      for key, patcher in self.patchers.items()}
+
+class WorkflowBaseTestCase(TestCase):
+    def start_patchers(self, patchers):
+        mocks = {key: patcher.start() for key, patcher in patchers.items()}
+        return mocks
 
     def tearDown(self):
-        for patcher in self.patchers.values(): patcher.stop()
-        super().tearDown()
+        if hasattr(self, 'patchers'):
+            for patcher in self.patchers.values(): patcher.stop()
 
-    def test_creates_workflow(self):
-        runner_key = 'some runner'
-        workflow = utils.start_workflow(runner_key=runner_key)
-        self.assertEqual(list(Workflow.objects.all()), [workflow])
-        self.assertEqual(workflow.runner_key, runner_key)
-
-    def test_calls_runner_tick(self):
-        workflow = utils.start_workflow(runner_key='junk')
-        mock_runner = self.mocks['utils']['get_workflow_runner'].return_value
-        self.assertEqual(mock_runner.run_workflow_tick.call_args,
-                         call(workflow=workflow))
-
-class GetWorkflowRunnerTestCase(TestCase):
-    def test_calls_loader(self):
-        runner_loader = MagicMock()
-        runner_key = 'some runner'
-        utils.get_workflow_runner(runner_key=runner_key,
-                                  runner_loader=runner_loader)
-        self.assertEqual(runner_loader.load_runner.call_args, 
-                         call(key=runner_key))
-
-class PollWorkflowJobsTestCase(TestCase):
+class StartWorkflowTestCase(WorkflowBaseTestCase):
     def setUp(self):
         super().setUp()
         self.patchers = {
             'utils': patch.multiple(
-                utils, run_workflow_job_workflow_ticks=DEFAULT)
+                utils, run_workflow_tick=DEFAULT, serialize_workflow=DEFAULT)
         }
-        self.mocks = {key: patcher.start()
-                      for key, patcher in self.patchers.items()}
+        self.mocks = self.start_patchers(self.patchers)
+        self.mocks['utils']['serialize_workflow'].return_value = 'serialization'
+        self.spec = WorkflowSpec.objects.create(key='some key')
+
+    def test_creates_workflow_model(self):
+        workflow = utils.start_workflow(spec_key=self.spec.key)
+        self.assertEqual(list(Workflow.objects.all()), [workflow])
+        self.assertEqual(workflow.spec, self.spec)
+        self.assertEqual(workflow.serialization,
+                         self.mocks['utils']['serialize_workflow'].return_value)
+        self.assertEqual(workflow.status, WorkflowStatuses.Running.name)
+
+    def test_calls_workflow_tick(self):
+        workflow = utils.start_workflow(spec_key=self.spec.key)
+        self.assertEqual(
+            self.mocks['utils']['run_workflow_tick'].call_args,
+            call(workflow=workflow))
+
+class SerializeWorkflowTestCase(WorkflowBaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.patchers = {
+            'utils': patch.multiple(utils, get_workflow_engine=DEFAULT)
+        }
+        self.mocks = self.start_patchers(self.patchers)
+
+    def test_calls_engine_serialize_workflow(self):
+        workflow = MagicMock()
+        serialization = utils.serialize_workflow(workflow=workflow)
+        serialize_workflow_fn = self.mocks['utils']['get_workflow_engine']\
+                .return_value.serialize_workflow
+        self.assertEqual(serialization, serialize_workflow_fn.return_value)
+        self.assertEqual(serialize_workflow_fn.call_args,
+                         call(workflow=workflow))
+
+class RunWorkflowTickTestCase(WorkflowBaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.patchers = {
+            'utils': patch.multiple(utils, get_workflow_engine=DEFAULT)
+        }
+        self.mocks = self.start_patchers(self.patchers)
+
+    def test_calls_engine_run_workflow_tick(self):
+        workflow = MagicMock()
+        utils.run_workflow_tick(workflow=workflow)
+        run_workflow_tick_fn = self.mocks['utils']['get_workflow_engine']\
+                .return_value.run_workflow_tick
+        self.assertEqual(run_workflow_tick_fn.call_args,
+                         call(workflow=workflow))
+
+class PollWorkflowJobsTestCase(WorkflowBaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.patchers = {
+            'utils': patch.multiple(utils, run_workflow_tick=DEFAULT)
+        }
+        self.mocks = self.start_patchers(self.patchers)
         self.workflow_jobs = self.generate_workflow_jobs()
 
     def generate_workflow_jobs(self):
@@ -85,10 +117,6 @@ class PollWorkflowJobsTestCase(TestCase):
         return [Job.objects.create(status=status)
                 for status in unfinished_statuses]
 
-    def tearDown(self):
-        for patcher in self.patchers.values(): patcher.stop()
-        super().tearDown()
-
     def test_marks_jobs_as_finished(self):
         utils.poll_workflow_jobs()
         finished_workflow_jobs = WorkflowJob.objects.filter(finished=True)
@@ -106,43 +134,9 @@ class PollWorkflowJobsTestCase(TestCase):
 
     def test_runs_workflow_ticks_for_jobs_that_finished(self):
         utils.poll_workflow_jobs()
-        mock = self.mocks['utils']['run_workflow_job_workflow_ticks']
-        workflow_jobs_kwarg = mock.call_args[1]['workflow_jobs']
-        expected_workflow_jobs_kwarg = self.workflow_jobs['should_finish']
-        self.assertEqual(set(workflow_jobs_kwarg),
-                         set(expected_workflow_jobs_kwarg))
-
-class RunWorkflowJobsWorkflowTicksTestCase(TestCase):
-    def setUp(self):
-        super().setUp()
-        self.patchers = {
-            'utils': patch.multiple(utils, get_workflow_runner=DEFAULT)
-        }
-        self.mocks = {key: patcher.start()
-                      for key, patcher in self.patchers.items()}
-        self.workflow_jobs = self.generate_workflow_jobs()
-
-    def generate_workflow_jobs(self):
-        workflow_jobs = [
-            WorkflowJob(
-                workflow=Workflow.objects.create(runner_key=(i % 2)),
-                job=Job.objects.create()
-            )
-            for i in range(6)
+        call_args_list = self.mocks['utils']['run_workflow_tick'].call_args_list
+        expected_call_args_list = [
+            call(workflow=workflow_job.workflow)
+            for workflow_job in self.workflow_jobs['should_finish']
         ]
-        return workflow_jobs
-
-    def tearDown(self):
-        for patcher in self.patchers.values(): patcher.stop()
-        super().tearDown()
-
-    def test_runs_workflow_ticks(self):
-        utils.run_workflow_job_workflow_ticks(workflow_jobs=self.workflow_jobs)
-        mock_runner = self.mocks['utils']['get_workflow_runner'].return_value
-        call_args_list = mock_runner.run_workflow_tick.call_args_list
-        expected_call_args_list = [call(workflow=workflow_job.workflow)
-                                   for workflow_job in self.workflow_jobs]
-        self.assertEqual(
-            sorted(call_args_list, key=lambda c: c[1]['workflow'].uuid),
-            sorted(expected_call_args_list, key=lambda c: c[2]['workflow'].uuid)
-        )
+        self.assertEqual(call_args_list, expected_call_args_list)

@@ -1,3 +1,4 @@
+import enum
 import uuid
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
@@ -15,24 +16,22 @@ class Mission(TimeStampedModel):
     def __str__(self):
         return uuid_model_str(self)
 
-class Task(TimeStampedModel):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4,
-                            editable=False)
-    name = models.CharField(null=True, max_length=1024)
-    mission = models.ForeignKey('Mission', null=True, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return uuid_model_str(self)
+class WorkflowStatuses(enum.Enum):
+    Pending = {'label': 'pending'}
+    Running = {'label': 'running'}
+    Completed = {'label': 'completed'}
 
 class Workflow(TimeStampedModel):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4,
                             editable=False)
     spec = models.ForeignKey('WorkflowSpec', null=True,
                              on_delete=models.CASCADE)
-    json_serialization = models.TextField(null=True)
+    serialization = models.TextField(null=True)
     mission = models.ForeignKey('Mission', null=True, on_delete=models.CASCADE)
-    finished = models.NullBooleanField(null=True)
-    jobs = models.ManyToManyField('jobs.Job', through='WorkflowJob')
+    status = models.CharField(null=True, max_length=32,
+                              choices=[(status.name, status.value['label'])
+                                       for status in WorkflowStatuses],
+                              default=WorkflowStatuses.Pending.name)
 
     @property
     def last_finished_job(self):
@@ -64,7 +63,7 @@ class WorkflowSpec(TimeStampedModel):
     path = models.CharField(null=True, max_length=1024)
     label = models.CharField(null=True, max_length=1024)
     error = models.CharField(null=True, max_length=1024)
-    json_serialization = models.TextField(null=True)
+    serialization = models.TextField(null=True)
 
     def __str__(self):
         return '<{class_name}: {{label: {label}, uuid: {uuid}}}>'.format(
