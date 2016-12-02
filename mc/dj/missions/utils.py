@@ -1,5 +1,7 @@
+import importlib.util
 import glob
 import os
+import random
 
 from django.conf import settings
 
@@ -79,7 +81,7 @@ def sync_workflow_runners(runner_dirs=None):
     paths_in_dirs_only = paths_in_dirs.difference(paths_in_db)
     for path in paths_in_dirs_only:
         try:
-            result['created'][path] = add_workflow_runner(runner_path=path)
+            result['created'][path] = add_workflow_runner(module_path=path)
         except Exception as error:
             result['errors'][path] = error
 
@@ -91,7 +93,7 @@ def sync_workflow_runners(runner_dirs=None):
 
     paths_in_dirs_and_db = paths_in_dirs.intersection(paths_in_db)
     for path in paths_in_dirs_and_db:
-        try: result['synced'][path] = sync_workflow_runner(runner_path=path)
+        try: result['synced'][path] = sync_workflow_runner(module_path=path)
         except Exception as error:
             WorkflowRunner.objects.filter(path=path).update(error=error)
             result['errors'][path] = error
@@ -122,10 +124,20 @@ def get_default_runner_dirs():
                                     'workflow_runners')]
     return runner_dirs
 
-def add_workflow_runner(runner_path=None):
-    raise NotImplementedError()
+def add_workflow_runners(module_path=None):
+    runner_module = load_module(module_path)
+    runners_from_module = getattr(runner_module, 'workflow_runners')
 
-def sync_workflow_runner(runner_path=None):
+def load_module(module_path=None):
+    # We use random to avoid module name collisions.
+    module_name = (os.path.basename(module_path).strip('.py') +
+                   random.randint(1000, 2000)) 
+    spec = importlib.util.spec_from_file_location(module_name, module_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+def sync_workflow_runner(module_path=None):
     raise NotImplementedError()
 
 
