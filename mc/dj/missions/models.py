@@ -27,7 +27,9 @@ class Task(TimeStampedModel):
 class Workflow(TimeStampedModel):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4,
                             editable=False)
-    runner_key = models.CharField(null=True, max_length=1024)
+    spec = models.ForeignKey('WorkflowSpec', null=True,
+                             on_delete=models.CASCADE)
+    json_serialization = models.TextField(null=True)
     mission = models.ForeignKey('Mission', null=True, on_delete=models.CASCADE)
     finished = models.NullBooleanField(null=True)
     jobs = models.ManyToManyField('jobs.Job', through='WorkflowJob')
@@ -55,13 +57,14 @@ class WorkflowJob(TimeStampedModel):
             wf=self.workflow_id,
             j=self.job_id)
 
-class WorkflowRunner(TimeStampedModel):
+class WorkflowSpec(TimeStampedModel):
     uuid = models.UUIDField(primary_key=True, default=uuid.uuid4,
                             editable=False)
     key = models.CharField(null=True, max_length=1024)
     path = models.CharField(null=True, max_length=1024)
     label = models.CharField(null=True, max_length=1024)
     error = models.CharField(null=True, max_length=1024)
+    json_serialization = models.TextField(null=True)
 
     def __str__(self):
         return '<{class_name}: {{label: {label}, uuid: {uuid}}}>'.format(
