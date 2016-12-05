@@ -29,7 +29,7 @@ class WorkflowTestCase(TestCase):
         self.assertTrue(workflow.created is not None)
         self.assertTrue(workflow.modified is not None)
         self.assertEqual(workflow.status, WorkflowStatuses.Pending.name)
-        self.assertTrue(hasattr(workflow, 'jobs'))
+        self.assertTrue(hasattr(workflow, 'workflow_jobs'))
 
     def test_last_finished_job(self):
         workflow = Workflow.objects.create()

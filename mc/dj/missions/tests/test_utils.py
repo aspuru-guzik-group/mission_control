@@ -3,7 +3,8 @@ from unittest.mock import call, patch, MagicMock, DEFAULT
 from django.test import TestCase
 
 from jobs.models import Job, JobStatuses
-from ..models import Workflow, WorkflowJob, WorkflowSpec, WorkflowStatuses
+from ..models import (Mission, Workflow, WorkflowJob, WorkflowSpec,
+                      WorkflowStatuses)
 from .. import utils
 
 
@@ -21,42 +22,43 @@ class StartWorkflowTestCase(WorkflowBaseTestCase):
         super().setUp()
         self.patchers = {
             'utils': patch.multiple(
-                utils, run_workflow_tick=DEFAULT, serialize_workflow=DEFAULT)
+                utils, run_workflow_tick=DEFAULT,
+                generate_workflow_from_spec=DEFAULT)
         }
         self.mocks = self.start_patchers(self.patchers)
-        self.mocks['utils']['serialize_workflow'].return_value = 'serialization'
-        self.spec = WorkflowSpec.objects.create(key='some key')
+        self.spec = WorkflowSpec.objects.create()
+        self.mission = Mission.objects.create()
 
-    def test_creates_workflow_model(self):
-        workflow = utils.start_workflow(spec_key=self.spec.key)
-        self.assertEqual(list(Workflow.objects.all()), [workflow])
+    def test_saves_workflow_model(self):
+        workflow = utils.start_workflow(spec_key=self.spec.key,
+                                        mission=self.mission)
         self.assertEqual(workflow.spec, self.spec)
-        self.assertEqual(workflow.serialization,
-                         self.mocks['utils']['serialize_workflow'].return_value)
+        self.assertEqual(workflow.mission, self.mission)
         self.assertEqual(workflow.status, WorkflowStatuses.Running.name)
+        self.assertEqual(workflow.save.call_count, 1)
 
     def test_calls_workflow_tick(self):
-        workflow = utils.start_workflow(spec_key=self.spec.key)
+        workflow = utils.start_workflow(spec_key=self.spec.key,
+                                        mission=self.mission)
         self.assertEqual(
             self.mocks['utils']['run_workflow_tick'].call_args,
             call(workflow=workflow))
 
-class SerializeWorkflowTestCase(WorkflowBaseTestCase):
+class GenerateWorkflowFromSpecTestCase(WorkflowBaseTestCase):
     def setUp(self):
         super().setUp()
         self.patchers = {
             'utils': patch.multiple(utils, get_workflow_engine=DEFAULT)
         }
         self.mocks = self.start_patchers(self.patchers)
+        self.spec = WorkflowSpec.objects.create()
 
-    def test_calls_engine_serialize_workflow(self):
-        workflow = MagicMock()
-        serialization = utils.serialize_workflow(workflow=workflow)
-        serialize_workflow_fn = self.mocks['utils']['get_workflow_engine']\
-                .return_value.serialize_workflow
-        self.assertEqual(serialization, serialize_workflow_fn.return_value)
-        self.assertEqual(serialize_workflow_fn.call_args,
-                         call(workflow=workflow))
+    def test_calls_engine_generate_workflow(self):
+        workflow = utils.generate_workflow_from_spec(spec=self.spec)
+        generate_workflow_fn = self.mocks['utils']['get_workflow_engine']\
+                .return_value.generate_workflow_from_spec
+        self.assertEqual(workflow, generate_workflow_fn.return_value)
+        self.assertEqual(generate_workflow_fn.call_args, call(spec=self.spec))
 
 class RunWorkflowTickTestCase(WorkflowBaseTestCase):
     def setUp(self):

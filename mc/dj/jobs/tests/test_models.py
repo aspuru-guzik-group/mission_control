@@ -11,6 +11,6 @@ class JobTestCase(TestCase):
         job = Job.objects.create(**kwargs)
         self.assertEqual(job.name, kwargs['name'])
         self.assertEqual(job.status, JobStatuses.Pending.name)
-        self.assertTrue(job.uuid is not None)
-        self.assertTrue(job.created is not None)
-        self.assertTrue(job.modified is not None)
+        expected_attrs = ['uuid', 'created', 'modified', 'spec']
+        for attr in expected_attrs:
+            self.assertTrue(hasattr(job, attr))

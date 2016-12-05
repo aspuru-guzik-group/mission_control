@@ -1,21 +1,23 @@
-from jobs.models import Job, JobStatuses
+from jobs.models import JobStatuses
 
-from .models import Workflow, WorkflowStatuses, WorkflowJob, WorkflowSpec
+from .models import WorkflowStatuses, WorkflowJob, WorkflowSpec
 from .spiff_workflow_engine import SpiffWorkflowEngine
 
 
 def start_workflow(spec_key=None, mission=None):
     workflow_spec = WorkflowSpec.objects.get(key=spec_key)
-    workflow = Workflow(spec=workflow_spec, mission=mission)
-    workflow.serialization = serialize_workflow(workflow=workflow)
+    workflow = generate_workflow_from_spec(spec=workflow_spec)
+    workflow.spec = workflow_spec
     workflow.status = WorkflowStatuses.Running.name
+    workflow.mission = mission
     workflow.save()
     run_workflow_tick(workflow=workflow)
     return workflow
 
-def serialize_workflow(workflow=None):
+def generate_workflow_from_spec(spec=None):
     engine = get_workflow_engine()
-    return engine.serialize_workflow(workflow=workflow)
+    workflow = engine.generate_workflow_from_spec(spec=spec)
+    return workflow
 
 def get_workflow_engine():
     return SpiffWorkflowEngine()
