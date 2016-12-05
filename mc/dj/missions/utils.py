@@ -36,3 +36,12 @@ def poll_workflow_jobs():
     workflow_jobs_to_mark_as_finished_qset.update(finished=True)
     for workflow_job in workflow_jobs_to_mark_as_finished:
         run_workflow_tick(workflow=workflow_job.workflow)
+
+def create_spec(key=None, serialization=None, serialization_format='xml'):
+    engine = get_workflow_engine()
+    normalized_serialization = engine.normalize_spec_serialization(
+        serialization=serialization, input_format=serialization_format)
+    spec = WorkflowSpec.objects.create(key=key,
+                                       serialization=normalized_serialization)
+    return spec
+

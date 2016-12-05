@@ -8,7 +8,7 @@ from ..models import (Mission, Workflow, WorkflowJob, WorkflowSpec,
 from .. import utils
 
 
-class WorkflowBaseTestCase(TestCase):
+class BaseTestCase(TestCase):
     def start_patchers(self, patchers):
         mocks = {key: patcher.start() for key, patcher in patchers.items()}
         return mocks
@@ -17,7 +17,7 @@ class WorkflowBaseTestCase(TestCase):
         if hasattr(self, 'patchers'):
             for patcher in self.patchers.values(): patcher.stop()
 
-class StartWorkflowTestCase(WorkflowBaseTestCase):
+class StartWorkflowTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.patchers = {
@@ -44,7 +44,7 @@ class StartWorkflowTestCase(WorkflowBaseTestCase):
             self.mocks['utils']['run_workflow_tick'].call_args,
             call(workflow=workflow))
 
-class GenerateWorkflowFromSpecTestCase(WorkflowBaseTestCase):
+class GenerateWorkflowFromSpecTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.patchers = {
@@ -60,7 +60,7 @@ class GenerateWorkflowFromSpecTestCase(WorkflowBaseTestCase):
         self.assertEqual(workflow, generate_workflow_fn.return_value)
         self.assertEqual(generate_workflow_fn.call_args, call(spec=self.spec))
 
-class RunWorkflowTickTestCase(WorkflowBaseTestCase):
+class RunWorkflowTickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.patchers = {
@@ -76,7 +76,7 @@ class RunWorkflowTickTestCase(WorkflowBaseTestCase):
         self.assertEqual(run_workflow_tick_fn.call_args,
                          call(workflow=workflow))
 
-class PollWorkflowJobsTestCase(WorkflowBaseTestCase):
+class PollWorkflowJobsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.patchers = {
@@ -142,3 +142,30 @@ class PollWorkflowJobsTestCase(WorkflowBaseTestCase):
             for workflow_job in self.workflow_jobs['should_finish']
         ]
         self.assertEqual(call_args_list, expected_call_args_list)
+
+class CreateSpecTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.patchers = {
+            'utils': patch.multiple(utils, get_workflow_engine=DEFAULT)
+        }
+        self.mocks = self.start_patchers(self.patchers)
+        self.mock_engine = self.mocks['utils']['get_workflow_engine']\
+                .return_value
+        self.mock_engine.normalize_spec_serialization.return_value = (
+            'normalized')
+        self.serialization = 'some serialization'
+        self.key = 'some key'
+
+    def test_returns_expected_spec(self):
+        expected_serialization = self.mock_engine.normalize_spec_serialization\
+                .return_value
+        created_spec = utils.create_spec(key=self.key,
+                                         serialization=expected_serialization)
+        self.assertEqual(created_spec.key, self.key)
+
+    def test_persists_created_spec(self):
+        created_spec = utils.create_spec(serialization=self.serialization)
+        specs_from_db = WorkflowSpec.objects.all()
+        self.assertEqual(set(specs_from_db), set([created_spec]))
+

@@ -1,6 +1,6 @@
 import SpiffWorkflow
 import SpiffWorkflow.specs
-from SpiffWorkflow.storage import JSONSerializer
+from SpiffWorkflow.storage import JSONSerializer, XmlSerializer
 
 from jobs.models import Job
 from .models import Workflow, WorkflowJob
@@ -19,12 +19,19 @@ class SpiffWorkflowEngine(object):
         )
         return workflow
 
-    def deserialize_spiff_spec(self, serialization=None):
+    def deserialize_spiff_spec(self, serialization=None, format=None):
         return SpiffWorkflow.specs.WorkflowSpec.deserialize(
-            serialization, self.get_serializer())
+            serialization, self.get_serializer(format=format))
 
-    def get_serializer(self):
-        return JSONSerializer()
+    def serialize_spiff_spec(self, spiff_spec=None, format=None):
+        return spiff_spec.serialize(self.get_serializer(format=format))
+
+    def get_serializer(self, format='json'):
+        if not format: format = 'json'
+        if format == 'json':
+            return JSONSerializer()
+        elif format == 'xml':
+            return XmlSerializer()
 
     def serialize_spiff_workflow(self, spiff_workflow=None):
         return spiff_workflow.serialize(self.get_serializer())
@@ -54,3 +61,11 @@ class SpiffWorkflowEngine(object):
             workflow=workflow)
         spiff_task.set_data(**{TASK_RUNNING_KEY: True})
 
+
+    def normalize_spec_serialization(self, serialization=None,
+                                     input_format=None):
+        spiff_spec = self.deserialize_spiff_spec(serialization=serialization,
+                                                 format=input_format)
+        normalized_serialization = self.serialize_spiff_spec(
+            spiff_spec=spiff_spec)
+        return normalized_serialization

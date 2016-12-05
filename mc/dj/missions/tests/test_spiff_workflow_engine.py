@@ -194,3 +194,42 @@ class StartSpiffTaskTestCase(BaseTestCase):
                                      workflow=self.workflow)
         self.assertEqual(self.spiff_task.set_data.call_args,
                          call(_running=True))
+
+class NormalizeSpecSerializationTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.patchers = {
+            'engine': patch.multiple(self.engine, serialize_spiff_spec=DEFAULT,
+                                     deserialize_spiff_spec=DEFAULT),
+        }
+        self.mocks = self.start_patchers(self.patchers)
+        self.serialization = 'some serialization'
+
+    def test_returns_serialization_of_deserialization(self):
+        normalized_serialization = self.engine.normalize_spec_serialization(
+            serialization=self.serialization)
+        mock_deserialize_fn = self.mocks['engine']['deserialize_spiff_spec']
+        mock_serialize_fn = self.mocks['engine']['serialize_spiff_spec']
+        self.assertEqual(mock_serialize_fn.call_args,
+                         call(spiff_spec=mock_deserialize_fn.return_value))
+        expected_normalized_serialization = mock_serialize_fn.return_value
+        self.assertEqual(normalized_serialization,
+                         expected_normalized_serialization)
+
+class SerializeSpiffSpecTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.patchers = {
+            'engine': patch.multiple(self.engine, get_serializer=DEFAULT),
+        }
+        self.mocks = self.start_patchers(self.patchers)
+        self.mock_spiff_spec = MagicMock()
+
+    def test_serializes_spiff_spec(self):
+        serialization = self.engine.serialize_spiff_spec(
+            spiff_spec=self.mock_spiff_spec)
+        self.assertEqual(
+            self.mock_spiff_spec.serialize.call_args,
+            call(self.mocks['engine']['get_serializer'].return_value))
+        self.assertEqual(serialization,
+                         self.mock_spiff_spec.serialize.return_value)
