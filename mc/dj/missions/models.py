@@ -2,6 +2,7 @@ import enum
 import uuid
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
+from django.contrib.postgres.fields import JSONField
 
 def uuid_model_str(instance):
     return '<{class_name}: {uuid}>'.format(
@@ -33,12 +34,6 @@ class Workflow(TimeStampedModel):
                                        for status in WorkflowStatuses],
                               default=WorkflowStatuses.Pending.name)
 
-    @property
-    def last_finished_job(self):
-        finished_jobs = self.workflow_jobs.filter(finished=True)
-        if not finished_jobs.exists(): return None
-        return finished_jobs.order_by('-modified').first().job
-
     def __str__(self):
         return uuid_model_str(self)
 
@@ -49,6 +44,7 @@ class WorkflowJob(TimeStampedModel):
                                  related_name='workflow_jobs')
     job = models.ForeignKey('jobs.Job', on_delete=models.CASCADE)
     finished = models.NullBooleanField(null=True, default=False)
+    meta = JSONField(default=dict)
 
     def __str__(self):
         return '<{class_name}: {{workflow_id: {wf}, job_id: {j}}}>'.format(
@@ -66,7 +62,10 @@ class WorkflowSpec(TimeStampedModel):
     serialization = models.TextField(null=True)
 
     def __str__(self):
-        return '<{class_name}: {{label: {label}, uuid: {uuid}}}>'.format(
+        return (
+            '<{class_name}: {{label: {label}, key: {key}, uuid: {uuid}}}>'
+        ).format(
             class_name=self.__class__.__name__,
             label=self.label,
+            key=self.key,
             uuid=self.uuid)

@@ -1,3 +1,4 @@
+import collections
 from unittest.mock import call, patch, MagicMock, DEFAULT
 
 from django.test import TestCase
@@ -80,7 +81,8 @@ class PollWorkflowJobsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.patchers = {
-            'utils': patch.multiple(utils, run_workflow_tick=DEFAULT)
+            'utils': patch.multiple(utils,
+                                    process_finished_workflow_jobs=DEFAULT)
         }
         self.mocks = self.start_patchers(self.patchers)
         self.workflow_jobs = self.generate_workflow_jobs()
@@ -134,12 +136,52 @@ class PollWorkflowJobsTestCase(BaseTestCase):
         self.assertEqual(set(unfinished_workflow_jobs),
                          set(expected_unfinished_workflow_jobs))
 
-    def test_runs_workflow_ticks_for_jobs_that_finished(self):
+    def test_processes_finished_jobs(self):
         utils.poll_workflow_jobs()
-        call_args_list = self.mocks['utils']['run_workflow_tick'].call_args_list
+        self.assertEqual(
+            self.mocks['utils']['process_finished_workflow_jobs'].call_args,
+            call(workflow_jobs=self.workflow_jobs['should_finish']))
+
+class ProcessFinishedWorkflowJobsTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.patchers = {
+            'utils': patch.multiple(utils, get_workflow_engine=DEFAULT)
+        }
+        self.mocks = self.start_patchers(self.patchers)
+        self.engine = self.mocks['utils']['get_workflow_engine'].return_value
+        self.workflow_jobs = self.generate_workflow_jobs()
+        self.grouped_workflow_jobs = collections.defaultdict(list)
+        for workflow_job in self.workflow_jobs:
+            self.grouped_workflow_jobs[workflow_job.workflow].append(
+                workflow_job)
+
+    def generate_workflow_jobs(self):
+        workflows = [Workflow.objects.create() for i in range(3)]
+        workflow_jobs = []
+        for workflow in workflows:
+            workflow_jobs.extend([WorkflowJob.objects.create(
+                workflow=workflow,
+                job=Job.objects.create(),
+            ) for i in range(3)])
+        return workflow_jobs
+
+    def test_calls_engine_process_finished_workflow_jobs(self):
+        utils.process_finished_workflow_jobs(workflow_jobs=self.workflow_jobs)
+        call_args_list = self.engine.process_finished_workflow_jobs\
+                .call_args_list
         expected_call_args_list = [
-            call(workflow=workflow_job.workflow)
-            for workflow_job in self.workflow_jobs['should_finish']
+            call(workflow=workflow, workflow_jobs=workflow_jobs)
+            for workflow, workflow_jobs in self.grouped_workflow_jobs.items()
+        ]
+        self.assertEqual(call_args_list, expected_call_args_list)
+
+    def test_runs_workflow_tick(self):
+        utils.process_finished_workflow_jobs(workflow_jobs=self.workflow_jobs)
+        call_args_list = self.engine.run_workflow_tick.call_args_list
+        expected_call_args_list = [
+            call(workflow=workflow)
+            for workflow in self.grouped_workflow_jobs.keys()
         ]
         self.assertEqual(call_args_list, expected_call_args_list)
 

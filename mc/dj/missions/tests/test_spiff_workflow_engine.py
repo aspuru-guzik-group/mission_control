@@ -1,7 +1,9 @@
+import uuid
 from unittest.mock import call, DEFAULT, MagicMock, patch
+
 from django.test import TestCase
 
-from ..models import WorkflowSpec, Workflow, WorkflowJob
+from ..models import WorkflowSpec, Workflow, WorkflowJob, WorkflowStatuses
 from ..spiff_workflow_engine import SpiffWorkflowEngine
 
 
@@ -21,16 +23,21 @@ class GenerateWorkflowFromSpecTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.patchers = {
-            'engine': patch.multiple(self.engine,
-                                     deserialize_spiff_spec=DEFAULT,
-                                     serialize_spiff_workflow=DEFAULT),
+            'engine': patch.multiple(
+                self.engine,
+                deserialize_spiff_spec=DEFAULT,
+                serialize_spiff_workflow=DEFAULT,
+                complete_spiff_workflow_start_task=DEFAULT
+            ),
             'SpiffWorkflow': patch.multiple('SpiffWorkflow', Workflow=DEFAULT),
         }
         self.mocks = self.start_patchers(self.patchers)
         self.spec = WorkflowSpec(serialization='some serialization')
+        self.expected_spiff_workflow = self.mocks['SpiffWorkflow']['Workflow']\
+                .return_value
 
-    def test_generates_workflow(self):
-        workflow_model = self.engine.generate_workflow_from_spec(spec=self.spec)
+    def test_creates_spiff_workflow_from_spec(self):
+        self.engine.generate_workflow_from_spec(spec=self.spec)
         mock_deserialize_spiff_spec = self.mocks['engine'].get(
             'deserialize_spiff_spec')
         self.assertEqual(
@@ -40,18 +47,22 @@ class GenerateWorkflowFromSpecTestCase(BaseTestCase):
         expected_spiff_spec = mock_deserialize_spiff_spec.return_value
         self.assertEqual(mock_spiff_Workflow.call_args,
                          call(expected_spiff_spec))
-        expected_spiff_workflow = mock_spiff_Workflow.return_value
+
+    def test_completes_start_task_on_spiff_workflow(self):
+        self.engine.generate_workflow_from_spec(spec=self.spec)
+        mock_complete_start_task_fn = self.mocks['engine'].get(
+            'complete_spiff_workflow_start_task')
+        self.assertEqual(mock_complete_start_task_fn.call_args,
+                         call(spiff_workflow=self.expected_spiff_workflow))
+
+    def test_created_workflow_has_expected_serialization(self):
+        workflow_model = self.engine.generate_workflow_from_spec(spec=self.spec)
         mock_serialize_spiff_workflow = self.mocks['engine'].get(
             'serialize_spiff_workflow')
         self.assertEqual(mock_serialize_spiff_workflow.call_args,
-                         call(spiff_workflow=expected_spiff_workflow))
+                         call(spiff_workflow=self.expected_spiff_workflow))
         expected_serialization = mock_serialize_spiff_workflow.return_value
-        expected_workflow_attrs = {
-            'serialization': expected_serialization,
-        }
-        workflow_attrs = {attr: getattr(workflow_model, attr)
-                          for attr in expected_workflow_attrs}
-        self.assertEqual(workflow_attrs, expected_workflow_attrs)
+        self.assertEqual(workflow_model.serialization, expected_serialization)
 
 class DeserializeSpiffSpecTestCase(BaseTestCase):
     def setUp(self):
@@ -72,7 +83,7 @@ class DeserializeSpiffSpecTestCase(BaseTestCase):
         mock_get_serializer = self.mocks['engine']['get_serializer']
         self.assertEqual(
             mock_spiff_WorkflowSpec.deserialize.call_args,
-            call(self.mock_serialization, mock_get_serializer.return_value))
+            call(mock_get_serializer.return_value, self.mock_serialization))
         self.assertEqual(spiff_spec,
                          mock_spiff_WorkflowSpec.deserialize.return_value)
 
@@ -105,6 +116,9 @@ class RunWorkflowTickTestCase(BaseTestCase):
         }
         self.mocks = self.start_patchers(self.patchers)
         self.mock_workflow = MagicMock()
+        mock_deserialize = self.mocks['engine']['deserialize_spiff_workflow']
+        self.deserialized_workflow = mock_deserialize.return_value
+        self.deserialized_workflow.is_completed.return_value = False
         self.task_groups = self.generate_task_groups()
 
     def generate_task_groups(self):
@@ -112,7 +126,7 @@ class RunWorkflowTickTestCase(BaseTestCase):
         for i in range(6):
             task = MagicMock()
             running = ((i % 2) == 0)
-            task.get_data.return_value = running
+            task._get_internal_data.return_value = running
             task_groups['all'].append(task)
             if running:
                 task_groups['running'].append(task)
@@ -128,9 +142,8 @@ class RunWorkflowTickTestCase(BaseTestCase):
             call(serialization=initial_serialization))
 
     def test_starts_pending_tasks(self):
-        mock_deserialize = self.mocks['engine']['deserialize_spiff_workflow']
-        deserialized_workflow = mock_deserialize.return_value
-        deserialized_workflow.get_tasks.return_value = self.task_groups['all']
+        self.deserialized_workflow.get_tasks.return_value = \
+                self.task_groups['all']
         self.engine.run_workflow_tick(workflow=self.mock_workflow)
         call_args_list = self.mocks['engine']['start_spiff_task'].call_args_list
         expected_call_args_list = [
@@ -140,11 +153,15 @@ class RunWorkflowTickTestCase(BaseTestCase):
 
     def test_serializes_workflow(self):
         self.engine.run_workflow_tick(workflow=self.mock_workflow)
-        mock_deserialize = self.mocks['engine']['deserialize_spiff_workflow']
-        expected_spiff_workflow = mock_deserialize.return_value
         self.assertEqual(
             self.mocks['engine']['serialize_spiff_workflow'].call_args,
-            call(spiff_workflow=expected_spiff_workflow))
+            call(spiff_workflow=self.deserialized_workflow))
+
+    def test_marks_completed_workflow_as_completed(self):
+        self.deserialized_workflow.is_completed.return_value = True
+        self.engine.run_workflow_tick(workflow=self.mock_workflow)
+        self.assertEqual(self.mock_workflow.status,
+                         WorkflowStatuses.Completed.name)
 
     def test_saves_workflow(self):
         self.engine.run_workflow_tick(workflow=self.mock_workflow)
@@ -167,7 +184,7 @@ class DeserializeSpiffWorkflow(BaseTestCase):
         mock_get_serializer = self.mocks['engine']['get_serializer']
         self.assertEqual(
             mock_spiff_Workflow.deserialize.call_args,
-            call(self.mock_serialization, mock_get_serializer.return_value))
+            call(mock_get_serializer.return_value, self.mock_serialization))
         self.assertEqual(
             spiff_workflow,
             mock_spiff_Workflow.deserialize.return_value)
@@ -177,7 +194,7 @@ class StartSpiffTaskTestCase(BaseTestCase):
         super().setUp()
         self.job_spec = {'junk': 'data'}
         self.spiff_task = MagicMock()
-        self.spiff_task.get_data.return_value = self.job_spec
+        self.spiff_task.get_spec_data.return_value = self.job_spec
         self.workflow = Workflow.objects.create()
 
     def test_creates_job_for_task(self):
@@ -187,12 +204,14 @@ class StartSpiffTaskTestCase(BaseTestCase):
         workflow_job = WorkflowJob.objects.all()[0]
         self.assertEqual(workflow_job.workflow, self.workflow)
         self.assertEqual(workflow_job.job.spec,
-                         self.spiff_task.get_data('job_spec'))
+                         self.spiff_task.get_spec_data('job_spec'))
+        self.assertEqual(workflow_job.meta,
+                         {'task_uuid': str(self.spiff_task.id)})
 
     def test_marks_task_as_running(self):
         self.engine.start_spiff_task(spiff_task=self.spiff_task,
                                      workflow=self.workflow)
-        self.assertEqual(self.spiff_task.set_data.call_args,
+        self.assertEqual(self.spiff_task._set_internal_data.call_args,
                          call(_running=True))
 
 class NormalizeSpecSerializationTestCase(BaseTestCase):
@@ -233,3 +252,56 @@ class SerializeSpiffSpecTestCase(BaseTestCase):
             call(self.mocks['engine']['get_serializer'].return_value))
         self.assertEqual(serialization,
                          self.mock_spiff_spec.serialize.return_value)
+
+class ProcessFinishedWorkflowJobsTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.patchers = {
+            'engine': patch.multiple(self.engine,
+                                     deserialize_spiff_workflow=DEFAULT,
+                                     serialize_spiff_workflow=DEFAULT)
+        }
+        self.mocks = self.start_patchers(self.patchers)
+        self.workflow = MagicMock()
+        self.workflow_jobs = self.generate_workflow_jobs(workflow=self.workflow)
+        self.spiff_workflow = self.mocks['engine'].get(
+            'deserialize_spiff_workflow').return_value
+
+    def generate_workflow_jobs(self, workflow):
+        workflow_jobs = []
+        for i in range(3):
+            workflow_job = MagicMock()
+            workflow_job.workflow = workflow
+            workflow_job.meta = {'task_uuid': str(uuid.uuid4())}
+            workflow_jobs.append(workflow_job)
+        return workflow_jobs
+
+    def test_deserializes_workflow(self):
+        initial_serialization = self.workflow.serialization
+        self.engine.process_finished_workflow_jobs(
+            workflow=self.workflow, workflow_jobs=self.workflow_jobs)
+        self.assertEqual(
+            self.mocks['engine']['deserialize_spiff_workflow'].call_args,
+            call(serialization=initial_serialization))
+
+    def test_completes_corresponding_tasks(self):
+        self.engine.process_finished_workflow_jobs(
+            workflow=self.workflow, workflow_jobs=self.workflow_jobs)
+        call_args_list = self.spiff_workflow.complete_task_from_id\
+                .call_args_list
+        expected_call_args_list = [
+            call(uuid.UUID(workflow_job.meta['task_uuid']))
+            for workflow_job in self.workflow_jobs]
+        self.assertEqual(call_args_list, expected_call_args_list)
+
+    def test_reserializes_workflow(self):
+        self.engine.process_finished_workflow_jobs(
+            workflow=self.workflow, workflow_jobs=self.workflow_jobs)
+        self.assertEqual(
+            self.mocks['engine']['serialize_spiff_workflow'].call_args,
+            call(spiff_workflow=self.spiff_workflow))
+
+    def test_saves_worflow(self):
+        self.engine.process_finished_workflow_jobs(
+            workflow=self.workflow, workflow_jobs=self.workflow_jobs)
+        self.assertEqual(self.workflow.save.call_count, 1)

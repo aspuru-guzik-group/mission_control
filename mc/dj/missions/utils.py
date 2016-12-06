@@ -1,5 +1,6 @@
-from jobs.models import JobStatuses
+import collections
 
+from jobs.models import JobStatuses
 from .models import WorkflowStatuses, WorkflowJob, WorkflowSpec
 from .spiff_workflow_engine import SpiffWorkflowEngine
 
@@ -28,14 +29,26 @@ def run_workflow_tick(workflow=None):
 
 def poll_workflow_jobs():
     finished_job_statuses = [JobStatuses.Completed.name]
-    workflow_jobs_to_mark_as_finished_qset = WorkflowJob.objects.filter(
+    newly_finished_workflow_jobs_qset = WorkflowJob.objects.filter(
         finished=False, job__status__in=finished_job_statuses)
-    # Need to capture jobs, because update operation will change the queryset.
-    workflow_jobs_to_mark_as_finished = list(
-        workflow_jobs_to_mark_as_finished_qset.all())
-    workflow_jobs_to_mark_as_finished_qset.update(finished=True)
-    for workflow_job in workflow_jobs_to_mark_as_finished:
-        run_workflow_tick(workflow=workflow_job.workflow)
+    # Capture jobs in list because update operation will change the queryset.
+    newly_finished_workflow_jobs = list(newly_finished_workflow_jobs_qset.all())
+    newly_finished_workflow_jobs_qset.update(finished=True)
+    process_finished_workflow_jobs(workflow_jobs=newly_finished_workflow_jobs)
+
+def process_finished_workflow_jobs(workflow_jobs=None):
+    workflow_jobs_by_workflow = group_workflow_jobs_by_workflow(workflow_jobs)
+    for workflow, workflow_jobs_group in workflow_jobs_by_workflow.items():
+        engine = get_workflow_engine()
+        engine.process_finished_workflow_jobs(workflow=workflow,
+                                              workflow_jobs=workflow_jobs_group)
+        run_workflow_tick(workflow=workflow)
+
+def group_workflow_jobs_by_workflow(workflow_jobs=None):
+    workflow_jobs_by_workflow = collections.defaultdict(list)
+    for workflow_job in workflow_jobs:
+        workflow_jobs_by_workflow[workflow_job.workflow].append(workflow_job)
+    return workflow_jobs_by_workflow
 
 def create_spec(key=None, serialization=None, serialization_format='xml'):
     engine = get_workflow_engine()

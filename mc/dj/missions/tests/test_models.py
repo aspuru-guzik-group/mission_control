@@ -31,19 +31,6 @@ class WorkflowTestCase(TestCase):
         self.assertEqual(workflow.status, WorkflowStatuses.Pending.name)
         self.assertTrue(hasattr(workflow, 'workflow_jobs'))
 
-    def test_last_finished_job(self):
-        workflow = Workflow.objects.create()
-        for i in range(3):
-            WorkflowJob.objects.create(
-                workflow=workflow,
-                job=Job.objects.create(),
-                finished=True,
-                modified=i)
-        last_finished_job = workflow.last_finished_job
-        expected_last_finished_job = workflow.workflow_jobs.order_by(
-            '-modified').first().job
-        self.assertEqual(last_finished_job, expected_last_finished_job)
-
 class WorkflowJobTestCase(TestCase):
     def test_has_expected_fields(self):
         kwargs = {
@@ -57,6 +44,7 @@ class WorkflowJobTestCase(TestCase):
         self.assertTrue(workflow_job.workflow is kwargs['workflow'])
         self.assertTrue(workflow_job.job is kwargs['job'])
         self.assertEqual(workflow_job.finished, False)
+        self.assertEqual(workflow_job.meta, {})
 
 class WorkflowSpecTestCase(TestCase):
     def test_has_expected_fields(self):
