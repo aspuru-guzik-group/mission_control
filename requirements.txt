@@ -1,3 +1,9 @@
 Django
 django-extensions
 psycopg2
+djangorestframework
+psutil
+requests
+django-filter
+pexpect
+git+git://github.com/adorsk/SpiffWorkflow.git@0285c41bba46a97b1a7aae4887b1397d98657862#egg=SpiffWorkflow

@@ -38,6 +38,10 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'missions',
+    'jobs',
+    'e2e',
+    'job_spec_client',
+    'job_runners',
 ]
 
 MIDDLEWARE = [
