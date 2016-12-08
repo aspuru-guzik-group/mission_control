@@ -2,16 +2,6 @@ version: "2"
 services:
   pg:
     image: postgres
-  mongo:
-    image: mongo
-    ports:
-      - "27017:27017"
-    volumes:
-      - ./mongo_data:/data/db
-  redis:
-    image: redis
-    volumes:
-      - ./mongo_data:/data/db
   mc_base:
     build:
       context: ./
@@ -33,15 +23,3 @@ services:
       - ./mc:/mc
     depends_on:
       - pg
-      - redis
-      - mongo
-  beat:
-    extends:
-      service: mc_base
-    command: celery -A mc beat -l info -S django
-    volumes:
-      - ./mc:/mc
-    depends_on:
-      - pg
-      - redis
-      - mongo
