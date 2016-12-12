@@ -1,9 +1,10 @@
+import difflib
 import filecmp
 import json
 import os
 import unittest
 
-from ...odyssey_dir_builder import OdysseyDirBuilder
+from ...odyssey.odyssey_dir_builder import OdysseyDirBuilder
 
 TestCase = unittest.TestCase
 
@@ -37,12 +38,19 @@ class SnapshotDirTestCaseMixin(BaseTestCaseMixin):
         self.assertEqual(set(cmp_result.left_only), set())
         self.assertEqual(set(cmp_result.right_only), set())
         for differing_file in cmp_result.diff_files:
-            left_file = os.path.join(left, differing_file)
-            right_file = os.path.join(right, differing_file)
-            self.assertEqual(open(left_file).read(), open(right_file).read())
+            fail_msg = "Files differ:\n%s" % self.get_diff(
+                left_file=os.path.join(left, differing_file),
+                right_file=os.path.join(right, differing_file))
+            self.fail(fail_msg)
 
-class ConfgenTestCase(SnapshotDirTestCaseMixin, TestCase):
-    snapshot_name = 'confgen'
+    def get_diff(self, left_file=None, right_file=None):
+        diff_lines = difflib.unified_diff(
+            open(left_file).readlines(), open(right_file).readlines(),
+            fromfile=left_file, tofile=right_file)
+        return "".join([line for line in diff_lines])
+
+class rdkit_conformer_generator_TestCase(SnapshotDirTestCaseMixin, TestCase):
+    snapshot_name = 'rdkit_conformer_generator'
 
 if __name__ == '__main__':
     unittest.main()

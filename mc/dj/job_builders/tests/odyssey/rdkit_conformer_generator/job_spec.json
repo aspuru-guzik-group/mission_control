@@ -1,12 +1,12 @@
 {
-    "type": "confgen",
-    "confgen_params": {
-      "output_limit": "output_limit_value"
+    "type": "rdkit_conformer_generator",
+    "params": {
+      "inchikey": "inchikey_value",
+      "output_limit": "output_limit_value",
       "candidate_limit": "candidate_limit_value",
       "forcefield_id": "forcefield_id_value",
       "output_dir": "output_dir_value",
       "smiles": "smiles_value",
-      "inchikey": "inchikey_value",
       "prune_rms_thresh": "prune_rms_thresh_value",
       "energy_range": "energy_range_value",
       "energy_cluster_candidate_radius": "energy_cluster_candidate_radius_value",
