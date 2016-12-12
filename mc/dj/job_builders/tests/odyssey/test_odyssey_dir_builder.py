@@ -5,6 +5,8 @@ import os
 import unittest
 
 from ...odyssey.odyssey_dir_builder import OdysseyDirBuilder
+from ...odyssey.handlers import rdkit_conformer_generator
+
 
 TestCase = unittest.TestCase
 
@@ -30,8 +32,12 @@ class SnapshotDirTestCaseMixin(BaseTestCaseMixin):
         return os.path.join(self.snapshot_dir, 'expected_dir')
 
     def test_builds_expected_job(self):
-        output_dir = self.builder.build_job(job_spec=self.job_spec)
+        output_dir = self.builder.build_job(
+            job_spec=self.job_spec,
+            job_type_handlers=self.get_job_type_handlers())
         self.compare_dirs(output_dir, self.expected_output_dir)
+
+    def get_job_type_handlers(self): raise NotImplementedError()
 
     def compare_dirs(self, left, right):
         cmp_result = filecmp.dircmp(left, right)
@@ -51,6 +57,10 @@ class SnapshotDirTestCaseMixin(BaseTestCaseMixin):
 
 class rdkit_conformer_generator_TestCase(SnapshotDirTestCaseMixin, TestCase):
     snapshot_name = 'rdkit_conformer_generator'
+
+    def get_job_type_handlers(self):
+        return {'rdkit_conformer_generator': \
+                rdkit_conformer_generator.alter_dir_spec}
 
 if __name__ == '__main__':
     unittest.main()

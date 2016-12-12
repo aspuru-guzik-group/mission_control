@@ -3,22 +3,24 @@ import os
 import tempfile
 import textwrap
 
-from . import rdkit_conformer_generator
-
 
 class OdysseyDirBuilder(object):
-    def build_job(self, job_spec=None, output_dir=None):
+    def build_job(self, job_spec=None, output_dir=None, job_type_handlers=None):
         if not output_dir:
             output_dir = tempfile.mkdtemp(prefix='odyssey_dir.')
-        dir_spec = self.generate_dir_spec(job_spec=job_spec)
+        dir_spec = self.generate_dir_spec(job_spec=job_spec,
+                                          job_type_handlers=job_type_handlers)
         self.build_dir(dir_spec=dir_spec, output_dir=output_dir)
         return output_dir
 
-    def generate_dir_spec(self, job_spec=None):
+    def generate_dir_spec(self, job_spec=None, job_type_handlers=None):
         dir_spec = self.generate_initial_dir_spec(job_spec=job_spec)
-        if job_spec.get('type') == 'rdkit_conformer_generator':
-            dir_spec = rdkit_conformer_generator.alter_dir_spec(
-                dir_spec=dir_spec, job_spec=job_spec)
+        job_type = job_spec['type']
+        try:
+            dir_spec_handler = job_type_handlers[job_type]
+            dir_spec = dir_spec_handler(dir_spec=dir_spec, job_spec=job_spec)
+        except KeyError as error:
+            raise KeyError("No handler found for job_type '%s'." % job_type)
         return dir_spec
 
     def generate_initial_dir_spec(self, job_spec=None):
