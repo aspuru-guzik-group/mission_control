@@ -4,6 +4,8 @@ class Workflow(object):
     def __init__(self):
         self.nodes = {}
         self.edges = {}
+        self.state = None
+        self.status = None
 
     def add_nodes(self, nodes=None):
         for node in nodes: self.add_node(node=node)
@@ -12,11 +14,9 @@ class Workflow(object):
         assert hasattr(node, 'id')
         self.nodes[node.id] = node
 
-    def add_edges_from_specs(self, edge_specs=None):
-        for edge_spec in edge_specs:
-            self.add_edge_from_spec(edge_spec=edge_spec)
+    def add_edges(self, edges=None):
+        for edge in edges: self.add_edge(edge=edge)
 
-    def add_edge_from_spec(self, edge_spec=None):
-        src_id, dest_id = edge_spec['src_id'], edge_spec['dest_id']
-        self.edges[(src_id, dest_id)] = {'src': self.nodes[src_id],
-                                         'dest': self.nodes[dest_id]}
+    def add_edge(self, edge=None):
+        edge_key = (edge['src'].id, edge['dest'].id)
+        self.edges[edge_key] = edge
