@@ -1,3 +1,4 @@
+from collections import defaultdict
 import unittest
 from unittest.mock import call, DEFAULT, patch, MagicMock
 
@@ -100,7 +101,7 @@ class ConnectNodesTestCase(BaseTestCase):
         self.assertEqual(self.mocks['workflow']['add_edge'].call_args,
                          call(edge={'src': nodes[0], 'dest': nodes[1]}))
 
-class GetNearestIncompleteNodesTestCase(BaseTestCase):
+class GetNearestPendingNodesTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.setup_workflow()
@@ -132,13 +133,13 @@ class GetNearestIncompleteNodesTestCase(BaseTestCase):
             workflow.connect_nodes(src=tail, dest=node)
             tail = node
 
-    def test_get_nearest_incomplete_nodes(self):
-        expected_nearest_incomplete_nodes = [self.linear_branches['1'][1],
-                                             self.linear_branches['2'][2]]
-        self.assertEqual(set(self.workflow.get_nearest_incomplete_nodes()),
-                         set(expected_nearest_incomplete_nodes))
+    def test_get_nearest_pending_nodes(self):
+        expected_nearest_pending_nodes = [self.linear_branches['1'][1],
+                                          self.linear_branches['2'][2]]
+        self.assertEqual(set(self.workflow.get_nearest_pending_nodes()),
+                         set(expected_nearest_pending_nodes))
 
-class GetChildNodes(BaseTestCase):
+class GetChildNodesTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.setup_workflow(workflow=self.workflow)
@@ -161,6 +162,22 @@ class GetChildNodes(BaseTestCase):
         child_nodes = self.workflow.get_child_nodes(
             parent_node=self.workflow.nodes['1'])
         self.assertEqual(set(child_nodes), set(expected_child_nodes))
+
+class GetNodesTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+
+    def test_filters_per_query(self):
+        nodes = defaultdict(list)
+        for i in range(4):
+            if i % 2: answer = 'yes'
+            else: answer = 'no'
+            node = self.generate_node(answer=answer)
+            nodes[answer].append(node)
+            self.workflow.add_node(node)
+        result = self.workflow.get_nodes(query={'answer': 'yes'})
+        expected_result = nodes['yes']
+        self.assertEqual(set(result), set(expected_result))
 
 if __name__ == '__main__':
     unittest.main()

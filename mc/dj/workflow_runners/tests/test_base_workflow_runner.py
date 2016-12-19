@@ -1,8 +1,8 @@
 import unittest
-#from unittest.mock import call, DEFAULT, MagicMock, patch
+from unittest.mock import MagicMock
 
 from ..base_workflow_runner import BaseWorkflowRunner
-from ..workflow import Workflow
+from ..workflow import Workflow, StaticNode
 
 
 class BaseTestCase(unittest.TestCase):
@@ -109,6 +109,105 @@ class SerializationTestCase(BaseTestCase):
         workflow.state = 'workflow_state'
         workflow.status = 'workflow_status'
         return workflow
+
+class TickTestCase(BaseTestCase):
+    def test_starts_nearest_pending_nodes(self):
+        self.maxDiff = None
+        workflow = self.generate_workflow_with_pending_successors()
+        precursors = workflow.get_nodes(query={'status': 'COMPLETED'})
+        successors = workflow.get_nodes(query={'status': 'PENDING'})
+        self.assertTrue(len(successors) > 0)
+
+        expected_successor_summaries_before_tick = {
+            node.id: self.summarize_node(node, overrides={'tick_count': 0,
+                                                          'status': 'PENDING'})
+            for node in successors
+        }
+        self.assertEqual(self.summarize_nodes(successors),
+                         expected_successor_summaries_before_tick)
+
+        self.runner.tick_workflow(workflow)
+
+        expected_successor_summaries_after_tick = {
+            node.id: self.summarize_node(node, overrides={'tick_count': 1,
+                                                          'status': 'RUNNING'})
+            for node in successors
+        }
+        self.assertEqual(self.summarize_nodes(successors),
+                         expected_successor_summaries_after_tick)
+        
+        expected_precusor_summaries_after_tick = {
+            node.id: self.summarize_node(
+                node, overrides={'tick_count': 0, 'status': 'COMPLETED'})
+            for node in precursors
+        }
+        self.assertEqual(self.summarize_nodes(precursors),
+                         expected_precusor_summaries_after_tick)
+
+    def summarize_nodes(self, nodes):
+        return {node.id: self.summarize_node(node) for node in nodes}
+
+    def summarize_node(self, node, overrides=None):
+        if not overrides: overrides = {}
+        return {'id': node.id, 'tick_count': node.tick.call_count,
+                'status': node.status, **overrides}
+
+    def generate_workflow_with_pending_successors(self):
+        workflow = Workflow(root_node=StaticNode(status='COMPLETED'))
+        self.add_branch_with_pending_leaf_to_workflow(workflow, depth=3)
+        self.add_branch_with_pending_leaf_to_workflow(workflow, depth=2)
+        return workflow
+
+    def add_branch_with_pending_leaf_to_workflow(self, workflow, depth=3):
+        branch_root = MagicMock()
+        branch_root.status = 'COMPLETED'
+        workflow.add_child_nodes(parent_node=workflow.root_node,
+                                 child_nodes=[branch_root])
+        for i in range(depth):
+            child_node = MagicMock()
+            child_node.status = 'COMPLETED'
+            child_node.depth = depth
+            workflow.add_child_nodes(parent_node=branch_root,
+                                     child_nodes=[child_node])
+            branch_root = child_node
+        branch_leaf = MagicMock()
+        branch_leaf.status = 'PENDING'
+        workflow.add_child_nodes(parent_node=branch_root,
+                                 child_nodes=[branch_leaf])
+
+    def test_ticks_running_tasks(self):
+        workflow = self.generate_workflow_with_running_nodes()
+        running_nodes = workflow.get_nodes(query={'status': 'RUNNING'})
+        expected_node_summaries_before_tick = {
+            node.id: self.summarize_node(node, overrides={'tick_count': 0,
+                                                          'status': 'RUNNING'})
+            for node in running_nodes
+        }
+        self.assertEqual(self.summarize_nodes(running_nodes),
+                         expected_node_summaries_before_tick)
+        self.runner.tick_workflow(workflow)
+        expected_node_summaries_after_tick = {
+            node.id: self.summarize_node(node, overrides={'tick_count': 1,
+                                                          'status': 'RUNNING'})
+            for node in running_nodes
+        }
+        self.assertEqual(self.summarize_nodes(running_nodes),
+                         expected_node_summaries_after_tick)
+
+    def generate_workflow_with_running_nodes(self):
+        workflow = Workflow(root_node=StaticNode(status='COMPLETED'))
+        for i in range(3):
+            running_node = MagicMock()
+            running_node.status = 'RUNNING'
+            workflow.add_node(running_node)
+            workflow.connect_nodes(src=workflow.root_node, dest=running_node)
+        return workflow
+
+    @unittest.skip
+    def test_posts_serialized_workflow_after_tick(self):
+        # @TODO: this should prolly go in a higher-order runner, one that
+        # calls base runner, but then does the posting.
+        self.fail()
 
 if __name__ == '__main__':
     unittest.main()

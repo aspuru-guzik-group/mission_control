@@ -81,3 +81,19 @@ class BaseWorkflowRunner(object):
             'dest_id': edge['dest'].id,
         }
         return serialized_edge
+
+    def tick_workflow(self, workflow=None):
+        self.start_nearest_pending_nodes(workflow=workflow)
+        self.tick_running_nodes(workflow=workflow)
+
+    def start_nearest_pending_nodes(self, workflow=None):
+        for node in workflow.get_nearest_pending_nodes():
+            node.status = 'RUNNING'
+
+    def tick_running_nodes(self, workflow=None):
+        for node in workflow.get_nodes(query={'status': 'RUNNING'}):
+            self.tick_node(node=node)
+
+    def tick_node(self, node=None):
+        node.tick(runner=self)
+

@@ -49,16 +49,31 @@ class Workflow(object):
                        if edge['src'] is parent_node]
         return child_nodes
 
-    def get_nearest_incomplete_nodes(self):
-        nearest_incomplete_nodes = []
+    def get_nearest_pending_nodes(self):
+        nearest_pending_nodes = []
         cursors = [self.root_node]
         while len(cursors) > 0:
             next_cursors = []
             for cursor in cursors:
-                if cursor.status == 'COMPLETED':
+                if cursor.status == 'PENDING':
+                    nearest_pending_nodes.append(cursor)
+                elif cursor.status == 'COMPLETED':
                     child_nodes = self.get_child_nodes(parent_node=cursor)
                     next_cursors.extend(child_nodes)
-                else:
-                    nearest_incomplete_nodes.append(cursor)
             cursors = next_cursors
-        return nearest_incomplete_nodes
+        return nearest_pending_nodes
+
+    def get_nodes(self, query=None):
+        result = self.nodes.values()
+        if query:
+            filtered_result = []
+            for node in result:
+                passes_filters = True
+                for filter_key, filter_value in query.items():
+                    if getattr(node, filter_key) != filter_value:
+                        passes_filters = False
+                        break
+                if passes_filters:
+                    filtered_result.append(node)
+            result = filtered_result
+        return result
