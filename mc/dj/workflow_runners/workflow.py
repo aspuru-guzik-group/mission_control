@@ -1,10 +1,11 @@
 from collections import defaultdict
 from uuid import uuid4
 
-
-class StaticNode(object):
-    def __init__(self, id=None, status=None, state=None, **kwargs):
+class BaseNode(object):
+    def __init__(self, id=None, workflow=None, status=None, state=None,
+                 **kwargs):
         self.id = id or str(uuid4())
+        self.workflow = workflow
         self.status = status
         self.state = state
 

@@ -8,8 +8,11 @@ class BaseWorkflowRunner(object):
     def __init__(self):
         self.node_class_registry = OrderedDict()
 
-    def register_node_class(self, test_fn=None, node_class=None, key=None):
+    def register_node_class(self, node_class=None, key=None, test_fn=None):
         if key is None: key = str(uuid4())
+        if not test_fn:
+            def test_fn(serialized_node):
+                return (serialized_node.get('type') == node_class.__name__)
         self.node_class_registry[key] = {'test_fn': test_fn,
                                          'node_class': node_class}
 
