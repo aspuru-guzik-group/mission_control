@@ -85,13 +85,15 @@ class BaseWorkflowRunner(object):
     def tick_workflow(self, workflow=None):
         self.start_nearest_pending_nodes(workflow=workflow)
         self.tick_running_nodes(workflow=workflow)
+        if not workflow.has_incomplete_nodes():
+            workflow.status = 'COMPLETED'
 
     def start_nearest_pending_nodes(self, workflow=None):
         for node in workflow.get_nearest_pending_nodes():
             node.status = 'RUNNING'
 
     def tick_running_nodes(self, workflow=None):
-        for node in workflow.get_nodes(query={'status': 'RUNNING'}):
+        for node in workflow.get_nodes_by_status(status='RUNNING'):
             self.tick_node(node=node)
 
     def tick_node(self, node=None):

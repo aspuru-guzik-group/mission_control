@@ -114,8 +114,8 @@ class TickTestCase(BaseTestCase):
     def test_starts_nearest_pending_nodes(self):
         self.maxDiff = None
         workflow = self.generate_workflow_with_pending_successors()
-        precursors = workflow.get_nodes(query={'status': 'COMPLETED'})
-        successors = workflow.get_nodes(query={'status': 'PENDING'})
+        precursors = workflow.get_nodes_by_status(status='COMPLETED')
+        successors = workflow.get_nodes_by_status(status='PENDING')
         self.assertTrue(len(successors) > 0)
 
         expected_successor_summaries_before_tick = {
@@ -177,7 +177,7 @@ class TickTestCase(BaseTestCase):
 
     def test_ticks_running_tasks(self):
         workflow = self.generate_workflow_with_running_nodes()
-        running_nodes = workflow.get_nodes(query={'status': 'RUNNING'})
+        running_nodes = workflow.get_nodes_by_status(status='RUNNING')
         expected_node_summaries_before_tick = {
             node.id: self.summarize_node(node, overrides={'tick_count': 0,
                                                           'status': 'RUNNING'})
@@ -203,11 +203,11 @@ class TickTestCase(BaseTestCase):
             workflow.connect_nodes(src=workflow.root_node, dest=running_node)
         return workflow
 
-    @unittest.skip
-    def test_posts_serialized_workflow_after_tick(self):
-        # @TODO: this should prolly go in a higher-order runner, one that
-        # calls base runner, but then does the posting.
-        self.fail()
+    def test_sets_status_to_completed_if_no_incomplete_nodes(self):
+        workflow = Workflow(root_node=StaticNode(status='COMPLETED'))
+        self.assertTrue(workflow.status != 'COMPLETED')
+        self.runner.tick_workflow(workflow)
+        self.assertTrue(workflow.status == 'COMPLETED')
 
 if __name__ == '__main__':
     unittest.main()

@@ -163,11 +163,11 @@ class GetChildNodesTestCase(BaseTestCase):
             parent_node=self.workflow.nodes['1'])
         self.assertEqual(set(child_nodes), set(expected_child_nodes))
 
-class GetNodesTestCase(BaseTestCase):
+class FilterNodesTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
 
-    def test_filters_per_query(self):
+    def test_filters(self):
         nodes = defaultdict(list)
         for i in range(4):
             if i % 2: answer = 'yes'
@@ -175,9 +175,34 @@ class GetNodesTestCase(BaseTestCase):
             node = self.generate_node(answer=answer)
             nodes[answer].append(node)
             self.workflow.add_node(node)
-        result = self.workflow.get_nodes(query={'answer': 'yes'})
+        _filter = lambda node: node.answer == 'yes'
+        result = self.workflow.filter_nodes(filters=[_filter])
         expected_result = nodes['yes']
         self.assertEqual(set(result), set(expected_result))
+
+class GetNodesByStatusTestCase(BaseTestCase):
+    def test_gets_nodes_by_status(self):
+        nodes = defaultdict(list)
+        statuses = ['status_%s' % i for i in range(3)]
+        for status in statuses:
+            for i in range(3):
+                node = self.generate_node(status=status)
+                nodes[status].append(node)
+                self.workflow.add_node(node)
+        for status in statuses:
+            result = self.workflow.get_nodes_by_status(status=status)
+            expected_result = nodes[status]
+            self.assertEqual(set(result), set(expected_result))
+
+class HasIncompleteNodesTestCase(BaseTestCase):
+    def test_has_incomplete(self):
+        self.workflow.add_node(self.generate_node(status='PENDING'))
+        self.assertTrue(self.workflow.has_incomplete_nodes())
+
+    def test_does_not_have_incomplete(self):
+        self.workflow.add_node(self.generate_node(status='COMPLETE'))
+        self.assertFalse(self.workflow.has_incomplete_nodes())
+
 
 if __name__ == '__main__':
     unittest.main()

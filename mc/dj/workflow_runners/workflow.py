@@ -63,17 +63,24 @@ class Workflow(object):
             cursors = next_cursors
         return nearest_pending_nodes
 
-    def get_nodes(self, query=None):
-        result = self.nodes.values()
-        if query:
-            filtered_result = []
-            for node in result:
-                passes_filters = True
-                for filter_key, filter_value in query.items():
-                    if getattr(node, filter_key) != filter_value:
-                        passes_filters = False
-                        break
-                if passes_filters:
-                    filtered_result.append(node)
-            result = filtered_result
+    def filter_nodes(self, filters=None):
+        result = []
+        for node in self.nodes.values():
+            passes_filters = True
+            for _filter in filters:
+                if not _filter(node):
+                    passes_filters = False
+                    break
+            if passes_filters:
+                result.append(node)
         return result
+
+    def get_nodes_by_status(self, status=None):
+        state_filter = lambda node: node.status == status
+        return self.filter_nodes(filters=[state_filter])
+
+    def has_incomplete_nodes(self):
+        filter_fn = lambda node: node.status != 'COMPLETE'
+        incomplete_nodes = self.filter_nodes(filters=[filter_fn])
+        return len(incomplete_nodes) > 0
+
