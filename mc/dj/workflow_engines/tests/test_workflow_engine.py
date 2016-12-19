@@ -1,13 +1,13 @@
 import unittest
 from unittest.mock import MagicMock
 
-from ..base_workflow_runner import BaseWorkflowRunner
+from ..workflow_engine import WorkflowEngine
 from ..workflow import Workflow, BaseNode
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.runner = BaseWorkflowRunner()
+        self.engine = WorkflowEngine()
 
     def tearDown(self):
         if hasattr(self, 'patchers'): self.stop_patchers(self.patchers)
@@ -33,7 +33,7 @@ class DeserializationTestCase(BaseTestCase):
         self.node_classes = {name: type(name, (BaseNode,), {})
                              for name in ['Type1', 'Type2', 'Type3']}
         for name, node_class in self.node_classes.items():
-            self.runner.register_node_class(node_class=node_class)
+            self.engine.register_node_class(node_class=node_class)
 
     def test_deserializes_workflow(self):
         serialized_workflow = {
@@ -49,10 +49,10 @@ class DeserializationTestCase(BaseTestCase):
                 {'src_id': 'b', 'dest_id': 'd'},
             ]
         }
-        workflow = self.runner.deserialize_workflow(serialized_workflow)
+        workflow = self.engine.deserialize_workflow(serialized_workflow)
         expected_nodes = {}
         for serialized_node in serialized_workflow['nodes']:
-            expected_node = self.runner.deserialize_node(serialized_node)
+            expected_node = self.engine.deserialize_node(serialized_node)
             expected_nodes[expected_node.id] = expected_node
 
         def summarize_nodes(nodes):
@@ -74,7 +74,7 @@ class DeserializationTestCase(BaseTestCase):
 class SerializationTestCase(BaseTestCase):
     def test_serializes_workflow(self):
         workflow = self.generate_workflow()
-        serialization = self.runner.serialize_workflow(workflow)
+        serialization = self.engine.serialize_workflow(workflow)
         expected_serialization = {
             'nodes': [{'id': node.id, 'type': node.type, 'status': node.status,
                        'state': node.state}
@@ -123,7 +123,7 @@ class TickTestCase(BaseTestCase):
         self.assertEqual(self.summarize_nodes(successors),
                          expected_successor_summaries_before_tick)
 
-        self.runner.tick_workflow(workflow)
+        self.engine.tick_workflow(workflow)
 
         expected_successor_summaries_after_tick = {
             node.id: self.summarize_node(node, overrides={'tick_count': 1,
@@ -182,7 +182,7 @@ class TickTestCase(BaseTestCase):
         }
         self.assertEqual(self.summarize_nodes(running_nodes),
                          expected_node_summaries_before_tick)
-        self.runner.tick_workflow(workflow)
+        self.engine.tick_workflow(workflow)
         expected_node_summaries_after_tick = {
             node.id: self.summarize_node(node, overrides={'tick_count': 1,
                                                           'status': 'RUNNING'})
@@ -203,7 +203,7 @@ class TickTestCase(BaseTestCase):
     def test_sets_status_to_completed_if_no_incomplete_nodes(self):
         workflow = Workflow(root_node=BaseNode(status='COMPLETED'))
         self.assertTrue(workflow.status != 'COMPLETED')
-        self.runner.tick_workflow(workflow)
+        self.engine.tick_workflow(workflow)
         self.assertTrue(workflow.status == 'COMPLETED')
 
 if __name__ == '__main__':

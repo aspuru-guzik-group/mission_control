@@ -4,7 +4,7 @@ from uuid import uuid4
 from .workflow import Workflow
 
 
-class BaseWorkflowRunner(object):
+class WorkflowEngine(object):
     def __init__(self):
         self.node_class_registry = OrderedDict()
 
@@ -100,5 +100,5 @@ class BaseWorkflowRunner(object):
             self.tick_node(node=node)
 
     def tick_node(self, node=None):
-        node.tick(runner=self)
+        node.tick(engine=self)
 
