@@ -10,7 +10,7 @@ def uuid_model_str(instance):
         uuid=instance.uuid)
 
 class Mission(TimeStampedModel):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4,
+    uuid = models.CharField(primary_key=True, default=uuid.uuid4,
                             editable=False)
     name = models.CharField(null=True, max_length=1024)
 
@@ -23,10 +23,8 @@ class WorkflowStatuses(enum.Enum):
     Completed = {'label': 'completed'}
 
 class Workflow(TimeStampedModel):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4,
+    uuid = models.CharField(primary_key=True, default=uuid.uuid4,
                             editable=False)
-    spec = models.ForeignKey('WorkflowSpec', null=True,
-                             on_delete=models.CASCADE)
     serialization = models.TextField(null=True)
     mission = models.ForeignKey('Mission', null=True, on_delete=models.CASCADE)
     status = models.CharField(null=True, max_length=32,
@@ -38,7 +36,7 @@ class Workflow(TimeStampedModel):
         return uuid_model_str(self)
 
 class WorkflowJob(TimeStampedModel):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4,
+    uuid = models.CharField(primary_key=True, default=uuid.uuid4,
                             editable=False)
     workflow = models.ForeignKey(Workflow, on_delete=models.CASCADE,
                                  related_name='workflow_jobs')
@@ -51,21 +49,3 @@ class WorkflowJob(TimeStampedModel):
             class_name=self.__class__.__name__,
             wf=self.workflow_id,
             j=self.job_id)
-
-class WorkflowSpec(TimeStampedModel):
-    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4,
-                            editable=False)
-    key = models.CharField(null=True, max_length=1024)
-    path = models.CharField(null=True, max_length=1024)
-    label = models.CharField(null=True, max_length=1024)
-    error = models.CharField(null=True, max_length=1024)
-    serialization = models.TextField(null=True)
-
-    def __str__(self):
-        return (
-            '<{class_name}: {{label: {label}, key: {key}, uuid: {uuid}}}>'
-        ).format(
-            class_name=self.__class__.__name__,
-            label=self.label,
-            key=self.key,
-            uuid=self.uuid)
