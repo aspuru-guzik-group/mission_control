@@ -27,8 +27,9 @@ class DeserializationTestCase(BaseTestCase):
 
     def setup_node_classes(self):
         class BaseNode(object):
-            def __init__(self, *args, id=None, **kwargs):
+            def __init__(self, *args, id=None, status=None, **kwargs):
                 self.id = id
+                self.status = status
 
         self.node_classes = {name: type(name, (BaseNode,), {})
                              for name in ['Type1', 'Type2', 'Type3']}
@@ -59,8 +60,15 @@ class DeserializationTestCase(BaseTestCase):
             expected_nodes[expected_node.id] = expected_node
 
         def summarize_nodes(nodes):
-            return {node.id: {'node_type': type(node), '__dict__': node.__dict__}
-                    for node in nodes.values()}
+            return {
+                node.id: {
+                    'id': node.id,
+                    'node_type': type(node),
+                    'status': node.status,
+                }
+                for node in nodes.values()
+            }
+
         self.assertEqual(summarize_nodes(self.workflow.nodes),
                          summarize_nodes(expected_nodes))
 

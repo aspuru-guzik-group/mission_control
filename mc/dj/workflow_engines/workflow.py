@@ -9,6 +9,9 @@ class BaseNode(object):
         self.status = status
         self.state = state
 
+    @property
+    def node_type(self): return self.__class__.__name__
+
 class Workflow(object):
     def __init__(self, root_node=None):
         self.nodes = {}
@@ -24,6 +27,7 @@ class Workflow(object):
     def add_node(self, node=None):
         assert hasattr(node, 'id')
         self.nodes[node.id] = node
+        node.workflow = self
 
     def add_edges(self, edges=None):
         for edge in edges: self.add_edge(edge=edge)

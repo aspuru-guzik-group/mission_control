@@ -45,11 +45,18 @@ class AddNodesTestCase(BaseTestCase):
                          [call(node=node) for node in nodes])
 
 class AddNodeTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.node = self.generate_node()
+
     def test_adds_node(self):
-        node = self.generate_node()
-        self.assertFalse(node.id in self.workflow.nodes)
-        self.workflow.add_node(node=node)
-        self.assertEqual(self.workflow.nodes[node.id], node)
+        self.assertFalse(self.node.id in self.workflow.nodes)
+        self.workflow.add_node(node=self.node)
+        self.assertEqual(self.workflow.nodes[self.node.id], self.node)
+
+    def test_sets_workflow_on_node(self):
+        self.workflow.add_node(node=self.node)
+        self.assertEqual(self.node.workflow, self.workflow)
 
 class AddEdgesTestCase(BaseTestCase):
     def setUp(self):
