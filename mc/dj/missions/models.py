@@ -20,9 +20,9 @@ class Mission(TimeStampedModel):
         return uuid_model_str(self)
 
 class WorkflowStatuses(enum.Enum):
-    Pending = {'label': 'pending'}
-    Running = {'label': 'running'}
-    Completed = {'label': 'completed'}
+    PENDING = {'label': 'pending'}
+    RUNNING = {'label': 'running'}
+    COMPLETED = {'label': 'completed'}
 
 class Workflow(TimeStampedModel):
     uuid = models.CharField(primary_key=True, default=str_uuid4,
@@ -32,7 +32,7 @@ class Workflow(TimeStampedModel):
     status = models.CharField(null=True, max_length=32,
                               choices=[(status.name, status.value['label'])
                                        for status in WorkflowStatuses],
-                              default=WorkflowStatuses.Pending.name)
+                              default=WorkflowStatuses.PENDING.name)
     claimed = models.NullBooleanField(null=True, default=False)
 
     def __str__(self):

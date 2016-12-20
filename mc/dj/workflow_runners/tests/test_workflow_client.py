@@ -9,9 +9,9 @@ class WorkflowClientTestCase(unittest.TestCase):
 
     def test_has_required_methods(self):
         required_methods = [
-            'claim_workflow_records',
-            'fetch_claimable_workflow_records',
-            'update_workflow_records'
+            'claim_workflows',
+            'fetch_claimable_workflows',
+            'update_workflows'
         ]
         method_existences = {
             method_name: getattr(

@@ -18,8 +18,8 @@ class ListWorkflowsTestCase(APITestCase):
                          sorted(expected_data, key=lambda j:j['uuid']))
 
     def test_status_filtering(self):
-        statuses = [WorkflowStatuses.Pending.name,
-                    WorkflowStatuses.Running.name]
+        statuses = [WorkflowStatuses.PENDING.name,
+                    WorkflowStatuses.RUNNING.name]
         workflows_by_status = {
             status: [Workflow.objects.create(status=status) for i in range(3)]
             for status in statuses
@@ -38,7 +38,7 @@ class PatchWorkflowTestCase(APITestCase):
 
     def test_patch_workflow(self):
         workflow_to_patch = self.workflows[0]
-        new_values = {'status': WorkflowStatuses.Running.name}
+        new_values = {'status': WorkflowStatuses.RUNNING.name}
         response = self.client.patch('/workflows/%s/' % workflow_to_patch.uuid,
                                      new_values)
         self.assertEqual(response.status_code, 200)

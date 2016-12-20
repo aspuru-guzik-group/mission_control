@@ -207,7 +207,7 @@ class HasIncompleteNodesTestCase(BaseTestCase):
         self.assertTrue(self.workflow.has_incomplete_nodes())
 
     def test_does_not_have_incomplete(self):
-        self.workflow.add_node(self.generate_node(status='COMPLETE'))
+        self.workflow.add_node(self.generate_node(status='COMPLETED'))
         self.assertFalse(self.workflow.has_incomplete_nodes())
 
 

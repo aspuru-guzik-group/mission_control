@@ -48,7 +48,8 @@ class DeserializationTestCase(BaseTestCase):
                 {'src_id': 'a', 'dest_id': 'b'},
                 {'src_id': 'b', 'dest_id': 'c'},
                 {'src_id': 'b', 'dest_id': 'd'},
-            ]
+            ],
+            'status': 'status',
         }
         self.workflow = self.engine.deserialize_workflow(
             serialized_workflow=self.serialized_workflow)
@@ -85,6 +86,10 @@ class DeserializationTestCase(BaseTestCase):
                 'dest': self.workflow.nodes[dest_id]
             }
         self.assertEqual(self.workflow.edges, expected_edges)
+
+    def test_has_expected_status(self):
+        self.assertEqual(
+            self.workflow.status, self.serialized_workflow['status'])
 
 
 class SerializationTestCase(BaseTestCase):

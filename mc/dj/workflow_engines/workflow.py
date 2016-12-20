@@ -85,7 +85,7 @@ class Workflow(object):
         return self.filter_nodes(filters=[state_filter])
 
     def has_incomplete_nodes(self):
-        filter_fn = lambda node: node.status != 'COMPLETE'
+        filter_fn = lambda node: node.status != 'COMPLETED'
         incomplete_nodes = self.filter_nodes(filters=[filter_fn])
         return len(incomplete_nodes) > 0
 

@@ -75,7 +75,7 @@ class FetchClaimableWorkflowRecordsTestCase(BaseTestCase):
     def test_fetch_claimable_workflow_records(self):
         self.runner.fetch_claimable_workflow_records()
         self.assertEqual(
-            self.workflow_client.fetch_claimable_workflow_records.call_count, 1)
+            self.workflow_client.fetch_claimable_workflows.call_count, 1)
 
 class ProcessClaimableRecordsBase(BaseTestCase):
     def setUp(self):
@@ -92,7 +92,7 @@ class ProcessClaimableRecordsBase(BaseTestCase):
 class ProcessClaimableWorkflowRecordsTestCase(ProcessClaimableRecordsBase):
     def setUp(self):
         super().setUp()
-        self.workflow_client.claim_workflow_records.return_value = {
+        self.workflow_client.claim_workflows.return_value = {
             self.workflow_record['uuid']: self.claimed}
 
     def test_calls_tick_workflow_record(self):
@@ -100,14 +100,14 @@ class ProcessClaimableWorkflowRecordsTestCase(ProcessClaimableRecordsBase):
         self.assertEqual(self.mocks['runner']['tick_workflow_record'].call_args,
                          call(workflow_record=self.claimed))
 
-    def test_calls_update_with_updated_reserialization(self):
+    def test_calls_update(self):
+        mock_updates = {'junk': 'updates'}
+        self.mocks['runner']['tick_workflow_record'].return_value = mock_updates
         self.runner.process_claimable_workflow_record(self.workflow_record)
-        expected_serialization = self.mocks['runner']['tick_workflow_record']\
-                .return_value
         self.assertEqual(
             self.mocks['runner']['update_workflow_record'].call_args,
             call(workflow_record=self.claimed, updates={
-                'serialization': expected_serialization}))
+                **mock_updates, 'claimed': False}))
 
     def test_handles_tick_exception(self):
         exception = Exception("some exception")
@@ -120,7 +120,7 @@ class ProcessClaimableWorkflowRecordsTestCase(ProcessClaimableRecordsBase):
 class ProcessUnclaimableWorkflowRecordsTestCase(ProcessClaimableRecordsBase):
     def setUp(self):
         super().setUp()
-        self.workflow_client.claim_workflow_records.return_value = {
+        self.workflow_client.claim_workflows.return_value = {
             self.workflow_record['uuid']: None}
 
     def test_does_not_call_tick_workflow_record(self):
@@ -131,21 +131,36 @@ class ProcessUnclaimableWorkflowRecordsTestCase(ProcessClaimableRecordsBase):
 class TickWorkflowRecord(BaseTestCase):
     def setUp(self):
         super().setUp()
+        self.patchers = {
+            'json': patch.multiple('json', loads=DEFAULT, dumps=DEFAULT)
+        }
+        self.mocks = self.start_patchers(self.patchers)
         self.workflow_record = MagicMock()
 
     def test_calls_engine_tick_with_deserialization(self):
         self.runner.tick_workflow_record(workflow_record=self.workflow_record)
+        self.assertEqual(self.mocks['json']['loads'].call_args,
+                         call(self.workflow_record['serialization']))
+        self.assertEqual(
+            self.workflow_engine.deserialize_workflow.call_args,
+            call(serialized_workflow=self.mocks['json']['loads'].return_value))
         expected_deserialized_workflow = self.workflow_engine\
                 .deserialize_workflow.return_value
         self.assertEqual(
             self.workflow_engine.tick_workflow.call_args,
             call(workflow=expected_deserialized_workflow))
 
-    def test_returns_engine_serialize(self):
+    def test_returns_updates(self):
         result = self.runner.tick_workflow_record(
             workflow_record=self.workflow_record)
-        expected_result = self.workflow_engine.serialize_workflow.return_value
-        self.assertEqual(result, expected_result)
+        serialization = self.workflow_engine.serialize_workflow.return_value
+        self.assertEqual(
+            self.mocks['json']['dumps'].call_args,
+            call(serialization))
+        self.assertEqual(
+            result, {
+                'serialization': self.mocks['json']['dumps'].return_value,
+                'status': serialization['status']})
 
 class UpdateWorkflowRecordTestCase(BaseTestCase):
     def test_update_workflow_record(self):
@@ -154,7 +169,7 @@ class UpdateWorkflowRecordTestCase(BaseTestCase):
         self.runner.update_workflow_record(workflow_record=workflow_record,
                                            updates=updates)
         self.assertEqual(
-            self.workflow_client.update_workflow_records.call_args, 
+            self.workflow_client.update_workflows.call_args, 
             call(updates_by_uuid={workflow_record['uuid']: updates}))
 
 if __name__ == '__main__':

@@ -1,3 +1,4 @@
+import json
 import logging
 import time
 
@@ -37,7 +38,7 @@ class BaseWorkflowRunner(object):
 
     def tick(self):
         self.tick_counter += 1
-        logging.debug('tick #%s' % self.tick_counter)
+        self.logger.debug('tick #%s' % self.tick_counter)
         processed_counter = 0
         for workflow_record in self.fetch_claimable_workflow_records():
             did_process = self.process_claimable_workflow_record(
@@ -46,42 +47,48 @@ class BaseWorkflowRunner(object):
             if processed_counter > self.max_workflows_per_tick: break
 
     def fetch_claimable_workflow_records(self):
-        logging.debug('fetch_claimable_workflows')
-        return self.workflow_client.fetch_claimable_workflow_records()
+        self.logger.debug('fetch_claimable_workflow_records')
+        return self.workflow_client.fetch_claimable_workflows()
 
     def process_claimable_workflow_record(self, workflow_record=None):
-        logging.debug('process_claimable_workflow')
+        self.logger.debug('process_claimable_workflow')
         processed = False
         claimed_record = self.claim_workflow_record(workflow_record)
         if claimed_record:
             try:
-                updated_serialization = self.tick_workflow_record(
+                updates = self.tick_workflow_record(
                     workflow_record=claimed_record)
                 self.update_workflow_record(
                     workflow_record=claimed_record,
-                    updates={'serialization': updated_serialization})
+                    updates={**updates, 'claimed': False})
                 processed = True
             except Exception as exception:
-                logging.exception(exception)
+                self.logger.exception(exception)
                 self.update_workflow_record(workflow_record=claimed_record,
                                             updates={'status': 'FAILED'})
         return processed
 
     def claim_workflow_record(self, workflow_record=None):
-        logging.debug('claim_workflow')
-        claimed_records = self.workflow_client.claim_workflow_records(
+        self.logger.debug('claim_workflow')
+        claimed_records = self.workflow_client.claim_workflows(
             uuids=[workflow_record['uuid']])
         return claimed_records.get(workflow_record['uuid'], False)
 
     def tick_workflow_record(self, workflow_record=None):
+        json_workflow = workflow_record['serialization']
+        serialized_workflow = json.loads(json_workflow)
         workflow = self.workflow_engine.deserialize_workflow(
-            serialization=workflow_record['serialization'])
+            serialized_workflow=serialized_workflow)
         self.workflow_engine.tick_workflow(workflow=workflow)
         updated_serialization = self.workflow_engine.serialize_workflow(
             workflow=workflow)
-        return updated_serialization
+        updates = {
+            'serialization': json.dumps(updated_serialization),
+            'status': updated_serialization['status'],
+        }
+        return updates
 
     def update_workflow_record(self, workflow_record=None, updates=None):
-        self.workflow_client.update_workflow_records(updates_by_uuid={
+        self.workflow_client.update_workflows(updates_by_uuid={
             workflow_record['uuid']: updates})
 

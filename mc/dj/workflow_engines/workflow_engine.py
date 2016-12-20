@@ -32,6 +32,7 @@ class WorkflowEngine(object):
             for serialized_edge in serialized_workflow.get('edges', [])
         ]
         workflow.add_edges(edges=edges)
+        workflow.status = serialized_workflow['status']
         return workflow
 
     def deserialize_node(self, serialized_node):

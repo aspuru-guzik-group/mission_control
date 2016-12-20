@@ -26,7 +26,7 @@ class WorkflowTestCase(TestCase):
         self.assertTrue(workflow.uuid is not None)
         self.assertTrue(workflow.created is not None)
         self.assertTrue(workflow.modified is not None)
-        self.assertEqual(workflow.status, WorkflowStatuses.Pending.name)
+        self.assertEqual(workflow.status, WorkflowStatuses.PENDING.name)
         self.assertTrue(hasattr(workflow, 'workflow_jobs'))
         self.assertTrue(hasattr(workflow, 'claimed'))
 

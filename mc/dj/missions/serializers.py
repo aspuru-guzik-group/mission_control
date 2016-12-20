@@ -7,4 +7,4 @@ class WorkflowSerializer(serializers.ModelSerializer):
         model = Workflow
         fields = ('uuid', 'serialization', 'status', 'created', 'modified',
                   'mission', 'claimed')
-        read_only_fields = ('uuid', 'created', 'modified', 'claimed')
+        read_only_fields = ('uuid', 'created', 'modified')
