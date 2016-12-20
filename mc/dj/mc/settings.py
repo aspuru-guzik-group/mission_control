@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'job_runners',
     'workflow_engines',
     'workflow_runners',
+    'workflow_client',
 ]
 
 MIDDLEWARE = [
