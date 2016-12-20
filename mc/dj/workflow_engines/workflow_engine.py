@@ -23,6 +23,9 @@ class WorkflowEngine(object):
             for serialized_node in serialized_workflow.get('nodes', [])
         ]
         workflow.add_nodes(nodes=nodes)
+        root_node_id = serialized_workflow.get('root_node_id')
+        if root_node_id is not None:
+            workflow.root_node = workflow.nodes[root_node_id]
         edges = [
             {'src': workflow.nodes[serialized_edge['src_id']],
              'dest': workflow.nodes[serialized_edge['dest_id']]}
@@ -59,6 +62,8 @@ class WorkflowEngine(object):
             'state': workflow.state,
             'status': workflow.status,
         }
+        if workflow.root_node is not None:
+            serialized_workflow['root_node_id'] = workflow.root_node.id
         return serialized_workflow
 
     def serialize_nodes(self, nodes=None):

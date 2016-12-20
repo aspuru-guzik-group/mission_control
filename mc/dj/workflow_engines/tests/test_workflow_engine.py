@@ -35,56 +35,54 @@ class DeserializationTestCase(BaseTestCase):
         for name, node_class in self.node_classes.items():
             self.engine.register_node_class(node_class=node_class)
 
-    def test_deserializes_workflow(self):
-        serialized_workflow = {
+        self.serialized_workflow = {
             'nodes': [
                 {'id': 'a', 'type': 'Type1', 'status': 'COMPLETED'},
                 {'id': 'b', 'type': 'Type2', 'status': 'COMPLETED'},
                 {'id': 'c', 'type': 'Type1', 'status': 'RUNNING'},
                 {'id': 'd', 'type' : 'Type2', 'status': 'RUNNING'},
             ],
+            'root_node_id': 'a',
             'edges': [
                 {'src_id': 'a', 'dest_id': 'b'},
                 {'src_id': 'b', 'dest_id': 'c'},
                 {'src_id': 'b', 'dest_id': 'd'},
             ]
         }
-        workflow = self.engine.deserialize_workflow(serialized_workflow)
+        self.workflow = self.engine.deserialize_workflow(
+            serialized_workflow=self.serialized_workflow)
+
+    def test_has_expected_nodes(self):
         expected_nodes = {}
-        for serialized_node in serialized_workflow['nodes']:
+        for serialized_node in self.serialized_workflow['nodes']:
             expected_node = self.engine.deserialize_node(serialized_node)
             expected_nodes[expected_node.id] = expected_node
 
         def summarize_nodes(nodes):
             return {node.id: {'type': type(node), '__dict__': node.__dict__}
                     for node in nodes.values()}
-        self.assertEqual(summarize_nodes(workflow.nodes),
+        self.assertEqual(summarize_nodes(self.workflow.nodes),
                          summarize_nodes(expected_nodes))
+
+    def test_has_expected_root_node(self):
+        self.assertEqual(self.workflow.root_node, self.workflow.nodes['a'])
+
+    def test_has_expected_edges(self):
         expected_edges = {}
-        for serialized_edge in serialized_workflow['edges']:
+        for serialized_edge in self.serialized_workflow['edges']:
             src_id, dest_id = (serialized_edge['src_id'],
                                serialized_edge['dest_id'])
             expected_edges[(src_id, dest_id)] = {
-                'src': workflow.nodes[src_id],
-                'dest': workflow.nodes[dest_id]
+                'src': self.workflow.nodes[src_id],
+                'dest': self.workflow.nodes[dest_id]
             }
-        self.assertEqual(workflow.edges, expected_edges)
+        self.assertEqual(self.workflow.edges, expected_edges)
 
 
 class SerializationTestCase(BaseTestCase):
-    def test_serializes_workflow(self):
-        workflow = self.generate_workflow()
-        serialization = self.engine.serialize_workflow(workflow)
-        expected_serialization = {
-            'nodes': [{'id': node.id, 'type': node.type, 'status': node.status,
-                       'state': node.state}
-                      for node in workflow.nodes.values()],
-            'edges': [{'src_id': edge['src'].id, 'dest_id': edge['dest'].id}
-                      for edge in workflow.edges.values()],
-            'state': workflow.state,
-            'status': workflow.status,
-        }
-        self.assertEqual(serialization, expected_serialization)
+    def setUp(self):
+        super().setUp()
+        self.workflow = self.generate_workflow()
 
     def generate_workflow(self):
         workflow = Workflow()
@@ -100,12 +98,27 @@ class SerializationTestCase(BaseTestCase):
                                state=i)
                  for i in range(3)]
         workflow.add_nodes(nodes=nodes)
+        workflow.root_node = nodes[0]
         edges = [{'src': nodes[0], 'dest': nodes[1]},
                  {'src': nodes[1], 'dest': nodes[2]}]
         workflow.add_edges(edges=edges)
         workflow.state = 'workflow_state'
         workflow.status = 'workflow_status'
         return workflow
+
+    def test_serializes_workflow(self):
+        serialization = self.engine.serialize_workflow(self.workflow)
+        expected_serialization = {
+            'nodes': [{'id': node.id, 'type': node.type, 'status': node.status,
+                       'state': node.state}
+                      for node in self.workflow.nodes.values()],
+            'root_node_id': self.workflow.root_node.id,
+            'edges': [{'src_id': edge['src'].id, 'dest_id': edge['dest'].id}
+                      for edge in self.workflow.edges.values()],
+            'state': self.workflow.state,
+            'status': self.workflow.status,
+        }
+        self.assertEqual(serialization, expected_serialization)
 
 class TickTestCase(BaseTestCase):
     def test_starts_nearest_pending_nodes(self):
