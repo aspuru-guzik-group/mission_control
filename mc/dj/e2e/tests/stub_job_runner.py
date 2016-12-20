@@ -2,7 +2,7 @@ from job_runners.base_job_runner import BaseJobRunner
 from job_spec_client.job_spec_client import MissionControlJobSpecClient
 
 
-def generate_stub_runner(base_url=None, request_client=None):
+def generate_stub_job_runner(base_url=None, request_client=None):
     class StubJobDirFactory(object):
         def build_dir_for_spec(self, job_spec=None):
             return {}

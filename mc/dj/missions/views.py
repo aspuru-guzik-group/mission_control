@@ -3,7 +3,7 @@ from django.views.decorators.http import require_http_methods
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 
-from .models import Workflow, WorkflowStatuses
+from .models import Workflow
 from .serializers import WorkflowSerializer
 
 
@@ -21,10 +21,10 @@ def claim_workflows(request):
         uuids = csv_uuids.split(',')
         workflows = Workflow.objects.filter(uuid__in=uuids)
         for workflow in workflows:
-            if workflow.status == WorkflowStatuses.Pending.name:
-                workflow.status = WorkflowStatuses.Claimed.name
+            if workflow.claimed:
+                result[workflow.uuid] = None
+            else:
+                workflow.claimed = True
                 workflow.save()
                 result[workflow.uuid] = WorkflowSerializer(workflow).data
-            else:
-                result[workflow.uuid] = None
     return JsonResponse(result)

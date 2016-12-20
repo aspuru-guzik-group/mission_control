@@ -4,7 +4,7 @@ from django.test import TestCase, override_settings
 import json
 from jobs.models import Job
 
-from .stub_runner import generate_stub_runner
+from .stub_job_runner import generate_stub_job_runner
 
 BASE_PATH = 'test_api'
 urlpatterns = [
@@ -12,12 +12,12 @@ urlpatterns = [
 ]
 
 @override_settings(ROOT_URLCONF=__name__)
-class ClientJobRunner_X_Api_TestCase(TestCase):
+class JobRunnerE2ETestCase(TestCase):
     def setUp(self):
         self.num_jobs = 10
         self.jobs = self.generate_jobs()
-        self.runner = generate_stub_runner(base_url='/%s' % BASE_PATH,
-                                           request_client=self.client)
+        self.runner = generate_stub_job_runner(base_url='/%s' % BASE_PATH,
+                                               request_client=self.client)
         orig_patch = self.client.patch
         def json_patch(path, data=None, **kwargs):
             return orig_patch(path, json.dumps(data),

@@ -1,8 +1,7 @@
 from django.test import TestCase
 
 from jobs.models import Job
-from ..models import (Mission, WorkflowStatuses, Workflow, WorkflowJob,
-                      WorkflowSpec)
+from ..models import (Mission, WorkflowStatuses, Workflow, WorkflowJob)
 
 class MissionTestCase(TestCase):
     def test_has_expected_fields(self):
@@ -18,7 +17,6 @@ class MissionTestCase(TestCase):
 class WorkflowTestCase(TestCase):
     def test_has_expected_fields(self):
         kwargs = {
-            'spec': WorkflowSpec.objects.create(),
             'mission': Mission.objects.create(name='mission'),
             'serialization': 'some serialization',
         }
@@ -30,6 +28,7 @@ class WorkflowTestCase(TestCase):
         self.assertTrue(workflow.modified is not None)
         self.assertEqual(workflow.status, WorkflowStatuses.Pending.name)
         self.assertTrue(hasattr(workflow, 'workflow_jobs'))
+        self.assertTrue(hasattr(workflow, 'claimed'))
 
 class WorkflowJobTestCase(TestCase):
     def test_has_expected_fields(self):
@@ -45,16 +44,3 @@ class WorkflowJobTestCase(TestCase):
         self.assertTrue(workflow_job.job is kwargs['job'])
         self.assertEqual(workflow_job.finished, False)
         self.assertEqual(workflow_job.meta, {})
-
-class WorkflowSpecTestCase(TestCase):
-    def test_has_expected_fields(self):
-        kwargs = {
-            'key': 'some key',
-            'serialization': 'some serialization',
-        }
-        workflow_spec = WorkflowSpec.objects.create(**kwargs)
-        self.assertTrue(workflow_spec.uuid is not None)
-        self.assertTrue(workflow_spec.created is not None)
-        self.assertTrue(workflow_spec.modified is not None)
-        for attr, value in kwargs.items():
-            self.assertEqual(getattr(workflow_spec, attr), value)
