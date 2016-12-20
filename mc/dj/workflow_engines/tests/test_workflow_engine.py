@@ -37,10 +37,10 @@ class DeserializationTestCase(BaseTestCase):
 
         self.serialized_workflow = {
             'nodes': [
-                {'id': 'a', 'type': 'Type1', 'status': 'COMPLETED'},
-                {'id': 'b', 'type': 'Type2', 'status': 'COMPLETED'},
-                {'id': 'c', 'type': 'Type1', 'status': 'RUNNING'},
-                {'id': 'd', 'type' : 'Type2', 'status': 'RUNNING'},
+                {'id': 'a', 'node_type': 'Type1', 'status': 'COMPLETED'},
+                {'id': 'b', 'node_type': 'Type2', 'status': 'COMPLETED'},
+                {'id': 'c', 'node_type': 'Type1', 'status': 'RUNNING'},
+                {'id': 'd', 'node_type' : 'Type2', 'status': 'RUNNING'},
             ],
             'root_node_id': 'a',
             'edges': [
@@ -59,7 +59,7 @@ class DeserializationTestCase(BaseTestCase):
             expected_nodes[expected_node.id] = expected_node
 
         def summarize_nodes(nodes):
-            return {node.id: {'type': type(node), '__dict__': node.__dict__}
+            return {node.id: {'node_type': type(node), '__dict__': node.__dict__}
                     for node in nodes.values()}
         self.assertEqual(summarize_nodes(self.workflow.nodes),
                          summarize_nodes(expected_nodes))
@@ -86,17 +86,14 @@ class SerializationTestCase(BaseTestCase):
 
     def generate_workflow(self):
         workflow = Workflow()
-        class BaseComponent(object):
-            def __init__(self, id=None, type=None, status=None, state=None,
-                         **kwargs):
+        class BaseNode(object):
+            node_type = 'BaseNode'
+            def __init__(self, id=None, status=None, state=None, **kwargs):
                 self.id = id
-                self.type = type
                 self.status = status
                 self.state = state
 
-        nodes = [BaseComponent(id=i, type='type_%s' % i, status='status_%s' % i,
-                               state=i)
-                 for i in range(3)]
+        nodes = [BaseNode(id=i, status='s_%s' % i, state=i) for i in range(3)]
         workflow.add_nodes(nodes=nodes)
         workflow.root_node = nodes[0]
         edges = [{'src': nodes[0], 'dest': nodes[1]},
@@ -109,8 +106,8 @@ class SerializationTestCase(BaseTestCase):
     def test_serializes_workflow(self):
         serialization = self.engine.serialize_workflow(self.workflow)
         expected_serialization = {
-            'nodes': [{'id': node.id, 'type': node.type, 'status': node.status,
-                       'state': node.state}
+            'nodes': [{'id': node.id, 'node_type': node.node_type,
+                       'status': node.status, 'state': node.state}
                       for node in self.workflow.nodes.values()],
             'root_node_id': self.workflow.root_node.id,
             'edges': [{'src_id': edge['src'].id, 'dest_id': edge['dest'].id}
