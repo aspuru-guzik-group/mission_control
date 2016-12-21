@@ -40,17 +40,17 @@ class BaseWorkflowRunner(object):
         self.tick_counter += 1
         self.logger.debug('tick #%s' % self.tick_counter)
         processed_counter = 0
-        for workflow_record in self.fetch_claimable_workflow_records():
-            did_process = self.process_claimable_workflow_record(
-                workflow_record=workflow_record)
+        for workflow_record in self.fetch_tickable_workflow_records():
+            did_process = self.process_workflow_record(workflow_record)
             if did_process: processed_counter += 1
             if processed_counter > self.max_workflows_per_tick: break
 
-    def fetch_claimable_workflow_records(self):
-        self.logger.debug('fetch_claimable_workflow_records')
-        return self.workflow_client.fetch_claimable_workflows()
+    def fetch_tickable_workflow_records(self):
+        self.logger.debug('fetch_tickable_workflow_records')
+        return self.workflow_client.fetch_workflows(query_params={
+            'claimed': False, 'tickable': True})
 
-    def process_claimable_workflow_record(self, workflow_record=None):
+    def process_workflow_record(self, workflow_record=None):
         self.logger.debug('process_claimable_workflow')
         processed = False
         claimed_record = self.claim_workflow_record(workflow_record)
@@ -82,10 +82,10 @@ class BaseWorkflowRunner(object):
         self.workflow_engine.tick_workflow(workflow=workflow)
         updated_serialization = self.workflow_engine.serialize_workflow(
             workflow=workflow)
-        updates = {
-            'serialization': json.dumps(updated_serialization),
-            'status': updated_serialization['status'],
-        }
+        updates = {'serialization': json.dumps(updated_serialization)}
+        serialized_status = updated_serialization['status']
+        if serialized_status == 'COMPLETED':
+            updates['status'] = serialized_status
         return updates
 
     def update_workflow_record(self, workflow_record=None, updates=None):

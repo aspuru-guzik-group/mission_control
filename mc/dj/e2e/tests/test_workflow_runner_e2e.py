@@ -147,8 +147,9 @@ class WorkflowRunnerE2ETestCase(TestCase):
             states[-1]['workflows'][self.workflow_uuid]['status'], 'COMPLETED')
 
         tick_and_capture_state(label='g')
-        # HERE! FIND A BETTER WAY TO COMPARE.
-        self.assertEqual(states[-1], states[-2])
+        self.assertEqual(
+            states[-2]['workflows'][self.workflow_uuid]['modified'],
+            states[-1]['workflows'][self.workflow_uuid]['modified'])
 
     def get_state(self, prev_state=None):
         state = {

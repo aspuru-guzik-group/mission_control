@@ -7,6 +7,9 @@ from ..models import Workflow, WorkflowStatuses
 from ..serializers import WorkflowSerializer
 
 
+def key_by_uuid(items=None):
+    return {item['uuid']: item for item in items}
+
 @override_settings(ROOT_URLCONF='missions.urls')
 class ListWorkflowsTestCase(APITestCase):
     def test_list_workflows(self):
@@ -14,8 +17,7 @@ class ListWorkflowsTestCase(APITestCase):
         response = self.client.get('/workflows/')
         expected_data = [WorkflowSerializer(workflow).data
                          for workflow in workflows]
-        self.assertEqual(sorted(response.data, key=lambda j: j['uuid']),
-                         sorted(expected_data, key=lambda j:j['uuid']))
+        self.assertEqual(key_by_uuid(response.data), key_by_uuid(expected_data))
 
     def test_status_filtering(self):
         statuses = [WorkflowStatuses.PENDING.name,
@@ -28,8 +30,37 @@ class ListWorkflowsTestCase(APITestCase):
             response = self.client.get('/workflows/', {'status': status})
             expected_data = [WorkflowSerializer(workflow).data
                              for workflow in workflows_by_status[status]]
-            self.assertEqual(sorted(response.data, key=lambda j: j['uuid']),
-                             sorted(expected_data, key=lambda j: j['uuid']))
+            self.assertEqual(key_by_uuid(response.data),
+                             key_by_uuid(expected_data))
+
+@override_settings(ROOT_URLCONF='missions.urls')
+class TickableWorkflowsTestCase(APITestCase):
+    def setUp(self):
+        super().setUp()
+        self.workflow_groups = self.generate_workflow_groups()
+
+    def generate_workflow_groups(self):
+        workflow_groups = {
+            'tickable': [
+                Workflow.objects.create(claimed=True, status=status.name)
+                for status in WorkflowStatuses.tickable_statuses
+            ],
+            'untickable': [
+                Workflow.objects.create(claimed=True,
+                                        status=WorkflowStatuses.COMPLETED.name)
+            ],
+        }
+        for workflow_group in workflow_groups.items():
+            self.assertTrue(len(workflow_group) > 0)
+        return workflow_groups
+
+    def test_returns_tickable_workflows(self):
+        response = self.client.get('/workflows/', {'tickable': True})
+        expected_data = [
+            WorkflowSerializer(workflow).data
+            for workflow in self.workflow_groups['tickable']
+        ]
+        self.assertEqual(key_by_uuid(response.data), key_by_uuid(expected_data))
 
 @override_settings(ROOT_URLCONF='missions.urls')
 class PatchWorkflowTestCase(APITestCase):

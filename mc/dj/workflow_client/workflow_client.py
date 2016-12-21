@@ -14,9 +14,6 @@ class MissionControlWorkflowClient(object):
             response = self.request_client.get(workflows_url)
         return response.json()
 
-    def fetch_claimable_workflows(self):
-        return self.fetch_workflows(query_params={'claimed': False})
-
     def claim_workflows(self, uuids=None):
         claim_workflows_url = self.base_url + 'claim_workflows/'
         response = self.request_client.post(claim_workflows_url, {'uuids': uuids})

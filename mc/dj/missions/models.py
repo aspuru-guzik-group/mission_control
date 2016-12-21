@@ -23,6 +23,8 @@ class WorkflowStatuses(enum.Enum):
     PENDING = {'label': 'pending'}
     RUNNING = {'label': 'running'}
     COMPLETED = {'label': 'completed'}
+WorkflowStatuses.tickable_statuses = [getattr(WorkflowStatuses, status)
+                                      for status in ['PENDING', 'RUNNING']]
 
 class Workflow(TimeStampedModel):
     uuid = models.CharField(primary_key=True, default=str_uuid4,

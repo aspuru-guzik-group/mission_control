@@ -44,14 +44,6 @@ class FetchWorkflowsTestCase(BaseTestCase):
         fetched_workflows = self.client.fetch_workflows()
         self.assertEqual(fetched_workflows, workflows)
 
-class FetchClaimableWorkflowsTest(BaseTestCase):
-    def test_calls_fetch_workflows_with_query_params(self):
-        with patch.multiple(self.client, fetch_workflows=DEFAULT):
-            self.client.fetch_claimable_workflows()
-            self.assertEqual(
-                self.client.fetch_workflows.call_args,
-                call(query_params={'claimed': False}))
-
 class ClaimWorkflowsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
