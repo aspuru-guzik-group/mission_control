@@ -27,9 +27,10 @@ class DeserializationTestCase(BaseTestCase):
 
     def setup_node_classes(self):
         class BaseNode(object):
-            def __init__(self, *args, id=None, status=None, **kwargs):
+            def __init__(self, *args, id=None, status=None, ctx=None, **kwargs):
                 self.id = id
                 self.status = status
+                self.ctx = ctx
 
         self.node_classes = {name: type(name, (BaseNode,), {})
                              for name in ['Type1', 'Type2', 'Type3']}
@@ -66,6 +67,7 @@ class DeserializationTestCase(BaseTestCase):
                     'id': node.id,
                     'node_type': type(node),
                     'status': node.status,
+                    'ctx': node.ctx,
                 }
                 for node in nodes.values()
             }

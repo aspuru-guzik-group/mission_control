@@ -5,8 +5,9 @@ from .workflow import Workflow
 
 
 class WorkflowEngine(object):
-    def __init__(self):
+    def __init__(self, ctx=None):
         self.node_class_registry = OrderedDict()
+        self.ctx = ctx
 
     def register_node_class(self, node_class=None, key=None, test_fn=None):
         if key is None: key = str(uuid4())
@@ -44,7 +45,7 @@ class WorkflowEngine(object):
             raise Exception(msg)
         node_kwargs = self.get_node_kwargs_for_serialized_node(
             serialized_node=serialized_node)
-        node = node_class(**node_kwargs)
+        node = node_class(ctx=self.ctx, **node_kwargs)
         return node
 
     def get_node_class_for_serialized_node(self, serialized_node=None):
