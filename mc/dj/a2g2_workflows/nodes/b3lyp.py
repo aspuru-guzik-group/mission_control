@@ -1,53 +1,20 @@
-import logging
+from .job_wrapper import JobWrapperNode
 
 
-class B3LYPNode(object):
-    def __init__(self, *args, create_job=None, status=None, data=None,
-                 jobs=None, logger=None, **kwargs):
-        self.create_job = create_job
-        self.status = status
-        self.data = data
-        self.jobs = jobs
-        self.logger = logger or logging
+class B3LYPNode(JobWrapperNode):
+    def __init__(self, *args, data=None, **kwargs):
+        self.validate_data(data=data)
+        super().__init__(*args, data=data, **kwargs)
 
-    def tick(self):
-        self.increment_tick_counter()
-        try: 
-            if self.data['ticks'] == 1: self.initial_tick()
-            else: self.intermediate_tick()
-        except Exception as e:
-            self.logger.exception(e)
-            self.status = 'FAILED'
+    def validate_data(self, data=None):
+        assert data['input']['xyz'] is not None
+        assert data['input']['b3lyp_spec'] is not None
 
-    def increment_tick_counter(self):
-        if 'ticks' not in self.data: self.data['ticks'] = 0
-        self.data['ticks'] += 1
-
-    def initial_tick(self):
-        assert self.data['inputs']['xyz'] is not None
-        assert self.data['inputs']['b3lyp_spec'] is not None
-        self.data['job_id'] = self.create_job(job_kwargs={
-            'type': 'b3lyp',
-            'spec': {
-                'xyz': self.data['inputs']['xyz'],
-                'b3lyp': self.data['inputs']['b3lyp_spec']
+    def get_job_input(self):
+        return {
+            'job_type': 'b3lyp',
+            'job_spec': {
+                'xyz': self.data['input']['xyz'],
+                'b3lyp': self.data['input']['b3lyp_spec']
             }
-        })
-        self.status = 'RUNNING'
-
-    def intermediate_tick(self):
-        job = self.get_job()
-        assert job is not None
-        if job['status'] == 'COMPLETED':
-            self.status = 'COMPLETED'
-            self.data['outputs'] = {
-                'xyz': job['data']['output_xyz']
-            }
-        elif job['status'] == 'FAILED':
-            self.status = 'FAILED'
-            self.data['error'] = job['data']['error']
-        else:
-            self.status = 'RUNNING'
-
-    def get_job(self):
-        return self.jobs[self.data['job_id']]
+        }
