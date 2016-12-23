@@ -50,8 +50,7 @@ class WorkflowRunnerE2ETestCase(TestCase):
             def tick(self, *args, **kwargs):
                 super().tick()
                 next_node = Node_1(status='PENDING')
-                self.workflow.add_node(next_node)
-                self.workflow.connect_nodes(src=self, dest=next_node)
+                self.workflow.add_node(next_node, precursors=[self])
                 self.status = 'COMPLETED'
         node_classes.append(Node_0)
 
@@ -62,8 +61,7 @@ class WorkflowRunnerE2ETestCase(TestCase):
                 super().tick()
                 if self.__class__.allow_completion:
                     next_node = Node_2(status='PENDING')
-                    self.workflow.add_node(next_node)
-                    self.workflow.connect_nodes(src=self, dest=next_node)
+                    self.workflow.add_node(next_node, precursors=[self])
                     self.status = 'COMPLETED'
         node_classes.append(Node_1)
 

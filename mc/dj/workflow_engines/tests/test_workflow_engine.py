@@ -175,7 +175,10 @@ class TickTestCase(BaseTestCase):
                 'status': node.status, **overrides}
 
     def generate_workflow_with_pending_successors(self):
-        workflow = Workflow(root_node=BaseNode(status='COMPLETED'))
+        workflow = Workflow()
+        root_node = MagicMock()
+        root_node.configure_mock(id='ROOT', status='COMPLETED')
+        workflow.add_node(root_node, as_root=True)
         self.add_branch_with_pending_leaf_to_workflow(workflow, depth=3)
         self.add_branch_with_pending_leaf_to_workflow(workflow, depth=2)
         return workflow
@@ -183,19 +186,16 @@ class TickTestCase(BaseTestCase):
     def add_branch_with_pending_leaf_to_workflow(self, workflow, depth=3):
         branch_root = MagicMock()
         branch_root.status = 'COMPLETED'
-        workflow.add_child_nodes(parent_node=workflow.root_node,
-                                 child_nodes=[branch_root])
+        workflow.add_node(node=branch_root, precursors=[workflow.root_node])
         for i in range(depth):
             child_node = MagicMock()
             child_node.status = 'COMPLETED'
             child_node.depth = depth
-            workflow.add_child_nodes(parent_node=branch_root,
-                                     child_nodes=[child_node])
+            workflow.add_node(node=child_node, precursors=[branch_root])
             branch_root = child_node
         branch_leaf = MagicMock()
         branch_leaf.status = 'PENDING'
-        workflow.add_child_nodes(parent_node=branch_root,
-                                 child_nodes=[branch_leaf])
+        workflow.add_node(node=branch_leaf, precursors=[branch_root])
 
     def test_ticks_running_tasks(self):
         workflow = self.generate_workflow_with_running_nodes()
@@ -217,12 +217,12 @@ class TickTestCase(BaseTestCase):
                          expected_node_summaries_after_tick)
 
     def generate_workflow_with_running_nodes(self):
-        workflow = Workflow(root_node=BaseNode(status='COMPLETED'))
+        workflow = Workflow()
+        workflow.add_node(BaseNode(status='COMPLETED'), as_root=True)
         for i in range(3):
             running_node = MagicMock()
-            running_node.status = 'RUNNING'
-            workflow.add_node(running_node)
-            workflow.connect_nodes(src=workflow.root_node, dest=running_node)
+            running_node.configure_mock(id=i, status='RUNNING')
+            workflow.add_node(running_node, precursors=[workflow.root_node])
         return workflow
 
     def test_sets_status_to_completed_if_no_incomplete_nodes(self):

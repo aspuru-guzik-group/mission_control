@@ -24,29 +24,51 @@ class Workflow(object):
     def add_nodes(self, nodes=None):
         for node in nodes: self.add_node(node=node)
 
-    def add_node(self, node=None):
+    def add_node(self, node=None, as_root=False, precursors=None,
+                 successors=[]):
         assert hasattr(node, 'id')
         self.nodes[node.id] = node
         node.workflow = self
+        if as_root:
+            self.root_node = node
+        if precursors:
+            for precursor in precursors:
+                self.add_edge(src=precursor, dest=node)
+        if successors:
+            for successor in successors:
+                self.add_edge(src=node, dest=successor)
+        return node
 
     def add_edges(self, edges=None):
-        for edge in edges: self.add_edge(edge=edge)
+        for edge in edges: self.add_edge(**edge)
 
-    def add_edge(self, edge=None):
-        src, dest = [edge[k] for k in ('src','dest')]
-        edge_key = (src.id, dest.id)
+    def add_edge(self, src=None, dest=None):
+        if dest is self.root_node:
+            raise Exception("Root node can not be an edge dest")
+        src_id, dest_id = [self.ensure_node_id(node) for node in [src, dest]]
+        edge_key = self.get_edge_key(src=src_id, dest=dest_id)
+        edge = {'src': self.nodes[src_id], 'dest': self.nodes[dest_id]}
         self.edges[edge_key] = edge
-        self.edges_by_node_id[src.id][edge_key] = edge
-        self.edges_by_node_id[dest.id][edge_key] = edge
+        self.edges_by_node_id[src_id][edge_key] = edge
+        self.edges_by_node_id[dest_id][edge_key] = edge
 
-    def connect_nodes(self, src=None, dest=None):
-        edge = {'src': src, 'dest': dest}
-        self.add_edge(edge=edge)
+    def get_edge_key(self, src=None, dest=None):
+        return (self.ensure_node_id(src), self.ensure_node_id(dest))
+
+    def has_edge(self, src=None, dest=None):
+        return self.get_edge_key(src=src, dest=dest) in self.edges
+
+    def ensure_node_id(self, node_or_node_id):
+        if isinstance(node_or_node_id, str) or isinstance(node_or_node_id, int):
+            node_id = node_or_node_id
+        else:
+            node_id = node_or_node_id.id
+        return node_id
 
     def add_child_nodes(self, parent_node=None, child_nodes=None):
         self.add_nodes(nodes=child_nodes)
         for child_node in child_nodes:
-            self.connect_nodes(src=parent_node, dest=child_node)
+            self.add_edge(src=parent_node, dest=child_node)
 
     def get_child_nodes(self, parent_node=None):
         parent_node_edges = self.edges_by_node_id[parent_node.id].values()
