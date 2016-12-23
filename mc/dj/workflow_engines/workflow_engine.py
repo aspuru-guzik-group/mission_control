@@ -92,9 +92,9 @@ class WorkflowEngine(object):
         }
         return serialized_edge
 
-    def tick_workflow(self, workflow=None):
+    def tick_workflow(self, workflow=None, ctx=None):
         self.start_nearest_pending_nodes(workflow=workflow)
-        self.tick_running_nodes(workflow=workflow)
+        self.tick_running_nodes(workflow=workflow, ctx=ctx)
         if not workflow.has_incomplete_nodes():
             workflow.status = 'COMPLETED'
 
@@ -102,10 +102,10 @@ class WorkflowEngine(object):
         for node in workflow.get_nearest_pending_nodes():
             node.status = 'RUNNING'
 
-    def tick_running_nodes(self, workflow=None):
+    def tick_running_nodes(self, workflow=None, ctx=None):
         for node in workflow.get_nodes_by_status(status='RUNNING'):
-            self.tick_node(node=node)
+            self.tick_node(node=node, ctx=ctx)
 
-    def tick_node(self, node=None):
-        node.tick(engine=self)
+    def tick_node(self, node=None, ctx=None):
+        node.tick(engine=self, ctx=ctx)
 
