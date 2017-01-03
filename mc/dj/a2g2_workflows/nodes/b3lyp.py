@@ -1,10 +1,8 @@
 from .job_wrapper import JobWrapperNode
 
 
-class B3LYPNode(JobWrapperNode):
-    def __init__(self, *args, data=None, **kwargs):
-        self.validate_data(data=data)
-        super().__init__(*args, data=data, **kwargs)
+class B3LYP_Node(JobWrapperNode):
+    def __init__(self, *args, **kwargs): super().__init__(self, *args, **kwargs)
 
     def validate_data(self, data=None):
         assert data['input']['xyz'] is not None

@@ -1,6 +1,9 @@
 from .base import BaseNode
 
 class A2G2_DAO_Node(BaseNode):
+    def __init__(self, *args, **kwargs):
+        super().__init__(self, *args, **kwargs)
+
     def tick(self, *args, ctx=None, **kwargs):
         try:
             a2g2_dao = ctx['a2g2_dao']

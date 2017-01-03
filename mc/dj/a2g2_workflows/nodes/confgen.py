@@ -1,10 +1,8 @@
 from .job_wrapper import JobWrapperNode
 
 
-class ConfgenNode(JobWrapperNode):
-    def __init__(self, *args, data=None, **kwargs):
-        self.validate_data(data=data)
-        super().__init__(*args, data=data, **kwargs)
+class Confgen_Node(JobWrapperNode):
+    def __init__(self, *args, **kwargs): super().__init__(self, *args, **kwargs)
 
     def validate_data(self, data=None):
         assert data['input']['smiles'] is not None
