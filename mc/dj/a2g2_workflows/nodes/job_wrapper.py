@@ -15,7 +15,7 @@ class JobWrapperNode(BaseNode):
                            'create_job': self.create_job, 'jobs': self.jobs}
         return JobNode(*args, **job_node_kwargs)
 
-    def tick(self):
+    def tick(self, *args, **kwargs):
         self.increment_tick_counter()
         try:
             if self.data['ticks'] == 1:

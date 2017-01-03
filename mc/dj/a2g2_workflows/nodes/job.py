@@ -7,7 +7,7 @@ class JobNode(BaseNode):
         self.create_job = create_job
         self.jobs = jobs
 
-    def tick(self):
+    def tick(self, *args, **kwargs):
         self.increment_tick_counter()
         try: 
             if self.data['ticks'] == 1: self.initial_tick()
