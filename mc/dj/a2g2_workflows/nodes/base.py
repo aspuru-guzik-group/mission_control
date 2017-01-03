@@ -3,12 +3,13 @@ import logging
 
 class BaseNode(object):
     def __init__(self, *args, id=None, status='PENDING', data=None, logger=None,
-                 **kwargs):
+                 workflow=None, **kwargs):
         if id is None: id = uuid4()
         self.id = id
         self.status = status
         self.data = data or {}
         self.logger = logger or logging
+        self.workflow = workflow
 
     def tick(self, *args, **kwargs): raise NotImplementedError
 

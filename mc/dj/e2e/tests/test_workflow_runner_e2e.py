@@ -92,10 +92,9 @@ class WorkflowRunnerE2ETestCase(TestCase):
 
     def populate_workflows(self):
         workflow = Workflow()
-        root_node = self.keyed_node_classes['Node_0'](
-            workflow=workflow, status='PENDING')
-        workflow.add_node(root_node)
-        workflow.root_node = root_node
+        root_node = self.keyed_node_classes['Node_0'](workflow=workflow,
+                                                      status='PENDING')
+        workflow.add_node(node=root_node, as_root=True)
         serialization = self.workflow_engine.serialize_workflow(workflow)
         workflow_model = WorkflowModel.objects.create(
             serialization=json.dumps(serialization))

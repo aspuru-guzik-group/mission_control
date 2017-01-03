@@ -13,13 +13,14 @@ class BaseNode(object):
     def node_type(self): return self.__class__.__name__
 
 class Workflow(object):
-    def __init__(self, root_node=None):
+    def __init__(self, jobs=None):
+        self.jobs = jobs or {}
         self.nodes = {}
         self.edges = {}
         self.edges_by_node_id = collections.defaultdict(dict)
         self.state = None
         self.status = None
-        self.root_node = root_node
+        self.root_node = None
 
     def add_nodes(self, nodes=None):
         for node in nodes: self.add_node(node=node)

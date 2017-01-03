@@ -103,8 +103,9 @@ class WorkflowEngine(object):
             node.status = 'RUNNING'
 
     def tick_running_nodes(self, workflow=None, ctx=None):
+        ctx_with_jobs = {**ctx, 'jobs': workflow.jobs}
         for node in workflow.get_nodes_by_status(status='RUNNING'):
-            self.tick_node(node=node, ctx=ctx)
+            self.tick_node(node=node, ctx=ctx_with_jobs)
 
     def tick_node(self, node=None, ctx=None):
         node.tick(engine=self, ctx=ctx)

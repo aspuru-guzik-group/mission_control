@@ -9,10 +9,12 @@ from ..nodes.job import JobNode
 class BaseTestCase(TestCase):
     def setUp(self):
         super().setUp()
-        self.create_job = MagicMock()
+        self.ctx = {
+            'create_job': MagicMock()
+        }
 
     def generate_node(self, **node_kwargs):
-        return JobNode(create_job=self.create_job, **node_kwargs)
+        return JobNode(**node_kwargs)
 
     def generate_job(self, id=None, status='PENDING', **job_kwargs):
         if not id: id = str(uuid4())
@@ -28,18 +30,19 @@ class InitialTickTestCase(BaseTestCase):
             }
         }
         self.node = self.generate_node(data=self.initial_data)
-        self.node.tick()
+        self.node.tick(ctx=self.ctx)
 
     def test_initial_tick_creates_job(self):
         expected_call_args = call(job_kwargs={
             'type': self.initial_data['input']['job_type'],
             'spec': self.initial_data['input']['job_spec'],
         })
-        self.assertEqual(self.create_job.call_args, expected_call_args)
+        self.assertEqual(self.ctx['create_job'].call_args, expected_call_args)
 
     def test_has_expected_data(self):
         expected_data = {**self.initial_data, 
-                          'job_id': self.create_job.return_value, 'ticks': 1}
+                         'job_id': self.ctx['create_job'].return_value,
+                         'ticks': 1}
         self.assertEqual(self.node.data, expected_data)
 
     def test_has_expected_status(self):

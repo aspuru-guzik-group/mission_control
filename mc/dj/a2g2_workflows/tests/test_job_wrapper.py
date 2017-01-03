@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import call, MagicMock
 
 from ..nodes.job_wrapper import JobWrapperNode
 
@@ -12,8 +12,7 @@ class BaseTestCase(unittest.TestCase):
         self.TestNode = TestNode
 
     def generate_node(self, **node_kwargs):
-        return self.TestNode(create_job=MagicMock, jobs=MagicMock(),
-                             **node_kwargs)
+        return self.TestNode(**node_kwargs)
 
 class InitializationTestCase(BaseTestCase):
     def setUp(self):
@@ -29,12 +28,6 @@ class InitializationTestCase(BaseTestCase):
         self.assertEqual(
             self.node.job_node.status, self.nested_job_state['status'])
         self.assertEqual(self.node.job_node.data, self.nested_job_state['data'])
-
-    def test_job_node_has_create_job(self):
-        self.assertEqual(self.node.job_node.create_job, self.node.create_job)
-
-    def test_job_node_has_jobs(self):
-        self.assertEqual(self.node.job_node.jobs, self.node.jobs)
 
 class InitialTickTestCase(BaseTestCase):
     def setUp(self):
@@ -56,8 +49,9 @@ class IntermediateTickTestCase(BaseTestCase):
         self.node.on_job_failed = MagicMock()
 
     def test_calls_job_node_tick(self):
-        self.node.tick()
-        self.assertEqual(self.node.job_node.tick.call_count, 1)
+        ctx = MagicMock()
+        self.node.tick(ctx=ctx)
+        self.assertEqual(self.node.job_node.tick.call_args, call(ctx=ctx))
 
     def test_sets_job_node_state(self):
         self.node.tick()

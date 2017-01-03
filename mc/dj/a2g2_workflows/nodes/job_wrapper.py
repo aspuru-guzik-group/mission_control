@@ -3,25 +3,22 @@ from .job import JobNode
 
 
 class JobWrapperNode(BaseNode):
-    def __init__(self, *args, create_job=None, jobs=None, **kwargs):
+    def __init__(self, *args, **kwargs):
         super().__init__(self, *args, **kwargs)
-        self.create_job = create_job
-        self.jobs = jobs
         self.job_node = self.generate_job_node(*args, **kwargs)
 
     def generate_job_node(self, *args, **kwargs):
         job_node_state = self.data.get('_job_node_state', {})
-        job_node_kwargs = {**kwargs, **job_node_state,
-                           'create_job': self.create_job, 'jobs': self.jobs}
+        job_node_kwargs = {**kwargs, **job_node_state}
         return JobNode(*args, **job_node_kwargs)
 
-    def tick(self, *args, **kwargs):
+    def tick(self, *args, ctx=None, **kwargs):
         self.increment_tick_counter()
         try:
             if self.data['ticks'] == 1:
                 self.job_node.data['input'] = self.get_job_input()
                 assert 'job_type' in self.job_node.data['input']
-            self.job_node.tick()
+            self.job_node.tick(ctx=ctx)
             self._update_nested_job_node_state()
             if self.job_node.status == 'COMPLETED':
                 self.on_job_completed()

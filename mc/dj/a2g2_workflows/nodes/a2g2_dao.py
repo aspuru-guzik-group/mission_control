@@ -7,9 +7,14 @@ class A2G2_DAO_Node(BaseNode):
     def tick(self, *args, ctx=None, **kwargs):
         try:
             a2g2_dao = ctx['a2g2_dao']
-            query = self.data['input']['query']
-            self.data['output'] = {'mol': a2g2_dao.query(query)}
-            self.status = 'COMPLETED'
+            if 'query' in self.data['input']:
+                query = self.data['input']['query']
+                self.data['output'] = {'result_set': a2g2_dao.query(query)}
+                self.status = 'COMPLETED'
+            elif 'ingest' in self.data['input']:
+                ingest_spec = self.data['input']['ingest']
+                a2g2_dao.ingest(ingest_spec=ingest_spec)
+                self.status = 'COMPLETED'
         except Exception as e:
             self.status = 'FAILED'
             self.logger.exception(e)
