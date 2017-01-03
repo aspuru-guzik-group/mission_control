@@ -2,7 +2,7 @@ from uuid import uuid4
 import logging
 
 class BaseNode(object):
-    def __init__(self, *args, id=None, status=None, data=None, logger=None,
+    def __init__(self, *args, id=None, status='PENDING', data=None, logger=None,
                  **kwargs):
         if id is None: id = uuid4()
         self.id = id
@@ -11,3 +11,7 @@ class BaseNode(object):
         self.logger = logger or logging
 
     def tick(self, *args, **kwargs): raise NotImplementedError
+
+    def increment_tick_counter(self):
+        if 'ticks' not in self.data: self.data['ticks'] = 0
+        self.data['ticks'] += 1
