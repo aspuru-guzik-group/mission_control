@@ -1,6 +1,7 @@
 from collections import defaultdict
 import unittest
-from unittest.mock import call, DEFAULT, patch, MagicMock
+from unittest.mock import call, DEFAULT, patch, Mock
+from uuid import uuid4
 
 from ..workflow import Workflow
 
@@ -25,9 +26,10 @@ class BaseTestCase(unittest.TestCase):
             nodes.append(self.generate_node(id=i))
         return nodes
 
-    def generate_node(self, **kwargs):
-        node = MagicMock()
-        node.configure_mock(**kwargs)
+    def generate_node(self, id=None, **kwargs):
+        if id is None: id = str(uuid4())
+        node = Mock()
+        node.configure_mock(id=id, **kwargs)
         return node
 
 class AddNodesTestCase(BaseTestCase):
@@ -67,18 +69,28 @@ class AddNodeTestCase(BaseTestCase):
         self.assertEqual(self.node.workflow, self.workflow)
         self.assertEqual(self.workflow.root_node, self.node)
 
-    def test_add_with_precursors(self):
+    def test_add_with_single_precursor(self):
+        precursor = self.workflow.add_node(node=self.generate_node())
+        self.workflow.add_node(node=self.node, precursor=precursor)
+        self.assertTrue(self.workflow.has_edge(src=precursor, dest=self.node))
+
+    def test_add_with_many_precursors(self):
         precursors = [self.workflow.add_node(node=self.generate_node(id=i))
                       for i in range(1)]
-        self.workflow.add_node(node=self.node, precursors=precursors)
+        self.workflow.add_node(node=self.node, precursor=precursors)
         for precursor in precursors:
             self.assertTrue(
                 self.workflow.has_edge(src=precursor, dest=self.node))
 
-    def test_add_with_successors(self):
+    def test_add_with_single_successor(self):
+        successor = self.workflow.add_node(node=self.generate_node())
+        self.workflow.add_node(node=self.node, successor=successor)
+        self.assertTrue(self.workflow.has_edge(src=self.node, dest=successor))
+
+    def test_add_with_many_successors(self):
         successors = [self.workflow.add_node(node=self.generate_node(id=i))
                       for i in range(3)]
-        self.workflow.add_node(node=self.node, successors=successors)
+        self.workflow.add_node(node=self.node, successor=successors)
         for successor in successors:
             self.assertTrue(
                 self.workflow.has_edge(src=self.node, dest=successor))
@@ -147,7 +159,7 @@ class GetNearestPendingNodesTestCase(BaseTestCase):
     def add_linear_branch_to_workflow(self, workflow=None, branch_nodes=None):
         tail = workflow.root_node
         for node in branch_nodes:
-            tail = workflow.add_node(node=node, precursors=[tail])
+            tail = workflow.add_node(node=node, precursor=[tail])
 
     def test_get_nearest_pending_nodes(self):
         expected_nearest_pending_nodes = [self.linear_branches['1'][1],
@@ -163,11 +175,11 @@ class GetChildNodesTestCase(BaseTestCase):
     def setup_workflow(self, workflow=None):
         self.workflow.add_node(self.generate_node(id='ROOT'), as_root=True)
         node_1 = self.generate_node(id='1')
-        self.workflow.add_node(node_1, precursors=[workflow.root_node])
+        self.workflow.add_node(node_1, precursor=workflow.root_node)
         node_1_1 = self.generate_node(id='1_1')
-        self.workflow.add_node(node_1_1, precursors=[node_1])
+        self.workflow.add_node(node_1_1, precursor=node_1)
         node_1_2 = self.generate_node(id='1_2')
-        self.workflow.add_node(node_1_2, precursors=[node_1])
+        self.workflow.add_node(node_1_2, precursor=node_1)
 
     def test_gets_child_nodes(self):
         expected_child_nodes = [self.workflow.nodes['1_1'],

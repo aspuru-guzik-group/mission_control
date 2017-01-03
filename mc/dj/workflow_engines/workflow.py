@@ -1,4 +1,4 @@
-from collections import defaultdict
+import collections
 from uuid import uuid4
 
 class BaseNode(object):
@@ -16,7 +16,7 @@ class Workflow(object):
     def __init__(self, root_node=None):
         self.nodes = {}
         self.edges = {}
-        self.edges_by_node_id = defaultdict(dict)
+        self.edges_by_node_id = collections.defaultdict(dict)
         self.state = None
         self.status = None
         self.root_node = root_node
@@ -24,20 +24,22 @@ class Workflow(object):
     def add_nodes(self, nodes=None):
         for node in nodes: self.add_node(node=node)
 
-    def add_node(self, node=None, as_root=False, precursors=None,
-                 successors=[]):
+    def add_node(self, node=None, as_root=False, precursor=None, successor=[]):
         assert hasattr(node, 'id')
         self.nodes[node.id] = node
         node.workflow = self
-        if as_root:
-            self.root_node = node
-        if precursors:
-            for precursor in precursors:
-                self.add_edge(src=precursor, dest=node)
-        if successors:
-            for successor in successors:
-                self.add_edge(src=node, dest=successor)
+        if as_root: self.root_node = node
+        for precursor_node in self._ensure_iterable(precursor):
+            self.add_edge(src=precursor_node, dest=node)
+        for successor_node in self._ensure_iterable(successor):
+            self.add_edge(src=node, dest=successor_node)
         return node
+
+    def _ensure_iterable(self, obj=None):
+        if not isinstance(obj, collections.Iterable):
+            if obj is None: obj = []
+            else: obj = [obj]
+        return obj
 
     def add_edges(self, edges=None):
         for edge in edges: self.add_edge(**edge)
