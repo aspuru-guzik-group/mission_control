@@ -3,24 +3,24 @@ from .job import JobNode
 
 
 class JobWrapperNode(BaseNode):
-    def __init__(self, *args, data=None, **kwargs):
-        super().__init__(self, *args, data=data, **kwargs)
+    def __init__(self, *args, create_job=None, jobs=None, **kwargs):
+        super().__init__(self, *args, **kwargs)
+        self.create_job = create_job
+        self.jobs = jobs
         self.job_node = self.generate_job_node(*args, **kwargs)
 
     def generate_job_node(self, *args, **kwargs):
         job_node_state = self.data.get('_job_node_state', {})
-        job_node_kwargs = {
-            **kwargs,
-            'status': job_node_state.get('status', None),
-            'data': {'input': self.get_job_input(),
-                     **job_node_state.get('data', {})}
-        }
+        job_node_kwargs = {**kwargs, **job_node_state,
+                           'create_job': self.create_job, 'jobs': self.jobs}
         return JobNode(*args, **job_node_kwargs)
 
-    def get_job_input(self): raise NotImplementedError
-
     def tick(self):
+        self.increment_tick_counter()
         try:
+            if self.data['ticks'] == 1:
+                self.job_node.data['input'] = self.get_job_input()
+                assert 'job_type' in self.job_node.data['input']
             self.job_node.tick()
             self._update_nested_job_node_state()
             if self.job_node.status == 'COMPLETED':
@@ -33,6 +33,8 @@ class JobWrapperNode(BaseNode):
             self.logger.exception(e)
             self.data['error'] = str(e)
             self.status = 'FAILED'
+
+    def get_job_input(self): raise NotImplementedError
 
     def _update_nested_job_node_state(self):
         self.data['_job_node_state'] = self._get_job_node_state()

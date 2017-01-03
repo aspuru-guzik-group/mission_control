@@ -1,14 +1,11 @@
-import logging
+from .base import BaseNode
 
 
-class JobNode(object):
-    def __init__(self, *args, create_job=None, status=None, data=None,
-                 jobs=None, logger=None, **kwargs):
+class JobNode(BaseNode):
+    def __init__(self, *args, create_job=None, jobs=None, **kwargs):
+        super().__init__(self, *args, **kwargs)
         self.create_job = create_job
-        self.status = status
-        self.data = data
         self.jobs = jobs
-        self.logger = logger or logging
 
     def tick(self):
         self.increment_tick_counter()
@@ -19,14 +16,10 @@ class JobNode(object):
             self.logger.exception(e)
             self.status = 'FAILED'
 
-    def increment_tick_counter(self):
-        if 'ticks' not in self.data: self.data['ticks'] = 0
-        self.data['ticks'] += 1
-
     def initial_tick(self):
         self.data['job_id'] = self.create_job(job_kwargs={
-            'type': self.data['inputs']['job_type'],
-            'spec': self.data['inputs'].get('job_spec', {})
+            'type': self.data['input']['job_type'],
+            'spec': self.data['input'].get('job_spec', {})
         })
         self.status = 'RUNNING'
 

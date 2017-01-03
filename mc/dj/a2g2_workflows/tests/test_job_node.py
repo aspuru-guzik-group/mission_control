@@ -22,7 +22,7 @@ class InitialTickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.initial_data = {
-            'inputs': {
+            'input': {
                 'job_type': 'some job_type',
                 'job_spec': 'some job_spec',
             }
@@ -32,16 +32,18 @@ class InitialTickTestCase(BaseTestCase):
 
     def test_initial_tick_creates_job(self):
         expected_call_args = call(job_kwargs={
-            'type': self.initial_data['inputs']['job_type'],
-            'spec': self.initial_data['inputs']['job_spec'],
+            'type': self.initial_data['input']['job_type'],
+            'spec': self.initial_data['input']['job_spec'],
         })
         self.assertEqual(self.create_job.call_args, expected_call_args)
 
     def test_has_expected_data(self):
-        self.assertEqual(self.node.status, 'RUNNING')
         expected_data = {**self.initial_data, 
                           'job_id': self.create_job.return_value, 'ticks': 1}
         self.assertEqual(self.node.data, expected_data)
+
+    def test_has_expected_status(self):
+        self.assertEqual(self.node.status, 'RUNNING')
 
 class IntermediateTickMixin(object):
     def setup_for_intermediate_tick(self, job_kwargs=None):

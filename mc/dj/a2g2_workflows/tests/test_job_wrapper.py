@@ -8,11 +8,12 @@ class BaseTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
         class TestNode(JobWrapperNode):
-            def get_job_input(self):  return {'some': 'input'}
+            def get_job_input(self):  return {'job_type': 'some job type'}
         self.TestNode = TestNode
 
     def generate_node(self, **node_kwargs):
-        return self.TestNode(**node_kwargs)
+        return self.TestNode(create_job=MagicMock, jobs=MagicMock(),
+                             **node_kwargs)
 
 class InitializationTestCase(BaseTestCase):
     def setUp(self):
@@ -24,19 +25,32 @@ class InitializationTestCase(BaseTestCase):
         self.wrapper_node_data = {'_job_node_state': self.nested_job_state}
         self.node = self.generate_node(data=self.wrapper_node_data)
 
-    def test_job_node_has_status_from_state(self):
+    def test_job_node_gets_state_from_nested_job_state(self):
         self.assertEqual(
             self.node.job_node.status, self.nested_job_state['status'])
+        self.assertEqual(self.node.job_node.data, self.nested_job_state['data'])
 
-    def test_job_node_has_data_from_state_plus_input(self):
-        expected_job_node_data = {'input': self.node.get_job_input(),
-                                  **self.nested_job_state['data']}
-        self.assertEqual(self.node.job_node.data, expected_job_node_data)
+    def test_job_node_has_create_job(self):
+        self.assertEqual(self.node.job_node.create_job, self.node.create_job)
 
-class TickTestCase(BaseTestCase):
+    def test_job_node_has_jobs(self):
+        self.assertEqual(self.node.job_node.jobs, self.node.jobs)
+
+class InitialTickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.node = self.generate_node()
+
+    def test_job_node_gets_input_data(self):
+        self.node.tick()
+        self.assertEqual(
+            self.node.job_node.data['input'], self.node.get_job_input())
+
+class IntermediateTickTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.node = self.generate_node()
+        self.node.data['ticks'] = 1
         self.node.job_node = MagicMock()
         self.node.on_job_completed = MagicMock()
         self.node.on_job_failed = MagicMock()
