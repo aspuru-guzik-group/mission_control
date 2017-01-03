@@ -74,6 +74,12 @@ class AddNodeTestCase(BaseTestCase):
         self.workflow.add_node(node=self.node, precursor=precursor)
         self.assertTrue(self.workflow.has_edge(src=precursor, dest=self.node))
 
+    def test_add_with_precursor_id(self):
+        precursor = self.generate_node(id='precursor_id')
+        self.workflow.add_node(node=precursor)
+        self.workflow.add_node(node=self.node, precursor='precursor_id')
+        self.assertTrue(self.workflow.has_edge(src=precursor, dest=self.node))
+
     def test_add_with_many_precursors(self):
         precursors = [self.workflow.add_node(node=self.generate_node(id=i))
                       for i in range(1)]
@@ -85,6 +91,12 @@ class AddNodeTestCase(BaseTestCase):
     def test_add_with_single_successor(self):
         successor = self.workflow.add_node(node=self.generate_node())
         self.workflow.add_node(node=self.node, successor=successor)
+        self.assertTrue(self.workflow.has_edge(src=self.node, dest=successor))
+
+    def test_add_with_successsor_id(self):
+        successor = self.generate_node(id='successor_id')
+        self.workflow.add_node(node=successor)
+        self.workflow.add_node(node=self.node, successor='successor_id')
         self.assertTrue(self.workflow.has_edge(src=self.node, dest=successor))
 
     def test_add_with_many_successors(self):

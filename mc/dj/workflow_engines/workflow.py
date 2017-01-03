@@ -24,7 +24,8 @@ class Workflow(object):
     def add_nodes(self, nodes=None):
         for node in nodes: self.add_node(node=node)
 
-    def add_node(self, node=None, as_root=False, precursor=None, successor=[]):
+    def add_node(self, node=None, as_root=False, precursor=None,
+                 successor=None):
         assert hasattr(node, 'id')
         self.nodes[node.id] = node
         node.workflow = self
@@ -36,10 +37,10 @@ class Workflow(object):
         return node
 
     def _ensure_iterable(self, obj=None):
-        if not isinstance(obj, collections.Iterable):
-            if obj is None: obj = []
-            else: obj = [obj]
-        return obj
+        if obj is None: return []
+        elif isinstance(obj, str): return [obj]
+        elif isinstance(obj, collections.Iterable): return obj
+        else: return [obj]
 
     def add_edges(self, edges=None):
         for edge in edges: self.add_edge(**edge)
