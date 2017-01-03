@@ -1,6 +1,6 @@
 import unittest
 
-from ..nodes.confgen import ConfgenNode
+from ..nodes.confgen import Confgen_Node
 from ..nodes.job_wrapper import JobWrapperNode
 
 
@@ -9,11 +9,11 @@ class BaseTestCase(unittest.TestCase):
         super().setUp()
 
     def generate_node(self, **node_kwargs):
-        return ConfgenNode(**node_kwargs)
+        return Confgen_Node(**node_kwargs)
 
 class InheritanceTestCase(BaseTestCase):
     def test_inherits_from_JobWrapper(self):
-        self.assertTrue(issubclass(ConfgenNode, JobWrapperNode))
+        self.assertTrue(issubclass(Confgen_Node, JobWrapperNode))
 
 class GetJobInputTestCase(BaseTestCase):
     def test_generates_expected_job_input(self):
