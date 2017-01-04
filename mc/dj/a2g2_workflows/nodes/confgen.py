@@ -16,3 +16,17 @@ class Confgen_Node(JobWrapperNode):
                 'confgen': self.data['input']['confgen_spec']
             }
         }
+
+class Confgen_Parse_Node(JobWrapperNode):
+    def __init__(self, *args, **kwargs): super().__init__(self, *args, **kwargs)
+
+    def validate_data(self, data=None):
+        assert data['input']['parse']['dir'] is not None
+
+    def get_job_input(self):
+        return {
+            'job_type': 'confgen_parse',
+            'job_spec': {
+                'confgen_dir': self.data['input']['parse']['dir']
+            }
+        }

@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import call, MagicMock
+from uuid import uuid4
 
 from workflow_engines.workflow_engine import WorkflowEngine
 
@@ -9,6 +10,7 @@ from ..workflows.reaxys import Reaxys_Workflow_Module
 class ReaxysWorkflowTestCase(unittest.TestCase):
     def setUp(self):
         self.ctx = self.generate_ctx()
+        self.setup_create_job_side_effect()
         self.engine = self.generate_workflow_engine(ctx=self.ctx)
         self.mol_key = 'some mol key'
         self.workflow = self.generate_workflow(mol_key=self.mol_key)
@@ -18,6 +20,15 @@ class ReaxysWorkflowTestCase(unittest.TestCase):
             'a2g2_dao': MagicMock(),
             'create_job': MagicMock(),
         }
+
+    def setup_create_job_side_effect(self):
+        """For tracking job ids, for faking job completion."""
+        self.job_ids = []
+        def create_job_side_effect(*args, **kwargs):
+            job_id = uuid4()
+            self.job_ids.append(job_id)
+            return job_id
+        self.ctx['create_job'].side_effect = create_job_side_effect
 
     def generate_workflow_engine(self, ctx=None):
         engine = WorkflowEngine(ctx=ctx)
@@ -76,22 +87,54 @@ class ReaxysWorkflowTestCase(unittest.TestCase):
                 }
             })
         )
-        expected_confgen_job_id = self.ctx['create_job'].return_value
+        confgen_job_id = self.job_ids[-1]
         self.assertEqual(nodes['confgen'].job_node.data['job_id'],
-                         expected_confgen_job_id)
+                         confgen_job_id)
 
         # Fake confgen job completion.
-        completed_confgen_job = {'status': 'COMPLETED',
-                                 'data': {'output': {'output_dir': 'some dir'}}}
-        self.workflow.jobs[expected_confgen_job_id] = completed_confgen_job
+        confgen_job = {'status': 'COMPLETED',
+                                 'data': {'output': {'dir': 'some dir'}}}
+        self.workflow.jobs[confgen_job_id] = confgen_job
 
         # t = 4
         _tick()
         self.assertEqual(nodes['confgen'].status, 'COMPLETED')
         self.assertEqual(nodes['confgen'].data['output'],
-                         completed_confgen_job['data']['output'])
+                         confgen_job['data']['output'])
+        self.assertEqual(nodes['confgen_parse_setup'].status, 'PENDING')
 
         # t = 5
+        _tick()
+        self.assertEqual(nodes['confgen_parse_setup'].status, 'COMPLETED')
+        self.assertEqual(nodes['confgen_parse'].status, 'PENDING')
+        self.assertEqual(
+            nodes['confgen_parse'].data['input'],
+            {
+                'parse': {
+                    'dir': nodes['confgen'].data['output']['dir'],
+                }
+            }
+        )
+
+        # t = 6
+        _tick()
+        confgen_parse_job_id = self.job_ids[-1]
+        self.assertEqual(nodes['confgen_parse'].job_node.data['job_id'],
+                         confgen_parse_job_id)
+
+        # Fake confgen_parse job completion.
+        confgen_parse_job = {'status': 'COMPLETED',
+                             'data': {'output': {'dir': 'some dir'}}}
+        self.workflow.jobs[confgen_parse_job_id] = confgen_parse_job
+
+        # t = 7
+        _tick()
+        self.assertEqual(nodes['confgen_parse'].status, 'COMPLETED')
+        self.assertEqual(nodes['confgen_parse'].data['output'],
+                         confgen_parse_job['data']['output'])
+        self.assertEqual(nodes['confgen_ingest_setup'].status, 'PENDING')
+
+        # t = 8
         _tick()
         self.assertEqual(nodes['confgen_ingest_setup'].status, 'COMPLETED')
         self.assertEqual(nodes['confgen_ingest'].status, 'PENDING')
@@ -101,13 +144,13 @@ class ReaxysWorkflowTestCase(unittest.TestCase):
                 'ingest': {
                     'object': 'Geom',
                     'item_kwargs': {'mol': self.mol_key},
-                    'xyz_dir': nodes['confgen'].data['output']['output_dir'],
+                    'dir': nodes['confgen_parse'].data['output']['dir'],
                 }
             }
         )
         self.fail()
 
-        # t = 6
+        # t = 9
         _tick()
 
         # B3LYP Task
