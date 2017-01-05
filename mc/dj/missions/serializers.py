@@ -1,10 +1,10 @@
 from rest_framework import serializers
 
-from .models import Workflow
+from .models import Flow
 
-class WorkflowSerializer(serializers.ModelSerializer):
+class FlowSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Workflow
+        model = Flow
         fields = ('uuid', 'serialization', 'status', 'created', 'modified',
                   'mission', 'claimed')
         read_only_fields = ('uuid', 'created', 'modified')

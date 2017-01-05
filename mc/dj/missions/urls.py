@@ -5,9 +5,9 @@ from . import views
 
 
 router = DefaultRouter()
-router.register(r'workflows', views.WorkflowViewSet)
+router.register(r'flows', views.FlowViewSet)
 
 urlpatterns = [
     url(r'^', include(router.urls)),
-    url(r'^claim_workflows/', views.claim_workflows, name='claim_workflows'),
+    url(r'^claim_flows/', views.claim_flows, name='claim_flows'),
 ]

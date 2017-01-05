@@ -12,19 +12,19 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('jobs', '0008_auto_20161130_1447'),
-        ('missions', '0005_workflow_finished'),
+        ('missions', '0005_flow_finished'),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='WorkflowJob',
+            name='FlowJob',
             fields=[
                 ('created', django_extensions.db.fields.CreationDateTimeField(auto_now_add=True, verbose_name='created')),
                 ('modified', django_extensions.db.fields.ModificationDateTimeField(auto_now=True, verbose_name='modified')),
                 ('uuid', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('finished', models.NullBooleanField(default=False)),
                 ('job', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='jobs.Job')),
-                ('workflow', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='missions.Workflow')),
+                ('flow', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='missions.Flow')),
             ],
             options={
                 'get_latest_by': 'modified',
@@ -33,11 +33,11 @@ class Migration(migrations.Migration):
             },
         ),
         migrations.DeleteModel(
-            name='WorkflowRunner',
+            name='FlowRunner',
         ),
         migrations.AddField(
-            model_name='workflow',
+            model_name='flow',
             name='jobs',
-            field=models.ManyToManyField(through='missions.WorkflowJob', to='jobs.Job'),
+            field=models.ManyToManyField(through='missions.FlowJob', to='jobs.Job'),
         ),
     ]

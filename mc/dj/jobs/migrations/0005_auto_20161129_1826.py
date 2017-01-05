@@ -9,15 +9,15 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('missions', '0004_workflowrunner'),
+        ('missions', '0004_flowrunner'),
         ('jobs', '0004_auto_20161122_1835'),
     ]
 
     operations = [
         migrations.AddField(
             model_name='job',
-            name='workflow',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='missions.Workflow'),
+            name='flow',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='missions.Flow'),
         ),
         migrations.AlterField(
             model_name='job',

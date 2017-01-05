@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 from jobs.models import Job
-from ..models import (Mission, WorkflowStatuses, Workflow, WorkflowJob)
+from ..models import (Mission, FlowStatuses, Flow, FlowJob)
 
 class MissionTestCase(TestCase):
     def test_has_expected_fields(self):
@@ -14,33 +14,33 @@ class MissionTestCase(TestCase):
         self.assertTrue(mission.created is not None)
         self.assertTrue(mission.modified is not None)
 
-class WorkflowTestCase(TestCase):
+class FlowTestCase(TestCase):
     def test_has_expected_fields(self):
         kwargs = {
             'mission': Mission.objects.create(name='mission'),
             'serialization': 'some serialization',
         }
-        workflow = Workflow.objects.create(**kwargs)
+        flow = Flow.objects.create(**kwargs)
         for kwarg, value in kwargs.items():
-            self.assertEqual(getattr(workflow, kwarg), value)
-        self.assertTrue(workflow.uuid is not None)
-        self.assertTrue(workflow.created is not None)
-        self.assertTrue(workflow.modified is not None)
-        self.assertEqual(workflow.status, WorkflowStatuses.PENDING.name)
-        self.assertTrue(hasattr(workflow, 'workflow_jobs'))
-        self.assertTrue(hasattr(workflow, 'claimed'))
+            self.assertEqual(getattr(flow, kwarg), value)
+        self.assertTrue(flow.uuid is not None)
+        self.assertTrue(flow.created is not None)
+        self.assertTrue(flow.modified is not None)
+        self.assertEqual(flow.status, FlowStatuses.PENDING.name)
+        self.assertTrue(hasattr(flow, 'flow_jobs'))
+        self.assertTrue(hasattr(flow, 'claimed'))
 
-class WorkflowJobTestCase(TestCase):
+class FlowJobTestCase(TestCase):
     def test_has_expected_fields(self):
         kwargs = {
-            'workflow': Workflow.objects.create(),
+            'flow': Flow.objects.create(),
             'job': Job.objects.create(),
         }
-        workflow_job = WorkflowJob.objects.create(**kwargs)
-        self.assertTrue(workflow_job.uuid is not None)
-        self.assertTrue(workflow_job.created is not None)
-        self.assertTrue(workflow_job.modified is not None)
-        self.assertTrue(workflow_job.workflow is kwargs['workflow'])
-        self.assertTrue(workflow_job.job is kwargs['job'])
-        self.assertEqual(workflow_job.finished, False)
-        self.assertEqual(workflow_job.meta, {})
+        flow_job = FlowJob.objects.create(**kwargs)
+        self.assertTrue(flow_job.uuid is not None)
+        self.assertTrue(flow_job.created is not None)
+        self.assertTrue(flow_job.modified is not None)
+        self.assertTrue(flow_job.flow is kwargs['flow'])
+        self.assertTrue(flow_job.job is kwargs['job'])
+        self.assertEqual(flow_job.finished, False)
+        self.assertEqual(flow_job.meta, {})

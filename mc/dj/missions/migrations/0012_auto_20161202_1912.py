@@ -14,12 +14,12 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RemoveField(
-            model_name='workflow',
+            model_name='flow',
             name='runner_key',
         ),
         migrations.AddField(
-            model_name='workflow',
+            model_name='flow',
             name='spec',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='missions.WorkflowSpec'),
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='missions.FlowSpec'),
         ),
     ]

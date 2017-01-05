@@ -19,38 +19,38 @@ class Mission(TimeStampedModel):
     def __str__(self):
         return uuid_model_str(self)
 
-class WorkflowStatuses(enum.Enum):
+class FlowStatuses(enum.Enum):
     PENDING = {'label': 'pending'}
     RUNNING = {'label': 'running'}
     COMPLETED = {'label': 'completed'}
-WorkflowStatuses.tickable_statuses = [getattr(WorkflowStatuses, status)
+FlowStatuses.tickable_statuses = [getattr(FlowStatuses, status)
                                       for status in ['PENDING', 'RUNNING']]
 
-class Workflow(TimeStampedModel):
+class Flow(TimeStampedModel):
     uuid = models.CharField(primary_key=True, default=str_uuid4,
                             editable=False, max_length=64)
     serialization = models.TextField(null=True)
     mission = models.ForeignKey('Mission', null=True, on_delete=models.CASCADE)
     status = models.CharField(null=True, max_length=32,
                               choices=[(status.name, status.value['label'])
-                                       for status in WorkflowStatuses],
-                              default=WorkflowStatuses.PENDING.name)
+                                       for status in FlowStatuses],
+                              default=FlowStatuses.PENDING.name)
     claimed = models.NullBooleanField(null=True, default=False)
 
     def __str__(self):
         return uuid_model_str(self)
 
-class WorkflowJob(TimeStampedModel):
+class FlowJob(TimeStampedModel):
     uuid = models.CharField(primary_key=True, default=str_uuid4,
                             editable=False, max_length=64)
-    workflow = models.ForeignKey(Workflow, on_delete=models.CASCADE,
-                                 related_name='workflow_jobs')
+    flow = models.ForeignKey(Flow, on_delete=models.CASCADE,
+                                 related_name='flow_jobs')
     job = models.ForeignKey('jobs.Job', on_delete=models.CASCADE)
     finished = models.NullBooleanField(null=True, default=False)
     meta = JSONField(default=dict)
 
     def __str__(self):
-        return '<{class_name}: {{workflow_id: {wf}, job_id: {j}}}>'.format(
+        return '<{class_name}: {{flow_id: {wf}, job_id: {j}}}>'.format(
             class_name=self.__class__.__name__,
-            wf=self.workflow_id,
+            wf=self.flow_id,
             j=self.job_id)

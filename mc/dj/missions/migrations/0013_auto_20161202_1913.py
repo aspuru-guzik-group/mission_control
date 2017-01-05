@@ -13,11 +13,11 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RemoveField(
-            model_name='workflowjob',
+            model_name='flowjob',
             name='json_serialization',
         ),
         migrations.AddField(
-            model_name='workflow',
+            model_name='flow',
             name='json_serialization',
             field=models.TextField(null=True),
         ),

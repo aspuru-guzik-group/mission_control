@@ -8,17 +8,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('missions', '0009_workflowrunner_error'),
+        ('missions', '0009_flowrunner_error'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='workflowjob',
+            model_name='flowjob',
             name='json_serialization',
             field=models.TextField(null=True),
         ),
         migrations.AddField(
-            model_name='workflowrunner',
+            model_name='flowrunner',
             name='json_serialization',
             field=models.TextField(null=True),
         ),

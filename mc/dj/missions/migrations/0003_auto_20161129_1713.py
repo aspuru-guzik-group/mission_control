@@ -9,7 +9,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('missions', '0002_workflow'),
+        ('missions', '0002_flow'),
     ]
 
     operations = [
@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='missions.Mission'),
         ),
         migrations.AlterField(
-            model_name='workflow',
+            model_name='flow',
             name='mission',
             field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, to='missions.Mission'),
         ),

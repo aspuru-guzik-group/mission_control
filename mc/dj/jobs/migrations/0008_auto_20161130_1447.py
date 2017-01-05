@@ -18,6 +18,6 @@ class Migration(migrations.Migration):
         ),
         migrations.RemoveField(
             model_name='job',
-            name='workflow',
+            name='flow',
         ),
     ]

@@ -42,9 +42,10 @@ INSTALLED_APPS = [
     'e2e',
     'job_spec_client',
     'job_runners',
-    'workflow_engines',
-    'workflow_runners',
-    'workflow_client',
+    'flow_engines',
+    'flow_runners',
+    'flow_client',
+    'a2g2_flows',
 ]
 
 MIDDLEWARE = [

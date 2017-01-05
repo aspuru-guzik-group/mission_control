@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name='job',
-            name='workflow',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='jobs', to='missions.Workflow'),
+            name='flow',
+            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.CASCADE, related_name='jobs', to='missions.Flow'),
         ),
     ]

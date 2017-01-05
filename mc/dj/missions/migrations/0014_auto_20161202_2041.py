@@ -17,25 +17,25 @@ class Migration(migrations.Migration):
             name='mission',
         ),
         migrations.RenameField(
-            model_name='workflow',
+            model_name='flow',
             old_name='json_serialization',
             new_name='serialization',
         ),
         migrations.RenameField(
-            model_name='workflowspec',
+            model_name='flowspec',
             old_name='json_serialization',
             new_name='serialization',
         ),
         migrations.RemoveField(
-            model_name='workflow',
+            model_name='flow',
             name='finished',
         ),
         migrations.RemoveField(
-            model_name='workflow',
+            model_name='flow',
             name='jobs',
         ),
         migrations.AddField(
-            model_name='workflow',
+            model_name='flow',
             name='status',
             field=models.CharField(choices=[('Pending', 'pending'), ('Running', 'running'), ('Completed', 'completed')], default='Pending', max_length=32, null=True),
         ),

@@ -13,7 +13,7 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RenameModel(
-            old_name='WorkflowRunner',
-            new_name='WorkflowSpec',
+            old_name='FlowRunner',
+            new_name='FlowSpec',
         ),
     ]

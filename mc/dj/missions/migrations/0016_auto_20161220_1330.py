@@ -9,12 +9,12 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('missions', '0015_workflowjob_meta'),
+        ('missions', '0015_flowjob_meta'),
     ]
 
     operations = [
         migrations.RemoveField(
-            model_name='workflow',
+            model_name='flow',
             name='spec',
         ),
         migrations.AlterField(
@@ -23,16 +23,16 @@ class Migration(migrations.Migration):
             field=models.CharField(default=uuid.uuid4, editable=False, max_length=64, primary_key=True, serialize=False),
         ),
         migrations.AlterField(
-            model_name='workflow',
+            model_name='flow',
             name='uuid',
             field=models.CharField(default=uuid.uuid4, editable=False, max_length=64, primary_key=True, serialize=False),
         ),
         migrations.AlterField(
-            model_name='workflowjob',
+            model_name='flowjob',
             name='uuid',
             field=models.CharField(default=uuid.uuid4, editable=False, max_length=64, primary_key=True, serialize=False),
         ),
         migrations.DeleteModel(
-            name='WorkflowSpec',
+            name='FlowSpec',
         ),
     ]

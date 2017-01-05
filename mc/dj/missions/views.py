@@ -3,12 +3,12 @@ from django.views.decorators.http import require_http_methods
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework import viewsets
 
-from .models import Workflow, WorkflowStatuses
-from .serializers import WorkflowSerializer
+from .models import Flow, FlowStatuses
+from .serializers import FlowSerializer
 
-class WorkflowFilter(FilterSet):
+class FlowFilter(FilterSet):
     class Meta:
-        model = Workflow
+        model = Flow
         fields = ['status']
 
     @property
@@ -22,28 +22,28 @@ class WorkflowFilter(FilterSet):
         return hasattr(self.request, 'GET') and ('tickable' in request.GET)
 
     def filter_for_tickable(self, qs=None):
-        tickable_statuses = [s.name for s in WorkflowStatuses.tickable_statuses]
+        tickable_statuses = [s.name for s in FlowStatuses.tickable_statuses]
         modified_qs = qs.filter(status__in=tickable_statuses)
         return modified_qs
 
-class WorkflowViewSet(viewsets.ModelViewSet):
-    queryset = Workflow.objects.all()
-    serializer_class = WorkflowSerializer
+class FlowViewSet(viewsets.ModelViewSet):
+    queryset = Flow.objects.all()
+    serializer_class = FlowSerializer
     filter_backends = (DjangoFilterBackend,)
-    filter_class = WorkflowFilter
+    filter_class = FlowFilter
 
 @require_http_methods(["POST"])
-def claim_workflows(request):
+def claim_flows(request):
     result = {}
     csv_uuids = request.POST['uuids']
     if csv_uuids:
         uuids = csv_uuids.split(',')
-        workflows = Workflow.objects.filter(uuid__in=uuids)
-        for workflow in workflows:
-            if workflow.claimed:
-                result[workflow.uuid] = None
+        flows = Flow.objects.filter(uuid__in=uuids)
+        for flow in flows:
+            if flow.claimed:
+                result[flow.uuid] = None
             else:
-                workflow.claimed = True
-                workflow.save()
-                result[workflow.uuid] = WorkflowSerializer(workflow).data
+                flow.claimed = True
+                flow.save()
+                result[flow.uuid] = FlowSerializer(flow).data
     return JsonResponse(result)
