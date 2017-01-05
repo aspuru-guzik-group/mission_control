@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import call, DEFAULT, patch, Mock
+from uuid import uuid4
 
 from ..flow_engine import FlowEngine
 from ..flow import Flow, BaseTask
@@ -147,8 +148,11 @@ class TickTestCase(BaseTestCase):
         self.engine.tick_flow(flow)
         expected_call_args_list = [call(flow=flow, task=successor)
                                    for successor in successors]
-        self.assertEqual(self.mocks['engine']['start_task'].call_args_list,
-                         expected_call_args_list)
+        self.assertEqual(
+            sorted(self.mocks['engine']['start_task'].call_args_list,
+                   key=lambda c: id(c[1]['task'])),
+            sorted(expected_call_args_list,
+                   key=lambda c: id(c[2]['task'])))
 
     def generate_flow_with_pending_successors(self):
         flow = Flow()
@@ -165,6 +169,7 @@ class TickTestCase(BaseTestCase):
         flow.add_task(task=branch_root, precursor=flow.root_task)
         for i in range(depth):
             child_task = Mock()
+            child_task.id = str(uuid4())
             child_task.status = 'COMPLETED'
             child_task.depth = depth
             flow.add_task(task=child_task, precursor=branch_root)
@@ -229,6 +234,7 @@ class StartTaskTestCase(BaseTestCase):
     def test_sets_input_for_multiple_precursors(self):
         precursors = [self.flow.add_task(task=Mock()) for i in range(3)]
         successor = self.flow.add_task(task=Mock(), precursor=precursors)
+        successor.static_input = None
         self.engine.start_task(flow=self.flow, task=successor)
         expected_input = [precursor.output for precursor in precursors]
         self.assertEqual(set(successor.input), set(expected_input))
@@ -236,8 +242,17 @@ class StartTaskTestCase(BaseTestCase):
     def test_sets_input_for_single_precursor(self):
         precursor = self.flow.add_task(task=Mock())
         successor = self.flow.add_task(task=Mock(), precursor=precursor)
+        successor.static_input = None
         self.engine.start_task(flow=self.flow, task=successor)
         expected_input = precursor.output
+        self.assertEqual(successor.input, expected_input)
+
+    def test_uses_static_input_if_provided(self):
+        precursor = self.flow.add_task(task=Mock())
+        successor = self.flow.add_task(task=Mock(), precursor=precursor)
+        successor.static_input = Mock()
+        self.engine.start_task(flow=self.flow, task=successor)
+        expected_input = successor.static_input
         self.assertEqual(successor.input, expected_input)
 
 if __name__ == '__main__':

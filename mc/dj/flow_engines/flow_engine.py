@@ -107,11 +107,16 @@ class FlowEngine(object):
         task.status = 'RUNNING'
 
     def set_task_input(self, flow=None, task=None):
-        _get_output = lambda t: getattr(t, 'output', None)
-        precursors = flow.get_precursors(task=task)
-        if len(precursors) == 0: task.input = None
-        elif len(precursors) == 1: task.input = _get_output(precursors[0])
-        else: task.input = [_get_output(precursor) for precursor in precursors]
+        static_input = getattr(task, 'static_input', None)
+        if static_input is not None:
+            task.input = task.static_input
+        else:
+            _get_output = lambda t: getattr(t, 'output', None)
+            precursors = flow.get_precursors(task=task)
+            if len(precursors) == 0: task.input = None
+            elif len(precursors) == 1: task.input = _get_output(precursors[0])
+            else: task.input = [_get_output(precursor)
+                                for precursor in precursors]
 
     def tick_running_tasks(self, flow=None, ctx=None):
         if not ctx: ctx = {}
@@ -121,4 +126,3 @@ class FlowEngine(object):
 
     def tick_task(self, task=None, ctx=None):
         task.tick(engine=self, ctx=ctx)
-
