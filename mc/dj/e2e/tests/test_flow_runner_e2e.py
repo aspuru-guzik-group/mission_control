@@ -3,7 +3,7 @@ from django.conf.urls import url, include
 from django.test import TestCase, override_settings
 
 from missions.models import Flow as FlowModel
-from flow_engines.flow import Flow, BaseNode
+from flow_engines.flow import Flow, BaseTask
 from flow_runners.base_flow_runner import BaseFlowRunner
 from flow_engines.flow_engine import FlowEngine
 from flow_client.flow_client import MissionControlFlowClient
@@ -18,9 +18,9 @@ urlpatterns = [
 class FlowRunnerE2ETestCase(TestCase):
     def setUp(self):
         self.configure_request_client()
-        self.keyed_node_classes = self.generate_keyed_node_classes()
+        self.keyed_task_classes = self.generate_keyed_task_classes()
         self.flow_engine = self.generate_flow_engine(
-            keyed_node_classes=self.keyed_node_classes)
+            keyed_task_classes=self.keyed_task_classes)
         self.flow_client = MissionControlFlowClient(
             base_url='/%s' % BASE_PATH,
             request_client=self.client
@@ -37,51 +37,51 @@ class FlowRunnerE2ETestCase(TestCase):
                               content_type='application/json', **kwargs)
         self.client.patch = json_patch
 
-    def generate_keyed_node_classes(self):
-        class BaseTestNode(BaseNode):
+    def generate_keyed_task_classes(self):
+        class BaseTestTask(BaseTask):
             def tick(self, *args, **kwargs):
-                print("tick", self.__class__.__name__)
+                #print("tick", self.__class__.__name__)
                 if not hasattr(self.__class__, 'ticks'):
                     self.__class__.ticks = 0
                 self.__class__.ticks += 1
 
-        node_classes = []
-        class Node_0(BaseTestNode):
+        task_classes = []
+        class Task_0(BaseTestTask):
             def tick(self, *args, **kwargs):
                 super().tick()
-                next_node = Node_1(status='PENDING')
-                self.flow.add_node(next_node, precursors=[self])
+                next_task = Task_1(status='PENDING')
+                self.flow.add_task(next_task, precursor=self)
                 self.status = 'COMPLETED'
-        node_classes.append(Node_0)
+        task_classes.append(Task_0)
 
-        class Node_1(BaseTestNode):
+        class Task_1(BaseTestTask):
             allow_completion = False
 
             def tick(self, *args, **kwargs):
                 super().tick()
                 if self.__class__.allow_completion:
-                    next_node = Node_2(status='PENDING')
-                    self.flow.add_node(next_node, precursors=[self])
+                    next_task = Task_2(status='PENDING')
+                    self.flow.add_task(next_task, precursor=self)
                     self.status = 'COMPLETED'
-        node_classes.append(Node_1)
+        task_classes.append(Task_1)
 
-        class Node_2(BaseTestNode):
+        class Task_2(BaseTestTask):
             allow_completion = False
 
             def tick(self, *args, **kwargs):
                 super().tick()
                 if self.__class__.allow_completion:
                     self.status = 'COMPLETED'
-        node_classes.append(Node_2)
+        task_classes.append(Task_2)
 
-        keyed_node_classes = {node_class.__name__: node_class
-                              for node_class in node_classes}
-        return keyed_node_classes
+        keyed_task_classes = {task_class.__name__: task_class
+                              for task_class in task_classes}
+        return keyed_task_classes
 
-    def generate_flow_engine(self, keyed_node_classes=None):
+    def generate_flow_engine(self, keyed_task_classes=None):
         flow_engine = FlowEngine()
-        for node_class in keyed_node_classes.values():
-            flow_engine.register_node_class(node_class=node_class)
+        for task_class in keyed_task_classes.values():
+            flow_engine.register_task_class(task_class=task_class)
         return flow_engine
 
     def generate_flow_runner(self, flow_engine=None,
@@ -92,9 +92,9 @@ class FlowRunnerE2ETestCase(TestCase):
 
     def populate_flows(self):
         flow = Flow()
-        root_node = self.keyed_node_classes['Node_0'](flow=flow,
+        root_task = self.keyed_task_classes['Task_0'](flow=flow,
                                                       status='PENDING')
-        flow.add_node(node=root_node, as_root=True)
+        flow.add_task(task=root_task, as_root=True)
         serialization = self.flow_engine.serialize_flow(flow)
         flow_model = FlowModel.objects.create(
             serialization=json.dumps(serialization))
@@ -105,41 +105,41 @@ class FlowRunnerE2ETestCase(TestCase):
         states.append(self.get_state(prev_state=None))
 
         def tick_and_capture_state(label=None):
-            print("tick_and_capture", label)
+            #print("tick_and_capture", label)
             self.flow_runner.tick()
             states.append(self.get_state(prev_state=states[-1]))
 
         tick_and_capture_state(label='a')
         self.assertEqual(
-            states[-1]['node_classes']['Node_0']['ticks'], 1)
+            states[-1]['task_classes']['Task_0']['ticks'], 1)
 
         tick_and_capture_state(label='b')
         self.assertEqual(
-            states[-1]['node_classes']['Node_0']['ticks'], 1)
+            states[-1]['task_classes']['Task_0']['ticks'], 1)
         self.assertEqual(
-            states[-1]['node_classes']['Node_1']['ticks'], 1)
+            states[-1]['task_classes']['Task_1']['ticks'], 1)
 
         tick_and_capture_state(label='c')
         self.assertEqual(
-            states[-1]['node_classes']['Node_1']['ticks'], 2)
+            states[-1]['task_classes']['Task_1']['ticks'], 2)
         self.assertFalse(
-            'ticks' in states[-1]['node_classes']['Node_2'])
+            'ticks' in states[-1]['task_classes']['Task_2'])
 
-        self.keyed_node_classes['Node_1'].allow_completion = True
+        self.keyed_task_classes['Task_1'].allow_completion = True
         tick_and_capture_state(label='d')
         self.assertEqual(
-            states[-1]['node_classes']['Node_1']['ticks'], 3)
+            states[-1]['task_classes']['Task_1']['ticks'], 3)
 
         tick_and_capture_state(label='e')
         self.assertEqual(
-            states[-1]['node_classes']['Node_1']['ticks'], 3)
+            states[-1]['task_classes']['Task_1']['ticks'], 3)
         self.assertEqual(
-            states[-1]['node_classes']['Node_2']['ticks'], 1)
+            states[-1]['task_classes']['Task_2']['ticks'], 1)
 
-        self.keyed_node_classes['Node_2'].allow_completion = True
+        self.keyed_task_classes['Task_2'].allow_completion = True
         tick_and_capture_state(label='f')
         self.assertEqual(
-            states[-1]['node_classes']['Node_2']['ticks'], 2)
+            states[-1]['task_classes']['Task_2']['ticks'], 2)
         self.assertEqual(
             states[-1]['flows'][self.flow_uuid]['status'], 'COMPLETED')
 
@@ -154,9 +154,9 @@ class FlowRunnerE2ETestCase(TestCase):
                 flow_model.uuid: flow_model.__dict__
                 for flow_model in FlowModel.objects.all()
             },
-            'node_classes': {
-                key: node_class.__dict__
-                for key, node_class in self.keyed_node_classes.items()
+            'task_classes': {
+                key: task_class.__dict__
+                for key, task_class in self.keyed_task_classes.items()
             }
         }
         return state

@@ -1,7 +1,7 @@
 from .base import BaseTask
 
 
-class JobTask(BaseTask):
+class FlowTask(BaseTask):
     def __init__(self, *args, **kwargs): super().__init__(self, *args, **kwargs)
 
     def tick(self, *args, ctx=None, **kwargs):
@@ -14,24 +14,24 @@ class JobTask(BaseTask):
             self.status = 'FAILED'
 
     def initial_tick(self, ctx=None):
-        create_job = ctx['create_job']
-        self.data['job_id'] = create_job(job_kwargs={
-            'type': self.input['job_type'],
-            'spec': self.input.get('job_spec', {})
+        create_flow = ctx['create_flow']
+        self.data['flow_id'] = create_flow(flow_kwargs={
+            'type': self.input['flow_type'],
+            'spec': self.input.get('flow_spec', {})
         })
         self.status = 'RUNNING'
 
     def intermediate_tick(self, ctx=None):
-        job = self.get_job(ctx=ctx)
-        assert job is not None
-        if job['status'] == 'COMPLETED':
+        flow = self.get_flow(ctx=ctx)
+        assert flow is not None
+        if flow['status'] == 'COMPLETED':
             self.status = 'COMPLETED'
-            self.output = job.get('output', None)
-        elif job['status'] == 'FAILED':
+            self.output = flow.get('output', None)
+        elif flow['status'] == 'FAILED':
             self.status = 'FAILED'
-            self.error = job.get('error', None)
+            self.error = flow.get('error', None)
         else:
             self.status = 'RUNNING'
 
-    def get_job(self, ctx=None):
-        return ctx['get_job'](job_id=self.data['job_id'])
+    def get_flow(self, ctx=None):
+        return ctx['get_flow'](flow_id=self.data['flow_id'])

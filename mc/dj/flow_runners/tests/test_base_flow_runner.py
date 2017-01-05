@@ -1,3 +1,4 @@
+import logging
 import unittest
 from unittest.mock import call, DEFAULT, MagicMock, patch
 from ..base_flow_runner import BaseFlowRunner
@@ -95,6 +96,10 @@ class ProcessFlowRecordsTestCase(ProcessRecordBase):
         self.flow_client.claim_flows.return_value = {
             self.flow_record['uuid']: self.claimed}
 
+    def tearDown(self):
+        logging.disable(logging.NOTSET)
+        super().tearDown()
+
     def test_calls_tick_flow_record(self):
         self.runner.process_flow_record(self.flow_record)
         self.assertEqual(self.mocks['runner']['tick_flow_record'].call_args,
@@ -110,6 +115,7 @@ class ProcessFlowRecordsTestCase(ProcessRecordBase):
                 **mock_updates, 'claimed': False}))
 
     def test_handles_tick_exception(self):
+        logging.disable(logging.ERROR) # silently throw exception.
         exception = Exception("some exception")
         self.mocks['runner']['tick_flow_record'].side_effect = exception
         self.runner.process_flow_record(self.flow_record)

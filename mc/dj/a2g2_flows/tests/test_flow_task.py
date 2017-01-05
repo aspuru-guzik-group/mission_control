@@ -3,45 +3,45 @@ from unittest.mock import call, MagicMock
 from uuid import uuid4
 from django.test import TestCase
 
-from ..tasks.job import JobTask
+from ..tasks.flow import FlowTask
 
 
 class BaseTestCase(TestCase):
     def setUp(self):
         super().setUp()
         self.ctx = {
-            'create_job': MagicMock(),
-            'get_job': MagicMock()
+            'create_flow': MagicMock(),
+            'get_flow': MagicMock()
         }
 
     def generate_task(self, **task_kwargs):
-        return JobTask(**task_kwargs)
+        return FlowTask(**task_kwargs)
 
-    def generate_job(self, id=None, status='PENDING', **job_state):
+    def generate_flow(self, id=None, status='PENDING', **flow_state):
         if not id: id = str(uuid4())
-        return {'id': id, 'status': status, **job_state}
+        return {'id': id, 'status': status, **flow_state}
 
 class InitialTickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.initial_state = {
             'input': {
-                'job_type': 'some job_type',
-                'job_spec': 'some job_spec',
+                'flow_type': 'some flow_type',
+                'flow_spec': 'some flow_spec',
             }
         }
         self.task = self.generate_task(**self.initial_state)
         self.task.tick(ctx=self.ctx)
 
-    def test_initial_tick_creates_job(self):
-        expected_call_args = call(job_kwargs={
-            'type': self.initial_state['input']['job_type'],
-            'spec': self.initial_state['input']['job_spec'],
+    def test_initial_tick_creates_flow(self):
+        expected_call_args = call(flow_kwargs={
+            'type': self.initial_state['input']['flow_type'],
+            'spec': self.initial_state['input']['flow_spec'],
         })
-        self.assertEqual(self.ctx['create_job'].call_args, expected_call_args)
+        self.assertEqual(self.ctx['create_flow'].call_args, expected_call_args)
 
     def test_has_expected_data(self):
-        expected_data = {'job_id': self.ctx['create_job'].return_value,
+        expected_data = {'flow_id': self.ctx['create_flow'].return_value,
                          'ticks': 1}
         self.assertEqual(self.task.data, expected_data)
 
@@ -49,35 +49,35 @@ class InitialTickTestCase(BaseTestCase):
         self.assertEqual(self.task.status, 'RUNNING')
 
 class IntermediateTickMixin(object):
-    def setup_for_intermediate_tick(self, job_state=None):
-        if not job_state: job_state = {}
-        self.job = self.generate_job(**job_state)
-        self.ctx['get_job'].return_value = self.job
+    def setup_for_intermediate_tick(self, flow_state=None):
+        if not flow_state: flow_state = {}
+        self.flow = self.generate_flow(**flow_state)
+        self.ctx['get_flow'].return_value = self.flow
         self.initial_ticks = 1
         self.initial_state = {
             'data': {'ticks': self.initial_ticks,
-                     'job_id': self.job['id']},
-            'input': {'job_type': 'some job type'},
+                     'flow_id': self.flow['id']},
+            'input': {'flow_type': 'some flow type'},
             'status': 'RUNNING'}
         self.task = self.generate_task(**self.initial_state)
         self.task.tick(ctx=self.ctx)
 
-class IncompleteJobTestCase(BaseTestCase, IntermediateTickMixin):
+class IncompleteFlowTestCase(BaseTestCase, IntermediateTickMixin):
     def setUp(self):
         super().setUp()
-        self.setup_for_intermediate_tick(job_state={'status': 'PENDING'})
+        self.setup_for_intermediate_tick(flow_state={'status': 'PENDING'})
 
     def test_has_expected_state(self):
         self.assertEqual(self.task.status, self.initial_state['status'])
         self.assertEqual(self.task.data, {**self.initial_state['data'],
                                           'ticks': self.initial_ticks + 1})
 
-class CompletedJobTestCase(BaseTestCase, IntermediateTickMixin):
+class CompletedFlowTestCase(BaseTestCase, IntermediateTickMixin):
     def setUp(self):
         super().setUp()
-        self.setup_for_intermediate_tick(job_state={
+        self.setup_for_intermediate_tick(flow_state={
             'status': 'COMPLETED',
-            'data': 'some job_data',
+            'data': 'some flow_data',
             'output': 'some output',
         })
 
@@ -85,12 +85,12 @@ class CompletedJobTestCase(BaseTestCase, IntermediateTickMixin):
         self.assertEqual(self.task.status, 'COMPLETED')
         self.assertEqual(self.task.data, {**self.initial_state['data'],
                                           'ticks': self.initial_ticks + 1})
-        self.assertEqual(self.task.output, self.job['output'])
+        self.assertEqual(self.task.output, self.flow['output'])
 
-class FailedJobTestCase(BaseTestCase, IntermediateTickMixin):
+class FailedFlowTestCase(BaseTestCase, IntermediateTickMixin):
     def setUp(self):
         super().setUp()
-        self.setup_for_intermediate_tick(job_state={
+        self.setup_for_intermediate_tick(flow_state={
             'status': 'FAILED',
             'error': 'some error'
         })
@@ -99,7 +99,7 @@ class FailedJobTestCase(BaseTestCase, IntermediateTickMixin):
         self.assertEqual(self.task.status, 'FAILED')
         self.assertEqual(self.task.data, {**self.initial_state['data'],
                                           'ticks': self.initial_ticks + 1})
-        self.assertEqual(self.task.error, self.job['error'])
+        self.assertEqual(self.task.error, self.flow['error'])
 
 if __name__ == '__main__':
     unittest.main()

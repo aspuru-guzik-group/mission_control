@@ -1,3 +1,4 @@
+import logging
 import unittest
 from unittest.mock import call, DEFAULT, MagicMock, patch
 from ..base_job_runner import BaseJobRunner
@@ -81,7 +82,9 @@ class ProcessClaimableJobSpecTestCase(JobRunnerBaseTestCase):
         self.mocks = self.patcher.start()
 
     def tearDown(self):
+        logging.disable(logging.NOTSET)
         self.patcher.stop()
+        super().tearDown()
 
     def test_claimable_job_spec(self):
         job_spec = {'uuid': 'abcd'}
@@ -113,6 +116,7 @@ class ProcessClaimableJobSpecTestCase(JobRunnerBaseTestCase):
         self.assertEqual(self.mocks['start_job_execution'].call_count, 0)
 
     def test_handles_start_execution_exception(self):
+        logging.disable(logging.ERROR) # silently throw exception.
         job_spec = MagicMock()
         mock_claimed_spec = MagicMock()
         self.job_spec_client.claim_job_specs.return_value = {
