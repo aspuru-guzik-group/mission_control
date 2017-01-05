@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import Mock
+from unittest.mock import call, DEFAULT, patch, Mock
 
 from ..flow_engine import FlowEngine
 from ..flow import Flow, BaseTask
@@ -133,46 +133,22 @@ class SerializationTestCase(BaseTestCase):
         self.assertEqual(serialization, expected_serialization)
 
 class TickTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.patchers = {'engine': patch.multiple(self.engine,
+                                                  start_task=DEFAULT)}
+        self.mocks = self.start_patchers(patchers=self.patchers)
+
     def test_starts_nearest_pending_tasks(self):
         self.maxDiff = None
         flow = self.generate_flow_with_pending_successors()
-        precursors = flow.get_tasks_by_status(status='COMPLETED')
         successors = flow.get_tasks_by_status(status='PENDING')
         self.assertTrue(len(successors) > 0)
-
-        expected_successor_summaries_before_tick = {
-            task.id: self.summarize_task(task, overrides={'tick_count': 0,
-                                                          'status': 'PENDING'})
-            for task in successors
-        }
-        self.assertEqual(self.summarize_tasks(successors),
-                         expected_successor_summaries_before_tick)
-
         self.engine.tick_flow(flow)
-
-        expected_successor_summaries_after_tick = {
-            task.id: self.summarize_task(task, overrides={'tick_count': 1,
-                                                          'status': 'RUNNING'})
-            for task in successors
-        }
-        self.assertEqual(self.summarize_tasks(successors),
-                         expected_successor_summaries_after_tick)
-        
-        expected_precusor_summaries_after_tick = {
-            task.id: self.summarize_task(
-                task, overrides={'tick_count': 0, 'status': 'COMPLETED'})
-            for task in precursors
-        }
-        self.assertEqual(self.summarize_tasks(precursors),
-                         expected_precusor_summaries_after_tick)
-
-    def summarize_tasks(self, tasks):
-        return {task.id: self.summarize_task(task) for task in tasks}
-
-    def summarize_task(self, task, overrides=None):
-        if not overrides: overrides = {}
-        return {'id': task.id, 'tick_count': task.tick.call_count,
-                'status': task.status, **overrides}
+        expected_call_args_list = [call(flow=flow, task=successor)
+                                   for successor in successors]
+        self.assertEqual(self.mocks['engine']['start_task'].call_args_list,
+                         expected_call_args_list)
 
     def generate_flow_with_pending_successors(self):
         flow = Flow()
@@ -225,11 +201,44 @@ class TickTestCase(BaseTestCase):
             flow.add_task(running_task, precursor=flow.root_task)
         return flow
 
+    def summarize_tasks(self, tasks):
+        return {task.id: self.summarize_task(task) for task in tasks}
+
+    def summarize_task(self, task, overrides=None):
+        if not overrides: overrides = {}
+        return {'id': task.id, 'tick_count': task.tick.call_count,
+                'status': task.status, **overrides}
+
     def test_sets_status_to_completed_if_no_incomplete_tasks(self):
-        flow = Flow(root_task=BaseTask(status='COMPLETED'))
+        flow = Flow()
+        flow.add_task(task=BaseTask(status='COMPLETED'), as_root=True)
         self.assertTrue(flow.status != 'COMPLETED')
         self.engine.tick_flow(flow)
         self.assertTrue(flow.status == 'COMPLETED')
+
+class StartTaskTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.flow = Flow()
+
+    def test_sets_status_to_running(self):
+        task = self.flow.add_task(task=Mock())
+        self.engine.start_task(flow=self.flow, task=task)
+        self.assertEqual(task.status, 'RUNNING')
+
+    def test_sets_input_for_multiple_precursors(self):
+        precursors = [self.flow.add_task(task=Mock()) for i in range(3)]
+        successor = self.flow.add_task(task=Mock(), precursor=precursors)
+        self.engine.start_task(flow=self.flow, task=successor)
+        expected_input = [precursor.output for precursor in precursors]
+        self.assertEqual(set(successor.input), set(expected_input))
+
+    def test_sets_input_for_single_precursor(self):
+        precursor = self.flow.add_task(task=Mock())
+        successor = self.flow.add_task(task=Mock(), precursor=precursor)
+        self.engine.start_task(flow=self.flow, task=successor)
+        expected_input = precursor.output
+        self.assertEqual(successor.input, expected_input)
 
 if __name__ == '__main__':
     unittest.main()

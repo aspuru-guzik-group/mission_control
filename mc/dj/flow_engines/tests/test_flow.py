@@ -179,7 +179,7 @@ class GetNearestPendingTasksTestCase(BaseTestCase):
         self.assertEqual(set(self.flow.get_nearest_pending_tasks()),
                          set(expected_nearest_pending_tasks))
 
-class GetChildTasksTestCase(BaseTestCase):
+class GetSuccessorsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.setup_flow(flow=self.flow)
@@ -193,12 +193,10 @@ class GetChildTasksTestCase(BaseTestCase):
         task_1_2 = self.generate_task(id='1_2')
         self.flow.add_task(task_1_2, precursor=task_1)
 
-    def test_gets_child_tasks(self):
-        expected_child_tasks = [self.flow.tasks['1_1'],
-                                self.flow.tasks['1_2']]
-        child_tasks = self.flow.get_child_tasks(
-            parent_task=self.flow.tasks['1'])
-        self.assertEqual(set(child_tasks), set(expected_child_tasks))
+    def test_gets_successors(self):
+        successors = self.flow.get_successors(task=self.flow.tasks['1'])
+        expected_successors = [self.flow.tasks['1_1'], self.flow.tasks['1_2']]
+        self.assertEqual(set(successors), set(expected_successors))
 
 class FilterTasksTestCase(BaseTestCase):
     def setUp(self):

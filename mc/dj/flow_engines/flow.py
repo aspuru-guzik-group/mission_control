@@ -69,16 +69,15 @@ class Flow(object):
             task_id = task_or_task_id.id
         return task_id
 
-    def add_child_tasks(self, parent_task=None, child_tasks=None):
-        self.add_tasks(tasks=child_tasks)
-        for child_task in child_tasks:
-            self.add_edge(src=parent_task, dest=child_task)
+    def get_precursors(self, task=None):
+        task_edges = self.edges_by_task_id[task.id].values()
+        precursors = [e['src'] for e in task_edges if e['dest'] is task]
+        return precursors
 
-    def get_child_tasks(self, parent_task=None):
-        parent_task_edges = self.edges_by_task_id[parent_task.id].values()
-        child_tasks = [edge['dest'] for edge in parent_task_edges
-                       if edge['src'] is parent_task]
-        return child_tasks
+    def get_successors(self, task=None):
+        task_edges = self.edges_by_task_id[task.id].values()
+        successors = [e['dest'] for e in task_edges if e['src'] is task]
+        return successors
 
     def get_nearest_pending_tasks(self):
         nearest_pending_tasks = []
@@ -89,8 +88,8 @@ class Flow(object):
                 if cursor.status == 'PENDING':
                     nearest_pending_tasks.append(cursor)
                 elif cursor.status == 'COMPLETED':
-                    child_tasks = self.get_child_tasks(parent_task=cursor)
-                    next_cursors.extend(child_tasks)
+                    successors = self.get_successors(task=cursor)
+                    next_cursors.extend(successors)
             cursors = next_cursors
         return nearest_pending_tasks
 

@@ -1,4 +1,4 @@
-from collections import OrderedDict
+import collections
 from uuid import uuid4
 
 from .flow import Flow
@@ -6,7 +6,7 @@ from .flow import Flow
 
 class FlowEngine(object):
     def __init__(self, ctx=None):
-        self.task_class_registry = OrderedDict()
+        self.task_class_registry = collections.OrderedDict()
         self.ctx = ctx
 
     def register_task_class(self, task_class=None, key=None, test_fn=None):
@@ -100,10 +100,22 @@ class FlowEngine(object):
 
     def start_nearest_pending_tasks(self, flow=None):
         for task in flow.get_nearest_pending_tasks():
-            task.status = 'RUNNING'
+            self.start_task(flow=flow, task=task)
+
+    def start_task(self, flow=None, task=None):
+        self.set_task_input(flow=flow, task=task)
+        task.status = 'RUNNING'
+
+    def set_task_input(self, flow=None, task=None):
+        _get_output = lambda t: getattr(t, 'output', None)
+        precursors = flow.get_precursors(task=task)
+        if len(precursors) == 0: task.input = None
+        elif len(precursors) == 1: task.input = _get_output(precursors[0])
+        else: task.input = [_get_output(precursor) for precursor in precursors]
 
     def tick_running_tasks(self, flow=None, ctx=None):
-        ctx_with_jobs = {**ctx, 'jobs': flow.jobs}
+        if not ctx: ctx = {}
+        ctx_with_jobs = {**ctx, 'jobs': getattr(flow, 'jobs', {})}
         for task in flow.get_tasks_by_status(status='RUNNING'):
             self.tick_task(task=task, ctx=ctx_with_jobs)
 
