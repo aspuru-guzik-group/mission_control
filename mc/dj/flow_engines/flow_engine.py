@@ -6,80 +6,80 @@ from .flow import Flow
 
 class FlowEngine(object):
     def __init__(self, ctx=None):
-        self.node_class_registry = OrderedDict()
+        self.task_class_registry = OrderedDict()
         self.ctx = ctx
 
-    def register_node_class(self, node_class=None, key=None, test_fn=None):
+    def register_task_class(self, task_class=None, key=None, test_fn=None):
         if key is None: key = str(uuid4())
         if not test_fn:
-            def test_fn(serialized_node):
-                return (serialized_node.get('node_type') == node_class.__name__)
-        self.node_class_registry[key] = {'test_fn': test_fn,
-                                         'node_class': node_class}
+            def test_fn(serialized_task):
+                return (serialized_task.get('task_type') == task_class.__name__)
+        self.task_class_registry[key] = {'test_fn': test_fn,
+                                         'task_class': task_class}
 
     def deserialize_flow(self, serialized_flow=None):
         flow = Flow()
-        nodes = [
-            self.deserialize_node(serialized_node)
-            for serialized_node in serialized_flow.get('nodes', [])
+        tasks = [
+            self.deserialize_task(serialized_task)
+            for serialized_task in serialized_flow.get('tasks', [])
         ]
-        flow.add_nodes(nodes=nodes)
-        root_node_id = serialized_flow.get('root_node_id')
-        if root_node_id is not None:
-            flow.root_node = flow.nodes[root_node_id]
+        flow.add_tasks(tasks=tasks)
+        root_task_id = serialized_flow.get('root_task_id')
+        if root_task_id is not None:
+            flow.root_task = flow.tasks[root_task_id]
         edges = [
-            {'src': flow.nodes[serialized_edge['src_id']],
-             'dest': flow.nodes[serialized_edge['dest_id']]}
+            {'src': flow.tasks[serialized_edge['src_id']],
+             'dest': flow.tasks[serialized_edge['dest_id']]}
             for serialized_edge in serialized_flow.get('edges', [])
         ]
         flow.add_edges(edges=edges)
         flow.status = serialized_flow['status']
         return flow
 
-    def deserialize_node(self, serialized_node):
-        node_class = self.get_node_class_for_serialized_node(
-            serialized_node=serialized_node)
-        if not node_class:
-            msg = "Could not find node_class for serialized_node '{}'".format( 
-                serialized_node)
+    def deserialize_task(self, serialized_task):
+        task_class = self.get_task_class_for_serialized_task(
+            serialized_task=serialized_task)
+        if not task_class:
+            msg = "Could not find task_class for serialized_task '{}'".format( 
+                serialized_task)
             raise Exception(msg)
-        node_kwargs = self.get_node_kwargs_for_serialized_node(
-            serialized_node=serialized_node)
-        node = node_class(ctx=self.ctx, **node_kwargs)
-        return node
+        task_kwargs = self.get_task_kwargs_for_serialized_task(
+            serialized_task=serialized_task)
+        task = task_class(ctx=self.ctx, **task_kwargs)
+        return task
 
-    def get_node_class_for_serialized_node(self, serialized_node=None):
-        for registry_entry in self.node_class_registry.values():
-            if registry_entry['test_fn'](serialized_node):
-                return registry_entry['node_class']
+    def get_task_class_for_serialized_task(self, serialized_task=None):
+        for registry_entry in self.task_class_registry.values():
+            if registry_entry['test_fn'](serialized_task):
+                return registry_entry['task_class']
         return None
 
-    def get_node_kwargs_for_serialized_node(self, serialized_node=None):
-        return serialized_node
+    def get_task_kwargs_for_serialized_task(self, serialized_task=None):
+        return serialized_task
 
     def serialize_flow(self, flow=None):
         serialized_flow = {
-            'nodes': self.serialize_nodes(nodes=flow.nodes.values()),
+            'tasks': self.serialize_tasks(tasks=flow.tasks.values()),
             'edges': self.serialize_edges(edges=flow.edges.values()),
             'state': flow.state,
             'status': flow.status,
         }
-        if flow.root_node is not None:
-            serialized_flow['root_node_id'] = flow.root_node.id
+        if flow.root_task is not None:
+            serialized_flow['root_task_id'] = flow.root_task.id
         return serialized_flow
 
-    def serialize_nodes(self, nodes=None):
-        serialized_nodes = [self.serialize_node(node=node) for node in nodes]
-        return serialized_nodes
+    def serialize_tasks(self, tasks=None):
+        serialized_tasks = [self.serialize_task(task=task) for task in tasks]
+        return serialized_tasks
 
-    def serialize_node(self, node=None):
-        serialized_node = {
-            'id': node.id,
-            'state': node.state,
-            'node_type': node.node_type,
-            'status': node.status,
+    def serialize_task(self, task=None):
+        serialized_task = {
+            'id': task.id,
+            'state': task.state,
+            'task_type': task.task_type,
+            'status': task.status,
         }
-        return serialized_node
+        return serialized_task
 
     def serialize_edges(self, edges=None):
         serialized_edges = [self.serialize_edge(edge=edge) for edge in edges]
@@ -93,20 +93,20 @@ class FlowEngine(object):
         return serialized_edge
 
     def tick_flow(self, flow=None, ctx=None):
-        self.start_nearest_pending_nodes(flow=flow)
-        self.tick_running_nodes(flow=flow, ctx=ctx)
-        if not flow.has_incomplete_nodes():
+        self.start_nearest_pending_tasks(flow=flow)
+        self.tick_running_tasks(flow=flow, ctx=ctx)
+        if not flow.has_incomplete_tasks():
             flow.status = 'COMPLETED'
 
-    def start_nearest_pending_nodes(self, flow=None):
-        for node in flow.get_nearest_pending_nodes():
-            node.status = 'RUNNING'
+    def start_nearest_pending_tasks(self, flow=None):
+        for task in flow.get_nearest_pending_tasks():
+            task.status = 'RUNNING'
 
-    def tick_running_nodes(self, flow=None, ctx=None):
+    def tick_running_tasks(self, flow=None, ctx=None):
         ctx_with_jobs = {**ctx, 'jobs': flow.jobs}
-        for node in flow.get_nodes_by_status(status='RUNNING'):
-            self.tick_node(node=node, ctx=ctx_with_jobs)
+        for task in flow.get_tasks_by_status(status='RUNNING'):
+            self.tick_task(task=task, ctx=ctx_with_jobs)
 
-    def tick_node(self, node=None, ctx=None):
-        node.tick(engine=self, ctx=ctx)
+    def tick_task(self, task=None, ctx=None):
+        task.tick(engine=self, ctx=ctx)
 

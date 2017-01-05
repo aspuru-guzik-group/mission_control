@@ -20,92 +20,92 @@ class BaseTestCase(unittest.TestCase):
         mocks = {key: patcher.start() for key, patcher in patchers.items()}
         return mocks
 
-    def generate_nodes(self, n=3):
-        nodes = []
+    def generate_tasks(self, n=3):
+        tasks = []
         for i in range(n):
-            nodes.append(self.generate_node(id=i))
-        return nodes
+            tasks.append(self.generate_task(id=i))
+        return tasks
 
-    def generate_node(self, id=None, **kwargs):
+    def generate_task(self, id=None, **kwargs):
         if id is None: id = str(uuid4())
-        node = Mock()
-        node.configure_mock(id=id, **kwargs)
-        return node
+        task = Mock()
+        task.configure_mock(id=id, **kwargs)
+        return task
 
-class AddNodesTestCase(BaseTestCase):
+class AddTasksTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.patchers = {
-            'flow': patch.multiple(self.flow, add_node=DEFAULT)
+            'flow': patch.multiple(self.flow, add_task=DEFAULT)
         }
         self.mocks = self.start_patchers(self.patchers)
 
-    def test_adds_nodes(self):
-        nodes = self.generate_nodes(n=3)
-        self.flow.add_nodes(nodes=nodes)
-        self.assertEqual(self.mocks['flow']['add_node'].call_args_list,
-                         [call(node=node) for node in nodes])
+    def test_adds_tasks(self):
+        tasks = self.generate_tasks(n=3)
+        self.flow.add_tasks(tasks=tasks)
+        self.assertEqual(self.mocks['flow']['add_task'].call_args_list,
+                         [call(task=task) for task in tasks])
 
-class AddNodeTestCase(BaseTestCase):
+class AddTaskTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.node = self.generate_node(id='node')
+        self.task = self.generate_task(id='task')
 
-    def test_adds_node(self):
-        self.assertFalse(self.node.id in self.flow.nodes)
-        self.flow.add_node(node=self.node)
-        self.assertEqual(self.flow.nodes[self.node.id], self.node)
+    def test_adds_task(self):
+        self.assertFalse(self.task.id in self.flow.tasks)
+        self.flow.add_task(task=self.task)
+        self.assertEqual(self.flow.tasks[self.task.id], self.task)
 
-    def test_returns_node(self):
-        result = self.flow.add_node(node=self.node)
-        self.assertEqual(result, self.node)
+    def test_returns_task(self):
+        result = self.flow.add_task(task=self.task)
+        self.assertEqual(result, self.task)
 
-    def test_sets_flow_on_node(self):
-        self.flow.add_node(node=self.node)
-        self.assertEqual(self.node.flow, self.flow)
+    def test_sets_flow_on_task(self):
+        self.flow.add_task(task=self.task)
+        self.assertEqual(self.task.flow, self.flow)
 
     def test_add_as_root(self):
-        self.flow.add_node(node=self.node, as_root=True)
-        self.assertEqual(self.node.flow, self.flow)
-        self.assertEqual(self.flow.root_node, self.node)
+        self.flow.add_task(task=self.task, as_root=True)
+        self.assertEqual(self.task.flow, self.flow)
+        self.assertEqual(self.flow.root_task, self.task)
 
     def test_add_with_single_precursor(self):
-        precursor = self.flow.add_node(node=self.generate_node())
-        self.flow.add_node(node=self.node, precursor=precursor)
-        self.assertTrue(self.flow.has_edge(src=precursor, dest=self.node))
+        precursor = self.flow.add_task(task=self.generate_task())
+        self.flow.add_task(task=self.task, precursor=precursor)
+        self.assertTrue(self.flow.has_edge(src=precursor, dest=self.task))
 
     def test_add_with_precursor_id(self):
-        precursor = self.generate_node(id='precursor_id')
-        self.flow.add_node(node=precursor)
-        self.flow.add_node(node=self.node, precursor='precursor_id')
-        self.assertTrue(self.flow.has_edge(src=precursor, dest=self.node))
+        precursor = self.generate_task(id='precursor_id')
+        self.flow.add_task(task=precursor)
+        self.flow.add_task(task=self.task, precursor='precursor_id')
+        self.assertTrue(self.flow.has_edge(src=precursor, dest=self.task))
 
     def test_add_with_many_precursors(self):
-        precursors = [self.flow.add_node(node=self.generate_node(id=i))
+        precursors = [self.flow.add_task(task=self.generate_task(id=i))
                       for i in range(1)]
-        self.flow.add_node(node=self.node, precursor=precursors)
+        self.flow.add_task(task=self.task, precursor=precursors)
         for precursor in precursors:
             self.assertTrue(
-                self.flow.has_edge(src=precursor, dest=self.node))
+                self.flow.has_edge(src=precursor, dest=self.task))
 
     def test_add_with_single_successor(self):
-        successor = self.flow.add_node(node=self.generate_node())
-        self.flow.add_node(node=self.node, successor=successor)
-        self.assertTrue(self.flow.has_edge(src=self.node, dest=successor))
+        successor = self.flow.add_task(task=self.generate_task())
+        self.flow.add_task(task=self.task, successor=successor)
+        self.assertTrue(self.flow.has_edge(src=self.task, dest=successor))
 
     def test_add_with_successsor_id(self):
-        successor = self.generate_node(id='successor_id')
-        self.flow.add_node(node=successor)
-        self.flow.add_node(node=self.node, successor='successor_id')
-        self.assertTrue(self.flow.has_edge(src=self.node, dest=successor))
+        successor = self.generate_task(id='successor_id')
+        self.flow.add_task(task=successor)
+        self.flow.add_task(task=self.task, successor='successor_id')
+        self.assertTrue(self.flow.has_edge(src=self.task, dest=successor))
 
     def test_add_with_many_successors(self):
-        successors = [self.flow.add_node(node=self.generate_node(id=i))
+        successors = [self.flow.add_task(task=self.generate_task(id=i))
                       for i in range(3)]
-        self.flow.add_node(node=self.node, successor=successors)
+        self.flow.add_task(task=self.task, successor=successors)
         for successor in successors:
             self.assertTrue(
-                self.flow.has_edge(src=self.node, dest=successor))
+                self.flow.has_edge(src=self.task, dest=successor))
 
 class AddEdgesTestCase(BaseTestCase):
     def setUp(self):
@@ -124,9 +124,9 @@ class AddEdgesTestCase(BaseTestCase):
 class AddEdgeTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.nodes = self.generate_nodes(n=2)
-        self.flow.add_nodes(nodes=self.nodes)
-        self.edge = {'src': self.nodes[0], 'dest': self.nodes[1]}
+        self.tasks = self.generate_tasks(n=2)
+        self.flow.add_tasks(tasks=self.tasks)
+        self.edge = {'src': self.tasks[0], 'dest': self.tasks[1]}
         self.expected_edge_key = (self.edge['src'].id, self.edge['dest'].id)
 
     def test_add_edge(self):
@@ -134,111 +134,111 @@ class AddEdgeTestCase(BaseTestCase):
         self.flow.add_edge(**self.edge)
         self.assertEqual(self.flow.edges[self.expected_edge_key], self.edge)
 
-    def test_updates_edges_by_node_id(self):
-        self.assertTrue(self.nodes[0].id not in self.flow.edges_by_node_id)
-        self.assertTrue(self.nodes[1].id not in self.flow.edges_by_node_id)
+    def test_updates_edges_by_task_id(self):
+        self.assertTrue(self.tasks[0].id not in self.flow.edges_by_task_id)
+        self.assertTrue(self.tasks[1].id not in self.flow.edges_by_task_id)
         self.flow.add_edge(**self.edge)
-        for node in self.nodes:
+        for task in self.tasks:
             self.assertEqual(
-                self.flow.edges_by_node_id[node.id][self.expected_edge_key],
+                self.flow.edges_by_task_id[task.id][self.expected_edge_key],
                 self.edge)
 
-class GetNearestPendingNodesTestCase(BaseTestCase):
+class GetNearestPendingTasksTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.setup_flow()
 
     def setup_flow(self):
-        self.flow.add_node(
-            self.generate_node(id='ROOT', status='COMPLETED'), as_root=True)
+        self.flow.add_task(
+            self.generate_task(id='ROOT', status='COMPLETED'), as_root=True)
         self.linear_branches = {
             '1': [
-                self.generate_node(id='1.1', status='COMPLETED'),
-                self.generate_node(id='1.2', status='PENDING'),
-                self.generate_node(id='1.3', status='PENDING')
+                self.generate_task(id='1.1', status='COMPLETED'),
+                self.generate_task(id='1.2', status='PENDING'),
+                self.generate_task(id='1.3', status='PENDING')
             ],
             '2': [
-                self.generate_node(id='2.1', status='COMPLETED'),
-                self.generate_node(id='2.2', status='COMPLETED'),
-                self.generate_node(id='2.3', status='PENDING'),
-                self.generate_node(id='2.4', status='PENDING'),
+                self.generate_task(id='2.1', status='COMPLETED'),
+                self.generate_task(id='2.2', status='COMPLETED'),
+                self.generate_task(id='2.3', status='PENDING'),
+                self.generate_task(id='2.4', status='PENDING'),
             ],
         }
-        for branch_nodes in self.linear_branches.values():
+        for branch_tasks in self.linear_branches.values():
             self.add_linear_branch_to_flow(flow=self.flow,
-                                               branch_nodes=branch_nodes)
+                                               branch_tasks=branch_tasks)
 
-    def add_linear_branch_to_flow(self, flow=None, branch_nodes=None):
-        tail = flow.root_node
-        for node in branch_nodes:
-            tail = flow.add_node(node=node, precursor=[tail])
+    def add_linear_branch_to_flow(self, flow=None, branch_tasks=None):
+        tail = flow.root_task
+        for task in branch_tasks:
+            tail = flow.add_task(task=task, precursor=[tail])
 
-    def test_get_nearest_pending_nodes(self):
-        expected_nearest_pending_nodes = [self.linear_branches['1'][1],
+    def test_get_nearest_pending_tasks(self):
+        expected_nearest_pending_tasks = [self.linear_branches['1'][1],
                                           self.linear_branches['2'][2]]
-        self.assertEqual(set(self.flow.get_nearest_pending_nodes()),
-                         set(expected_nearest_pending_nodes))
+        self.assertEqual(set(self.flow.get_nearest_pending_tasks()),
+                         set(expected_nearest_pending_tasks))
 
-class GetChildNodesTestCase(BaseTestCase):
+class GetChildTasksTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.setup_flow(flow=self.flow)
 
     def setup_flow(self, flow=None):
-        self.flow.add_node(self.generate_node(id='ROOT'), as_root=True)
-        node_1 = self.generate_node(id='1')
-        self.flow.add_node(node_1, precursor=flow.root_node)
-        node_1_1 = self.generate_node(id='1_1')
-        self.flow.add_node(node_1_1, precursor=node_1)
-        node_1_2 = self.generate_node(id='1_2')
-        self.flow.add_node(node_1_2, precursor=node_1)
+        self.flow.add_task(self.generate_task(id='ROOT'), as_root=True)
+        task_1 = self.generate_task(id='1')
+        self.flow.add_task(task_1, precursor=flow.root_task)
+        task_1_1 = self.generate_task(id='1_1')
+        self.flow.add_task(task_1_1, precursor=task_1)
+        task_1_2 = self.generate_task(id='1_2')
+        self.flow.add_task(task_1_2, precursor=task_1)
 
-    def test_gets_child_nodes(self):
-        expected_child_nodes = [self.flow.nodes['1_1'],
-                                self.flow.nodes['1_2']]
-        child_nodes = self.flow.get_child_nodes(
-            parent_node=self.flow.nodes['1'])
-        self.assertEqual(set(child_nodes), set(expected_child_nodes))
+    def test_gets_child_tasks(self):
+        expected_child_tasks = [self.flow.tasks['1_1'],
+                                self.flow.tasks['1_2']]
+        child_tasks = self.flow.get_child_tasks(
+            parent_task=self.flow.tasks['1'])
+        self.assertEqual(set(child_tasks), set(expected_child_tasks))
 
-class FilterNodesTestCase(BaseTestCase):
+class FilterTasksTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
 
     def test_filters(self):
-        nodes = defaultdict(list)
+        tasks = defaultdict(list)
         for i in range(4):
             if i % 2: answer = 'yes'
             else: answer = 'no'
-            node = self.generate_node(answer=answer)
-            nodes[answer].append(node)
-            self.flow.add_node(node)
-        _filter = lambda node: node.answer == 'yes'
-        result = self.flow.filter_nodes(filters=[_filter])
-        expected_result = nodes['yes']
+            task = self.generate_task(answer=answer)
+            tasks[answer].append(task)
+            self.flow.add_task(task)
+        _filter = lambda task: task.answer == 'yes'
+        result = self.flow.filter_tasks(filters=[_filter])
+        expected_result = tasks['yes']
         self.assertEqual(set(result), set(expected_result))
 
-class GetNodesByStatusTestCase(BaseTestCase):
-    def test_gets_nodes_by_status(self):
-        nodes = defaultdict(list)
+class GetTasksByStatusTestCase(BaseTestCase):
+    def test_gets_tasks_by_status(self):
+        tasks = defaultdict(list)
         statuses = ['status_%s' % i for i in range(3)]
         for status in statuses:
             for i in range(3):
-                node = self.generate_node(status=status)
-                nodes[status].append(node)
-                self.flow.add_node(node)
+                task = self.generate_task(status=status)
+                tasks[status].append(task)
+                self.flow.add_task(task)
         for status in statuses:
-            result = self.flow.get_nodes_by_status(status=status)
-            expected_result = nodes[status]
+            result = self.flow.get_tasks_by_status(status=status)
+            expected_result = tasks[status]
             self.assertEqual(set(result), set(expected_result))
 
-class HasIncompleteNodesTestCase(BaseTestCase):
+class HasIncompleteTasksTestCase(BaseTestCase):
     def test_has_incomplete(self):
-        self.flow.add_node(self.generate_node(status='PENDING'))
-        self.assertTrue(self.flow.has_incomplete_nodes())
+        self.flow.add_task(self.generate_task(status='PENDING'))
+        self.assertTrue(self.flow.has_incomplete_tasks())
 
     def test_does_not_have_incomplete(self):
-        self.flow.add_node(self.generate_node(status='COMPLETED'))
-        self.assertFalse(self.flow.has_incomplete_nodes())
+        self.flow.add_task(self.generate_task(status='COMPLETED'))
+        self.assertFalse(self.flow.has_incomplete_tasks())
 
 
 if __name__ == '__main__':

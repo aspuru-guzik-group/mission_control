@@ -1,6 +1,6 @@
-from .base import BaseNode
+from .base import BaseTask
 
-class A2G2_DAO_Node(BaseNode):
+class A2G2_DAO_Task(BaseTask):
     def __init__(self, *args, **kwargs):
         super().__init__(self, *args, **kwargs)
 

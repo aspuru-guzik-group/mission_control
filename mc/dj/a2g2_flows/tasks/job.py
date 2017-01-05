@@ -1,7 +1,7 @@
-from .base import BaseNode
+from .base import BaseTask
 
 
-class JobNode(BaseNode):
+class JobTask(BaseTask):
     def __init__(self, *args, **kwargs): super().__init__(self, *args, **kwargs)
 
     def tick(self, *args, ctx=None, **kwargs):
@@ -14,7 +14,8 @@ class JobNode(BaseNode):
             self.status = 'FAILED'
 
     def initial_tick(self, ctx=None):
-        self.data['job_id'] = ctx['create_job'](job_kwargs={
+        create_job = ctx['create_job']
+        self.data['job_id'] = create_job(job_kwargs={
             'type': self.data['input']['job_type'],
             'spec': self.data['input'].get('job_spec', {})
         })

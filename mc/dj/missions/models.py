@@ -50,7 +50,7 @@ class FlowJob(TimeStampedModel):
     meta = JSONField(default=dict)
 
     def __str__(self):
-        return '<{class_name}: {{flow_id: {wf}, job_id: {j}}}>'.format(
+        return '<{class_name}: {{flow_id: {f_id}, job_id: {j_id}}}>'.format(
             class_name=self.__class__.__name__,
-            wf=self.flow_id,
-            j=self.job_id)
+            f_id=self.flow_id,
+            j_id=self.job_id)
