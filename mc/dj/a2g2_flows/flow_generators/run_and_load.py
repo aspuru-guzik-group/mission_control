@@ -41,7 +41,7 @@ class RunAndLoadFlowGenerator(BaseFlowGenerator):
     @classmethod
     def get_dependencies(cls, *args, **kwargs):
         return {
-            'tasks': set([JobTask, LoadPrepTask])
+            'task_classes': set([JobTask, LoadPrepTask])
         }
 
 class LoadPrepTask(BaseTask):

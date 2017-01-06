@@ -3,7 +3,7 @@ from django.conf.urls import url, include
 from django.test import TestCase, override_settings
 
 from missions.models import Flow as FlowModel
-from flow_engines.flow import Flow, BaseTask
+from flow_engines.flow import Flow
 from flow_runners.base_flow_runner import BaseFlowRunner
 from flow_engines.flow_engine import FlowEngine
 from flow_client.flow_client import MissionControlFlowClient
@@ -38,9 +38,11 @@ class FlowRunnerE2ETestCase(TestCase):
         self.client.patch = json_patch
 
     def generate_keyed_task_classes(self):
-        class BaseTestTask(BaseTask):
+        class BaseTestTask():
+            def __init__(self, *args, **kwargs):
+                self.__dict__.update(kwargs)
+
             def tick(self, *args, **kwargs):
-                #print("tick", self.__class__.__name__)
                 if not hasattr(self.__class__, 'ticks'):
                     self.__class__.ticks = 0
                 self.__class__.ticks += 1

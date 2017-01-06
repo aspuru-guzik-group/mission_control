@@ -33,6 +33,6 @@ class ReaxysFlowGenerator(object):
     @classmethod
     def get_dependencies(cls):
         return {
-            'tasks': set([FlowTask]),
-            'flow_generators': set([RunAndLoadFlowGenerator])
+            'task_classes': set([FlowTask]),
+            'flow_generator_classes': set([RunAndLoadFlowGenerator])
         }

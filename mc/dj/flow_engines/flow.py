@@ -1,16 +1,6 @@
 import collections
 from uuid import uuid4
 
-class BaseTask(object):
-    def __init__(self, uuid=None, status=None, flow=None, key=None,
-                 **kwargs):
-        self.uuid = uuid or str(uuid4())
-        self.flow = flow
-        self.key = key
-        self.status = status
-
-    @property
-    def task_type(self): return self.__class__.__name__
 
 class Flow(object):
     def __init__(self):

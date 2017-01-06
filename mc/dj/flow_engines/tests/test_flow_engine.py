@@ -3,7 +3,7 @@ from unittest.mock import call, DEFAULT, patch, Mock
 from uuid import uuid4
 
 from ..flow_engine import FlowEngine
-from ..flow import Flow, BaseTask
+from ..flow import Flow
 
 
 class BaseTestCase(unittest.TestCase):
@@ -21,19 +21,22 @@ class BaseTestCase(unittest.TestCase):
                  for key, patcher in patchers.items()}
         return mocks
 
+    def generate_task(self, **task_state):
+        task = Mock()
+        task.configure_mock(**task_state)
+        return task
+
 class DeserializationTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.setup_task_classes()
 
     def setup_task_classes(self):
-        class BaseTask(object):
-            def __init__(self, *args, key=None, status=None, ctx=None, **kwargs):
-                self.key = key
-                self.status = status
-                self.ctx = ctx
+        class MockTaskClass(object):
+            def __init__(self, *args, **kwargs):
+                self.__dict__.update(kwargs)
 
-        self.task_classes = {name: type(name, (BaseTask,), {})
+        self.task_classes = {name: type(name, (MockTaskClass,), {})
                              for name in ['Type1', 'Type2', 'Type3']}
         for name, task_class in self.task_classes.items():
             self.engine.register_task_class(task_class=task_class)
@@ -218,7 +221,7 @@ class TickTestCase(BaseTestCase):
 
     def generate_flow_with_running_tasks(self):
         flow = Flow()
-        flow.add_task(BaseTask(status='COMPLETED'), as_root=True)
+        flow.add_task(task=self.generate_task(status='COMPLETED'), as_root=True)
         for i in range(3):
             running_task = Mock()
             running_task.configure_mock(key=i, status='RUNNING')
@@ -235,7 +238,7 @@ class TickTestCase(BaseTestCase):
 
     def test_calls_complete_flow_if_no_incomplete_tasks(self):
         flow = Flow()
-        flow.add_task(task=BaseTask(status='COMPLETED'), as_root=True)
+        flow.add_task(task=self.generate_task(status='COMPLETED'), as_root=True)
         self.assertEqual(self.mocks['engine']['complete_flow'].call_count, 0)
         self.engine.tick_flow(flow)
         self.assertEqual(self.mocks['engine']['complete_flow'].call_count, 1)
@@ -249,7 +252,7 @@ class CompleteFlowTestCase(BaseTestCase):
 
     def test_sets_output_for_single_tail_task(self):
         flow = Flow()
-        tail_task = flow.add_task(task=BaseTask(status='COMPLETED'),
+        tail_task = flow.add_task(task=self.generate_task(status='COMPLETED'),
                                   as_root=True)
         tail_task.output = 'some output'
         self.engine.complete_flow(flow=flow)
@@ -257,12 +260,14 @@ class CompleteFlowTestCase(BaseTestCase):
 
     def test_sets_output_for_multiple_tail_tasks(self):
         flow = Flow()
-        root_task = flow.add_task(task=BaseTask(status='COMPLETED'),
+        root_task = flow.add_task(task=self.generate_task(status='COMPLETED'),
                                   as_root=True)
         tail_tasks = []
         for i in range(3):
-            tail_task = flow.add_task(task=BaseTask(status='COMPLETED'),
-                                      precursor=root_task)
+            tail_task = flow.add_task(
+                task=self.generate_task(status='COMPLETED'),
+                precursor=root_task
+            )
             tail_task.output = 'output_%s' % i
             tail_tasks.append(tail_task)
         self.engine.complete_flow(flow=flow)
@@ -306,10 +311,11 @@ class StartTaskTestCase(BaseTestCase):
 
 class GenerateFlowTestCase(BaseTestCase):
     def test_generates_flow_from_spec(self):
-        MockFlowGenerator = Mock()
-        self.engine.register_flow_generator(MockFlowGenerator,
-                                            test_fn=lambda flow_spec: True)
-        flow_spec = Mock()
+        class MockFlowGenerator(object):
+            flow_type = 'some flow type'
+            generate_flow = Mock()
+        self.engine.register_flow_generator_class(MockFlowGenerator)
+        flow_spec = {'flow_type': MockFlowGenerator.flow_type}
         flow = self.engine.generate_flow(flow_spec=flow_spec)
         self.assertEqual(MockFlowGenerator.generate_flow.call_args,
                          call(flow_spec=flow_spec))
