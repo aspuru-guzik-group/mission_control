@@ -10,6 +10,7 @@ class FlowEngine(object):
         self.ctx = ctx
         self.logger = logger or logging
         self.task_class_registry = collections.OrderedDict()
+        self.flow_generator_registry = collections.OrderedDict()
 
     def register_task_class(self, task_class=None, key=None, test_fn=None):
         if key is None: key = str(uuid4())
@@ -18,6 +19,14 @@ class FlowEngine(object):
                 return (serialized_task.get('task_type') == task_class.__name__)
         self.task_class_registry[key] = {'test_fn': test_fn,
                                          'task_class': task_class}
+
+    def register_flow_generator(self, flow_generator, key=None, test_fn=None):
+        if key is None: key = str(uuid4())
+        if not test_fn:
+            def test_fn(flow_spec):
+                return (flow_spec.get('flow_type') == flow_generator.__name__)
+        self.flow_generator_registry[key] = {'test_fn': test_fn,
+                                             'flow_generator': flow_generator}
 
     def deserialize_flow(self, serialized_flow=None):
         flow = Flow()
@@ -152,3 +161,22 @@ class FlowEngine(object):
             for tail_task in tail_tasks
         }
         return output
+
+    def generate_flow(self, flow_spec=None):
+        FlowGenerator = self.get_flow_generator_for_spec(flow_spec=flow_spec)
+        if not FlowGenerator:
+            msg = "Could not find FlowGenerator for flow_spec '{}'".format( 
+                flow_spec)
+            raise Exception(msg)
+        flow_kwargs = self.get_flow_kwargs_for_flow_spec(flow_spec=flow_spec)
+        flow = FlowGenerator.generate_flow(**flow_kwargs)
+        return flow
+
+    def get_flow_generator_for_spec(self, flow_spec=None):
+        for registry_entry in self.flow_generator_registry.values():
+            if registry_entry['test_fn'](flow_spec):
+                return registry_entry['flow_generator']
+        return None
+
+    def get_flow_kwargs_for_flow_spec(self, flow_spec=None):
+        return {'flow_spec': flow_spec}

@@ -305,5 +305,16 @@ class StartTaskTestCase(BaseTestCase):
         expected_input = successor.static_input
         self.assertEqual(successor.input, expected_input)
 
+class GenerateFlowTestCase(BaseTestCase):
+    def test_generates_flow_from_spec(self):
+        MockFlowGenerator = Mock()
+        self.engine.register_flow_generator(MockFlowGenerator,
+                                            test_fn=lambda flow_spec: True)
+        flow_spec = Mock()
+        flow = self.engine.generate_flow(flow_spec=flow_spec)
+        self.assertEqual(MockFlowGenerator.generate_flow.call_args,
+                         call(flow_spec=flow_spec))
+        self.assertEqual(flow, MockFlowGenerator.generate_flow.return_value)
+
 if __name__ == '__main__':
     unittest.main()
