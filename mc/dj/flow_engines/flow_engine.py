@@ -21,7 +21,8 @@ class FlowEngine(object):
 
     def deserialize_flow(self, serialized_flow=None):
         flow = Flow()
-        flow.data = serialized_flow.get('data')
+        for attr in ['data', 'input', 'output']:
+            setattr(flow, attr, serialized_flow.get(attr, None))
         tasks = [
             self.deserialize_task(serialized_task)
             for serialized_task in serialized_flow.get('tasks', [])
@@ -62,7 +63,8 @@ class FlowEngine(object):
 
     def serialize_flow(self, flow=None):
         serialized_flow = {
-            'data': flow.data,
+            **{attr: getattr(flow, attr, None)
+               for attr in ['data', 'input', 'output']},
             'tasks': self.serialize_tasks(tasks=flow.tasks.values()),
             'edges': self.serialize_edges(edges=flow.edges.values()),
             'state': flow.state,

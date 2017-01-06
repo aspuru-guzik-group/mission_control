@@ -14,6 +14,8 @@ class BaseTask(object):
 
 class Flow(object):
     def __init__(self):
+        self.input = None
+        self.output = None
         self.data = {}
         self.tasks = {}
         self.edges = {}
