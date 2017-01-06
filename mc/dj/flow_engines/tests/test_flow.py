@@ -84,6 +84,11 @@ class AddTaskTestCase(BaseTestCase):
         self.flow.add_task(task=self.task)
         self.assertTrue(self.task.key is not None)
 
+    def test_sets_static_input_if_provided(self):
+        static_input = Mock()
+        self.flow.add_task(task=self.task, static_input=static_input)
+        self.assertTrue(self.task.static_input is static_input)
+
     def test_add_as_root(self):
         self.flow.add_task(task=self.task, as_root=True)
         self.assertEqual(self.task.flow, self.flow)

@@ -25,12 +25,13 @@ class Flow(object):
     def add_tasks(self, tasks=None):
         for task in tasks: self.add_task(task=task)
 
-    def add_task(self, task=None, key=None, as_root=False, precursor=None,
-                 successor=None):
+    def add_task(self, task=None, key=None, static_input=None,
+                 as_root=False, precursor=None, successor=None):
         key = self.determine_key_for_task(task=task, key=key)
         self.tasks[key] = task
         task.key = key
         task.flow = self
+        if static_input is not None: task.static_input = static_input
         if as_root: self.root_task = task
         for precursor_task in self._ensure_iterable(precursor):
             self.add_edge(src=precursor_task, dest=task)
