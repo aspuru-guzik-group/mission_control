@@ -3,10 +3,10 @@ from flow_engines.flow import Flow
 from ..tasks.a2g2_dao import A2G2_DAO_Task
 from ..tasks.base import BaseTask
 from ..tasks.flow import FlowTask
-from ..flows.run_and_load import RunAndLoad_FlowGenerator
+from ..flows.run_and_load import RunAndLoadFlowGenerator
 
 
-class Reaxys_FlowGenerator(object):
+class ReaxysFlowGenerator(object):
     flow_type = 'reaxys'
     label = 'Reaxys'
     description = 'Flow that runs reaxys pipeline.'
@@ -37,7 +37,7 @@ class Reaxys_FlowGenerator(object):
                 ConfgenPrepTask,
                 FlowTask,
             ]),
-            'flow_generators': set([RunAndLoad_FlowGenerator])
+            'flow_generators': set([RunAndLoadFlowGenerator])
         }
 
 class ConfgenPrepTask(BaseTask):

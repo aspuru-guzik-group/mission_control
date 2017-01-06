@@ -2,8 +2,6 @@ from .base import BaseTask
 
 
 class FlowTask(BaseTask):
-    def __init__(self, *args, **kwargs): super().__init__(self, *args, **kwargs)
-
     def tick(self, *args, ctx=None, **kwargs):
         self.increment_tick_counter()
         try: 

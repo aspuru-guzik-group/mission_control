@@ -3,7 +3,7 @@ from unittest.mock import call, MagicMock
 from uuid import uuid4
 from django.test import TestCase
 
-from ..tasks.job import JobTask
+from ...tasks.job import JobTask
 
 
 class BaseTestCase(TestCase):
@@ -25,17 +25,13 @@ class InitialTickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.initial_state = {
-            'input': {
-                'job_type': 'some job_type',
-                'job_spec': 'some job_spec',
-            }
+            'input': {'job_spec': 'some job_spec'}
         }
         self.task = self.generate_task(**self.initial_state)
         self.task.tick(ctx=self.ctx)
 
     def test_initial_tick_creates_job(self):
         expected_call_args = call(job_kwargs={
-            'type': self.initial_state['input']['job_type'],
             'spec': self.initial_state['input']['job_spec'],
         })
         self.assertEqual(self.ctx['create_job'].call_args, expected_call_args)
@@ -57,7 +53,7 @@ class IntermediateTickMixin(object):
         self.initial_state = {
             'data': {'ticks': self.initial_ticks,
                      'job_id': self.job['id']},
-            'input': {'job_type': 'some job type'},
+            'input': {'job_spec': 'some job spec'},
             'status': 'RUNNING'}
         self.task = self.generate_task(**self.initial_state)
         self.task.tick(ctx=self.ctx)

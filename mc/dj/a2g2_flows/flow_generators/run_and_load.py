@@ -1,58 +1,52 @@
 from flow_engines.flow import Flow
 
-from ..nodes.base import BaseNode
-from ..nodes.job import Job_Node
+from .base import BaseFlowGenerator
+from ..tasks.base import BaseTask
+from ..tasks.job import JobTask
 
 
-class RPI_Flow_Module(object):
-    flow_type = 'rpi'
-    label = 'RPI'
-    description = 'Flow that runs run-parse-ingest cycle.'
+class RunAndLoadFlowGenerator(BaseFlowGenerator):
+    flow_type = 'run_and_load'
+    label = 'Run-and-Load Flow'
+    description = """Flow that runs 2 jobs:
+        (1) a generic job, and
+        (2) a 'load' job"""
 
     @classmethod
-    def generate_flow(cls, *arg, **kwargs):
-        node_classes = cls.get_node_classes()
+    def generate_flow(cls, *arg, flow_spec=None, **kwargs):
         flow = Flow()
+        flow.data['flow_spec'] = flow_spec
 
-        run_node = node_classes['rpi:job'](id='run')
-        flow.add_node(node=run_node, as_root=True)
+        flow.add_task(
+            key='run',
+            as_root=True,
+            task=JobTask(),
+            static_input={'job_spec': flow_spec['run_spec']}
+        )
 
-        parse_setup_node = node_classes['rpi:parse_setup'](id='parse_setup')
-        flow.add_node(node=parse_setup_node, precursor=run_node)
-        parse_node = node_classes['rpi:job'](id='parse')
-        flow.add_node(node=parse_node, precursor=parse_setup_node)
+        flow.add_task(
+            key='load_prep',
+            precursor='run',
+            task=LoadPrepTask(flow_spec=flow_spec)
+        )
 
-        ingest_setup_node = node_classes['rpi:ingest_setup'](id='ingest_setup')
-        flow.add_node(node=ingest_setup_node, precursor=parse_node)
-        ingest_node = node_classes['rpi:job'](id='ingest')
-        flow.add_node(node=ingest_node, precursor=ingest_setup_node)
+        flow.add_task(
+            key='load',
+            precursor='load_prep',
+            task=JobTask()
+        )
 
+        return flow
 
     @classmethod
-    def get_node_classes(cls):
-        node_classes = {
-            'rpi:job': Job_Node,
-            'rpi:parse_setup': Parse_Setup_Node,
-            'rpi:ingest_setup': Ingest_Setup_Node,
+    def get_dependencies(cls, *args, **kwargs):
+        return {
+            'tasks': set([JobTask, LoadPrepTask])
         }
-        return node_classes
 
-class Parse_Setup_Node(BaseNode):
+class LoadPrepTask(BaseTask):
     def tick(self, *args, **kwargs):
-        src_node = self.flow.nodes['query']
-        dest_node = self.flow.nodes['run']
-        dest_node.data['input'] = {
-            'smiles': src_node.data['output']['result_set']['mols'][0]['smiles'],
-            'confgen_spec': '!!!@TODO!!!'
-        }
+        load_spec = self.flow.data['flow_spec'].get('load_spec', {})
+        self.output = {'job_spec': {**load_spec, 'dir': self.input['dir']}}
         self.status = 'COMPLETED'
 
-class Ingest_Setup_Node(BaseNode):
-    def tick(self, *args, **kwargs):
-        src_node = self.flow.nodes['query']
-        dest_node = self.flow.nodes['run']
-        dest_node.data['input'] = {
-            'smiles': src_node.data['output']['result_set']['mols'][0]['smiles'],
-            'confgen_spec': '!!!@TODO!!!'
-        }
-        self.status = 'COMPLETED'

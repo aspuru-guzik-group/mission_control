@@ -4,7 +4,7 @@ from uuid import uuid4
 
 from flow_engines.flow_engine import FlowEngine
 
-from ..flows.reaxys import Reaxys_Flow_Module
+from ...flow_generators.reaxys import ReaxysFlowGenerator
 
 
 class ReaxysFlowTestCase(unittest.TestCase):
@@ -35,7 +35,7 @@ class ReaxysFlowTestCase(unittest.TestCase):
         return engine
 
     def generate_flow(self, mol_key=None):
-        return Reaxys_Flow_Module.generate_flow(mol_key=mol_key)
+        return ReaxysFlowGenerator.generate_flow(mol_key=mol_key)
 
     def test_run_flow(self):
 

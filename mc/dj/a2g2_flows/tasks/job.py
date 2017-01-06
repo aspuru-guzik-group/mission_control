@@ -2,23 +2,19 @@ from .base import BaseTask
 
 
 class JobTask(BaseTask):
-    def __init__(self, *args, **kwargs): super().__init__(self, *args, **kwargs)
-
     def tick(self, *args, ctx=None, **kwargs):
         self.increment_tick_counter()
         try: 
             if self.data['ticks'] == 1: self.initial_tick(ctx=ctx)
             else: self.intermediate_tick(ctx=ctx)
         except Exception as e:
-            self.logger.exception(e)
-            self.status = 'FAILED'
+            self.mark_as_failed(error=e)
+            raise e
 
     def initial_tick(self, ctx=None):
         create_job = ctx['create_job']
-        self.data['job_id'] = create_job(job_kwargs={
-            'type': self.input['job_type'],
-            'spec': self.input.get('job_spec', {})
-        })
+        job_kwargs = {'job_spec': self.input['job_spec']}
+        self.data['job_id'] = create_job(job_kwargs=job_kwargs)
         self.status = 'RUNNING'
 
     def intermediate_tick(self, ctx=None):

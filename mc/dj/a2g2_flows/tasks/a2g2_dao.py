@@ -1,8 +1,6 @@
 from .base import BaseTask
 
 class A2G2_DAO_Task(BaseTask):
-    def __init__(self, *args, **kwargs): super().__init__(self, *args, **kwargs)
-
     def tick(self, *args, ctx=None, **kwargs):
         try:
             a2g2_dao = ctx['a2g2_dao']

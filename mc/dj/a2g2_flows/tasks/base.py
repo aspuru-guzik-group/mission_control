@@ -19,3 +19,7 @@ class BaseTask(object):
     def increment_tick_counter(self):
         if 'ticks' not in self.data: self.data['ticks'] = 0
         self.data['ticks'] += 1
+
+    def mark_as_failed(self, error=None):
+        self.status = 'FAILED'
+        self.error = error
