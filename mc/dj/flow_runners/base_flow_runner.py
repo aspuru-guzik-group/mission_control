@@ -5,12 +5,14 @@ import time
 
 class BaseFlowRunner(object):
     def __init__(self, flow_client=None, flow_engine=None,
-                 tick_interval=120, max_flows_per_tick=3, logger=None):
+                 tick_interval=120, max_flows_per_tick=3, logger=None,
+                 tick_ctx=None):
         self.flow_client = flow_client
         self.flow_engine = flow_engine
         self.tick_interval = tick_interval
         self.max_flows_per_tick = max_flows_per_tick
         self.logger = logger or logging
+        self.tick_ctx = tick_ctx
 
         self._ticking = False
         self.tick_counter = 0
@@ -79,7 +81,7 @@ class BaseFlowRunner(object):
         serialized_flow = json.loads(json_flow)
         flow = self.flow_engine.deserialize_flow(
             serialized_flow=serialized_flow)
-        self.flow_engine.tick_flow(flow=flow)
+        self.flow_engine.tick_flow(flow=flow, ctx=self.tick_ctx)
         updated_serialization = self.flow_engine.serialize_flow(
             flow=flow)
         updates = {'serialization': json.dumps(updated_serialization)}

@@ -154,7 +154,7 @@ class TickFlowRecord(BaseTestCase):
                 .deserialize_flow.return_value
         self.assertEqual(
             self.flow_engine.tick_flow.call_args,
-            call(flow=expected_deserialized_flow))
+            call(flow=expected_deserialized_flow, ctx=self.runner.tick_ctx))
 
     def test_returns_serialization(self):
         result = self.runner.tick_flow_record(self.flow_record)
