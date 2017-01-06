@@ -8,8 +8,8 @@ class FlowTask(BaseTask):
             if self.data['ticks'] == 1: self.initial_tick(ctx=ctx)
             else: self.intermediate_tick(ctx=ctx)
         except Exception as e:
-            self.logger.exception(e)
-            self.status = 'FAILED'
+            self.mark_as_failed(error=e)
+            raise e
 
     def initial_tick(self, ctx=None):
         create_flow = ctx['create_flow']
