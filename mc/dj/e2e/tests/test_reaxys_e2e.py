@@ -60,6 +60,14 @@ class ReaxysFlowE2ETestCase(TestCase):
         return flow_engine
 
     def generate_tick_ctx(self):
+
+        def create_flow(flow_spec=None):
+            flow = self.flow_engine.generate_flow(flow_spec=flow_spec)
+            serialized_flow = self.flow_engine.serialize_flow(flow)
+            created_flow = self.flow_client.create_flow(
+                flow={'serialization': serialized_flow})
+            return created_flow.uuid
+
         def get_flow(flow_id=None):
             raise NotImplementedError
 
@@ -67,7 +75,7 @@ class ReaxysFlowE2ETestCase(TestCase):
             raise NotImplementedError
 
         return {
-            'create_flow': self.flow_client.create_flow,
+            'create_flow': create_flow,
             'get_flow': get_flow,
             'create_job': self.job_client.create_job,
             'get_job': get_job,
@@ -100,6 +108,7 @@ class ReaxysFlowE2ETestCase(TestCase):
     def generate_reaxys_flow_model(self):
         flow = ReaxysFlowGenerator.generate_flow(flow_spec=self.flow_spec)
         serialization = self.flow_engine.serialize_flow(flow=flow)
+        print("s: ", serialization)
         flow_model = FlowModel.objects.create(
             serialization=json.dumps(serialization))
         return flow_model
