@@ -97,6 +97,23 @@ class UpdateFlowsTestCase(BaseTestCase):
         expected_result = {_uuid: {} for _uuid in  self.updates_by_uuid}
         self.assertEqual(result, expected_result)
 
+class CreateFlowTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.flow = {'data': 'some data'}
+
+    def test_makes_post_call(self):
+        self.client.create_flow(flow=self.flow)
+        self.assertEqual(self.mocks['requests']['post'].call_args,
+                         call(self.base_url + 'flows/', data=self.flow))
+
+    def test_returns_post_result(self):
+        mock_result = {'some': 'result'}
+        self.mocks['requests']['post'].return_value.json.return_value = \
+                mock_result
+        result = self.client.create_flow(flow=self.flow)
+        self.assertEqual(result, mock_result)
+
 if __name__ == '__main__':
     unittest.main()
 

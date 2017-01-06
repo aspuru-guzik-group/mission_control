@@ -4,19 +4,29 @@ import requests
 class MissionControlFlowClient(object):
     def __init__(self, base_url=None, request_client=None):
         self.base_url = base_url
+        self.urls = self.generate_urls()
         self.request_client = request_client or requests
 
+    def generate_urls(self):
+        return {
+            'flows': self.base_url + 'flows/',
+            'claim_flows': self.base_url + 'claim_flows/'
+        }
+
+    def create_flow(self, flow=None):
+        response = self.request_client.post(self.urls['flows'], data=flow)
+        return response.json()
+
     def fetch_flows(self, query_params=None):
-        flows_url = self.base_url + 'flows/'
         if query_params:
-            response = self.request_client.get(flows_url, query_params)
+            response = self.request_client.get(self.urls['flows'], query_params)
         else:
-            response = self.request_client.get(flows_url)
+            response = self.request_client.get(self.urls['flows'])
         return response.json()
 
     def claim_flows(self, uuids=None):
-        claim_flows_url = self.base_url + 'claim_flows/'
-        response = self.request_client.post(claim_flows_url, {'uuids': uuids})
+        response = self.request_client.post(self.urls['claim_flows'], 
+                                            {'uuids': uuids})
         return response.json()
 
     def update_flows(self, updates_by_uuid=None):
