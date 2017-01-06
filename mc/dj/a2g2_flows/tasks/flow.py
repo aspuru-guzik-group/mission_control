@@ -14,8 +14,7 @@ class FlowTask(BaseTask):
     def initial_tick(self, ctx=None):
         create_flow = ctx['create_flow']
         self.data['flow_id'] = create_flow(flow_kwargs={
-            'type': self.input['flow_type'],
-            'spec': self.input.get('flow_spec', {})
+            'flow_spec': self.input.get('flow_spec', {})
         })
         self.status = 'RUNNING'
 

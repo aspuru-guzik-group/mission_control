@@ -1,49 +1,38 @@
 from flow_engines.flow import Flow
 
-from ..tasks.a2g2_dao import A2G2_DAO_Task
-from ..tasks.base import BaseTask
 from ..tasks.flow import FlowTask
-from ..flows.run_and_load import RunAndLoadFlowGenerator
+from ..flow_generators.run_and_load import RunAndLoadFlowGenerator
 
 
 class ReaxysFlowGenerator(object):
     flow_type = 'reaxys'
-    label = 'Reaxys'
-    description = 'Flow that runs reaxys pipeline.'
 
     @classmethod
-    def generate_flow(cls, *arg, mol_key=None, **kwargs):
+    def generate_flow(cls, *arg, flow_spec=None, **kwargs):
         flow = Flow()
-        flow.add_task(key='fetch_mol', 
+        flow.add_task(key='confgen', 
                       as_root=True,
-                      task=A2G2_DAO_Task(),
+                      task=FlowTask(),
                       static_input={
-                          'query': {
-                              'object': 'Mol', 'filters': [('key', mol_key)]
+                          'flow_spec': {
+                              'flow_type': RunAndLoadFlowGenerator.flow_type,
+                              'run_spec': {
+                                  'job_type': 'confgen',
+                                  'confgen': {
+                                      'smiles': flow_spec['smiles'],
+                                      'params': flow_spec['confgen_params'],
+                                  }
+                              },
+                              'load_spec': {
+                                  'job_type': 'confgen:load',
+                              }
                           }
                       })
-        flow.add_task(key='confgen_prep',
-                      precursor='fetch_mol',
-                      task=ConfgenPrepTask())
-        flow.add_task(key='confgen',
-                      precursor='confgen_prep',
-                      task=FlowTask())
+        return flow
 
     @classmethod
     def get_dependencies(cls):
         return {
-            'tasks': set([
-                A2G2_DAO_Task,
-                ConfgenPrepTask,
-                FlowTask,
-            ]),
+            'tasks': set([FlowTask]),
             'flow_generators': set([RunAndLoadFlowGenerator])
         }
-
-class ConfgenPrepTask(BaseTask):
-    def tick(self, *args, **kwargs):
-        self.output = {
-            'smiles': self.input['result_set']['mols'][0]['smiles'],
-            'confgen_spec': '!!!@TODO!!!'
-        }
-        self.status = 'COMPLETED'

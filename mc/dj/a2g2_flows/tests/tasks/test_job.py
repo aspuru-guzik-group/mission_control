@@ -32,7 +32,7 @@ class InitialTickTestCase(BaseTestCase):
 
     def test_initial_tick_creates_job(self):
         expected_call_args = call(job_kwargs={
-            'spec': self.initial_state['input']['job_spec'],
+            'job_spec': self.initial_state['input']['job_spec'],
         })
         self.assertEqual(self.ctx['create_job'].call_args, expected_call_args)
 
