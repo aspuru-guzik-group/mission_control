@@ -39,6 +39,7 @@ class DeserializationTestCase(BaseTestCase):
             self.engine.register_task_class(task_class=task_class)
 
         self.serialized_flow = {
+            'data': {'some': 'data'},
             'tasks': [
                 {'key': 'a', 'task_type': 'Type1', 'status': 'COMPLETED'},
                 {'key': 'b', 'task_type': 'Type2', 'status': 'COMPLETED'},
@@ -55,6 +56,9 @@ class DeserializationTestCase(BaseTestCase):
         }
         self.flow = self.engine.deserialize_flow(
             serialized_flow=self.serialized_flow)
+
+    def test_has_expected_data(self):
+        self.assertEqual(self.flow.data, self.serialized_flow['data'])
 
     def test_has_expected_tasks(self):
         expected_tasks = {}
@@ -102,6 +106,9 @@ class SerializationTestCase(BaseTestCase):
 
     def generate_flow(self):
         flow = Flow()
+
+        flow.data['some key'] = 'some value'
+
         class BaseTask(object):
             task_type = 'BaseTask'
             def __init__(self, key=None, status=None, state=None, **kwargs):
@@ -122,6 +129,7 @@ class SerializationTestCase(BaseTestCase):
     def test_serializes_flow(self):
         serialization = self.engine.serialize_flow(self.flow)
         expected_serialization = {
+            'data': self.flow.data,
             'tasks': [{'key': task.key, 'task_type': task.task_type,
                        'status': task.status, 'state': task.state}
                       for task in self.flow.tasks.values()],

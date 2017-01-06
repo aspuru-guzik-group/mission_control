@@ -13,8 +13,8 @@ class BaseTask(object):
     def task_type(self): return self.__class__.__name__
 
 class Flow(object):
-    def __init__(self, jobs=None):
-        self.jobs = jobs or {}
+    def __init__(self):
+        self.data = {}
         self.tasks = {}
         self.edges = {}
         self.edges_by_task_key = collections.defaultdict(dict)
