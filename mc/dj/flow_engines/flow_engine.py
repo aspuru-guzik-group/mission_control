@@ -1,13 +1,15 @@
 import collections
+import logging
 from uuid import uuid4
 
 from .flow import Flow
 
 
 class FlowEngine(object):
-    def __init__(self, ctx=None):
-        self.task_class_registry = collections.OrderedDict()
+    def __init__(self, ctx=None, logger=None):
         self.ctx = ctx
+        self.logger = logger or logging
+        self.task_class_registry = collections.OrderedDict()
 
     def register_task_class(self, task_class=None, key=None, test_fn=None):
         if key is None: key = str(uuid4())
@@ -127,4 +129,9 @@ class FlowEngine(object):
             self.tick_task(task=task, ctx=ctx_with_jobs)
 
     def tick_task(self, task=None, ctx=None):
-        task.tick(engine=self, ctx=ctx)
+        try:
+            task.tick(engine=self, ctx=ctx)
+        except Exception as e:
+            msg = "tick failed for task with key '{key}': {e}".format(
+                key=task.key, e=e)
+            self.logger.exception(msg)
