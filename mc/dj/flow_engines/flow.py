@@ -2,12 +2,12 @@ import collections
 from uuid import uuid4
 
 class BaseTask(object):
-    def __init__(self, id=None, flow=None, status=None, state=None,
+    def __init__(self, uuid=None, status=None, flow=None, key=None,
                  **kwargs):
-        self.id = id or str(uuid4())
+        self.uuid = uuid or str(uuid4())
         self.flow = flow
+        self.key = key
         self.status = status
-        self.state = state
 
     @property
     def task_type(self): return self.__class__.__name__
@@ -17,7 +17,7 @@ class Flow(object):
         self.jobs = jobs or {}
         self.tasks = {}
         self.edges = {}
-        self.edges_by_task_id = collections.defaultdict(dict)
+        self.edges_by_task_key = collections.defaultdict(dict)
         self.state = None
         self.status = None
         self.root_task = None
@@ -25,10 +25,11 @@ class Flow(object):
     def add_tasks(self, tasks=None):
         for task in tasks: self.add_task(task=task)
 
-    def add_task(self, task=None, as_root=False, precursor=None,
+    def add_task(self, task=None, key=None, as_root=False, precursor=None,
                  successor=None):
-        assert hasattr(task, 'id')
-        self.tasks[task.id] = task
+        key = self.determine_key_for_task(task=task, key=key)
+        self.tasks[key] = task
+        task.key = key
         task.flow = self
         if as_root: self.root_task = task
         for precursor_task in self._ensure_iterable(precursor):
@@ -36,6 +37,15 @@ class Flow(object):
         for successor_task in self._ensure_iterable(successor):
             self.add_edge(src=task, dest=successor_task)
         return task
+
+    def determine_key_for_task(self, task=None, key=None):
+        existing_key = getattr(task, 'key', None)
+        if existing_key:
+            if key: raise Exception("Can not reassign task key.")
+            else: key = existing_key
+        else:
+            if key is None: key = str(uuid4())
+        return key
 
     def _ensure_iterable(self, obj=None):
         if obj is None: return []
@@ -49,33 +59,34 @@ class Flow(object):
     def add_edge(self, src=None, dest=None):
         if dest is self.root_task:
             raise Exception("Root task can not be an edge dest")
-        src_id, dest_id = [self.ensure_task_id(task) for task in [src, dest]]
-        edge_key = self.get_edge_key(src=src_id, dest=dest_id)
-        edge = {'src': self.tasks[src_id], 'dest': self.tasks[dest_id]}
+        src_key, dest_key = [self.ensure_task_key(task) for task in [src, dest]]
+        edge_key = self.get_edge_key(src=src_key, dest=dest_key)
+        edge = {'src': self.tasks[src_key], 'dest': self.tasks[dest_key]}
         self.edges[edge_key] = edge
-        self.edges_by_task_id[src_id][edge_key] = edge
-        self.edges_by_task_id[dest_id][edge_key] = edge
+        self.edges_by_task_key[src_key][edge_key] = edge
+        self.edges_by_task_key[dest_key][edge_key] = edge
 
     def get_edge_key(self, src=None, dest=None):
-        return (self.ensure_task_id(src), self.ensure_task_id(dest))
+        return (self.ensure_task_key(src), self.ensure_task_key(dest))
 
     def has_edge(self, src=None, dest=None):
         return self.get_edge_key(src=src, dest=dest) in self.edges
 
-    def ensure_task_id(self, task_or_task_id):
-        if isinstance(task_or_task_id, str) or isinstance(task_or_task_id, int):
-            task_id = task_or_task_id
+    def ensure_task_key(self, task_or_task_key):
+        if isinstance(task_or_task_key, str) or \
+           isinstance(task_or_task_key, int):
+            task_key = task_or_task_key
         else:
-            task_id = task_or_task_id.id
-        return task_id
+            task_key = task_or_task_key.key
+        return task_key
 
     def get_precursors(self, task=None):
-        task_edges = self.edges_by_task_id[task.id].values()
+        task_edges = self.edges_by_task_key[task.key].values()
         precursors = [e['src'] for e in task_edges if e['dest'] is task]
         return precursors
 
     def get_successors(self, task=None):
-        task_edges = self.edges_by_task_id[task.id].values()
+        task_edges = self.edges_by_task_key[task.key].values()
         successors = [e['dest'] for e in task_edges if e['src'] is task]
         return successors
 

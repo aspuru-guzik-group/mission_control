@@ -28,8 +28,8 @@ class DeserializationTestCase(BaseTestCase):
 
     def setup_task_classes(self):
         class BaseTask(object):
-            def __init__(self, *args, id=None, status=None, ctx=None, **kwargs):
-                self.id = id
+            def __init__(self, *args, key=None, status=None, ctx=None, **kwargs):
+                self.key = key
                 self.status = status
                 self.ctx = ctx
 
@@ -40,16 +40,16 @@ class DeserializationTestCase(BaseTestCase):
 
         self.serialized_flow = {
             'tasks': [
-                {'id': 'a', 'task_type': 'Type1', 'status': 'COMPLETED'},
-                {'id': 'b', 'task_type': 'Type2', 'status': 'COMPLETED'},
-                {'id': 'c', 'task_type': 'Type1', 'status': 'RUNNING'},
-                {'id': 'd', 'task_type' : 'Type2', 'status': 'RUNNING'},
+                {'key': 'a', 'task_type': 'Type1', 'status': 'COMPLETED'},
+                {'key': 'b', 'task_type': 'Type2', 'status': 'COMPLETED'},
+                {'key': 'c', 'task_type': 'Type1', 'status': 'RUNNING'},
+                {'key': 'd', 'task_type' : 'Type2', 'status': 'RUNNING'},
             ],
-            'root_task_id': 'a',
+            'root_task_key': 'a',
             'edges': [
-                {'src_id': 'a', 'dest_id': 'b'},
-                {'src_id': 'b', 'dest_id': 'c'},
-                {'src_id': 'b', 'dest_id': 'd'},
+                {'src_key': 'a', 'dest_key': 'b'},
+                {'src_key': 'b', 'dest_key': 'c'},
+                {'src_key': 'b', 'dest_key': 'd'},
             ],
             'status': 'status',
         }
@@ -60,12 +60,12 @@ class DeserializationTestCase(BaseTestCase):
         expected_tasks = {}
         for serialized_task in self.serialized_flow['tasks']:
             expected_task = self.engine.deserialize_task(serialized_task)
-            expected_tasks[expected_task.id] = expected_task
+            expected_tasks[expected_task.key] = expected_task
 
         def summarize_tasks(tasks):
             return {
-                task.id: {
-                    'id': task.id,
+                task.key: {
+                    'key': task.key,
                     'task_type': type(task),
                     'status': task.status,
                     'ctx': task.ctx,
@@ -82,11 +82,11 @@ class DeserializationTestCase(BaseTestCase):
     def test_has_expected_edges(self):
         expected_edges = {}
         for serialized_edge in self.serialized_flow['edges']:
-            src_id, dest_id = (serialized_edge['src_id'],
-                               serialized_edge['dest_id'])
-            expected_edges[(src_id, dest_id)] = {
-                'src': self.flow.tasks[src_id],
-                'dest': self.flow.tasks[dest_id]
+            src_key, dest_key = (serialized_edge['src_key'],
+                               serialized_edge['dest_key'])
+            expected_edges[(src_key, dest_key)] = {
+                'src': self.flow.tasks[src_key],
+                'dest': self.flow.tasks[dest_key]
             }
         self.assertEqual(self.flow.edges, expected_edges)
 
@@ -104,12 +104,12 @@ class SerializationTestCase(BaseTestCase):
         flow = Flow()
         class BaseTask(object):
             task_type = 'BaseTask'
-            def __init__(self, id=None, status=None, state=None, **kwargs):
-                self.id = id
+            def __init__(self, key=None, status=None, state=None, **kwargs):
+                self.key = key
                 self.status = status
                 self.state = state
 
-        tasks = [BaseTask(id=i, status='s_%s' % i, state=i) for i in range(3)]
+        tasks = [BaseTask(key=i, status='s_%s' % i, state=i) for i in range(3)]
         flow.add_tasks(tasks=tasks)
         flow.root_task = tasks[0]
         edges = [{'src': tasks[0], 'dest': tasks[1]},
@@ -122,11 +122,11 @@ class SerializationTestCase(BaseTestCase):
     def test_serializes_flow(self):
         serialization = self.engine.serialize_flow(self.flow)
         expected_serialization = {
-            'tasks': [{'id': task.id, 'task_type': task.task_type,
+            'tasks': [{'key': task.key, 'task_type': task.task_type,
                        'status': task.status, 'state': task.state}
                       for task in self.flow.tasks.values()],
-            'root_task_id': self.flow.root_task.id,
-            'edges': [{'src_id': edge['src'].id, 'dest_id': edge['dest'].id}
+            'root_task_key': self.flow.root_task.key,
+            'edges': [{'src_key': edge['src'].key, 'dest_key': edge['dest'].key}
                       for edge in self.flow.edges.values()],
             'state': self.flow.state,
             'status': self.flow.status,
@@ -157,7 +157,7 @@ class TickTestCase(BaseTestCase):
     def generate_flow_with_pending_successors(self):
         flow = Flow()
         root_task = Mock()
-        root_task.configure_mock(id='ROOT', status='COMPLETED')
+        root_task.configure_mock(key='ROOT', status='COMPLETED')
         flow.add_task(root_task, as_root=True)
         self.add_branch_with_pending_leaf_to_flow(flow, depth=3)
         self.add_branch_with_pending_leaf_to_flow(flow, depth=2)
@@ -169,7 +169,7 @@ class TickTestCase(BaseTestCase):
         flow.add_task(task=branch_root, precursor=flow.root_task)
         for i in range(depth):
             child_task = Mock()
-            child_task.id = str(uuid4())
+            child_task.key = str(uuid4())
             child_task.status = 'COMPLETED'
             child_task.depth = depth
             flow.add_task(task=child_task, precursor=branch_root)
@@ -182,7 +182,7 @@ class TickTestCase(BaseTestCase):
         flow = self.generate_flow_with_running_tasks()
         running_tasks = flow.get_tasks_by_status(status='RUNNING')
         expected_task_summaries_before_tick = {
-            task.id: self.summarize_task(task, overrides={'tick_count': 0,
+            task.key: self.summarize_task(task, overrides={'tick_count': 0,
                                                           'status': 'RUNNING'})
             for task in running_tasks
         }
@@ -190,7 +190,7 @@ class TickTestCase(BaseTestCase):
                          expected_task_summaries_before_tick)
         self.engine.tick_flow(flow)
         expected_task_summaries_after_tick = {
-            task.id: self.summarize_task(task, overrides={'tick_count': 1,
+            task.key: self.summarize_task(task, overrides={'tick_count': 1,
                                                           'status': 'RUNNING'})
             for task in running_tasks
         }
@@ -202,16 +202,16 @@ class TickTestCase(BaseTestCase):
         flow.add_task(BaseTask(status='COMPLETED'), as_root=True)
         for i in range(3):
             running_task = Mock()
-            running_task.configure_mock(id=i, status='RUNNING')
+            running_task.configure_mock(key=i, status='RUNNING')
             flow.add_task(running_task, precursor=flow.root_task)
         return flow
 
     def summarize_tasks(self, tasks):
-        return {task.id: self.summarize_task(task) for task in tasks}
+        return {task.key: self.summarize_task(task) for task in tasks}
 
     def summarize_task(self, task, overrides=None):
         if not overrides: overrides = {}
-        return {'id': task.id, 'tick_count': task.tick.call_count,
+        return {'key': task.key, 'tick_count': task.tick.call_count,
                 'status': task.status, **overrides}
 
     def test_sets_status_to_completed_if_no_incomplete_tasks(self):

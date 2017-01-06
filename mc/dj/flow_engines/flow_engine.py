@@ -24,12 +24,12 @@ class FlowEngine(object):
             for serialized_task in serialized_flow.get('tasks', [])
         ]
         flow.add_tasks(tasks=tasks)
-        root_task_id = serialized_flow.get('root_task_id')
-        if root_task_id is not None:
-            flow.root_task = flow.tasks[root_task_id]
+        root_task_key = serialized_flow.get('root_task_key')
+        if root_task_key is not None:
+            flow.root_task = flow.tasks[root_task_key]
         edges = [
-            {'src': flow.tasks[serialized_edge['src_id']],
-             'dest': flow.tasks[serialized_edge['dest_id']]}
+            {'src': flow.tasks[serialized_edge['src_key']],
+             'dest': flow.tasks[serialized_edge['dest_key']]}
             for serialized_edge in serialized_flow.get('edges', [])
         ]
         flow.add_edges(edges=edges)
@@ -65,7 +65,7 @@ class FlowEngine(object):
             'status': flow.status,
         }
         if flow.root_task is not None:
-            serialized_flow['root_task_id'] = flow.root_task.id
+            serialized_flow['root_task_key'] = flow.root_task.key
         return serialized_flow
 
     def serialize_tasks(self, tasks=None):
@@ -74,7 +74,7 @@ class FlowEngine(object):
 
     def serialize_task(self, task=None):
         serialized_task = {
-            'id': task.id,
+            'key': task.key,
             'state': task.state,
             'task_type': task.task_type,
             'status': task.status,
@@ -87,8 +87,8 @@ class FlowEngine(object):
 
     def serialize_edge(self, edge=None):
         serialized_edge = {
-            'src_id': edge['src'].id,
-            'dest_id': edge['dest'].id,
+            'src_key': edge['src'].key,
+            'dest_key': edge['dest'].key,
         }
         return serialized_edge
 

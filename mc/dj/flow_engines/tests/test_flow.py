@@ -23,13 +23,13 @@ class BaseTestCase(unittest.TestCase):
     def generate_tasks(self, n=3):
         tasks = []
         for i in range(n):
-            tasks.append(self.generate_task(id=i))
+            tasks.append(self.generate_task(key=i))
         return tasks
 
-    def generate_task(self, id=None, **kwargs):
-        if id is None: id = str(uuid4())
+    def generate_task(self, key=None, **kwargs):
+        if key is None: key = str(uuid4())
         task = Mock()
-        task.configure_mock(id=id, **kwargs)
+        task.configure_mock(key=key, **kwargs)
         return task
 
 class AddTasksTestCase(BaseTestCase):
@@ -49,12 +49,12 @@ class AddTasksTestCase(BaseTestCase):
 class AddTaskTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.task = self.generate_task(id='task')
+        self.task = self.generate_task(key='task')
 
     def test_adds_task(self):
-        self.assertFalse(self.task.id in self.flow.tasks)
+        self.assertFalse(self.task.key in self.flow.tasks)
         self.flow.add_task(task=self.task)
-        self.assertEqual(self.flow.tasks[self.task.id], self.task)
+        self.assertEqual(self.flow.tasks[self.task.key], self.task)
 
     def test_returns_task(self):
         result = self.flow.add_task(task=self.task)
@@ -63,6 +63,26 @@ class AddTaskTestCase(BaseTestCase):
     def test_sets_flow_on_task(self):
         self.flow.add_task(task=self.task)
         self.assertEqual(self.task.flow, self.flow)
+
+    def test_sets_key_on_task_wout_key(self):
+        self.task.key = None
+        key = 'some key'
+        self.flow.add_task(task=self.task, key=key)
+        self.assertEqual(self.task.key, key)
+
+    def test_errors_on_key_reassignment(self):
+        with self.assertRaises(Exception):
+            self.flow.add_task(task=self.task, key='some key')
+
+    def test_uses_task_key_if_no_key_provided(self):
+        original_key = self.task.key
+        self.flow.add_task(task=self.task)
+        self.assertEqual(self.task.key, original_key)
+
+    def test_sets_key_to_uuid_as_fallback(self):
+        self.task.key = None
+        self.flow.add_task(task=self.task)
+        self.assertTrue(self.task.key is not None)
 
     def test_add_as_root(self):
         self.flow.add_task(task=self.task, as_root=True)
@@ -74,14 +94,14 @@ class AddTaskTestCase(BaseTestCase):
         self.flow.add_task(task=self.task, precursor=precursor)
         self.assertTrue(self.flow.has_edge(src=precursor, dest=self.task))
 
-    def test_add_with_precursor_id(self):
-        precursor = self.generate_task(id='precursor_id')
+    def test_add_with_precursor_key(self):
+        precursor = self.generate_task(key='precursor_key')
         self.flow.add_task(task=precursor)
-        self.flow.add_task(task=self.task, precursor='precursor_id')
+        self.flow.add_task(task=self.task, precursor='precursor_key')
         self.assertTrue(self.flow.has_edge(src=precursor, dest=self.task))
 
     def test_add_with_many_precursors(self):
-        precursors = [self.flow.add_task(task=self.generate_task(id=i))
+        precursors = [self.flow.add_task(task=self.generate_task(key=i))
                       for i in range(1)]
         self.flow.add_task(task=self.task, precursor=precursors)
         for precursor in precursors:
@@ -94,13 +114,13 @@ class AddTaskTestCase(BaseTestCase):
         self.assertTrue(self.flow.has_edge(src=self.task, dest=successor))
 
     def test_add_with_successsor_id(self):
-        successor = self.generate_task(id='successor_id')
+        successor = self.generate_task(key='successor_id')
         self.flow.add_task(task=successor)
         self.flow.add_task(task=self.task, successor='successor_id')
         self.assertTrue(self.flow.has_edge(src=self.task, dest=successor))
 
     def test_add_with_many_successors(self):
-        successors = [self.flow.add_task(task=self.generate_task(id=i))
+        successors = [self.flow.add_task(task=self.generate_task(key=i))
                       for i in range(3)]
         self.flow.add_task(task=self.task, successor=successors)
         for successor in successors:
@@ -127,20 +147,20 @@ class AddEdgeTestCase(BaseTestCase):
         self.tasks = self.generate_tasks(n=2)
         self.flow.add_tasks(tasks=self.tasks)
         self.edge = {'src': self.tasks[0], 'dest': self.tasks[1]}
-        self.expected_edge_key = (self.edge['src'].id, self.edge['dest'].id)
+        self.expected_edge_key = (self.edge['src'].key, self.edge['dest'].key)
 
     def test_add_edge(self):
         self.assertFalse(self.expected_edge_key in self.flow.edges)
         self.flow.add_edge(**self.edge)
         self.assertEqual(self.flow.edges[self.expected_edge_key], self.edge)
 
-    def test_updates_edges_by_task_id(self):
-        self.assertTrue(self.tasks[0].id not in self.flow.edges_by_task_id)
-        self.assertTrue(self.tasks[1].id not in self.flow.edges_by_task_id)
+    def test_updates_edges_by_task_key(self):
+        self.assertTrue(self.tasks[0].key not in self.flow.edges_by_task_key)
+        self.assertTrue(self.tasks[1].key not in self.flow.edges_by_task_key)
         self.flow.add_edge(**self.edge)
         for task in self.tasks:
             self.assertEqual(
-                self.flow.edges_by_task_id[task.id][self.expected_edge_key],
+                self.flow.edges_by_task_key[task.key][self.expected_edge_key],
                 self.edge)
 
 class GetNearestPendingTasksTestCase(BaseTestCase):
@@ -150,18 +170,18 @@ class GetNearestPendingTasksTestCase(BaseTestCase):
 
     def setup_flow(self):
         self.flow.add_task(
-            self.generate_task(id='ROOT', status='COMPLETED'), as_root=True)
+            self.generate_task(key='ROOT', status='COMPLETED'), as_root=True)
         self.linear_branches = {
             '1': [
-                self.generate_task(id='1.1', status='COMPLETED'),
-                self.generate_task(id='1.2', status='PENDING'),
-                self.generate_task(id='1.3', status='PENDING')
+                self.generate_task(key='1.1', status='COMPLETED'),
+                self.generate_task(key='1.2', status='PENDING'),
+                self.generate_task(key='1.3', status='PENDING')
             ],
             '2': [
-                self.generate_task(id='2.1', status='COMPLETED'),
-                self.generate_task(id='2.2', status='COMPLETED'),
-                self.generate_task(id='2.3', status='PENDING'),
-                self.generate_task(id='2.4', status='PENDING'),
+                self.generate_task(key='2.1', status='COMPLETED'),
+                self.generate_task(key='2.2', status='COMPLETED'),
+                self.generate_task(key='2.3', status='PENDING'),
+                self.generate_task(key='2.4', status='PENDING'),
             ],
         }
         for branch_tasks in self.linear_branches.values():
@@ -185,12 +205,12 @@ class GetSuccessorsTestCase(BaseTestCase):
         self.setup_flow(flow=self.flow)
 
     def setup_flow(self, flow=None):
-        self.flow.add_task(self.generate_task(id='ROOT'), as_root=True)
-        task_1 = self.generate_task(id='1')
+        self.flow.add_task(self.generate_task(key='ROOT'), as_root=True)
+        task_1 = self.generate_task(key='1')
         self.flow.add_task(task_1, precursor=flow.root_task)
-        task_1_1 = self.generate_task(id='1_1')
+        task_1_1 = self.generate_task(key='1_1')
         self.flow.add_task(task_1_1, precursor=task_1)
-        task_1_2 = self.generate_task(id='1_2')
+        task_1_2 = self.generate_task(key='1_2')
         self.flow.add_task(task_1_2, precursor=task_1)
 
     def test_gets_successors(self):
