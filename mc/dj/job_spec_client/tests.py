@@ -4,7 +4,7 @@ from jobs.models import JobStatuses
 from .job_spec_client import MissionControlJobSpecClient
 
 
-class JobSpecClientBaseTestCase(unittest.TestCase):
+class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.base_url = '/base/url/'
         self.client = MissionControlJobSpecClient(
@@ -20,7 +20,7 @@ class JobSpecClientBaseTestCase(unittest.TestCase):
     def tearDown(self):
         for patcher in self.patchers.values(): patcher.stop()
 
-class FetchJobSpecsTestCase(JobSpecClientBaseTestCase):
+class FetchJobSpecsTestCase(BaseTestCase):
     def test_makes_get(self):
         self.client.fetch_job_specs()
         expected_url = self.base_url + 'jobs/'
@@ -47,7 +47,7 @@ class FetchJobSpecsTestCase(JobSpecClientBaseTestCase):
         fetched_job_specs = self.client.fetch_job_specs()
         self.assertEqual(fetched_job_specs, jobs)
 
-class FetchClaimableJobSpecsTest(JobSpecClientBaseTestCase):
+class FetchClaimableJobSpecsTest(BaseTestCase):
     def test_calls_fetch_job_specs_with_query_params(self):
         with patch.multiple(self.client, fetch_job_specs=DEFAULT):
             self.client.fetch_claimable_job_specs()
@@ -55,7 +55,7 @@ class FetchClaimableJobSpecsTest(JobSpecClientBaseTestCase):
                 self.client.fetch_job_specs.call_args,
                 call(query_params={'status': JobStatuses.Pending.name}))
 
-class ClaimJobSpecsTestCase(JobSpecClientBaseTestCase):
+class ClaimJobSpecsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.uuids = [i for i in range(3)]
@@ -81,7 +81,7 @@ class ClaimJobSpecsTestCase(JobSpecClientBaseTestCase):
         expected_result = {}
         self.assertEqual(result, expected_result)
 
-class UpdateJobSpecsTestCase(JobSpecClientBaseTestCase):
+class UpdateJobSpecsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.updates_by_uuid = {
@@ -107,6 +107,23 @@ class UpdateJobSpecsTestCase(JobSpecClientBaseTestCase):
             updates_by_uuid=self.updates_by_uuid)
         expected_result = {_uuid: {} for _uuid in  self.updates_by_uuid}
         self.assertEqual(result, expected_result)
+
+class CreateJobTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.job = {'data': 'some data'}
+
+    def test_makes_post_call(self):
+        self.client.create_job(job=self.job)
+        self.assertEqual(self.mocks['requests']['post'].call_args,
+                         call(self.base_url + 'jobs/', data=self.job))
+
+    def test_returns_post_result(self):
+        mock_result = {'some': 'result'}
+        self.mocks['requests']['post'].return_value.json.return_value = \
+                mock_result
+        result = self.client.create_job(job=self.job)
+        self.assertEqual(result, mock_result)
 
 if __name__ == '__main__':
     unittest.main()
