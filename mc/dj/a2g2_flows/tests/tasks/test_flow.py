@@ -25,18 +25,14 @@ class InitialTickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.initial_state = {
-            'input': {
-                'flow_type': 'some flow_type',
-                'flow_spec': 'some flow_spec',
-            }
+            'input': {'flow_spec': 'some flow_spec'}
         }
         self.task = self.generate_task(**self.initial_state)
         self.task.tick(ctx=self.ctx)
 
     def test_initial_tick_creates_flow(self):
         expected_call_args = call(flow_kwargs={
-            'type': self.initial_state['input']['flow_type'],
-            'spec': self.initial_state['input']['flow_spec'],
+            'flow_spec': self.initial_state['input']['flow_spec'],
         })
         self.assertEqual(self.ctx['create_flow'].call_args, expected_call_args)
 
