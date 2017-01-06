@@ -23,8 +23,10 @@ urlpatterns = [
 class ReaxysFlowE2ETestCase(TestCase):
     def setUp(self):
         self.configure_request_client()
-        self.flow_engine = self.generate_flow_engine()
         self.flow_client = self.generate_flow_client()
+        self.job_client = self.generate_job_client()
+        self.flow_engine = self.generate_flow_engine()
+        self.tick_ctx = self.generate_tick_ctx()
         self.flow_runner = self.generate_flow_runner()
         self.job_runner = self.generate_job_runner()
         self.flow_spec = self.generate_reaxys_flow_spec()
@@ -38,31 +40,50 @@ class ReaxysFlowE2ETestCase(TestCase):
                               content_type='application/json', **kwargs)
         self.client.patch = json_patch
 
-    def generate_flow_engine(self):
-        flow_engine = FlowEngine()
-        for flow_generator in [ReaxysFlowGenerator]:
-            flow_engine.register_flow_generator(flow_generator=flow_generator)
-        return flow_engine
-
     def generate_flow_client(self):
         return MissionControlFlowClient(
             base_url='/%s' % BASE_PATH,
             request_client=self.client
         )
 
+    def generate_job_client(self):
+        return MissionControlJobSpecClient(
+            base_url='/%s' % BASE_PATH,
+            request_client=self.client
+        )
+
+    def generate_flow_engine(self):
+        flow_engine = FlowEngine()
+        for flow_generator_class in [ReaxysFlowGenerator]:
+            flow_engine.register_flow_generator_class(
+                flow_generator_class=flow_generator_class)
+        return flow_engine
+
+    def generate_tick_ctx(self):
+        def get_flow(flow_id=None):
+            raise NotImplementedError
+
+        def get_job(job_id=None):
+            raise NotImplementedError
+
+        return {
+            'create_flow': self.flow_client.create_flow,
+            'get_flow': get_flow,
+            'create_job': self.job_client.create_job,
+            'get_job': get_job,
+        }
+
     def generate_flow_runner(self):
         return BaseFlowRunner(flow_client=self.flow_client,
-                              flow_engine=self.flow_engine)
+                              flow_engine=self.flow_engine,
+                              tick_ctx=self.tick_ctx)
 
     def generate_job_runner(self):
         execution_client = MagicMock()
         job_dir_factory = MagicMock()
         transfer_client = MagicMock()
         runner = BaseJobRunner(
-            job_spec_client=MissionControlJobSpecClient(
-                base_url='/%s' % BASE_PATH,
-                request_client=self.client
-            ),
+            job_spec_client=self.job_client,
             execution_client=execution_client,
             job_dir_factory=job_dir_factory,
             transfer_client=transfer_client,
