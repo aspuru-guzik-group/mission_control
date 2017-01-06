@@ -2,10 +2,11 @@ from uuid import uuid4
 import logging
 
 class BaseTask(object):
-    def __init__(self, *args, id=None, status='PENDING', data=None, logger=None,
-                 flow=None, input=None, output=None, error=None, **kwargs):
-        if id is None: id = uuid4()
-        self.id = id
+    def __init__(self, *args, uuid=None, key=None, status='PENDING', data=None,
+                 logger=None, flow=None, input=None, output=None, error=None,
+                 **kwargs):
+        if uuid is None: uuid = str(uuid4())
+        self.key = key
         self.status = status
         self.data = data or {}
         self.logger = logger or logging
