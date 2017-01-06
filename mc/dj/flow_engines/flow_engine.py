@@ -20,13 +20,19 @@ class FlowEngine(object):
         self.task_class_registry[key] = {'test_fn': test_fn,
                                          'task_class': task_class}
 
-    def register_flow_generator(self, flow_generator, key=None, test_fn=None):
+    def register_flow_generator(self, flow_generator=None, key=None,
+                                test_fn=None):
         if key is None: key = str(uuid4())
         if not test_fn:
             def test_fn(flow_spec):
-                return (flow_spec.get('flow_type') == flow_generator.__name__)
+                return (flow_spec.get('flow_type') == flow_generator.flow_type)
         self.flow_generator_registry[key] = {'test_fn': test_fn,
                                              'flow_generator': flow_generator}
+        dependencies = flow_generator.get_dependencies()
+        for task in dependencies.get('tasks', []):
+            self.register_task_class(task)
+        for _generator in dependencies.get('flow_generators', []):
+            self.register_flow_generator(flow_generator=_generator)
 
     def deserialize_flow(self, serialized_flow=None):
         flow = Flow()
