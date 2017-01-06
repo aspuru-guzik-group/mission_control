@@ -19,7 +19,8 @@ class Flow(object):
         self.data = {}
         self.tasks = {}
         self.edges = {}
-        self.edges_by_task_key = collections.defaultdict(dict)
+        self.edges_by_task_key = collections.defaultdict(
+            lambda: collections.defaultdict(dict))
         self.state = None
         self.status = None
         self.root_task = None
@@ -66,8 +67,8 @@ class Flow(object):
         edge_key = self.get_edge_key(src=src_key, dest=dest_key)
         edge = {'src': self.tasks[src_key], 'dest': self.tasks[dest_key]}
         self.edges[edge_key] = edge
-        self.edges_by_task_key[src_key][edge_key] = edge
-        self.edges_by_task_key[dest_key][edge_key] = edge
+        self.edges_by_task_key[src_key]['outgoing'][edge_key] = edge
+        self.edges_by_task_key[dest_key]['incoming'][edge_key] = edge
 
     def get_edge_key(self, src=None, dest=None):
         return (self.ensure_task_key(src), self.ensure_task_key(dest))
@@ -84,13 +85,13 @@ class Flow(object):
         return task_key
 
     def get_precursors(self, task=None):
-        task_edges = self.edges_by_task_key[task.key].values()
-        precursors = [e['src'] for e in task_edges if e['dest'] is task]
+        task_edges = self.edges_by_task_key[task.key]
+        precursors = [e['src'] for e in task_edges['incoming'].values()]
         return precursors
 
     def get_successors(self, task=None):
-        task_edges = self.edges_by_task_key[task.key].values()
-        successors = [e['dest'] for e in task_edges if e['src'] is task]
+        task_edges = self.edges_by_task_key[task.key]
+        successors = [e['dest'] for e in task_edges['outgoing'].values()]
         return successors
 
     def get_nearest_pending_tasks(self):
@@ -128,3 +129,13 @@ class Flow(object):
         incomplete_tasks = self.filter_tasks(filters=[filter_fn])
         return len(incomplete_tasks) > 0
 
+    def get_tail_tasks(self):
+        if len(self.tasks) == 1 and self.root_task.key in self.tasks:
+            tail_tasks = [self.root_task]
+        else:
+            tail_tasks = [
+                self.tasks[task_key]
+                for task_key, task_edges in self.edges_by_task_key.items()
+                if len(task_edges['outgoing']) == 0
+            ]
+        return tail_tasks

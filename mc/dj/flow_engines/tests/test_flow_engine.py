@@ -156,8 +156,8 @@ class SerializationTestCase(BaseTestCase):
 class TickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.patchers = {'engine': patch.multiple(self.engine,
-                                                  start_task=DEFAULT)}
+        self.patchers = {'engine': patch.multiple(
+            self.engine, start_task=DEFAULT, complete_flow=DEFAULT)}
         self.mocks = self.start_patchers(patchers=self.patchers)
 
     def test_starts_nearest_pending_tasks(self):
@@ -234,12 +234,42 @@ class TickTestCase(BaseTestCase):
         return {'key': task.key, 'tick_count': task.tick.call_count,
                 'status': task.status, **overrides}
 
-    def test_sets_status_to_completed_if_no_incomplete_tasks(self):
+    def test_calls_complete_flow_if_no_incomplete_tasks(self):
         flow = Flow()
         flow.add_task(task=BaseTask(status='COMPLETED'), as_root=True)
-        self.assertTrue(flow.status != 'COMPLETED')
+        self.assertEqual(self.mocks['engine']['complete_flow'].call_count, 0)
         self.engine.tick_flow(flow)
+        self.assertEqual(self.mocks['engine']['complete_flow'].call_count, 1)
+
+class CompleteFlowTestCase(BaseTestCase):
+    def test_sets_status_to_completed(self):
+        flow = Flow()
+        self.assertTrue(flow.status != 'COMPLETED')
+        self.engine.complete_flow(flow=flow)
         self.assertTrue(flow.status == 'COMPLETED')
+
+    def test_sets_output_for_single_tail_task(self):
+        flow = Flow()
+        tail_task = flow.add_task(task=BaseTask(status='COMPLETED'),
+                                  as_root=True)
+        tail_task.output = 'some output'
+        self.engine.complete_flow(flow=flow)
+        self.assertEqual(flow.output, tail_task.output)
+
+    def test_sets_output_for_multiple_tail_tasks(self):
+        flow = Flow()
+        root_task = flow.add_task(task=BaseTask(status='COMPLETED'),
+                                  as_root=True)
+        tail_tasks = []
+        for i in range(3):
+            tail_task = flow.add_task(task=BaseTask(status='COMPLETED'),
+                                      precursor=root_task)
+            tail_task.output = 'output_%s' % i
+            tail_tasks.append(tail_task)
+        self.engine.complete_flow(flow=flow)
+        expected_output = {tail_task.key: tail_task.output
+                          for tail_task in tail_tasks}
+        self.assertEqual(flow.output, expected_output)
 
 class StartTaskTestCase(BaseTestCase):
     def setUp(self):

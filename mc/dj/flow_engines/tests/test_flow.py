@@ -163,10 +163,12 @@ class AddEdgeTestCase(BaseTestCase):
         self.assertTrue(self.tasks[0].key not in self.flow.edges_by_task_key)
         self.assertTrue(self.tasks[1].key not in self.flow.edges_by_task_key)
         self.flow.add_edge(**self.edge)
-        for task in self.tasks:
-            self.assertEqual(
-                self.flow.edges_by_task_key[task.key][self.expected_edge_key],
-                self.edge)
+        self.assertEqual(
+            self.flow.edges_by_task_key[self.edge['src'].key]['outgoing'],
+            {self.expected_edge_key: self.edge})
+        self.assertEqual(
+            self.flow.edges_by_task_key[self.edge['dest'].key]['incoming'],
+            {self.expected_edge_key: self.edge})
 
 class GetNearestPendingTasksTestCase(BaseTestCase):
     def setUp(self):
@@ -263,6 +265,17 @@ class HasIncompleteTasksTestCase(BaseTestCase):
         self.flow.add_task(self.generate_task(status='COMPLETED'))
         self.assertFalse(self.flow.has_incomplete_tasks())
 
+class GetTailTasksTestCase(BaseTestCase):
+    def test_gets_tail_tasks(self):
+        root_task = self.flow.add_task(task=self.generate_task(), as_root=True)
+        tail_tasks = [self.flow.add_task(task=self.generate_task(),
+                                         precursor=root_task)
+                      for i in range(3)]
+        self.assertTrue(self.flow.get_tail_tasks(), tail_tasks)
+
+    def test_handles_flow_with_only_root_node(self):
+        root_task = self.flow.add_task(task=self.generate_task(), as_root=True)
+        self.assertTrue(self.flow.get_tail_tasks(), [root_task])
 
 if __name__ == '__main__':
     unittest.main()

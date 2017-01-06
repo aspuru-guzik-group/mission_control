@@ -102,7 +102,7 @@ class FlowEngine(object):
         self.start_nearest_pending_tasks(flow=flow)
         self.tick_running_tasks(flow=flow, ctx=ctx)
         if not flow.has_incomplete_tasks():
-            flow.status = 'COMPLETED'
+            self.complete_flow(flow=flow)
 
     def start_nearest_pending_tasks(self, flow=None):
         for task in flow.get_nearest_pending_tasks():
@@ -137,3 +137,18 @@ class FlowEngine(object):
             msg = "tick failed for task with key '{key}': {e}".format(
                 key=task.key, e=e)
             self.logger.exception(msg)
+
+    def complete_flow(self, flow=None):
+        flow.status = 'COMPLETED'
+        flow.output = self.get_flow_output(flow=flow)
+
+    def get_flow_output(self, flow=None):
+        _get_task_output = lambda t: getattr(t, 'output', None)
+        tail_tasks = flow.get_tail_tasks()
+        if len (tail_tasks) == 0: output = None
+        elif len(tail_tasks) == 1: output = _get_task_output(tail_tasks[0])
+        elif len(tail_tasks) > 1: output = {
+            tail_task.key: _get_task_output(tail_task)
+            for tail_task in tail_tasks
+        }
+        return output
