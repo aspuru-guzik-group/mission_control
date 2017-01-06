@@ -134,10 +134,8 @@ class FlowEngine(object):
                                 for precursor in precursors]
 
     def tick_running_tasks(self, flow=None, ctx=None):
-        if not ctx: ctx = {}
-        ctx_with_jobs = {**ctx, 'jobs': getattr(flow, 'jobs', {})}
         for task in flow.get_tasks_by_status(status='RUNNING'):
-            self.tick_task(task=task, ctx=ctx_with_jobs)
+            self.tick_task(task=task, ctx=ctx)
 
     def tick_task(self, task=None, ctx=None):
         try:
