@@ -88,12 +88,9 @@ class FlowEngine(object):
         return serialized_tasks
 
     def serialize_task(self, task=None):
-        serialized_task = {
-            'key': task.key,
-            'state': task.state,
-            'task_type': task.task_type,
-            'status': task.status,
-        }
+        serialized_task = {}
+        for attr in ['key', 'data', 'input', 'output', 'task_type', 'status']:
+            serialized_task[attr] = getattr(task, attr, None)
         return serialized_task
 
     def serialize_edges(self, edges=None):

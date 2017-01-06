@@ -142,8 +142,7 @@ class SerializationTestCase(BaseTestCase):
             'data': self.flow.data,
             'input': self.flow.input,
             'output': self.flow.output,
-            'tasks': [{'key': task.key, 'task_type': task.task_type,
-                       'status': task.status, 'state': task.state}
+            'tasks': [self.engine.serialize_task(task=task)
                       for task in self.flow.tasks.values()],
             'root_task_key': self.flow.root_task.key,
             'edges': [{'src_key': edge['src'].key, 'dest_key': edge['dest'].key}
