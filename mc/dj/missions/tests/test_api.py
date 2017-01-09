@@ -33,6 +33,15 @@ class ListFlowsTestCase(APITestCase):
             self.assertEqual(key_by_uuid(response.data),
                              key_by_uuid(expected_data))
 
+    def test_uuid_filtering(self):
+        flows = [Flow.objects.create() for i in range(2)]
+        flows_by_uuid = {flow.uuid: flow for flow in flows}
+        for uuid, flow in flows_by_uuid.items():
+            response = self.client.get('/flows/', {'uuid': uuid})
+            expected_data = [FlowSerializer(flow).data]
+            self.assertEqual(key_by_uuid(response.data),
+                             key_by_uuid(expected_data))
+
 @override_settings(ROOT_URLCONF='missions.urls')
 class TickableFlowsTestCase(APITestCase):
     def setUp(self):

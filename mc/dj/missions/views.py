@@ -9,7 +9,7 @@ from .serializers import FlowSerializer
 class FlowFilter(FilterSet):
     class Meta:
         model = Flow
-        fields = ['status']
+        fields = ['uuid', 'status']
 
     @property
     def qs(self):
