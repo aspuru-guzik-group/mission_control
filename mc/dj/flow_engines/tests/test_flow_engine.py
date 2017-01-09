@@ -124,18 +124,16 @@ class SerializationTestCase(BaseTestCase):
 
         class BaseTask(object):
             task_type = 'BaseTask'
-            def __init__(self, key=None, status=None, state=None, **kwargs):
+            def __init__(self, key=None, status=None,  **kwargs):
                 self.key = key
                 self.status = status
-                self.state = state
 
-        tasks = [BaseTask(key=i, status='s_%s' % i, state=i) for i in range(3)]
+        tasks = [BaseTask(key=i, status='s_%s' % i) for i in range(3)]
         flow.add_tasks(tasks=tasks)
         flow.root_task = tasks[0]
         edges = [{'src': tasks[0], 'dest': tasks[1]},
                  {'src': tasks[1], 'dest': tasks[2]}]
         flow.add_edges(edges=edges)
-        flow.state = 'flow_state'
         flow.status = 'flow_status'
         return flow
 
@@ -150,7 +148,6 @@ class SerializationTestCase(BaseTestCase):
             'root_task_key': self.flow.root_task.key,
             'edges': [{'src_key': edge['src'].key, 'dest_key': edge['dest'].key}
                       for edge in self.flow.edges.values()],
-            'state': self.flow.state,
             'status': self.flow.status,
         }
         self.assertEqual(serialization, expected_serialization)

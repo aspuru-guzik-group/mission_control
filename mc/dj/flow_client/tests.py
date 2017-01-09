@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import call, DEFAULT, patch
+from unittest.mock import call, DEFAULT, Mock, patch
 from .flow_client import MissionControlFlowClient
 
 
@@ -54,12 +54,13 @@ class FetchFlowByUUIDTestCase(BaseTestCase):
                                                  fetch_flows=DEFAULT)
 
     def test_wraps_fetch_flows(self):
+        mock_fetch_flows = self.mocks['client']['fetch_flows']
+        mock_fetch_flows.return_value = [Mock()]
         uuid = 'some uuid'
         result = self.flow_client.fetch_flow_by_uuid(uuid=uuid)
-        mock_fetch_flows = self.mocks['client']['fetch_flows']
         self.assertEqual(mock_fetch_flows.call_args,
                          call(query_params={'uuid': uuid}))
-        self.assertEqual(result, mock_fetch_flows.return_value.get(uuid))
+        self.assertEqual(result, mock_fetch_flows.return_value[0])
 
 class ClaimFlowsTestCase(BaseTestCase):
     def setUp(self):

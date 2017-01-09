@@ -77,6 +77,7 @@ class BaseFlowRunner(object):
         return claimed_records.get(flow_record['uuid'], False)
 
     def tick_flow_record(self, flow_record=None):
+        self.logger.debug('tick_flow_record', flow_record)
         json_flow = flow_record['serialization']
         serialized_flow = json.loads(json_flow)
         flow = self.flow_engine.deserialize_flow(
@@ -91,6 +92,7 @@ class BaseFlowRunner(object):
         return updates
 
     def update_flow_record(self, flow_record=None, updates=None):
+        self.logger.debug('update_flow_record')
         self.flow_client.update_flows(updates_by_uuid={
             flow_record['uuid']: updates})
 

@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import call, DEFAULT, patch
+from unittest.mock import call, DEFAULT, Mock, patch
 from jobs.models import JobStatuses
 from .job_spec_client import MissionControlJobSpecClient
 
@@ -64,12 +64,13 @@ class FetchJobSpecByUUIDTestCase(BaseTestCase):
                                                  fetch_job_specs=DEFAULT)
 
     def test_wraps_fetch_job_specs(self):
+        mock_fetch_job_specs = self.mocks['client']['fetch_job_specs']
+        mock_fetch_job_specs.return_value = [Mock()]
         uuid = 'some uuid'
         result = self.job_client.fetch_job_spec_by_uuid(uuid=uuid)
-        mock_fetch_job_specs = self.mocks['client']['fetch_job_specs']
         self.assertEqual(mock_fetch_job_specs.call_args,
                          call(query_params={'uuid': uuid}))
-        self.assertEqual(result, mock_fetch_job_specs.return_value.get(uuid))
+        self.assertEqual(result, mock_fetch_job_specs.return_value[0])
 
 class ClaimJobSpecsTestCase(BaseTestCase):
     def setUp(self):
