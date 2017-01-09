@@ -24,6 +24,10 @@ class MissionControlFlowClient(object):
             response = self.request_client.get(self.urls['flows'])
         return response.json()
 
+    def fetch_flow_by_uuid(self, uuid=None):
+        fetch_flows_result = self.fetch_flows(query_params={'uuid': uuid})
+        return fetch_flows_result.get(uuid, None)
+
     def claim_flows(self, uuids=None):
         response = self.request_client.post(self.urls['claim_flows'], 
                                             {'uuids': uuids})
