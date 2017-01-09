@@ -17,8 +17,8 @@ class MissionControlJobSpecClient(object):
             'claim_jobs': self.base_url + 'claim_jobs/'
         }
 
-    def create_job(self, job=None):
-        response = self.request_client.post(self.urls['jobs'], data=job)
+    def create_job(self, job_kwargs=None):
+        response = self.request_client.post(self.urls['jobs'], data=job_kwargs)
         return response.json()
 
     def fetch_job_specs(self, query_params=None):

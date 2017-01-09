@@ -128,18 +128,18 @@ class UpdateJobSpecsTestCase(BaseTestCase):
 class CreateJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.job = {'data': 'some data'}
+        self.job_kwargs = {'data': 'some data'}
 
     def test_makes_post_call(self):
-        self.job_client.create_job(job=self.job)
+        self.job_client.create_job(job_kwargs=self.job_kwargs)
         self.assertEqual(self.mocks['requests']['post'].call_args,
-                         call(self.base_url + 'jobs/', data=self.job))
+                         call(self.base_url + 'jobs/', data=self.job_kwargs))
 
     def test_returns_post_result(self):
         mock_result = {'some': 'result'}
         self.mocks['requests']['post'].return_value.json.return_value = \
                 mock_result
-        result = self.job_client.create_job(job=self.job)
+        result = self.job_client.create_job(job_kwargs=self.job_kwargs)
         self.assertEqual(result, mock_result)
 
 if __name__ == '__main__':
