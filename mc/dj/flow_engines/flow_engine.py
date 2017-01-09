@@ -123,10 +123,8 @@ class FlowEngine(object):
         task.status = 'RUNNING'
 
     def set_task_input(self, flow=None, task=None):
-        static_input = getattr(task, 'static_input', None)
-        if static_input is not None:
-            task.input = task.static_input
-        else:
+        existing_input = getattr(task, 'input', None)
+        if existing_input is None:
             _get_output = lambda t: getattr(t, 'output', None)
             precursors = flow.get_precursors(task=task)
             if len(precursors) == 0: task.input = None

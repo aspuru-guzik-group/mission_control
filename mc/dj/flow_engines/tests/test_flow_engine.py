@@ -288,7 +288,7 @@ class StartTaskTestCase(BaseTestCase):
     def test_sets_input_for_multiple_precursors(self):
         precursors = [self.flow.add_task(task=Mock()) for i in range(3)]
         successor = self.flow.add_task(task=Mock(), precursor=precursors)
-        successor.static_input = None
+        successor.input = None
         self.engine.start_task(flow=self.flow, task=successor)
         expected_input = [precursor.output for precursor in precursors]
         self.assertEqual(set(successor.input), set(expected_input))
@@ -296,17 +296,17 @@ class StartTaskTestCase(BaseTestCase):
     def test_sets_input_for_single_precursor(self):
         precursor = self.flow.add_task(task=Mock())
         successor = self.flow.add_task(task=Mock(), precursor=precursor)
-        successor.static_input = None
+        successor.input = None
         self.engine.start_task(flow=self.flow, task=successor)
         expected_input = precursor.output
         self.assertEqual(successor.input, expected_input)
 
-    def test_uses_static_input_if_provided(self):
+    def test_uses_existing_input(self):
         precursor = self.flow.add_task(task=Mock())
         successor = self.flow.add_task(task=Mock(), precursor=precursor)
-        successor.static_input = Mock()
+        successor.input = Mock()
         self.engine.start_task(flow=self.flow, task=successor)
-        expected_input = successor.static_input
+        expected_input = successor.input
         self.assertEqual(successor.input, expected_input)
 
 class GenerateFlowTestCase(BaseTestCase):
