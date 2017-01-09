@@ -8,7 +8,7 @@ from jobs.models import Job
 from flow_runners.base_flow_runner import BaseFlowRunner
 from flow_engines.flow_engine import FlowEngine
 from flow_client.flow_client import MissionControlFlowClient
-from a2g2_flows.flow_generators.reaxys import ReaxysFlowGenerator
+from a2g2.flow_generators.reaxys import ReaxysFlowGenerator
 from job_runners.base_job_runner import BaseJobRunner
 from job_spec_client.job_spec_client import MissionControlJobSpecClient
 

@@ -45,7 +45,7 @@ INSTALLED_APPS = [
     'flow_engines',
     'flow_runners',
     'flow_client',
-    'a2g2_flows',
+    'a2g2',
 ]
 
 MIDDLEWARE = [
