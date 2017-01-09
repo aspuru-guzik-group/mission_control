@@ -53,7 +53,7 @@ class FetchFlowByUUIDTestCase(BaseTestCase):
         self.patchers['client'] = patch.multiple(self.flow_client,
                                                  fetch_flows=DEFAULT)
 
-    def test_wraps_flows(self):
+    def test_wraps_fetch_flows(self):
         uuid = 'some uuid'
         result = self.flow_client.fetch_flow_by_uuid(uuid=uuid)
         mock_fetch_flows = self.mocks['client']['fetch_flows']

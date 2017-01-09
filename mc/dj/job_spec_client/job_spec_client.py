@@ -32,6 +32,11 @@ class MissionControlJobSpecClient(object):
         return self.fetch_job_specs(
             query_params={'status': self.Statuses.Pending.name})
 
+    def fetch_job_spec_by_uuid(self, uuid=None):
+        fetch_job_specs_result = self.fetch_job_specs(
+            query_params={'uuid': uuid})
+        return fetch_job_specs_result.get(uuid, None)
+
     def claim_job_specs(self, uuids=None):
         response = self.request_client.post(self.urls['claim_jobs'],
                                             {'uuids': uuids})
