@@ -3,16 +3,17 @@ from uuid import uuid4
 
 
 class Flow(object):
-    def __init__(self):
-        self.input = None
-        self.output = None
-        self.data = {}
+    def __init__(self, *args, input=None, output=None, data=None, status=None,
+                 **kwargs):
+        self.input = input
+        self.output = output
+        self.data = data or {}
+        self.status = status
+
         self.tasks = {}
         self.edges = {}
         self.edges_by_task_key = collections.defaultdict(
             lambda: collections.defaultdict(dict))
-        self.state = None
-        self.status = None
         self.root_task = None
 
     def add_tasks(self, tasks=None):
@@ -111,8 +112,8 @@ class Flow(object):
         return result
 
     def get_tasks_by_status(self, status=None):
-        state_filter = lambda task: task.status == status
-        return self.filter_tasks(filters=[state_filter])
+        status_filter = lambda task: task.status == status
+        return self.filter_tasks(filters=[status_filter])
 
     def has_incomplete_tasks(self):
         filter_fn = lambda task: task.status != 'COMPLETED'

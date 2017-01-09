@@ -35,7 +35,7 @@ class FlowEngine(object):
 
     def deserialize_flow(self, serialized_flow=None):
         flow = Flow()
-        for attr in ['data', 'input', 'output']:
+        for attr in ['data', 'input', 'output', 'status']:
             setattr(flow, attr, serialized_flow.get(attr, None))
         tasks = [
             self.deserialize_task(serialized_task)
@@ -51,7 +51,6 @@ class FlowEngine(object):
             for serialized_edge in serialized_flow.get('edges', [])
         ]
         flow.add_edges(edges=edges)
-        flow.status = serialized_flow['status']
         return flow
 
     def deserialize_task(self, serialized_task):
@@ -75,11 +74,9 @@ class FlowEngine(object):
     def serialize_flow(self, flow=None):
         serialized_flow = {
             **{attr: getattr(flow, attr, None)
-               for attr in ['data', 'input', 'output']},
+               for attr in ['data', 'input', 'output', 'status']},
             'tasks': self.serialize_tasks(tasks=flow.tasks.values()),
             'edges': self.serialize_edges(edges=flow.edges.values()),
-            'state': flow.state,
-            'status': flow.status,
         }
         if flow.root_task is not None:
             serialized_flow['root_task_key'] = flow.root_task.key
