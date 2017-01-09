@@ -159,8 +159,12 @@ class TickTestCase(BaseTestCase):
             self.engine, start_task=DEFAULT, complete_flow=DEFAULT)}
         self.mocks = self.start_patchers(patchers=self.patchers)
 
+    def test_starts_pending_flow(self):
+        flow = Flow(status='PENDING')
+        self.engine.tick_flow(flow=flow)
+        self.assertEqual(flow.status, 'RUNNING')
+
     def test_starts_nearest_pending_tasks(self):
-        self.maxDiff = None
         flow = self.generate_flow_with_pending_successors()
         successors = flow.get_tasks_by_status(status='PENDING')
         self.assertTrue(len(successors) > 0)

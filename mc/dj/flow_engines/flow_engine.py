@@ -106,10 +106,14 @@ class FlowEngine(object):
         return serialized_edge
 
     def tick_flow(self, flow=None, ctx=None):
+        if flow.status == 'PENDING': self.start_flow(flow=flow)
         self.start_nearest_pending_tasks(flow=flow)
         self.tick_running_tasks(flow=flow, ctx=ctx)
         if not flow.has_incomplete_tasks():
             self.complete_flow(flow=flow)
+
+    def start_flow(self, flow=None):
+        flow.status = 'RUNNING'
 
     def start_nearest_pending_tasks(self, flow=None):
         for task in flow.get_nearest_pending_tasks():

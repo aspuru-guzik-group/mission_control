@@ -86,6 +86,7 @@ class Flow(object):
         return successors
 
     def get_nearest_pending_tasks(self):
+        if not self.root_task: return []
         nearest_pending_tasks = []
         cursors = [self.root_task]
         while len(cursors) > 0:
