@@ -14,28 +14,25 @@ class RunAndLoadFlowGenerator(BaseFlowGenerator):
 
     @classmethod
     def generate_flow(cls, *arg, flow_spec=None, **kwargs):
-        flow = Flow()
+        flow_kwargs = {'status': 'PENDING', **flow_spec.get('flow_kwargs', {})}
+        flow = Flow(**flow_kwargs) 
         flow.data['flow_spec'] = flow_spec
-
         flow.add_task(
             key='run',
             as_root=True,
             task=JobTask(),
-            static_input={'job_spec': flow_spec['run_spec']}
+            input={'job_spec': flow_spec['run_spec']}
         )
-
         flow.add_task(
             key='load_prep',
             precursor='run',
             task=LoadPrepTask(flow_spec=flow_spec)
         )
-
         flow.add_task(
             key='load',
             precursor='load_prep',
             task=JobTask()
         )
-
         return flow
 
     @classmethod

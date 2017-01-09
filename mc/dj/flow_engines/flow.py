@@ -8,7 +8,7 @@ class Flow(object):
         self.input = input
         self.output = output
         self.data = data or {}
-        self.status = status
+        self.status = status or 'PENDING'
 
         self.tasks = {}
         self.edges = {}

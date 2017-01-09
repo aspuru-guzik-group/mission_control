@@ -13,7 +13,7 @@ class FlowTask(BaseTask):
 
     def initial_tick(self, ctx=None):
         create_flow = ctx['create_flow']
-        self.data['flow_id'] = create_flow(flow_kwargs={
+        self.data['flow_uuid'] = create_flow(flow_kwargs={
             'flow_spec': self.input.get('flow_spec', {})
         })
         self.status = 'RUNNING'
@@ -31,4 +31,4 @@ class FlowTask(BaseTask):
             self.status = 'RUNNING'
 
     def get_flow(self, ctx=None):
-        return ctx['get_flow'](flow_id=self.data['flow_id'])
+        return ctx['get_flow'](flow_uuid=self.data['flow_uuid'])

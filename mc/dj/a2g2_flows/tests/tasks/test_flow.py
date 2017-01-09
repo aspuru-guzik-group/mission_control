@@ -17,9 +17,9 @@ class BaseTestCase(TestCase):
     def generate_task(self, **task_kwargs):
         return FlowTask(**task_kwargs)
 
-    def generate_flow(self, id=None, status='PENDING', **flow_state):
-        if not id: id = str(uuid4())
-        return {'id': id, 'status': status, **flow_state}
+    def generate_flow(self, uuid=None, status='PENDING', **flow_state):
+        if not uuid: uuid = str(uuid4())
+        return {'uuid': uuid, 'status': status, **flow_state}
 
 class InitialTickTestCase(BaseTestCase):
     def setUp(self):
@@ -37,7 +37,7 @@ class InitialTickTestCase(BaseTestCase):
         self.assertEqual(self.ctx['create_flow'].call_args, expected_call_args)
 
     def test_has_expected_data(self):
-        expected_data = {'flow_id': self.ctx['create_flow'].return_value,
+        expected_data = {'flow_uuid': self.ctx['create_flow'].return_value,
                          'ticks': 1}
         self.assertEqual(self.task.data, expected_data)
 
@@ -52,7 +52,7 @@ class IntermediateTickMixin(object):
         self.initial_ticks = 1
         self.initial_state = {
             'data': {'ticks': self.initial_ticks,
-                     'flow_id': self.flow['id']},
+                     'flow_uuid': self.flow['uuid']},
             'input': {'flow_type': 'some flow type'},
             'status': 'RUNNING'}
         self.task = self.generate_task(**self.initial_state)

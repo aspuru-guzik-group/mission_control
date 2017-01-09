@@ -86,9 +86,7 @@ class BaseFlowRunner(object):
         updated_serialization = self.flow_engine.serialize_flow(
             flow=flow)
         updates = {'serialization': json.dumps(updated_serialization)}
-        serialized_status = updated_serialization['status']
-        if serialized_status == 'COMPLETED':
-            updates['status'] = serialized_status
+        updates['status'] = updated_serialization['status']
         return updates
 
     def update_flow_record(self, flow_record=None, updates=None):

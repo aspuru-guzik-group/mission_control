@@ -13,7 +13,7 @@ class ReaxysFlowGenerator(object):
         flow.add_task(key='confgen', 
                       as_root=True,
                       task=FlowTask(),
-                      static_input={
+                      input={
                           'flow_spec': {
                               'flow_type': RunAndLoadFlowGenerator.flow_type,
                               'run_spec': {

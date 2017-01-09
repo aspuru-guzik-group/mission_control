@@ -156,7 +156,13 @@ class TickFlowRecord(BaseTestCase):
             self.flow_engine.tick_flow.call_args,
             call(flow=expected_deserialized_flow, ctx=self.runner.tick_ctx))
 
-    def test_returns_serialization(self):
+    def test_includes_status_in_return(self):
+        serialization = {'status': 'COMPLETED'}
+        self.flow_engine.serialize_flow.return_value = serialization
+        result = self.runner.tick_flow_record(self.flow_record)
+        self.assertEqual(result['status'], serialization['status'])
+
+    def test_includes_serialization_in_return(self):
         result = self.runner.tick_flow_record(self.flow_record)
         serialization = self.flow_engine.serialize_flow.return_value
         self.assertEqual(
@@ -164,18 +170,6 @@ class TickFlowRecord(BaseTestCase):
         self.assertEqual(
             result['serialization'], self.mocks['json']['dumps'].return_value)
         
-    def test_returns_status_if_serialization_status_is_completed(self):
-        serialization = {'status': 'COMPLETED'}
-        self.flow_engine.serialize_flow.return_value = serialization
-        result = self.runner.tick_flow_record(self.flow_record)
-        self.assertEqual(result['status'], serialization['status'])
-
-    def test_does_not_status_if_serialization_status_is_not_completed(self):
-        result = self.runner.tick_flow_record(self.flow_record)
-        serialization = self.flow_engine.serialize_flow.return_value
-        serialization['status'] = 'RUNNING'
-        self.assertTrue('status' not in result)
-
 class UpdateFlowRecordTestCase(BaseTestCase):
     def test_update_flow_record(self):
         flow_record = MagicMock()

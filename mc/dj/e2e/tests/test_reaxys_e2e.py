@@ -29,8 +29,8 @@ class ReaxysFlowE2ETestCase(TestCase):
         self.tick_ctx = self.generate_tick_ctx()
         self.flow_runner = self.generate_flow_runner()
         self.job_runner = self.generate_job_runner()
-        self.flow_spec = self.generate_reaxys_flow_spec()
-        self.flow_model = self.generate_reaxys_flow_model()
+        self.reaxys_flow_spec = self.generate_reaxys_flow_spec()
+        self.reaxys_flow_uuid = self.generate_reaxys_flow_model().uuid
         self.states = []
 
     def configure_request_client(self):
@@ -61,18 +61,19 @@ class ReaxysFlowE2ETestCase(TestCase):
 
     def generate_tick_ctx(self):
 
-        def create_flow(flow_spec=None):
+        def create_flow(flow_kwargs=None):
+            flow_spec = flow_kwargs.get('flow_spec', {})
             flow = self.flow_engine.generate_flow(flow_spec=flow_spec)
             serialized_flow = self.flow_engine.serialize_flow(flow)
             created_flow = self.flow_client.create_flow(
-                flow={'serialization': serialized_flow})
-            return created_flow.uuid
+                flow={'serialization': json.dumps(serialized_flow)})
+            return created_flow['uuid']
 
-        def get_flow(flow_id=None):
-            raise NotImplementedError
+        def get_flow(flow_uuid=None):
+            return self.flow_client.fetch_flow_by_uuid(uuid=flow_uuid)
 
-        def get_job(job_id=None):
-            raise NotImplementedError
+        def get_job(job_uuid=None):
+            return self.job_client.fetch_job_spec_by_uuid(uuid=job_uuid)
 
         return {
             'create_flow': create_flow,
@@ -106,26 +107,54 @@ class ReaxysFlowE2ETestCase(TestCase):
         }
 
     def generate_reaxys_flow_model(self):
-        flow = ReaxysFlowGenerator.generate_flow(flow_spec=self.flow_spec)
+        flow = ReaxysFlowGenerator.generate_flow(
+            flow_spec=self.reaxys_flow_spec)
         serialization = self.flow_engine.serialize_flow(flow=flow)
-        print("s: ", serialization)
         flow_model = FlowModel.objects.create(
             serialization=json.dumps(serialization))
         return flow_model
 
     def test_flow(self):
-        states = []
-        states.append(self.get_state(prev_state=None))
-        self.tick_and_capture_state()
-        self.fail()
-
-    def tick_and_capture_state(self):
+        # flow_runner.tick = 1
         self.flow_runner.tick()
-        self.states.append(self.get_state(prev_state=self.states[-1]))
+        self.capture_state()
+        reaxys_flow = self.states[-1]['flows'][self.reaxys_flow_uuid]
+        confgen_task = reaxys_flow.tasks['confgen']
+        confgen_flow_uuid = confgen_task.data['flow_uuid']
+
+        self.assertEqual(
+            self.states[-1]['flow_models'][confgen_flow_uuid]['status'],
+            'PENDING')
+
+        # flow_runner.tick = 2
+        self.flow_runner.tick()
+        self.capture_state()
+        self.assertEqual(
+            self.states[-1]['flow_models'][confgen_flow_uuid]['status'],
+            'RUNNING')
+
+        # Fake completion of confgen flow.
+        FlowModel.objects.filter(uuid=confgen_flow_uuid)\
+                .update(status='COMPLETED')
+
+        # flow_runner.tick = 3
+        self.flow_runner.tick()
+        self.capture_state()
+        self.assertEqual(
+            self.states[-1]['flow_models'][confgen_flow_uuid]['status'],
+            'COMPLETED')
+        self.assertEqual(
+            self.states[-1]['flow_models'][self.reaxys_flow_uuid]['status'],
+            'COMPLETED')
+
+    def capture_state(self):
+        if len(self.states) > 1: prev_state = self.states[-1]
+        else: prev_state = None
+        self.states.append(self.get_state(prev_state=prev_state))
 
     def get_state(self, prev_state=None):
         state = {
-            'flows': {
+            'flow_models': {
                 flow_model.uuid: flow_model.__dict__
                 for flow_model in FlowModel.objects.all()
             },
@@ -133,5 +162,10 @@ class ReaxysFlowE2ETestCase(TestCase):
                 job.uuid: job.__dict__
                 for job in Job.objects.all()
             }
+        }
+        state['flows'] = {
+            flow_model['uuid']: self.flow_engine.deserialize_flow(
+                serialized_flow=json.loads(flow_model['serialization']))
+            for flow_model in state['flow_models'].values()
         }
         return state
