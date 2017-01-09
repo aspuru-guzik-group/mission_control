@@ -4,8 +4,8 @@ from unittest.mock import MagicMock
 
 from flow_engines.flow_engine import FlowEngine
 
-from ...flow_generators.reaxys import ReaxysFlowGenerator
-from ...flow_generators.reaxys import RunAndLoadFlowGenerator
+from ..reaxys import ReaxysFlowGenerator
+from ..reaxys import RunAndLoadFlowGenerator
 
 
 class ReaxysFlowTestCase(unittest.TestCase):

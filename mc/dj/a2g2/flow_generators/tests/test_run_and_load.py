@@ -5,7 +5,7 @@ from unittest.mock import call, MagicMock
 
 from flow_engines.flow_engine import FlowEngine
 
-from ...flow_generators.run_and_load import RunAndLoadFlowGenerator
+from ..run_and_load import RunAndLoadFlowGenerator
 
 
 class RunAndLoadFlowTestCase(unittest.TestCase):

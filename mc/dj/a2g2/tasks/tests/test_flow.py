@@ -3,7 +3,7 @@ from unittest.mock import call, MagicMock
 from uuid import uuid4
 from django.test import TestCase
 
-from ...tasks.flow import FlowTask
+from ..flow import FlowTask
 
 
 class BaseTestCase(TestCase):

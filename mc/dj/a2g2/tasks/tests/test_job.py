@@ -3,7 +3,7 @@ from unittest.mock import call, MagicMock
 from uuid import uuid4
 from django.test import TestCase
 
-from ...tasks.job import JobTask
+from ..job import JobTask
 
 
 class BaseTestCase(TestCase):
