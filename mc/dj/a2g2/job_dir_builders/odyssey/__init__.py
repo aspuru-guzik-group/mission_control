@@ -8,27 +8,8 @@ class OdysseyJobDirBuilder(object):
     @classmethod
     def build_dir(cls, dir_spec=None, output_dir=None):
         if not output_dir: output_dir = tempfile.mkdtemp(prefix='odyssey.')
-        prepared_dir_spec = cls.prepare_dir_spec(dir_spec=dir_spec)
-        cls.write_job_script(dir_spec=prepared_dir_spec,
-                              script_path=os.path.join(output_dir, 'job.sh'))
-
-    @classmethod
-    def prepare_dir_spec(cls, dir_spec=None):
-        prepared_dir_spec = {
-            **dir_spec,
-            'sbatch': [*cls.generate_initial_sbatch_params(),
-                       *dir_spec.get('sbatch', {})]
-        }
-        return prepared_dir_spec
-
-    @classmethod
-    def generate_initial_sbatch_params(cls, job_spec=None):
-        initial_sbatch_params = [
-            ('nodes', 1),
-            ('ntasks', 1),
-            ('partition', 'my_partition')
-        ]
-        return initial_sbatch_params
+        cls.write_job_script(dir_spec=dir_spec,
+                             script_path=os.path.join(output_dir, 'job.sh'))
 
     @classmethod
     def write_job_script(cls, dir_spec=None, script_path=None):
