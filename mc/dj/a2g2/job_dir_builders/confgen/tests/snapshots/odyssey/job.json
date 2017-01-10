@@ -1,8 +1,6 @@
 {
   "spec": {
     "type": "confgen",
-    "input": {
-      "smiles": "some smiles"
-    }
+    "smiles": "some smiles"
   }
 }

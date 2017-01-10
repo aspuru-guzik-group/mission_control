@@ -29,20 +29,15 @@ class TestBuildOdysseyDir(BaseTestCase):
             'job_script_body': textwrap.dedent(
                 '''
                 source /n/aagfs01/software/envs/a2g2_env/bin/activate
-                python -m a2g2.conformer_generator \
-                    --input=./conformer_generator.in.json
+                python -m a2g2.conformer_generator \\
+                  --input=./conformer_generator.in.json
                 '''),
             'templates': {
                 'specs': [
                     {'target': 'confgen.in.json',
-                     'content': ConfgenJobDirBuilder.load_template(
-                         'confgen.in.json'),
-                     'ctx': {
-                         'confgen_in_json': json.dumps({
-                             'smiles': self.job['spec']['smiles']
-                         }, indent=2)
-                     }
-                    }
+                     'content': json.dumps({
+                         'smiles': self.job['spec']['smiles']
+                     }, indent=2)}
                 ]
             }
         }
@@ -57,5 +52,6 @@ class TestBuildOdysseyDir(BaseTestCase):
             job=self.job, odyssey_dir_builder=OdysseyJobDirBuilder,
             output_dir=output_dir)
         this_dir = os.path.dirname(__file__)
-        snapshot_dir = os.path.join(this_dir, 'snapshots', 'odyssey')
+        snapshot_dir = os.path.join(this_dir, 'snapshots', 'odyssey',
+                                    'expected_dir')
         _test_utils.assert_dirs_equal(self, output_dir, snapshot_dir)
