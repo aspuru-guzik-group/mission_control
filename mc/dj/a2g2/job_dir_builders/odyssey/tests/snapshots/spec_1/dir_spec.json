@@ -9,5 +9,20 @@
   "modules": [
     ["module_1", true]
   ],
-  "job_script_body": "body_value"
+  "job_script_body": "body_value",
+  "templates": {
+    "ctx": {
+      "ctx_1": "ctx_1_value",
+      "ctx_2": "ctx_2_value"
+    },
+    "specs": [
+      {
+        "target": "template_1",
+        "ctx": {
+          "ctx_2": "ctx_2_value_from_spec"
+        },
+        "content": "{{ctx_1}} {{ctx_2}}"
+      }
+    ]
+  }
 }
