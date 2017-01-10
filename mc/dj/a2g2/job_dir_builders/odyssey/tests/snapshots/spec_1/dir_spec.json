@@ -1,0 +1,13 @@
+{
+  "sbatch": [
+    ["sbatch_1", "sbatch_1_value"]
+  ],
+  "env_vars": [
+    ["env_var_1", "env_var_1_value"],
+    ["env_var_2", "env_var_2_value"]
+  ],
+  "modules": [
+    ["module_1", true]
+  ],
+  "job_script_body": "body_value"
+}
