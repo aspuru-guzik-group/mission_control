@@ -34,7 +34,7 @@ class BaseTestCase(TestCase):
         comparison_dict = {key: superdict.get(key, None) for key in subdict}
         self.assertEqual(subdict, comparison_dict)
 
-    def generate_runner(self, **runner_kwargs):
+    def generate_runner(self, *args, **runner_kwargs):
         return odyssey_push_runner.OdysseyPushRunner(**runner_kwargs)
 
 class BaseCommandTestCase(BaseTestCase):
@@ -108,24 +108,52 @@ class RunCommandTestCase(BaseTestCase):
                 .return_value
         self.assertEqual(mock_runner.run.call_args, call())
 
-class DaemonSetupTestCase(BaseTestCase):
-    def test_has_flow_engine(self):
-        self.fail()
+class RunnerSetupTestCase(BaseTestCase):
+    def patch_runner(self, **patches):
+        patcher = patch.multiple(odyssey_push_runner.OdysseyPushRunner,
+                                 **patches)
+        self.patchers['runner'] = patcher
+        patched = patcher.start()
+        return patched
 
-    def test_has_flow_client(self):
-        self.fail()
+    def run_subcomponent_generator_fallback_test(self, subcomponent_name=None):
+        generator_method_name = 'generate_%s' % subcomponent_name
+        patched = self.patch_runner(**{generator_method_name: DEFAULT})
+        self.generate_runner(**{subcomponent_name: Mock()})
+        self.assertEqual(patched[generator_method_name].call_count, 0)
+        self.generate_runner(**{subcomponent_name: None})
+        self.assertEqual(patched[generator_method_name].call_count, 1)
+
+    def test_falls_back_to_generate_flow_engine(self):
+        self.run_subcomponent_generator_fallback_test('flow_engine')
+
+    def test_falls_back_to_generate_flow_client(self):
+        self.run_subcomponent_generator_fallback_test('flow_client')
 
     def test_has_job_client(self):
-        self.fail()
-
-    def test_has_flow_runner(self):
-        self.fail()
-
-    def test_registers_flows_with_flow_runner(self):
-        self.fail()
+        self.run_subcomponent_generator_fallback_test('job_client')
 
     def test_has_job_runner(self):
-        self.fail()
+        self.run_subcomponent_generator_fallback_test('job_runner')
+
+    def test_has_flow_runner(self):
+        self.run_subcomponent_generator_fallback_test('flow_runner')
+
+class GenerateFlowEngineTestCase(BaseTestCase):
+    def test_generates_flow_engine(self): self.fail()
+
+class GenerateFlowClientTestCase(BaseTestCase):
+    def test_generates_flow_client(self): self.fail()
+
+class GenerateJobClientTestCase(BaseTestCase):
+    def test_generates_job_client(self): self.fail()
+
+class GenerateJobRunnerTestCase(BaseTestCase):
+    def test_generates_job_runner(self): self.fail()
+
+class GenerateFlowRunnerTestCase(BaseTestCase):
+    def test_generates_flow_runner(self): self.fail()
+    def test_registers_flow_classes(self): self.fail()
 
 class RunTestCase(BaseTestCase):
     def test_calls_tick_at_interval(self):
