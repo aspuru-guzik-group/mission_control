@@ -1,13 +1,9 @@
 import json
-import os
-import tempfile
 import textwrap
 import unittest
 from unittest.mock import MagicMock
 
-from .. import ConfgenJobDirBuilder
-from ...odyssey import OdysseyJobDirBuilder
-from ... import test_utils as _test_utils
+from ..confgen import ConfgenJobDirBuilder
 
 
 class BaseTestCase(unittest.TestCase):
@@ -28,13 +24,19 @@ class TestBuildOdysseyDir(BaseTestCase):
             'modules': ['conda'],
             'job_script_body': textwrap.dedent(
                 '''
-                source /n/aagfs01/software/envs/a2g2_env/bin/activate
-                python -m a2g2.conformer_generator \\
-                  --input=./conformer_generator.in.json
+                echo "starting, $(date)"
+                source activate /n/aagfs01/software/conda_envs/a2g2_env
+                SCRATCH_DIR="/scratch/conformers.$$"
+                mkdir -p $SCRATCH_DIR
+                python -m a2g2_utils.conformer_generators.rdkit_conformer_generator.cmd \\
+                    --params_file="./confgen.params.json" \\
+                    --output_dir="$SCRATCH_DIR"
+                cp -r $SCRATCH_DIR ./conformers
+                echo "finished, $(date)"
                 '''),
             'templates': {
                 'specs': [
-                    {'target': 'confgen.in.json',
+                    {'target': 'confgen.params.json',
                      'content': json.dumps({
                          'smiles': self.job['spec']['smiles']
                      }, indent=2)}
@@ -45,13 +47,3 @@ class TestBuildOdysseyDir(BaseTestCase):
         self.assertEqual(call_kwargs['output_dir'], mock_output_dir)
         for k, v in expected_dir_spec.items():
             self.assertEqual(call_kwargs['dir_spec'][k], v) 
-
-    def test_generates_expected_dir(self):
-        output_dir = tempfile.mkdtemp(prefix='confgen.ody.')
-        ConfgenJobDirBuilder.build_odyssey_dir(
-            job=self.job, odyssey_dir_builder=OdysseyJobDirBuilder,
-            output_dir=output_dir)
-        this_dir = os.path.dirname(__file__)
-        snapshot_dir = os.path.join(this_dir, 'snapshots', 'odyssey',
-                                    'expected_dir')
-        _test_utils.assert_dirs_equal(self, output_dir, snapshot_dir)

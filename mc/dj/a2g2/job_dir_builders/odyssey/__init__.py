@@ -10,6 +10,7 @@ class OdysseyJobDirBuilder(object):
     @classmethod
     def build_dir(cls, dir_spec=None, output_dir=None):
         if not output_dir: output_dir = tempfile.mkdtemp(prefix='odyssey.')
+        if not os.path.exists(output_dir): os.makedirs(output_dir)
         cls.write_job_script(dir_spec=dir_spec, output_dir=output_dir)
         cls.write_templates(dir_spec=dir_spec, output_dir=output_dir)
 
