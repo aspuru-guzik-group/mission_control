@@ -40,13 +40,6 @@ class BaseTestCase(TestCase):
         return odyssey_push_runner.OdysseyPushRunner(run_setup=run_setup,
                                                      **runner_kwargs)
 
-    def patch_runner(self, **patches):
-        patcher = patch.multiple(odyssey_push_runner.OdysseyPushRunner,
-                                 **patches)
-        self.patchers['runner'] = patcher
-        patched = patcher.start()
-        return patched
-
 class BaseCommandTestCase(BaseTestCase):
     def setUp(self):
         self.params = {'param1': 'value1', 'param2': 'value2'}
@@ -99,12 +92,13 @@ class CreateFlowCommandTestCase(BaseTestCase):
 
 class RunnerCreateFlowTestCase(BaseTestCase):
     def test_wraps_flow_client_method(self):
-        flow_client = Mock()
-        self.runner = self.generate_runner(flow_client=flow_client)
-        flow = Mock()
-        result = self.runner.create_flow(flow=flow)
-        self.assertEqual(flow_client.create_flow.call_args, call(flow=flow))
-        self.assertEqual(result, flow_client.create_flow.return_value)
+        mock_flow_client = Mock()
+        self.runner.flow_client = mock_flow_client
+        mock_flow = Mock()
+        result = self.runner.create_flow(flow=mock_flow)
+        self.assertEqual(mock_flow_client.create_flow.call_args,
+                         call(flow=mock_flow))
+        self.assertEqual(result, mock_flow_client.create_flow.return_value)
 
 class RunCommandTestCase(BaseTestCase):
     def decorate_patchers(self):
@@ -123,13 +117,24 @@ class RunnerSetupTestCase(BaseTestCase):
         self.run_subcomponent_generator_fallback_test('flow_generator_classes')
 
     def run_subcomponent_generator_fallback_test(self, subcomponent_name=None):
+        mock_runner = Mock(odyssey_push_runner.OdysseyPushRunner)
         generator_method_name = 'generate_%s' % subcomponent_name
-        patched = self.patch_runner(**{generator_method_name: DEFAULT})
-        runner = self.generate_runner(**{subcomponent_name: Mock()})
-        runner.setup()
-        self.assertEqual(patched[generator_method_name].call_count, 0)
-        self.generate_runner(**{subcomponent_name: None})
-        self.assertEqual(patched[generator_method_name].call_count, 1)
+        mock_generator = Mock()
+        setattr(mock_runner, generator_method_name, mock_generator)
+        self.call_real_setup_with_mock(
+            mock=mock_runner, **{subcomponent_name: Mock()})
+        self.assertEqual(mock_generator.call_count, 0)
+        self.call_real_setup_with_mock(
+            mock=mock_runner, **{subcomponent_name: None})
+        self.assertEqual(mock_generator.call_count, 1)
+
+    def call_real_setup_with_mock(self, mock=None, *args, **kwargs):
+        self.call_real_method_with_mock(mock=mock, method_name='setup',
+                                        *args, **kwargs)
+
+    def call_real_method_with_mock(self, mock=None, method_name=None,
+                                   *args, **kwargs):
+        return getattr(mock.__class__, method_name)(mock, *args, **kwargs)
 
     def test_falls_back_to_generate_flow_engine(self):
         self.run_subcomponent_generator_fallback_test('flow_engine')
@@ -149,7 +154,7 @@ class RunnerSetupTestCase(BaseTestCase):
 class GenerateFlowGeneratorClassesTestCase(BaseTestCase):
     def test_generates_flow_generator_classes(self):
         runner = self.generate_runner()
-        from a2g2.flow_generator_classes import reaxys
+        from a2g2.flow_generators import reaxys
         expected_flow_generator_classes = set([reaxys.ReaxysFlowGenerator])
         self.assertEqual(runner.generate_flow_generator_classes(),
                          expected_flow_generator_classes)
@@ -222,15 +227,40 @@ class GenerateFlowRunnerTestCase(BaseTestCase):
                               flow_engine=flow_engine))
 
 class RunTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.runner.tick = Mock()
+
+    def decorate_patchers(self):
+        self.patchers['time'] = patch.multiple('time', sleep=DEFAULT)
+
     def test_calls_tick_at_interval(self):
-        self.fail()
+        tick_intervals = [1, 2]
+        tick_counter = 0
+        for tick_interval in tick_intervals:
+            self.runner.tick_interval = tick_interval
+            self.runner.run(ntimes=1)
+            tick_counter += 1
+            self.assertEqual(self.runner.tick.call_count, tick_counter)
+        self.assertEqual(
+            self.mocks['time']['sleep'].call_args_list,
+            [call(tick_interval) for tick_interval in tick_intervals])
 
 class TickTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.runner.flow_runner = Mock()
+        self.runner.job_runner = Mock()
+
     def test_ticks_flow_runner(self):
-        self.fail()
+        self.assertEqual(self.runner.flow_runner.tick.call_count, 0)
+        self.runner.tick()
+        self.assertEqual(self.runner.flow_runner.tick.call_count, 1)
 
     def test_ticks_job_runner(self):
-        self.fail()
+        self.assertEqual(self.runner.job_runner.tick.call_count, 0)
+        self.runner.tick()
+        self.assertEqual(self.runner.job_runner.tick.call_count, 1)
 
 if __name__ == '__main__':
     unittest.main()
