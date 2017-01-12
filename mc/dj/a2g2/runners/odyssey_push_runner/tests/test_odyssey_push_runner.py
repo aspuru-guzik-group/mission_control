@@ -205,10 +205,14 @@ class GenerateJobRunnerTestCase(BaseTestCase):
 
     def test_generates_job_client(self):
         job_client = Mock()
+        self.runner.odyssey_suer = Mock()
+        self.runner.odyssey_host = Mock()
         job_runner = self.runner.generate_job_runner(job_client=job_client)
         self.assertEqual(job_runner, self.mocks['JobRunner'].return_value)
         self.assertEqual(self.mocks['JobRunner'].call_args,
-                         call(job_client=job_client))
+                         call(job_client=job_client,
+                              odyssey_user=self.runner.odyssey_user,
+                              odyssey_host=self.runner.odyssey_host))
 
 class GenerateFlowRunnerTestCase(BaseTestCase):
     def decorate_patchers(self):

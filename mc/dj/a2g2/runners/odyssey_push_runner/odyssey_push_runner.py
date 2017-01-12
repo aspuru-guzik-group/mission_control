@@ -8,9 +8,12 @@ from .odyssey_push_job_runner import OdysseyPushJobRunner
 from flow_runners.base_flow_runner import BaseFlowRunner as FlowRunner
 
 class OdysseyPushRunner(object):
-    def __init__(self, *args, run_setup=True, tick_interval=None, **kwargs):
-        if run_setup: self.setup(**kwargs)
+    def __init__(self, *args, run_setup=True, tick_interval=None,
+                 odyssey_user=None, odyssey_host=None, **setup_kwargs):
         self.tick_interval = tick_interval
+        self.odyssey_user = odyssey_user
+        self.odyssey_host = odyssey_host
+        if run_setup: self.setup(**setup_kwargs)
 
     def setup(self,
               flow_generator_classes=None, 
@@ -46,7 +49,9 @@ class OdysseyPushRunner(object):
     def generate_job_client(self): return JobClient()
 
     def generate_job_runner(self, job_client=None): 
-        return OdysseyPushJobRunner(job_client=job_client)
+        return OdysseyPushJobRunner(job_client=job_client,
+                                    odyssey_user=self.odyssey_user,
+                                    odyssey_host=self.odyssey_host)
 
     def generate_flow_runner(self, flow_client=None, job_client=None,
                              flow_engine=None):
