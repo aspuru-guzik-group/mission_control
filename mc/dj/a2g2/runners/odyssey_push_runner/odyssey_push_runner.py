@@ -1,4 +1,9 @@
 from flow_engines.flow_engine import FlowEngine
+from flow_client.flow_client import MissionControlFlowClient as FlowClient
+from job_spec_client.job_spec_client import MissionControlJobSpecClient \
+        as JobClient
+from .odyssey_push_job_runner import OdysseyPushJobRunner
+from flow_runners.base_flow_runner import BaseFlowRunner as FlowRunner
 
 class OdysseyPushRunner(object):
     def __init__(self, *args, run_setup=True, **kwargs):
@@ -32,10 +37,17 @@ class OdysseyPushRunner(object):
                 flow_generator_class=flow_generator_class)
         return flow_engine
 
-    def generate_flow_client(self): pass
-    def generate_job_client(self): pass
-    def generate_job_runner(self): pass
-    def generate_flow_runner(self): pass
+    def generate_flow_client(self): return FlowClient()
+
+    def generate_job_client(self): return JobClient()
+
+    def generate_job_runner(self, job_client=None): 
+        return OdysseyPushJobRunner(job_client=job_client)
+
+    def generate_flow_runner(self, flow_client=None, job_client=None,
+                             flow_engine=None):
+        return FlowRunner(flow_client=flow_client, job_client=job_client,
+                          flow_engine=flow_engine)
 
     def create_flow(self, *args, flow=None, **kwargs):
         return self.flow_client.create_flow(flow=flow)

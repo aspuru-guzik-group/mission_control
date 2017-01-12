@@ -160,9 +160,8 @@ class GenerateFlowEngineTestCase(BaseTestCase):
                                                    'FlowEngine')
 
     def test_generates_flow_engine(self):
-        flow_engine = self.runner.generate_flow_engine()
-        expected_flow_engine = self.mocks['FlowEngine'].return_value
-        self.assertEqual(flow_engine, expected_flow_engine)
+        self.assertEqual(self.runner.generate_flow_engine(),
+                         self.mocks['FlowEngine'].return_value)
 
     def test_registers_flow_generator_classes_with_engine(self):
         flow_generator_classes = [Mock() for i in range(3)]
@@ -176,21 +175,51 @@ class GenerateFlowEngineTestCase(BaseTestCase):
         ]
         self.assertEqual(call_args_list, expected_call_args_list)
 
-    def register_flow_generator_class(self, flow_generator_class=None):
-        self.fail()
-
 class GenerateFlowClientTestCase(BaseTestCase):
-    def test_generates_flow_client(self): self.fail()
+    def decorate_patchers(self):
+        self.patchers['FlowClient'] = patch.object(odyssey_push_runner,
+                                                   'FlowClient')
+
+    def test_generates_flow_client(self):
+        self.assertEqual(self.runner.generate_flow_client(),
+                         self.mocks['FlowClient'].return_value)
 
 class GenerateJobClientTestCase(BaseTestCase):
-    def test_generates_job_client(self): self.fail()
+    def decorate_patchers(self):
+        self.patchers['JobClient'] = patch.object(odyssey_push_runner,
+                                                  'JobClient')
+
+    def test_generates_job_client(self):
+        self.assertEqual(self.runner.generate_job_client(),
+                         self.mocks['JobClient'].return_value)
 
 class GenerateJobRunnerTestCase(BaseTestCase):
-    def test_generates_job_runner(self): self.fail()
+    def decorate_patchers(self):
+        self.patchers['JobRunner'] = patch.object(odyssey_push_runner,
+                                                  'OdysseyPushJobRunner')
+
+    def test_generates_job_client(self):
+        job_client = Mock()
+        job_runner = self.runner.generate_job_runner(job_client=job_client)
+        self.assertEqual(job_runner, self.mocks['JobRunner'].return_value)
+        self.assertEqual(self.mocks['JobRunner'].call_args,
+                         call(job_client=job_client))
 
 class GenerateFlowRunnerTestCase(BaseTestCase):
-    def test_generates_flow_runner(self): self.fail()
-    def test_registers_flow_classes(self): self.fail()
+    def decorate_patchers(self):
+        self.patchers['FlowRunner'] = patch.object(odyssey_push_runner,
+                                                  'FlowRunner')
+    def test_generates_flow_runner(self):
+        job_client = Mock()
+        flow_client = Mock()
+        flow_engine = Mock()
+        flow_runner = self.runner.generate_flow_runner(flow_client=flow_client,
+                                                       job_client=job_client,
+                                                       flow_engine=flow_engine)
+        self.assertEqual(flow_runner, self.mocks['FlowRunner'].return_value)
+        self.assertEqual(self.mocks['FlowRunner'].call_args,
+                         call(flow_client=flow_client, job_client=job_client,
+                              flow_engine=flow_engine))
 
 class RunTestCase(BaseTestCase):
     def test_calls_tick_at_interval(self):
