@@ -10,3 +10,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.runner = odyssey_push_runner.OdysseyPushRunner(**options)
         self.runner.run()
+
+if __name__ == '__main__':
+    Command.run()

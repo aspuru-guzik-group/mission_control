@@ -19,6 +19,7 @@ class FlowTestCase(TestCase):
         kwargs = {
             'mission': Mission.objects.create(name='mission'),
             'serialization': 'some serialization',
+            'spec': 'some spec',
         }
         flow = Flow.objects.create(**kwargs)
         for kwarg, value in kwargs.items():

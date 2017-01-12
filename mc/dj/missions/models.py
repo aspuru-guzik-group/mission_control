@@ -30,6 +30,7 @@ class Flow(TimeStampedModel):
     uuid = models.CharField(primary_key=True, default=str_uuid4,
                             editable=False, max_length=64)
     serialization = models.TextField(null=True)
+    spec = models.TextField(null=True)
     mission = models.ForeignKey('Mission', null=True, on_delete=models.CASCADE)
     status = models.CharField(null=True, max_length=32,
                               choices=[(status.name, status.value['label'])

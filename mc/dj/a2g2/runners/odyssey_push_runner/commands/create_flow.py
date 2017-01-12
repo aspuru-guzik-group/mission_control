@@ -17,3 +17,6 @@ class Command(BaseCommand):
         flow = {'spec': options.get('flow_spec')}
         flow_uuid = self.runner.create_flow(flow=flow)
         print("Created flow with uuid '%s'" % flow_uuid, file=self.stdout)
+
+if __name__ == '__main__':
+    Command.run()

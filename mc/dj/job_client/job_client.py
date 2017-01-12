@@ -1,5 +1,5 @@
 import requests
-from jobs.models import JobStatuses
+from jobs.constants import JobStatuses
 
 
 class MissionControlJobClient(object):

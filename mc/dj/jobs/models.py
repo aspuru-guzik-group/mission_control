@@ -1,13 +1,9 @@
-import enum
 import uuid
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from django.contrib.postgres.fields import JSONField
 
-class JobStatuses(enum.Enum):
-    Pending = {'label': 'pending'}
-    Claimed = {'label': 'claimed'}
-    Completed = {'label': 'completed'}
+from .constants import JobStatuses
 
 class Job(TimeStampedModel):
     uuid = models.CharField(primary_key=True, default=uuid.uuid4,
