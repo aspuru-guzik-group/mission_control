@@ -33,8 +33,7 @@ class BaseFlowRunner(object):
                 self._tick_and_sleep(tick_interval=tick_interval)
 
     def _tick_and_sleep(self, tick_interval=None):
-        if tick_interval is None:
-            tick_interval = self.tick_interval
+        if tick_interval is None: tick_interval = self.tick_interval
         self.tick()
         time.sleep(tick_interval)
 
