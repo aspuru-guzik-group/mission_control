@@ -186,8 +186,11 @@ class GenerateFlowClientTestCase(BaseTestCase):
                                                    'FlowClient')
 
     def test_generates_flow_client(self):
+        self.runner.flow_server_url = Mock()
         self.assertEqual(self.runner.generate_flow_client(),
                          self.mocks['FlowClient'].return_value)
+        self.assertEqual(self.mocks['FlowClient'].call_args,
+                         call(base_url=self.runner.flow_server_url))
 
 class GenerateJobClientTestCase(BaseTestCase):
     def decorate_patchers(self):
@@ -195,8 +198,11 @@ class GenerateJobClientTestCase(BaseTestCase):
                                                   'JobClient')
 
     def test_generates_job_client(self):
+        self.runner.job_server_url = Mock()
         self.assertEqual(self.runner.generate_job_client(),
                          self.mocks['JobClient'].return_value)
+        self.assertEqual(self.mocks['JobClient'].call_args,
+                         call(base_url=self.runner.job_server_url))
 
 class GenerateJobRunnerTestCase(BaseTestCase):
     def decorate_patchers(self):

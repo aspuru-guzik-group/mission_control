@@ -10,6 +10,7 @@ class Command(BaseCommand):
             help="flow_spec as json string.",
             type=lambda i: json.loads(i)
         )
+        self.add_job_and_flow_server_url_arguments(parser)
 
     def handle(self, *args, **options):
         self.runner = odyssey_push_runner.OdysseyPushRunner()
