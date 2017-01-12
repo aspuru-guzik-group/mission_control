@@ -11,24 +11,26 @@ class BaseTestCase(unittest.TestCase):
         self.runner = BaseFlowRunner(
             flow_client=self.flow_client,
             flow_engine=self.flow_engine)
+        self.patchers = {}
+        self.decorate_patchers()
+        self.mocks = self.start_patchers()
 
-    def tearDown(self):
-        if hasattr(self, 'patchers'): self.stop_patchers(self.patchers)
+    def decorate_patchers(self): pass
 
-    def start_patchers(self, patchers):
-        mocks = {key: patcher.start() for key, patcher in patchers.items()}
+    def start_patchers(self):
+        mocks = {key: patcher.start() for key, patcher in self.patchers.items()}
         return mocks
 
-    def stop_patchers(self, patchers):
-        for patcher in patchers.values(): patcher.stop()
+    def tearDown(self):
+        self.stop_patchers()
+
+    def stop_patchers(self):
+        for patcher in self.patchers.values(): patcher.stop()
+
 
 class RunTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.patchers = {
-            'time': patch.multiple('time', sleep=DEFAULT)
-        }
-        self.mocks = self.start_patchers(self.patchers)
+    def decorate_patchers(self):
+        self.patchers['time'] = patch.multiple('time', sleep=DEFAULT)
 
     def test_run(self):
         tick_intervals = [1, 2]
@@ -43,17 +45,12 @@ class RunTestCase(BaseTestCase):
 class TickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.patchers = {
-            'runner': patch.multiple(self.runner,
-                                     fetch_tickable_flow_records=DEFAULT,
-                                     process_flow_record=DEFAULT)
-        }
-        self.mocks = self.start_patchers(self.patchers)
+        self.runner.fetch_tickable_flow_records = MagicMock()
+        self.runner.process_flow_record = MagicMock()
 
     def test_fetches_tickable_flow_records(self):
         self.runner.tick()
-        self.assertTrue(self.mocks['runner'].get(
-            'fetch_tickable_flow_records').called)
+        self.assertTrue(self.runner.fetch_tickable_flow_records.called)
 
     def test_processes_fetched_records(self):
         self.runner.max_executing_flows = 3
@@ -61,15 +58,13 @@ class TickTestCase(BaseTestCase):
         flow_records = []
         for i in range(self.runner.max_executing_flows + extra_flows):
             flow_records.append({'uuid': i})
-        self.mocks['runner']['fetch_tickable_flow_records'].return_value = \
-                flow_records
+        self.runner.fetch_tickable_flow_records.return_value = flow_records
         self.runner.tick()
         expected_call_args_list = [
             call(flow_record=flow_record)
             for flow_record in flow_records[:-1 * extra_flows]]
-        self.assertTrue(
-            self.mocks['runner']['process_flow_record'].call_args_list,
-            expected_call_args_list)
+        self.assertTrue(self.runner.process_flow_record.call_args_list,
+                        expected_call_args_list)
 
 class FetchTickableFlowRecordsTestCase(BaseTestCase):
     def test_fetch_tickable_flow_records(self):
@@ -81,14 +76,13 @@ class FetchTickableFlowRecordsTestCase(BaseTestCase):
 class ProcessRecordBase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.patchers = {
-            'runner': patch.multiple(
-                self.runner, tick_flow_record=DEFAULT,
-                update_flow_record=DEFAULT)
-        }
-        self.mocks = self.start_patchers(self.patchers)
         self.flow_record = MagicMock()
         self.claimed = MagicMock()
+
+    def decorate_patchers(self):
+        self.patchers['runner'] = patch.multiple(
+            self.runner, tick_flow_record=DEFAULT,
+            update_flow_record=DEFAULT)
 
 class ProcessFlowRecordsTestCase(ProcessRecordBase):
     def setUp(self):
@@ -137,24 +131,17 @@ class ProcessUnclaimableFlowRecordsTestCase(ProcessRecordBase):
 class TickFlowRecord(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.patchers = {
-            'json': patch.multiple('json', loads=DEFAULT, dumps=DEFAULT)
-        }
-        self.mocks = self.start_patchers(self.patchers)
         self.flow_record = MagicMock()
+        self.runner.get_flow_for_flow_record = MagicMock()
 
-    def test_calls_engine_tick_with_deserialization(self):
+    def decorate_patchers(self):
+        self.patchers['json'] = patch.multiple('json', dumps=DEFAULT)
+
+    def test_calls_engine_tick_with_get_flow_result(self):
         self.runner.tick_flow_record(self.flow_record)
-        self.assertEqual(self.mocks['json']['loads'].call_args,
-                         call(self.flow_record['serialization']))
-        self.assertEqual(
-            self.flow_engine.deserialize_flow.call_args,
-            call(serialized_flow=self.mocks['json']['loads'].return_value))
-        expected_deserialized_flow = self.flow_engine\
-                .deserialize_flow.return_value
-        self.assertEqual(
-            self.flow_engine.tick_flow.call_args,
-            call(flow=expected_deserialized_flow, ctx=self.runner.tick_ctx))
+        expected_flow = self.runner.get_flow_for_flow_record.return_value
+        self.assertEqual(self.flow_engine.tick_flow.call_args,
+                         call(flow=expected_flow, ctx=self.runner.tick_ctx))
 
     def test_includes_status_in_return(self):
         serialization = {'status': 'COMPLETED'}
@@ -169,7 +156,45 @@ class TickFlowRecord(BaseTestCase):
             self.mocks['json']['dumps'].call_args, call(serialization))
         self.assertEqual(
             result['serialization'], self.mocks['json']['dumps'].return_value)
+
+class GetFlowForFlowRecordTestCase(BaseTestCase):
+    def test_deserializes_if_has_serialization(self):
+        flow_record = {'serialization': MagicMock()}
+        self.runner.deserialize_flow = MagicMock()
+        flow = self.runner.get_flow_for_flow_record(flow_record=flow_record)
+        self.assertEqual(flow, self.runner.deserialize_flow.return_value)
         
+    def test_generates_if_lacks_serialization(self):
+        flow_record = {'spec': MagicMock()}
+        self.runner.generate_flow_from_spec = MagicMock()
+        flow = self.runner.get_flow_for_flow_record(flow_record=flow_record)
+        self.assertEqual(flow, self.runner.generate_flow_from_spec.return_value)
+
+class DeserializeFlow(BaseTestCase):
+    def decorate_patchers(self):
+        self.patchers['json'] = patch.multiple('json', loads=DEFAULT,
+                                               dumps=DEFAULT)
+
+    def test_deserializes_flow(self):
+        json_flow_serialization = MagicMock()
+        flow = self.runner.deserialize_flow(
+            json_flow_serialization=json_flow_serialization)
+        self.assertEqual(self.mocks['json']['loads'].call_args,
+                         call(json_flow_serialization))
+        self.assertEqual(
+            self.flow_engine.deserialize_flow.call_args,
+            call(serialized_flow=self.mocks['json']['loads'].return_value)
+        )
+        self.assertEqual(flow, self.flow_engine.deserialize_flow.return_value)
+
+class GenerateFlowFromSpec(BaseTestCase):
+    def test_generates_flow(self):
+        flow_spec = MagicMock()
+        flow = self.runner.generate_flow_from_spec(flow_spec=flow_spec)
+        self.assertEqual(self.flow_engine.generate_flow.call_args,
+                         call(flow_spec=flow_spec))
+        self.assertEqual(flow, self.flow_engine.generate_flow.return_value)
+
 class UpdateFlowRecordTestCase(BaseTestCase):
     def test_update_flow_record(self):
         flow_record = MagicMock()

@@ -77,16 +77,31 @@ class BaseFlowRunner(object):
 
     def tick_flow_record(self, flow_record=None):
         self.logger.debug('tick_flow_record', flow_record)
-        json_flow = flow_record['serialization']
-        serialized_flow = json.loads(json_flow)
-        flow = self.flow_engine.deserialize_flow(
-            serialized_flow=serialized_flow)
+        flow = self.get_flow_for_flow_record(flow_record=flow_record)
         self.flow_engine.tick_flow(flow=flow, ctx=self.tick_ctx)
-        updated_serialization = self.flow_engine.serialize_flow(
-            flow=flow)
+        updated_serialization = self.flow_engine.serialize_flow(flow=flow)
         updates = {'serialization': json.dumps(updated_serialization)}
         updates['status'] = updated_serialization['status']
         return updates
+
+    def get_flow_for_flow_record(self, flow_record=None):
+        json_flow_serialization = flow_record.get('serialization', None)
+        if json_flow_serialization:
+            flow = self.deserialize_flow(
+                json_flow_serialization=json_flow_serialization)
+        else:
+            flow = self.generate_flow_from_spec(flow_spec=flow_record['spec'])
+        return flow
+
+    def deserialize_flow(self, json_flow_serialization=None):
+        serialized_flow = json.loads(json_flow_serialization)
+        flow = self.flow_engine.deserialize_flow(
+            serialized_flow=serialized_flow)
+        return flow
+
+    def generate_flow_from_spec(self, flow_spec=None):
+        flow = self.flow_engine.generate_flow(flow_spec=flow_spec)
+        return flow
 
     def update_flow_record(self, flow_record=None, updates=None):
         self.logger.debug('update_flow_record')

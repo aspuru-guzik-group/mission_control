@@ -32,7 +32,6 @@ class FlowEngine(object):
             self.register_flow_generator_class(
                 flow_generator_class=generator_class)
 
-
     def deserialize_flow(self, serialized_flow=None):
         flow = Flow()
         for attr in ['data', 'input', 'output', 'status']:
