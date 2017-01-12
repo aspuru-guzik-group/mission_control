@@ -1,6 +1,6 @@
 version: "2"
 services:
-  pg:
+  mc_pg:
     image: postgres
   mc_base:
     build:
@@ -12,8 +12,8 @@ services:
       MC_DB_NAME: postgres
       MC_DB_USER: postgres
       MC_DB_PASSWORD: postgres
-      MC_DB_HOST: pg
-  mc:
+      MC_DB_HOST: mc_pg
+  mc_server:
     extends:
       service: mc_base
     command: python manage.py runserver 0.0.0.0:8000
@@ -22,4 +22,13 @@ services:
     volumes:
       - ./mc:/mc
     depends_on:
-      - pg
+      - mc_pg
+  mc_shell:
+    extends:
+      service: mc_base
+    command: /bin/bash
+    volumes:
+      - ./mc:/mc
+    depends_on:
+      - mc_pg
+      - mc_server
