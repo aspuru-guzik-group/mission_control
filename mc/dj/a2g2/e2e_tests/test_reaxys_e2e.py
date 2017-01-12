@@ -10,7 +10,7 @@ from flow_engines.flow_engine import FlowEngine
 from flow_client.flow_client import MissionControlFlowClient
 from a2g2.flow_generators.reaxys import ReaxysFlowGenerator
 from job_runners.base_job_runner import BaseJobRunner
-from job_spec_client.job_spec_client import MissionControlJobSpecClient
+from job_client.job_client import MissionControlJobClient
 
 
 BASE_PATH = 'test_api'
@@ -47,7 +47,7 @@ class ReaxysFlowE2ETestCase(TestCase):
         )
 
     def generate_job_client(self):
-        return MissionControlJobSpecClient(
+        return MissionControlJobClient(
             base_url='/%s' % BASE_PATH,
             request_client=self.client
         )
@@ -73,7 +73,7 @@ class ReaxysFlowE2ETestCase(TestCase):
             return self.flow_client.fetch_flow_by_uuid(uuid=flow_uuid)
 
         def get_job(job_uuid=None):
-            return self.job_client.fetch_job_spec_by_uuid(uuid=job_uuid)
+            return self.job_client.fetch_job_by_uuid(uuid=job_uuid)
 
         return {
             'create_flow': create_flow,
@@ -92,7 +92,7 @@ class ReaxysFlowE2ETestCase(TestCase):
         job_dir_factory = MagicMock()
         transfer_client = MagicMock()
         runner = BaseJobRunner(
-            job_spec_client=self.job_client,
+            job_client=self.job_client,
             execution_client=execution_client,
             job_dir_factory=job_dir_factory,
             transfer_client=transfer_client,

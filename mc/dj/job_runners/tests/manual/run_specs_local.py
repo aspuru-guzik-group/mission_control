@@ -7,57 +7,57 @@ from uuid import uuid4
 
 from local_job_runners.base_daemon import BaseDaemon
 from local_job_runners.filesystem_storage_client import FileSystemStorageClient
-from local_job_runnders.job_spec_client import JobSpecClient
+from local_job_runners.job_client import JobClient
 
 
 def main():
-    daemon = BaseDaemon(job_spec_client=generate_job_spec_client(),
+    daemon = BaseDaemon(job_client=generate_job_client(),
                         job_dir_factory=generate_job_dir_factory(),
                         transfer_client=generate_transfer_client(),
                         tick_interval=3)
     daemon.start()
 
-def generate_job_spec_client():
-    job_spec_paths = sys.argv[1:]
-    job_specs = load_job_specs_from_paths(job_spec_paths)
-    job_spec_client = SimpleJobSpecClient(job_specs=job_specs)
-    return job_spec_client
+def generate_job_client():
+    job_paths = sys.argv[1:]
+    jobs = load_jobs_from_paths(job_paths)
+    job_client = SimpleJobClient(jobs=jobs)
+    return job_client
 
-def load_job_specs_from_paths(job_spec_paths):
-    job_specs = []
-    for job_spec_path in job_spec_paths:
-        job_spec = json.load(open(job_spec_path))
-        job_spec.setdefault('uuid', str(uuid4()))
-        job_specs.append(job_spec)
-    return job_specs
+def load_jobs_from_paths(job_paths):
+    jobs = []
+    for job_path in job_paths:
+        job = json.load(open(job_path))
+        job.setdefault('uuid', str(uuid4()))
+        jobs.append(job)
+    return jobs
 
-class SimpleJobSpecClient(JobSpecClient):
-    def __init__(self, job_specs=None):
-        self.job_specs = {job_spec['uuid']: job_spec for job_spec in job_specs}
+class SimpleJobClient(JobClient):
+    def __init__(self, jobs=None):
+        self.jobs = {job['uuid']: job for job in jobs}
         self.claimed_uuids = {}
 
-    def fetch_job_specs(self):
-        claimable_job_specs = []
-        for uuid, job_spec in self.job_specs.items():
+    def fetch_jobs(self):
+        claimable_jobs = []
+        for uuid, job in self.jobs.items():
             if uuid not in self.claimed_uuids and \
-               job_spec.get('status') is not self.Statuses.COMPLETED:
-                claimable_job_specs.append(job_spec)
-        return claimable_job_specs
+               job.get('status') is not self.Statuses.COMPLETED:
+                claimable_jobs.append(job)
+        return claimable_jobs
 
-    def claim_job_specs(self, uuids=None):
+    def claim_jobs(self, uuids=None):
         for _uuid in uuids:
             self.claimed_uuids[_uuid] = True
         return {_uuid: True for _uuid in uuids}
 
-    def update_job_specs(self, updates_by_uuid=None):
+    def update_jobs(self, updates_by_uuid=None):
         for uuid, updates_for_uuid in updates_by_uuid.items():
-            self.job_specs[uuid].update(updates_for_uuid)
+            self.jobs[uuid].update(updates_for_uuid)
 
 def generate_job_dir_factory():
     return StubJobDirFactory()
 
 class StubJobDirFactory():
-    def build_dir_for_spec(self, job_spec=None):
+    def build_dir_for_spec(self, job=None):
         dir_path = tempfile.mkdtemp(prefix='stjdf.')
         entrypoint_path = os.path.join(dir_path, 'job.sh')
         with open(entrypoint_path, 'w') as f:
@@ -87,7 +87,7 @@ class StubTransferClient(object):
         return transfer_meta
 
     def get_storage_client_for_job(self, job=None):
-        storage_uri = job['job_spec']['storage']['uri']
+        storage_uri = job['job']['storage']['uri']
         return self.get_storage_client_for_storage_uri(storage_uri)
 
     def get_storage_client_for_storage_uri(self, storage_uri):

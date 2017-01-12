@@ -6,13 +6,13 @@ from ..base_job_runner import BaseJobRunner
 
 class JobRunnerBaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.job_spec_client = MagicMock()
+        self.job_client = MagicMock()
         self.job_dir_factory = MagicMock()
         self.execution_client = MagicMock()
         self.transfer_client = MagicMock()
         self.runner = BaseJobRunner(
             execution_client=self.execution_client,
-            job_spec_client=self.job_spec_client,
+            job_client=self.job_client,
             job_dir_factory=self.job_dir_factory,
             transfer_client=self.transfer_client)
 
@@ -33,30 +33,30 @@ class TickTestCase(JobRunnerBaseTestCase):
     def setUp(self):
         super().setUp()
         self.patcher = patch.multiple(
-            self.runner, fetch_claimable_job_specs=DEFAULT,
-            process_claimable_job_spec=DEFAULT, process_executing_jobs=DEFAULT,
+            self.runner, fetch_claimable_jobs=DEFAULT,
+            process_claimable_job=DEFAULT, process_executing_jobs=DEFAULT,
             process_transferring_jobs=DEFAULT)
         self.mocks = self.patcher.start()
 
     def tearDown(self):
         self.patcher.stop()
 
-    def test_fetches_claimable_job_spec(self):
+    def test_fetches_claimable_job(self):
         self.runner.tick()
-        self.assertTrue(self.mocks['fetch_claimable_job_specs'].called)
+        self.assertTrue(self.mocks['fetch_claimable_jobs'].called)
 
-    def test_processes_claimable_job_specs(self):
+    def test_processes_claimable_jobs(self):
         self.runner.max_executing_jobs = 3
         extra_jobs = 2
-        job_specs = [
+        jobs = [
             {'uuid': i}
             for i in range(self.runner.max_executing_jobs + extra_jobs)
         ]
-        self.mocks['fetch_claimable_job_specs'].return_value = job_specs
+        self.mocks['fetch_claimable_jobs'].return_value = jobs
         self.runner.tick()
-        expected_call_args = [call(job_spec=job_spec)
-                              for job_spec in job_specs[:-1 * extra_jobs]]
-        self.assertTrue(self.mocks['process_claimable_job_spec'].call_args_list,
+        expected_call_args = [call(job=job)
+                              for job in jobs[:-1 * extra_jobs]]
+        self.assertTrue(self.mocks['process_claimable_job'].call_args_list,
                         expected_call_args)
 
     def test_processes_executing_jobs(self):
@@ -68,17 +68,17 @@ class TickTestCase(JobRunnerBaseTestCase):
         self.assertEqual(self.mocks['process_transferring_jobs'].call_count, 1)
 
 class FetchClaimableJobsTestCase(JobRunnerBaseTestCase):
-    def test_fetch_claimable_job_specs(self):
-        self.runner.fetch_claimable_job_specs()
+    def test_fetch_claimable_jobs(self):
+        self.runner.fetch_claimable_jobs()
         self.assertEqual(
-            self.job_spec_client.fetch_claimable_job_specs.call_count, 1)
+            self.job_client.fetch_claimable_jobs.call_count, 1)
 
-class ProcessClaimableJobSpecTestCase(JobRunnerBaseTestCase):
+class ProcessClaimableJobTestCase(JobRunnerBaseTestCase):
     def setUp(self):
         super().setUp()
         self.patcher = patch.multiple(self.runner, build_job_dir=DEFAULT,
                                       start_job_execution=DEFAULT,
-                                      update_job_spec=DEFAULT)
+                                      update_job=DEFAULT)
         self.mocks = self.patcher.start()
 
     def tearDown(self):
@@ -86,18 +86,18 @@ class ProcessClaimableJobSpecTestCase(JobRunnerBaseTestCase):
         self.patcher.stop()
         super().tearDown()
 
-    def test_claimable_job_spec(self):
-        job_spec = {'uuid': 'abcd'}
+    def test_claimable_job(self):
+        job = {'uuid': 'abcd'}
         mock_claimed_spec = MagicMock()
-        self.job_spec_client.claim_job_specs.return_value = {
-            job_spec['uuid']: mock_claimed_spec}
-        self.runner.process_claimable_job_spec(job_spec=job_spec)
+        self.job_client.claim_jobs.return_value = {
+            job['uuid']: mock_claimed_spec}
+        self.runner.process_claimable_job(job=job)
         expected_job_dir_meta = self.mocks['build_job_dir'].return_value
         expected_execution_meta = self.mocks['start_job_execution'].return_value
         self.assertEqual(self.mocks['build_job_dir'].call_count, 1)
         expected_partial_job = {
             'key': mock_claimed_spec['uuid'],
-            'job_spec': mock_claimed_spec,
+            'job': mock_claimed_spec,
             'dir': expected_job_dir_meta,
         }
         self.assertEqual(self.mocks['start_job_execution'].call_args,
@@ -108,33 +108,33 @@ class ProcessClaimableJobSpecTestCase(JobRunnerBaseTestCase):
             self.runner.executing_jobs[expected_partial_job['key']],
             expected_full_job)
 
-    def test_unclaimable_job_spec(self):
-        job_spec = {'uuid': 'abcd'}
-        self.job_spec_client.claim_job_specs.return_value = {
-            job_spec['uuid']: None}
-        self.runner.process_claimable_job_spec(job_spec)
+    def test_unclaimable_job(self):
+        job = {'uuid': 'abcd'}
+        self.job_client.claim_jobs.return_value = {
+            job['uuid']: None}
+        self.runner.process_claimable_job(job)
         self.assertEqual(self.mocks['start_job_execution'].call_count, 0)
 
     def test_handles_start_execution_exception(self):
         logging.disable(logging.ERROR) # silently throw exception.
-        job_spec = MagicMock()
+        job = MagicMock()
         mock_claimed_spec = MagicMock()
-        self.job_spec_client.claim_job_specs.return_value = {
-            job_spec['uuid']: mock_claimed_spec}
+        self.job_client.claim_jobs.return_value = {
+            job['uuid']: mock_claimed_spec}
         exception = Exception("some exception")
         self.mocks['start_job_execution'].side_effect = exception
-        self.runner.process_claimable_job_spec(job_spec)
+        self.runner.process_claimable_job(job)
         self.assertEqual(
-            self.mocks['update_job_spec'].call_args,
-            call(job_spec=mock_claimed_spec, updates={'status': 'Failed'}))
+            self.mocks['update_job'].call_args,
+            call(job=mock_claimed_spec, updates={'status': 'Failed'}))
 
 class BuildJobDirTestCase(JobRunnerBaseTestCase):
     def test_build_job_dir(self):
-        job_spec = {'uuid': 'abcd'}
-        self.runner.build_job_dir(job_spec=job_spec)
+        job = {'uuid': 'abcd'}
+        self.runner.build_job_dir(job=job)
         self.assertEqual(
             self.runner.job_dir_factory.build_dir_for_spec.call_args,
-            call(job_spec=job_spec))
+            call(job=job))
 
 class StartJobExecutionTestCase(JobRunnerBaseTestCase):
     def test_start_job_execution(self):
@@ -292,12 +292,12 @@ class GetJobTransferStatesTestCase(JobRunnerBaseTestCase):
 class ProcessTransferredJobTestCase(JobRunnerBaseTestCase):
     def setUp(self):
         super().setUp()
-        self.patcher = patch.multiple(self.runner, update_job_spec=DEFAULT)
+        self.patcher = patch.multiple(self.runner, update_job=DEFAULT)
         self.mocks = self.patcher.start()
         self.job_key = 'abcd'
         self.transferred_job = {
             'key': self.job_key,
-            'job_spec': {'uuid': 'uuid_%s' % self.job_key},
+            'job': {'uuid': 'uuid_%s' % self.job_key},
             'transfer': {'junk': 'junk'}
         }
         self.runner.transferring_jobs[self.job_key] = self.transferred_job
@@ -308,20 +308,20 @@ class ProcessTransferredJobTestCase(JobRunnerBaseTestCase):
     def test_process_transferred_job(self):
         self.runner.process_transferred_job(job=self.transferred_job)
         self.assertEqual(
-            self.mocks['update_job_spec'].call_args,
-            call(job_spec=self.transferred_job['job_spec'], updates={
-                'status': self.job_spec_client.Statuses.Completed.name,
+            self.mocks['update_job'].call_args,
+            call(job=self.transferred_job['job'], updates={
+                'status': self.job_client.Statuses.Completed.name,
                 'transfer_meta': self.transferred_job['transfer']
             }))
         self.assertTrue(self.job_key not in self.runner.transferring_jobs)
 
-class UpdateJobSpecTestCase(JobRunnerBaseTestCase):
-    def test_update_job_spec(self):
-        job_spec = {'uuid': 'abcd'}
+class UpdateJobTestCase(JobRunnerBaseTestCase):
+    def test_update_job(self):
+        job = {'uuid': 'abcd'}
         updates = {'pie': 'blueberry', 'meat': 'beef'}
-        self.runner.update_job_spec(job_spec=job_spec, updates=updates)
-        self.assertEqual(self.job_spec_client.update_job_specs.call_args, 
-                         call(updates_by_uuid={job_spec['uuid']: updates}))
+        self.runner.update_job(job=job, updates=updates)
+        self.assertEqual(self.job_client.update_jobs.call_args, 
+                         call(updates_by_uuid={job['uuid']: updates}))
 
 if __name__ == '__main__':
     unittest.main()

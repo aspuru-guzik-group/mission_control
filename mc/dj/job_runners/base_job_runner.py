@@ -3,10 +3,10 @@ import time
 
 
 class BaseJobRunner(object):
-    def __init__(self, job_spec_client=None, job_dir_factory=None,
+    def __init__(self, job_client=None, job_dir_factory=None,
                  execution_client=None, tick_interval=120, max_executing_jobs=3,
                  transfer_client=None, logger=None):
-        self.job_spec_client = job_spec_client
+        self.job_client = job_client
         self.job_dir_factory = job_dir_factory
         self.execution_client = execution_client
         self.tick_interval = tick_interval
@@ -47,21 +47,21 @@ class BaseJobRunner(object):
         self.process_executing_jobs()
         num_job_slots = self.max_executing_jobs - len(self.executing_jobs)
         if num_job_slots <= 0: return
-        claimable_job_specs = self.fetch_claimable_job_specs()
-        for claimable_job_spec in claimable_job_specs[:num_job_slots]:
-            self.process_claimable_job_spec(job_spec=claimable_job_spec)
+        claimable_jobs = self.fetch_claimable_jobs()
+        for claimable_job in claimable_jobs[:num_job_slots]:
+            self.process_claimable_job(job=claimable_job)
 
-    def fetch_claimable_job_specs(self):
-        logging.debug('fetch_claimable_job_specs')
-        return self.job_spec_client.fetch_claimable_job_specs()
+    def fetch_claimable_jobs(self):
+        logging.debug('fetch_claimable_jobs')
+        return self.job_client.fetch_claimable_jobs()
 
-    def process_claimable_job_spec(self, job_spec=None):
-        logging.debug('process_claimable_job_spec')
-        claimed_spec = self.claim_job_spec(job_spec)
+    def process_claimable_job(self, job=None):
+        logging.debug('process_claimable_job')
+        claimed_spec = self.claim_job(job)
         if not claimed_spec: return
-        dir_meta = self.build_job_dir(job_spec=claimed_spec)
+        dir_meta = self.build_job_dir(job=claimed_spec)
         partial_job = {'key': claimed_spec['uuid'],
-                       'job_spec': claimed_spec,
+                       'job': claimed_spec,
                        'dir': dir_meta}
         try:
             execution_meta = self.start_job_execution(job=partial_job)
@@ -69,19 +69,19 @@ class BaseJobRunner(object):
             self.executing_jobs[partial_job['key']] = full_job
         except Exception as exception:
             logging.exception(exception)
-            self.update_job_spec(job_spec=claimed_spec,
+            self.update_job(job=claimed_spec,
                                  updates={'status': 'Failed'})
 
-    def claim_job_spec(self, job_spec=None):
-        logging.debug('claim_job_spec')
-        claimed_specs = self.job_spec_client.claim_job_specs(
-            uuids=[job_spec['uuid']])
-        return claimed_specs.get(job_spec['uuid'], False)
+    def claim_job(self, job=None):
+        logging.debug('claim_job')
+        claimed_specs = self.job_client.claim_jobs(
+            uuids=[job['uuid']])
+        return claimed_specs.get(job['uuid'], False)
 
-    def build_job_dir(self, job_spec=None):
+    def build_job_dir(self, job=None):
         logging.debug('build_job_dir')
         job_dir_meta = self.job_dir_factory.build_dir_for_spec(
-            job_spec=job_spec)
+            job=job)
         return job_dir_meta
 
     def start_job_execution(self, job=None):
@@ -150,13 +150,13 @@ class BaseJobRunner(object):
 
     def process_transferred_job(self, job=None):
         logging.debug('process_transferred_job')
-        self.update_job_spec(job_spec=job['job_spec'], updates={
-            'status': self.job_spec_client.Statuses.Completed.name,
+        self.update_job(job=job['job'], updates={
+            'status': self.job_client.Statuses.Completed.name,
             'transfer_meta': job['transfer'],
         })
         del self.transferring_jobs[job['key']]
 
-    def update_job_spec(self, job_spec=None, updates=None):
-        self.job_spec_client.update_job_specs(updates_by_uuid={
-            job_spec['uuid']: updates})
+    def update_job(self, job=None, updates=None):
+        self.job_client.update_jobs(updates_by_uuid={
+            job['uuid']: updates})
 

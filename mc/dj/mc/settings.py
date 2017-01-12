@@ -40,7 +40,7 @@ INSTALLED_APPS = [
     'missions',
     'jobs',
     'e2e',
-    'job_spec_client',
+    'job_client',
     'job_runners',
     'flow_engines',
     'flow_runners',

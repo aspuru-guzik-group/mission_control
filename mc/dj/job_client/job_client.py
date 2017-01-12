@@ -2,7 +2,7 @@ import requests
 from jobs.models import JobStatuses
 
 
-class MissionControlJobSpecClient(object):
+class MissionControlJobClient(object):
 
     Statuses = JobStatuses
 
@@ -21,32 +21,32 @@ class MissionControlJobSpecClient(object):
         response = self.request_client.post(self.urls['jobs'], data=job_kwargs)
         return response.json()
 
-    def fetch_job_specs(self, query_params=None):
+    def fetch_jobs(self, query_params=None):
         if query_params:
             response = self.request_client.get(self.urls['jobs'], query_params)
         else:
             response = self.request_client.get(self.urls['jobs'])
         return response.json()
 
-    def fetch_claimable_job_specs(self):
-        return self.fetch_job_specs(
+    def fetch_claimable_jobs(self):
+        return self.fetch_jobs(
             query_params={'status': self.Statuses.Pending.name})
 
-    def fetch_job_spec_by_uuid(self, uuid=None):
-        fetch_job_specs_result = self.fetch_job_specs(
+    def fetch_job_by_uuid(self, uuid=None):
+        fetch_jobs_result = self.fetch_jobs(
             query_params={'uuid': uuid})
-        if len(fetch_job_specs_result) == 1: return fetch_job_specs_result[0]
+        if len(fetch_jobs_result) == 1: return fetch_jobs_result[0]
         else: return None
 
-    def claim_job_specs(self, uuids=None):
+    def claim_jobs(self, uuids=None):
         response = self.request_client.post(self.urls['claim_jobs'],
                                             {'uuids': uuids})
         return response.json()
 
-    def update_job_specs(self, updates_by_uuid=None):
+    def update_jobs(self, updates_by_uuid=None):
         results_by_uuid = {}
         for _uuid, updates_for_uuid in updates_by_uuid.items():
-            job_spec_url = self.urls['jobs'] + _uuid + '/'
-            response = self.request_client.patch(job_spec_url, updates_for_uuid)
+            job_url = self.urls['jobs'] + _uuid + '/'
+            response = self.request_client.patch(job_url, updates_for_uuid)
             results_by_uuid[_uuid] = response.json()
         return results_by_uuid

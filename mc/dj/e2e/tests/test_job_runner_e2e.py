@@ -42,13 +42,13 @@ class JobRunnerE2ETestCase(TestCase):
         state['jobs'] = {j.uuid: j for j in Job.objects.all()}
         state['claimed_jobs'] = {
             key:j for key, j in state['jobs'].items()
-            if j.status == self.runner.job_spec_client.Statuses.Claimed.name}
+            if j.status == self.runner.job_client.Statuses.Claimed.name}
         state['pending_jobs'] = {
             key:j for key, j in state['jobs'].items()
-            if j.status == self.runner.job_spec_client.Statuses.Pending.name}
+            if j.status == self.runner.job_client.Statuses.Pending.name}
         state['completed_jobs'] = {
             key:j for key, j in state['jobs'].items()
-            if j.status == self.runner.job_spec_client.Statuses.Completed.name}
+            if j.status == self.runner.job_client.Statuses.Completed.name}
         state['executing_jobs'] = copy.deepcopy(self.runner.executing_jobs)
         state['transferring_jobs'] = copy.deepcopy(
             self.runner.transferring_jobs)

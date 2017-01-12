@@ -2,7 +2,7 @@ import time
 
 from flow_engines.flow_engine import FlowEngine
 from flow_client.flow_client import MissionControlFlowClient as FlowClient
-from job_spec_client.job_spec_client import MissionControlJobSpecClient \
+from job_client.job_client import MissionControlJobClient \
         as JobClient
 from .odyssey_push_job_runner import OdysseyPushJobRunner
 from flow_runners.base_flow_runner import BaseFlowRunner as FlowRunner

@@ -1,21 +1,21 @@
 import unittest
 
-from ..job_spec_client import JobSpecClient
+from ..job_client import JobClient
 
 
-class JobSpecClientTestCase(unittest.TestCase):
+class JobClientTestCase(unittest.TestCase):
     def setUp(self):
-        self.job_spec_client = JobSpecClient()
+        self.job_client = JobClient()
 
     def test_has_required_methods(self):
         required_methods = [
-            'claim_job_specs',
-            'fetch_job_specs',
-            'update_job_specs'
+            'claim_jobs',
+            'fetch_jobs',
+            'update_jobs'
         ]
         method_existences = {
             method_name: getattr(
-                self.job_spec_client, method_name, None) is not None
+                self.job_client, method_name, None) is not None
             for method_name in required_methods
         }
         expected_method_existences = {

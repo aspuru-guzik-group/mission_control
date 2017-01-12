@@ -1,13 +1,13 @@
 import unittest
 from unittest.mock import call, DEFAULT, Mock, patch
 from jobs.models import JobStatuses
-from .job_spec_client import MissionControlJobSpecClient
+from .job_client import MissionControlJobClient
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.base_url = '/base/url/'
-        self.job_client = MissionControlJobSpecClient(
+        self.job_client = MissionControlJobClient(
             base_url=self.base_url
         )
         self.patchers = {}
@@ -22,9 +22,9 @@ class BaseTestCase(unittest.TestCase):
     def tearDown(self):
         for patcher in self.patchers.values(): patcher.stop()
 
-class FetchJobSpecsTestCase(BaseTestCase):
+class FetchJobsTestCase(BaseTestCase):
     def test_makes_get(self):
-        self.job_client.fetch_job_specs()
+        self.job_client.fetch_jobs()
         expected_url = self.base_url + 'jobs/'
         expected_get_call = call(expected_url)
         self.assertEqual(self.mocks['requests']['get'].call_args,
@@ -32,7 +32,7 @@ class FetchJobSpecsTestCase(BaseTestCase):
 
     def test_query_params(self):
         query_params = {'filter1': 'junk'}
-        self.job_client.fetch_job_specs(query_params=query_params)
+        self.job_client.fetch_jobs(query_params=query_params)
         expected_url = self.base_url + 'jobs/'
         self.assertEqual(self.mocks['requests']['get'].call_args,
                          call(expected_url, query_params))
@@ -40,45 +40,45 @@ class FetchJobSpecsTestCase(BaseTestCase):
     def test_handles_populated_response(self):
         jobs = [{'uuid': i} for i in range(3)]
         self.mocks['requests']['get'].return_value.json.return_value = jobs
-        fetched_job_specs = self.job_client.fetch_job_specs()
-        self.assertEqual(fetched_job_specs, jobs)
+        fetched_jobs = self.job_client.fetch_jobs()
+        self.assertEqual(fetched_jobs, jobs)
 
     def test_handles_empty_response(self):
         jobs = []
         self.mocks['requests']['get'].return_value.json.return_value = jobs
-        fetched_job_specs = self.job_client.fetch_job_specs()
-        self.assertEqual(fetched_job_specs, jobs)
+        fetched_jobs = self.job_client.fetch_jobs()
+        self.assertEqual(fetched_jobs, jobs)
 
-class FetchClaimableJobSpecsTest(BaseTestCase):
-    def test_calls_fetch_job_specs_with_query_params(self):
-        with patch.multiple(self.job_client, fetch_job_specs=DEFAULT):
-            self.job_client.fetch_claimable_job_specs()
+class FetchClaimableJobsTest(BaseTestCase):
+    def test_calls_fetch_jobs_with_query_params(self):
+        with patch.multiple(self.job_client, fetch_jobs=DEFAULT):
+            self.job_client.fetch_claimable_jobs()
             self.assertEqual(
-                self.job_client.fetch_job_specs.call_args,
+                self.job_client.fetch_jobs.call_args,
                 call(query_params={'status': JobStatuses.Pending.name}))
 
-class FetchJobSpecByUUIDTestCase(BaseTestCase):
+class FetchJobByUUIDTestCase(BaseTestCase):
     def decorate_patchers(self):
         super().decorate_patchers()
         self.patchers['client'] = patch.multiple(self.job_client,
-                                                 fetch_job_specs=DEFAULT)
+                                                 fetch_jobs=DEFAULT)
 
-    def test_wraps_fetch_job_specs(self):
-        mock_fetch_job_specs = self.mocks['client']['fetch_job_specs']
-        mock_fetch_job_specs.return_value = [Mock()]
+    def test_wraps_fetch_jobs(self):
+        mock_fetch_jobs = self.mocks['client']['fetch_jobs']
+        mock_fetch_jobs.return_value = [Mock()]
         uuid = 'some uuid'
-        result = self.job_client.fetch_job_spec_by_uuid(uuid=uuid)
-        self.assertEqual(mock_fetch_job_specs.call_args,
+        result = self.job_client.fetch_job_by_uuid(uuid=uuid)
+        self.assertEqual(mock_fetch_jobs.call_args,
                          call(query_params={'uuid': uuid}))
-        self.assertEqual(result, mock_fetch_job_specs.return_value[0])
+        self.assertEqual(result, mock_fetch_jobs.return_value[0])
 
-class ClaimJobSpecsTestCase(BaseTestCase):
+class ClaimJobsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.uuids = [i for i in range(3)]
 
     def test_makes_post(self):
-        self.job_client.claim_job_specs(uuids=self.uuids)
+        self.job_client.claim_jobs(uuids=self.uuids)
         expected_url = self.base_url + 'claim_jobs/'
         expected_post_call = call(expected_url, {'uuids': self.uuids})
         self.assertEqual(self.mocks['requests']['post'].call_args,
@@ -88,17 +88,17 @@ class ClaimJobSpecsTestCase(BaseTestCase):
         self.mocks['requests']['post'].return_value.json.return_value = {
             _uuid: True for _uuid in self.uuids
         }
-        result = self.job_client.claim_job_specs(uuids=self.uuids)
+        result = self.job_client.claim_jobs(uuids=self.uuids)
         expected_result = {_uuid: True for _uuid in self.uuids}
         self.assertEqual(result, expected_result)
 
     def test_handles_empty_response(self):
         self.mocks['requests']['post'].return_value.json.return_value = {}
-        result = self.job_client.claim_job_specs(uuids=self.uuids)
+        result = self.job_client.claim_jobs(uuids=self.uuids)
         expected_result = {}
         self.assertEqual(result, expected_result)
 
-class UpdateJobSpecsTestCase(BaseTestCase):
+class UpdateJobsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.updates_by_uuid = {
@@ -107,7 +107,7 @@ class UpdateJobSpecsTestCase(BaseTestCase):
         }
 
     def test_makes_patch_calls(self):
-        self.job_client.update_job_specs(updates_by_uuid=self.updates_by_uuid)
+        self.job_client.update_jobs(updates_by_uuid=self.updates_by_uuid)
         expected_patch_calls = [
             call(self.base_url + 'jobs/' + _uuid + '/', updates_for_uuid)
             for _uuid, updates_for_uuid in self.updates_by_uuid.items()
@@ -120,7 +120,7 @@ class UpdateJobSpecsTestCase(BaseTestCase):
 
     def test_returns_combined_patch_results(self):
         self.mocks['requests']['patch'].return_value.json.return_value = {}
-        result = self.job_client.update_job_specs(
+        result = self.job_client.update_jobs(
             updates_by_uuid=self.updates_by_uuid)
         expected_result = {_uuid: {} for _uuid in  self.updates_by_uuid}
         self.assertEqual(result, expected_result)
