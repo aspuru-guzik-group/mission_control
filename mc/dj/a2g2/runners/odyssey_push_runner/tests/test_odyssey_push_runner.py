@@ -12,11 +12,13 @@ from ..commands import base as base_command
 from ..commands import create_flow as create_flow_command
 from ..commands import run as run_command
 
+
 class BaseTestCase(TestCase):
     def setUp(self):
         self.patchers = {}
         self.decorate_patchers()
         self.mocks = self.start_patchers()
+        self.runner = self.generate_runner()
 
     def decorate_patchers(self): pass
 
@@ -34,8 +36,16 @@ class BaseTestCase(TestCase):
         comparison_dict = {key: superdict.get(key, None) for key in subdict}
         self.assertEqual(subdict, comparison_dict)
 
-    def generate_runner(self, *args, **runner_kwargs):
-        return odyssey_push_runner.OdysseyPushRunner(**runner_kwargs)
+    def generate_runner(self, *args, run_setup=False, **runner_kwargs):
+        return odyssey_push_runner.OdysseyPushRunner(run_setup=run_setup,
+                                                     **runner_kwargs)
+
+    def patch_runner(self, **patches):
+        patcher = patch.multiple(odyssey_push_runner.OdysseyPushRunner,
+                                 **patches)
+        self.patchers['runner'] = patcher
+        patched = patcher.start()
+        return patched
 
 class BaseCommandTestCase(BaseTestCase):
     def setUp(self):
@@ -109,17 +119,14 @@ class RunCommandTestCase(BaseTestCase):
         self.assertEqual(mock_runner.run.call_args, call())
 
 class RunnerSetupTestCase(BaseTestCase):
-    def patch_runner(self, **patches):
-        patcher = patch.multiple(odyssey_push_runner.OdysseyPushRunner,
-                                 **patches)
-        self.patchers['runner'] = patcher
-        patched = patcher.start()
-        return patched
+    def test_falls_back_to_generate_flow_generator_classes(self):
+        self.run_subcomponent_generator_fallback_test('flow_generator_classes')
 
     def run_subcomponent_generator_fallback_test(self, subcomponent_name=None):
         generator_method_name = 'generate_%s' % subcomponent_name
         patched = self.patch_runner(**{generator_method_name: DEFAULT})
-        self.generate_runner(**{subcomponent_name: Mock()})
+        runner = self.generate_runner(**{subcomponent_name: Mock()})
+        runner.setup()
         self.assertEqual(patched[generator_method_name].call_count, 0)
         self.generate_runner(**{subcomponent_name: None})
         self.assertEqual(patched[generator_method_name].call_count, 1)
@@ -139,8 +146,38 @@ class RunnerSetupTestCase(BaseTestCase):
     def test_has_flow_runner(self):
         self.run_subcomponent_generator_fallback_test('flow_runner')
 
+class GenerateFlowGeneratorClassesTestCase(BaseTestCase):
+    def test_generates_flow_generator_classes(self):
+        runner = self.generate_runner()
+        from a2g2.flow_generator_classes import reaxys
+        expected_flow_generator_classes = set([reaxys.ReaxysFlowGenerator])
+        self.assertEqual(runner.generate_flow_generator_classes(),
+                         expected_flow_generator_classes)
+
 class GenerateFlowEngineTestCase(BaseTestCase):
-    def test_generates_flow_engine(self): self.fail()
+    def decorate_patchers(self):
+        self.patchers['FlowEngine'] = patch.object(odyssey_push_runner,
+                                                   'FlowEngine')
+
+    def test_generates_flow_engine(self):
+        flow_engine = self.runner.generate_flow_engine()
+        expected_flow_engine = self.mocks['FlowEngine'].return_value
+        self.assertEqual(flow_engine, expected_flow_engine)
+
+    def test_registers_flow_generator_classes_with_engine(self):
+        flow_generator_classes = [Mock() for i in range(3)]
+        self.runner.generate_flow_engine(
+            flow_generator_classes=flow_generator_classes)
+        call_args_list = self.mocks['FlowEngine'].return_value\
+                .register_flow_generator_class.call_args_list
+        expected_call_args_list = [
+            call(flow_generator_class=flow_generator_class)
+            for flow_generator_class in flow_generator_classes
+        ]
+        self.assertEqual(call_args_list, expected_call_args_list)
+
+    def register_flow_generator_class(self, flow_generator_class=None):
+        self.fail()
 
 class GenerateFlowClientTestCase(BaseTestCase):
     def test_generates_flow_client(self): self.fail()
