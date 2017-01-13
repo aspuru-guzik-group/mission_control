@@ -9,7 +9,7 @@ from django.test import TestCase
 
 from .. import odyssey_push_runner
 from ..commands import base as base_command
-from ..commands import create_flow as create_flow_command
+from ..commands import create_flow_record as create_flow_record_command
 from ..commands import run as run_command
 
 
@@ -76,28 +76,28 @@ class BaseCommandTestCase(BaseTestCase):
         self.assert_is_subdict(self.mocks['BaseCommand']['handle'].call_args[1],
                                self.params)
 
-class CreateFlowCommandTestCase(BaseTestCase):
+class CreateFlowRecordCommandTestCase(BaseTestCase):
     def decorate_patchers(self):
         self.patchers['odyssey_push_runner'] = patch.multiple(
             odyssey_push_runner, OdysseyPushRunner=DEFAULT)
 
-    def test_handle_calls_runner_create_flow(self):
-        flow_spec = Mock()
-        command = create_flow_command.Command()
-        command.handle(flow_spec=flow_spec)
+    def test_handle_calls_runner_create_flow_record(self):
+        flow_spec = json.dumps({'mock': 'flow'})
+        command = create_flow_record_command.Command()
+        command.handle(flow_spec_json=json.dumps(flow_spec))
         mock_runner = self.mocks['odyssey_push_runner']['OdysseyPushRunner']\
                 .return_value
-        self.assertEqual(mock_runner.create_flow.call_args,
-                         call(flow={'spec': flow_spec}))
+        self.assertEqual(mock_runner.create_flow_record.call_args,
+                         call(flow_record={'spec': flow_spec}))
 
-class RunnerCreateFlowTestCase(BaseTestCase):
+class RunnerCreateFlowRecordTestCase(BaseTestCase):
     def test_wraps_flow_client_method(self):
         mock_flow_client = Mock()
         self.runner.flow_client = mock_flow_client
-        mock_flow = Mock()
-        result = self.runner.create_flow(flow=mock_flow)
+        mock_flow_record = Mock()
+        result = self.runner.create_flow_record(flow_record=mock_flow_record)
         self.assertEqual(mock_flow_client.create_flow.call_args,
-                         call(flow=mock_flow))
+                         call(flow=mock_flow_record))
         self.assertEqual(result, mock_flow_client.create_flow.return_value)
 
 class RunCommandTestCase(BaseTestCase):

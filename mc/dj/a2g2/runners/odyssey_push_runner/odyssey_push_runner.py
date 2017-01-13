@@ -63,8 +63,8 @@ class OdysseyPushRunner(object):
         return FlowRunner(flow_client=flow_client, job_client=job_client,
                           flow_engine=flow_engine)
 
-    def create_flow(self, *args, flow=None, **kwargs):
-        return self.flow_client.create_flow(flow=flow)
+    def create_flow_record(self, *args, flow_record=None, **kwargs):
+        return self.flow_client.create_flow(flow=flow_record)
 
     def run(self, ntimes=None, tick_interval=None):
         if ntimes:
