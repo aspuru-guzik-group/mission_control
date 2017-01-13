@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import tempfile
@@ -19,6 +20,7 @@ class BaseTestCase(TestCase):
         self.decorate_patchers()
         self.mocks = self.start_patchers()
         self.runner = self.generate_runner()
+        self.mock_runner = self.generate_mock_runner()
 
     def decorate_patchers(self): pass
 
@@ -39,6 +41,13 @@ class BaseTestCase(TestCase):
     def generate_runner(self, *args, run_setup=False, **runner_kwargs):
         return odyssey_push_runner.OdysseyPushRunner(run_setup=run_setup,
                                                      **runner_kwargs)
+    def generate_mock_runner(self):
+        return Mock()
+
+    def call_runner_method_with_mock(self, mock=None, method_name=None,
+                                     *args, **kwargs):
+        method =  getattr(odyssey_push_runner.OdysseyPushRunner, method_name)
+        return method(mock, *args, **kwargs)
 
 class BaseCommandTestCase(BaseTestCase):
     def setUp(self):
@@ -84,11 +93,16 @@ class CreateFlowRecordCommandTestCase(BaseTestCase):
     def test_handle_calls_runner_create_flow_record(self):
         flow_spec = json.dumps({'mock': 'flow'})
         command = create_flow_record_command.Command()
+        stdout = io.StringIO()
+        command.set_streams(stdout=stdout)
         command.handle(flow_spec_json=json.dumps(flow_spec))
         mock_runner = self.mocks['odyssey_push_runner']['OdysseyPushRunner']\
                 .return_value
         self.assertEqual(mock_runner.create_flow_record.call_args,
                          call(flow_record={'spec': flow_spec}))
+        self.assertEqual(stdout.getvalue().strip(),
+                         "Created flow with uuid '{}'".format(
+                             mock_runner.create_flow_record.return_value))
 
 class RunnerCreateFlowRecordTestCase(BaseTestCase):
     def test_wraps_flow_client_method(self):
@@ -117,24 +131,19 @@ class RunnerSetupTestCase(BaseTestCase):
         self.run_subcomponent_generator_fallback_test('flow_generator_classes')
 
     def run_subcomponent_generator_fallback_test(self, subcomponent_name=None):
-        mock_runner = Mock(odyssey_push_runner.OdysseyPushRunner)
         generator_method_name = 'generate_%s' % subcomponent_name
         mock_generator = Mock()
-        setattr(mock_runner, generator_method_name, mock_generator)
+        setattr(self.mock_runner, generator_method_name, mock_generator)
         self.call_real_setup_with_mock(
-            mock=mock_runner, **{subcomponent_name: Mock()})
+            mock=self.mock_runner, **{subcomponent_name: Mock()})
         self.assertEqual(mock_generator.call_count, 0)
         self.call_real_setup_with_mock(
-            mock=mock_runner, **{subcomponent_name: None})
+            mock=self.mock_runner, **{subcomponent_name: None})
         self.assertEqual(mock_generator.call_count, 1)
 
     def call_real_setup_with_mock(self, mock=None, *args, **kwargs):
-        self.call_real_method_with_mock(mock=mock, method_name='setup',
-                                        *args, **kwargs)
-
-    def call_real_method_with_mock(self, mock=None, method_name=None,
-                                   *args, **kwargs):
-        return getattr(mock.__class__, method_name)(mock, *args, **kwargs)
+        self.call_runner_method_with_mock(mock=mock, method_name='setup',
+                                          *args, **kwargs)
 
     def test_falls_back_to_generate_flow_engine(self):
         self.run_subcomponent_generator_fallback_test('flow_engine')
@@ -148,15 +157,20 @@ class RunnerSetupTestCase(BaseTestCase):
     def test_has_job_runner(self):
         self.run_subcomponent_generator_fallback_test('job_runner')
 
+    def test_has_tick_ctx(self):
+        tick_ctx = Mock()
+        self.call_real_setup_with_mock(mock=self.mock_runner, tick_ctx=tick_ctx)
+        self.assertEqual(self.mock_runner.decorate_tick_ctx.call_args,
+                         call(tick_ctx=tick_ctx))
+
     def test_has_flow_runner(self):
         self.run_subcomponent_generator_fallback_test('flow_runner')
 
 class GenerateFlowGeneratorClassesTestCase(BaseTestCase):
     def test_generates_flow_generator_classes(self):
-        runner = self.generate_runner()
         from a2g2.flow_generators import reaxys
         expected_flow_generator_classes = set([reaxys.ReaxysFlowGenerator])
-        self.assertEqual(runner.generate_flow_generator_classes(),
+        self.assertEqual(self.runner.generate_flow_generator_classes(),
                          expected_flow_generator_classes)
 
 class GenerateFlowEngineTestCase(BaseTestCase):
@@ -210,31 +224,64 @@ class GenerateJobRunnerTestCase(BaseTestCase):
                                                   'OdysseyPushJobRunner')
 
     def test_generates_job_client(self):
-        job_client = Mock()
-        self.runner.odyssey_suer = Mock()
-        self.runner.odyssey_host = Mock()
-        job_runner = self.runner.generate_job_runner(job_client=job_client)
+        job_runner = self.call_runner_method_with_mock(
+            mock=self.mock_runner, method_name='generate_job_runner')
         self.assertEqual(job_runner, self.mocks['JobRunner'].return_value)
         self.assertEqual(self.mocks['JobRunner'].call_args,
-                         call(job_client=job_client,
-                              odyssey_user=self.runner.odyssey_user,
-                              odyssey_host=self.runner.odyssey_host))
+                         call(job_client=self.mock_runner.job_client,
+                              odyssey_user=self.mock_runner.odyssey_user,
+                              odyssey_host=self.mock_runner.odyssey_host))
+
+class DecorateTickCtxTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.orig_tick_ctx = {'k1': 'v1', 'k2': 'v2'}
+        self.decorated_tick_ctx = self.call_runner_method_with_mock(
+            mock=self.mock_runner, method_name='decorate_tick_ctx',
+            tick_ctx=self.orig_tick_ctx)
+
+    def test_includes_original_tick_ctx(self):
+        self.assert_is_subdict(self.orig_tick_ctx, self.decorated_tick_ctx)
+
+    def test_create_job_wraps_job_client(self):
+        args = Mock()
+        self.decorated_tick_ctx['create_job'](args)
+        self.assertEqual(self.mock_runner.job_client.create_job.call_args,
+                         call(args))
+
+    def test_get_job_wraps_job_client(self):
+        args = Mock()
+        self.decorated_tick_ctx['get_job'](args)
+        self.assertEqual(
+            self.mock_runner.job_client.fetch_job_by_uuid.call_args,
+            call(args))
+
+    def test_create_flow_wraps_flow_client(self):
+        args = Mock()
+        self.decorated_tick_ctx['create_flow'](args)
+        self.assertEqual(self.mock_runner.flow_client.create_flow.call_args,
+                         call(args))
+
+    def test_get_flow_wraps_flow_client(self):
+        args = Mock()
+        self.decorated_tick_ctx['get_flow'](args)
+        self.assertEqual(
+            self.mock_runner.flow_client.fetch_flow_by_uuid.call_args,
+            call(args))
 
 class GenerateFlowRunnerTestCase(BaseTestCase):
     def decorate_patchers(self):
         self.patchers['FlowRunner'] = patch.object(odyssey_push_runner,
                                                   'FlowRunner')
     def test_generates_flow_runner(self):
-        job_client = Mock()
-        flow_client = Mock()
-        flow_engine = Mock()
-        flow_runner = self.runner.generate_flow_runner(flow_client=flow_client,
-                                                       job_client=job_client,
-                                                       flow_engine=flow_engine)
+        flow_runner = self.call_runner_method_with_mock(
+            mock=self.mock_runner, method_name='generate_flow_runner')
         self.assertEqual(flow_runner, self.mocks['FlowRunner'].return_value)
         self.assertEqual(self.mocks['FlowRunner'].call_args,
-                         call(flow_client=flow_client, job_client=job_client,
-                              flow_engine=flow_engine))
+                         call(flow_client=self.mock_runner.flow_client,
+                              job_client=self.mock_runner.job_client,
+                              flow_engine=self.mock_runner.flow_engine,
+                              tick_ctx=self.mock_runner.tick_ctx))
 
 class RunTestCase(BaseTestCase):
     def setUp(self):

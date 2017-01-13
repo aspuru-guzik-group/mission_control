@@ -24,14 +24,18 @@ class OdysseyPushRunner(object):
               flow_client=None, 
               job_client=None,
               job_runner=None,
+              tick_ctx=None,
               flow_runner=None,
+              **kwargs
              ):
         self.flow_generator_classes = flow_generator_classes or \
                 self.generate_flow_generator_classes()
-        self.flow_engine = flow_engine or self.generate_flow_engine()
+        self.flow_engine = flow_engine or self.generate_flow_engine(
+            flow_generator_classes=self.flow_generator_classes)
         self.flow_client = flow_client or self.generate_flow_client()
         self.job_client = job_client or self.generate_job_client()
         self.job_runner = job_runner or self.generate_job_runner()
+        self.tick_ctx = self.decorate_tick_ctx(tick_ctx=tick_ctx)
         self.flow_runner = flow_runner or self.generate_flow_runner()
 
     def generate_flow_generator_classes(self):
@@ -53,15 +57,27 @@ class OdysseyPushRunner(object):
     def generate_job_client(self):
         return JobClient(base_url=self.job_server_url)
 
-    def generate_job_runner(self, job_client=None): 
-        return OdysseyPushJobRunner(job_client=job_client,
+    def generate_job_runner(self): 
+        return OdysseyPushJobRunner(job_client=self.job_client,
                                     odyssey_user=self.odyssey_user,
                                     odyssey_host=self.odyssey_host)
 
-    def generate_flow_runner(self, flow_client=None, job_client=None,
-                             flow_engine=None):
-        return FlowRunner(flow_client=flow_client, job_client=job_client,
-                          flow_engine=flow_engine)
+    def decorate_tick_ctx(self, tick_ctx=None):
+        tick_ctx = tick_ctx or {}
+        decorated_tick_ctx = {
+            'create_job': self.job_client.create_job,
+            'get_job': self.job_client.fetch_job_by_uuid,
+            'create_flow': self.flow_client.create_flow,
+            'get_flow': self.flow_client.fetch_flow_by_uuid,
+            **tick_ctx
+        }
+        return decorated_tick_ctx
+
+    def generate_flow_runner(self):
+        return FlowRunner(flow_client=self.flow_client,
+                          job_client=self.job_client,
+                          flow_engine=self.flow_engine,
+                          tick_ctx=self.tick_ctx)
 
     def create_flow_record(self, *args, flow_record=None, **kwargs):
         return self.flow_client.create_flow(flow=flow_record)

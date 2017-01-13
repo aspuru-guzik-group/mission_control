@@ -1,7 +1,6 @@
 import json
 
 from .base import BaseCommand
-from .. import odyssey_push_runner
 
 class Command(BaseCommand):
     def add_arguments(self, parser=None):
@@ -20,7 +19,7 @@ class Command(BaseCommand):
         )
 
     def handle(self, *args, **options):
-        self.runner = odyssey_push_runner.OdysseyPushRunner()
+        self.runner = self.generate_runner_from_options(options=options)
         flow_record = self.assemble_flow_record_from_options(options=options)
         flow_uuid = self.runner.create_flow_record(flow_record=flow_record)
         print("Created flow with uuid '%s'" % flow_uuid, file=self.stdout)

@@ -22,7 +22,7 @@ class OdysseyPushJobRunner:
                                             host=self.odyssey_host)
         return RemoteSlurmExecutionClient(ssh_client=ssh_client)
 
-    def generate_transfer_client():
+    def generate_transfer_client(self):
         class StubTransferClient: pass
         return StubTransferClient()
 

@@ -2,10 +2,13 @@ import argparse
 import json
 import sys
 
+from .. import odyssey_push_runner
+
 class BaseCommand(object):
     @classmethod
-    def run(cls, args=sys.argv):
+    def run(cls, args=sys.argv, streams=None):
         command = cls()
+        command.set_streams(**(streams or {}))
         parser = argparse.ArgumentParser()
         command.add_arguments(parser)
         command.add_params_file_argument(parser)
@@ -45,3 +48,6 @@ class BaseCommand(object):
         parser.add_argument('--flow_server_url', help="URL of flow server")
 
     def handle(self, *args, **kwargs): pass
+
+    def generate_runner_from_options(self, options=None):
+        return odyssey_push_runner.OdysseyPushRunner(**options)
