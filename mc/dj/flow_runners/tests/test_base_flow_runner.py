@@ -1,3 +1,4 @@
+import json
 import logging
 import unittest
 from unittest.mock import call, DEFAULT, MagicMock, patch
@@ -165,9 +166,11 @@ class GetFlowForFlowRecordTestCase(BaseTestCase):
         self.assertEqual(flow, self.runner.deserialize_flow.return_value)
         
     def test_generates_if_lacks_serialization(self):
-        flow_record = {'spec': MagicMock()}
+        flow_record = {'spec': json.dumps({'some': 'spec'})}
         self.runner.generate_flow_from_spec = MagicMock()
         flow = self.runner.get_flow_for_flow_record(flow_record=flow_record)
+        self.assertEqual(self.runner.generate_flow_from_spec.call_args,
+                         call(flow_spec=json.loads(flow_record['spec'])))
         self.assertEqual(flow, self.runner.generate_flow_from_spec.return_value)
 
 class DeserializeFlow(BaseTestCase):

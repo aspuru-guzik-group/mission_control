@@ -90,7 +90,8 @@ class BaseFlowRunner(object):
             flow = self.deserialize_flow(
                 json_flow_serialization=json_flow_serialization)
         else:
-            flow = self.generate_flow_from_spec(flow_spec=flow_record['spec'])
+            flow_spec = json.loads(flow_record['spec'])
+            flow = self.generate_flow_from_spec(flow_spec=flow_spec)
         return flow
 
     def deserialize_flow(self, json_flow_serialization=None):
