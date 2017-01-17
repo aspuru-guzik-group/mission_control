@@ -158,6 +158,9 @@ class RunnerSetupTestCase(BaseTestCase):
     def test_has_job_client(self):
         self.run_subcomponent_generator_fallback_test('job_client')
 
+    def test_has_job_dir_factory(self):
+        self.run_subcomponent_generator_fallback_test('job_dir_factory')
+
     def test_has_job_runner(self):
         self.run_subcomponent_generator_fallback_test('job_runner')
 
@@ -222,6 +225,15 @@ class GenerateJobClientTestCase(BaseTestCase):
                          call(base_url=self.mock_runner.job_server_url,
                               request_client=self.mock_runner.request_client))
 
+class GenerateJobDirFactoryTestCase(BaseTestCase):
+    def decorate_patchers(self):
+        self.patchers['JobDirFactory'] = patch.object(odyssey_push_runner,
+                                                      'JobDirFactory')
+
+    def test_generates_job_dir_factory(self):
+        result = self.mock_runner.call_real_method('generate_job_dir_factory')
+        self.assertEqual(result, self.mocks['JobDirFactory'].return_value)
+
 class GenerateJobRunnerTestCase(BaseTestCase):
     def decorate_patchers(self):
         self.patchers['JobRunner'] = patch.object(odyssey_push_runner,
@@ -232,6 +244,7 @@ class GenerateJobRunnerTestCase(BaseTestCase):
         self.assertEqual(job_runner, self.mocks['JobRunner'].return_value)
         self.assertEqual(self.mocks['JobRunner'].call_args,
                          call(job_client=self.mock_runner.job_client,
+                              job_dir_factory=self.mock_runner.job_dir_factory,
                               odyssey_user=self.mock_runner.odyssey_user,
                               odyssey_host=self.mock_runner.odyssey_host))
 

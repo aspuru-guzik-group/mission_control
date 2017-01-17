@@ -8,6 +8,8 @@ from job_client.job_client import MissionControlJobClient \
         as JobClient
 from .odyssey_push_job_runner import OdysseyPushJobRunner
 from flow_runners.base_flow_runner import BaseFlowRunner as FlowRunner
+from .odyssey_job_dir_factory import OdysseyJobDirFactory as JobDirFactory
+
 
 class OdysseyPushRunner(object):
     def __init__(self, *args, request_client=None, run_setup=True,
@@ -26,6 +28,7 @@ class OdysseyPushRunner(object):
               flow_engine=None, 
               flow_client=None, 
               job_client=None,
+              job_dir_factory=None,
               job_runner=None,
               tick_ctx=None,
               flow_runner=None,
@@ -37,6 +40,8 @@ class OdysseyPushRunner(object):
             flow_generator_classes=self.flow_generator_classes)
         self.flow_client = flow_client or self.generate_flow_client()
         self.job_client = job_client or self.generate_job_client()
+        self.job_dir_factory = job_dir_factory or \
+                self.generate_job_dir_factory()
         self.job_runner = job_runner or self.generate_job_runner()
         self.tick_ctx = self.decorate_tick_ctx(tick_ctx=tick_ctx)
         self.flow_runner = flow_runner or self.generate_flow_runner()
@@ -62,8 +67,12 @@ class OdysseyPushRunner(object):
         return JobClient(base_url=self.job_server_url,
                          request_client=self.request_client)
 
+    def generate_job_dir_factory(self):
+        return JobDirFactory()
+
     def generate_job_runner(self): 
         return OdysseyPushJobRunner(job_client=self.job_client,
+                                    job_dir_factory=self.job_dir_factory,
                                     odyssey_user=self.odyssey_user,
                                     odyssey_host=self.odyssey_host)
 
