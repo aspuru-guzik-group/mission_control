@@ -119,7 +119,6 @@ class CreateFlowTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.flow = {'data': 'some data'}
-        # Mock status code.
         self.mocks['requests']['post'].return_value.status_code = 200
 
     def test_makes_post_call(self):

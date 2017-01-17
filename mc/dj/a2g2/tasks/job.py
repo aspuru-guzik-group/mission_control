@@ -12,9 +12,10 @@ class JobTask(BaseTask):
             raise e
 
     def initial_tick(self, ctx=None):
-        create_job = ctx['create_job']
-        job_kwargs = {'job_spec': self.input['job_spec']}
-        self.data['job_id'] = create_job(job_kwargs=job_kwargs)
+        create_job_fn = ctx['create_job']
+        job_kwargs = {'spec': self.input['job_spec']}
+        job = create_job_fn(job_kwargs=job_kwargs)
+        self.data['job_uuid'] = job['uuid']
         self.status = 'RUNNING'
 
     def intermediate_tick(self, ctx=None):
@@ -30,4 +31,4 @@ class JobTask(BaseTask):
             self.status = 'RUNNING'
 
     def get_job(self, ctx=None):
-        return ctx['get_job'](job_id=self.data['job_id'])
+        return ctx['get_job'](uuid=self.data['job_uuid'])

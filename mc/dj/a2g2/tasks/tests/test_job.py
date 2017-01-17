@@ -17,9 +17,9 @@ class BaseTestCase(TestCase):
     def generate_task(self, **task_kwargs):
         return JobTask(**task_kwargs)
 
-    def generate_job(self, id=None, status='PENDING', **job_state):
-        if not id: id = str(uuid4())
-        return {'id': id, 'status': status, **job_state}
+    def generate_job(self, uuid=None, status='PENDING', **job_state):
+        if not uuid: uuid = str(uuid4())
+        return {'uuid': uuid, 'status': status, **job_state}
 
 class InitialTickTestCase(BaseTestCase):
     def setUp(self):
@@ -32,13 +32,15 @@ class InitialTickTestCase(BaseTestCase):
 
     def test_initial_tick_creates_job(self):
         expected_call_args = call(job_kwargs={
-            'job_spec': self.initial_state['input']['job_spec'],
+            'spec': self.initial_state['input']['job_spec'],
         })
         self.assertEqual(self.ctx['create_job'].call_args, expected_call_args)
 
     def test_has_expected_data(self):
-        expected_data = {'job_id': self.ctx['create_job'].return_value,
-                         'ticks': 1}
+        expected_data = {
+            'job_uuid': self.ctx['create_job'].return_value['uuid'],
+            'ticks': 1
+        }
         self.assertEqual(self.task.data, expected_data)
 
     def test_has_expected_status(self):
@@ -52,7 +54,7 @@ class IntermediateTickMixin(object):
         self.initial_ticks = 1
         self.initial_state = {
             'data': {'ticks': self.initial_ticks,
-                     'job_id': self.job['id']},
+                     'job_uuid': self.job['uuid']},
             'input': {'job_spec': 'some job spec'},
             'status': 'RUNNING'}
         self.task = self.generate_task(**self.initial_state)

@@ -240,13 +240,16 @@ class GenerateJobRunnerTestCase(BaseTestCase):
                                                   'OdysseyPushJobRunner')
 
     def test_generates_job_client(self):
-        job_runner = self.mock_runner.call_real_method('generate_job_runner')
+        job_runner_kwargs = {'mock': 'kwargs'}
+        job_runner = self.mock_runner.call_real_method(
+            'generate_job_runner', **{'job_runner_kwargs': job_runner_kwargs})
         self.assertEqual(job_runner, self.mocks['JobRunner'].return_value)
         self.assertEqual(self.mocks['JobRunner'].call_args,
                          call(job_client=self.mock_runner.job_client,
                               job_dir_factory=self.mock_runner.job_dir_factory,
                               odyssey_user=self.mock_runner.odyssey_user,
-                              odyssey_host=self.mock_runner.odyssey_host))
+                              odyssey_host=self.mock_runner.odyssey_host,
+                              **job_runner_kwargs))
 
 class DecorateTickCtxTestCase(BaseTestCase):
     def setUp(self):

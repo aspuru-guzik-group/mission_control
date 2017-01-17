@@ -10,10 +10,13 @@ class OdysseyPushJobRunner:
         self.odyssey_host = odyssey_host
         if setup: self.setup(*args, **base_job_runner_kwargs)
 
-    def setup(self, *args, **base_job_runner_kwargs):
+    def setup(self, *args, execution_client=None,
+              transfer_client=None, **base_job_runner_kwargs):
+        execution_client = execution_client or self.generate_execution_client()
+        transfer_client = transfer_client or self.generate_transfer_client()
         self.base_job_runner = BaseJobRunner(
-            execution_client=self.generate_execution_client(),
-            transfer_client=self.generate_transfer_client(),
+            execution_client=execution_client,
+            transfer_client=transfer_client,
             **base_job_runner_kwargs
         )
     

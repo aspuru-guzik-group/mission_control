@@ -1,3 +1,4 @@
+import logging
 import requests
 from jobs.constants import JobStatuses
 
@@ -6,10 +7,11 @@ class MissionControlJobClient(object):
 
     Statuses = JobStatuses
 
-    def __init__(self, base_url=None, request_client=None):
+    def __init__(self, base_url=None, request_client=None, logger=None):
         self.base_url = base_url
         self.urls = self.generate_urls()
         self.request_client = request_client or requests
+        self.logger = logger or logging
 
     def generate_urls(self):
         return {
@@ -18,8 +20,19 @@ class MissionControlJobClient(object):
         }
 
     def create_job(self, job_kwargs=None):
-        response = self.request_client.post(self.urls['jobs'], data=job_kwargs)
-        return response.json()
+        try:
+            response = self.request_client.post(self.urls['jobs'], data=job_kwargs)
+            if not str(response.status_code).startswith('2'):
+                raise Exception("Bad response: %s" % response)
+            return response.json()
+        except Exception as e:
+            msg = ("Client error, request was: {request}, error was:"
+                   " '{error}'"
+                  ).format(request={'url': self.urls['jobs'],
+                                    'data': job_kwargs},
+                           error=e)
+            self.logger.error(msg)
+            raise e
 
     def fetch_jobs(self, query_params=None):
         if query_params:

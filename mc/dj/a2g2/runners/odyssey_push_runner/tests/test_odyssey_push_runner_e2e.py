@@ -21,20 +21,13 @@ assert urlpatterns
 class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.execution_client = self.generate_mock_execution_client()
+        self.execution_client = Mock()
         self.transfer_client = Mock()
+        self.job_dir_factory = Mock()
         self.flow_generator_classes = self.generate_flow_generator_classes()
         self.runner = self.generate_runner()
         self.flow_spec = self.generate_flow_spec()
         self.parent_flow_model = self.generate_flow_model()
-
-    def generate_mock_execution_client(self):
-        mock_execution_client = Mock()
-        return mock_execution_client
-
-    def generate_mock_transfer_client(self):
-        mock_transfer_client = Mock()
-        return mock_transfer_client
 
     def generate_flow_generator_classes(self):
         flow_generator_classes = {}
@@ -92,9 +85,10 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
             job_server_url=mc_server_url,
             flow_server_url=mc_server_url,
             flow_generator_classes=self.flow_generator_classes.values(),
+            job_dir_factory=self.job_dir_factory,
+            job_runner_kwargs={'execution_client': self.execution_client,
+                               'transfer_client': self.transfer_client},
         )
-        runner.job_runner.execution_client = self.execution_client
-        runner.job_runner.transfer_client = self.execution_client
         return runner
 
     def generate_flow_spec(self):
@@ -149,7 +143,8 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
 
     def get_job_model(self):
         job_models = Job.objects.all()
-        job_model = filter(job_models, lambda j: j['spec']['type'] == 'A')[0]
+        job_model = [job_model for job_model in job_models
+                     if job_model.spec['type'] == 'Job_A'][0]
         return job_model
 
     def assert_job_model_attr(self, attr, expected):

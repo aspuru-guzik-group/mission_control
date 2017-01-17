@@ -30,6 +30,7 @@ class OdysseyPushRunner(object):
               job_client=None,
               job_dir_factory=None,
               job_runner=None,
+              job_runner_kwargs=None,
               tick_ctx=None,
               flow_runner=None,
               **kwargs
@@ -42,7 +43,8 @@ class OdysseyPushRunner(object):
         self.job_client = job_client or self.generate_job_client()
         self.job_dir_factory = job_dir_factory or \
                 self.generate_job_dir_factory()
-        self.job_runner = job_runner or self.generate_job_runner()
+        self.job_runner = job_runner or self.generate_job_runner(
+            job_runner_kwargs=job_runner_kwargs)
         self.tick_ctx = self.decorate_tick_ctx(tick_ctx=tick_ctx)
         self.flow_runner = flow_runner or self.generate_flow_runner()
 
@@ -70,11 +72,12 @@ class OdysseyPushRunner(object):
     def generate_job_dir_factory(self):
         return JobDirFactory()
 
-    def generate_job_runner(self): 
+    def generate_job_runner(self, job_runner_kwargs=None): 
         return OdysseyPushJobRunner(job_client=self.job_client,
                                     job_dir_factory=self.job_dir_factory,
                                     odyssey_user=self.odyssey_user,
-                                    odyssey_host=self.odyssey_host)
+                                    odyssey_host=self.odyssey_host,
+                                    **(job_runner_kwargs or {}))
 
     def decorate_tick_ctx(self, tick_ctx=None):
         tick_ctx = tick_ctx or {}

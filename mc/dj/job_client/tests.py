@@ -129,6 +129,7 @@ class CreateJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.job_kwargs = {'data': 'some data'}
+        self.mocks['requests']['post'].return_value.status_code = 200
 
     def test_makes_post_call(self):
         self.job_client.create_job(job_kwargs=self.job_kwargs)
