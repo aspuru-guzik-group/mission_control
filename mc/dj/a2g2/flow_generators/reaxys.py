@@ -8,7 +8,7 @@ class ReaxysFlowGenerator(object):
     flow_type = 'reaxys'
 
     @classmethod
-    def generate_flow(cls, *arg, flow_spec=None, **kwargs):
+    def generate_flow(cls, *args, flow_spec=None, **kwargs):
         flow = Flow()
         flow.add_task(key='confgen', 
                       as_root=True,
