@@ -1,3 +1,4 @@
+import json
 import unittest
 from unittest.mock import call, MagicMock
 from uuid import uuid4
@@ -31,14 +32,16 @@ class InitialTickTestCase(BaseTestCase):
         self.task.tick(ctx=self.ctx)
 
     def test_initial_tick_creates_flow(self):
-        expected_call_args = call(flow_kwargs={
-            'flow_spec': self.initial_state['input']['flow_spec'],
+        expected_call_args = call(flow={
+            'spec': json.dumps(self.initial_state['input']['flow_spec']),
         })
         self.assertEqual(self.ctx['create_flow'].call_args, expected_call_args)
 
     def test_has_expected_data(self):
-        expected_data = {'flow_uuid': self.ctx['create_flow'].return_value,
-                         'ticks': 1}
+        expected_data = {
+            'flow_uuid': self.ctx['create_flow'].return_value['uuid'],
+            'ticks': 1
+        }
         self.assertEqual(self.task.data, expected_data)
 
     def test_has_expected_status(self):

@@ -1,3 +1,4 @@
+import json
 from .base import BaseTask
 
 
@@ -13,9 +14,10 @@ class FlowTask(BaseTask):
 
     def initial_tick(self, ctx=None):
         create_flow = ctx['create_flow']
-        self.data['flow_uuid'] = create_flow(flow_kwargs={
-            'flow_spec': self.input.get('flow_spec', {})
+        flow = create_flow(flow={
+            'spec': json.dumps(self.input.get('flow_spec', {}))
         })
+        self.data['flow_uuid'] = flow['uuid']
         self.status = 'RUNNING'
 
     def intermediate_tick(self, ctx=None):
@@ -31,4 +33,4 @@ class FlowTask(BaseTask):
             self.status = 'RUNNING'
 
     def get_flow(self, ctx=None):
-        return ctx['get_flow'](flow_uuid=self.data['flow_uuid'])
+        return ctx['get_flow'](uuid=self.data['flow_uuid'])
