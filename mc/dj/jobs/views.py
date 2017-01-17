@@ -1,3 +1,5 @@
+import json
+
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django_filters.rest_framework import DjangoFilterBackend
@@ -16,9 +18,9 @@ class JobViewSet(viewsets.ModelViewSet):
 @require_http_methods(["POST"])
 def claim_jobs(request):
     result = {}
-    csv_uuids = request.POST['uuids']
-    if csv_uuids:
-        uuids = csv_uuids.split(',')
+    post_data = json.loads(request.body.decode())
+    uuids = post_data.get('uuids', [])
+    if uuids:
         jobs = Job.objects.filter(uuid__in=uuids)
         for job in jobs:
             if job.status == JobStatuses.Pending.name:

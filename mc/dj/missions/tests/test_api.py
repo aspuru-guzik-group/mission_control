@@ -104,10 +104,10 @@ class ClaimFlowTestCase(TestCase):
         self._claimFlows()
 
     def _claimFlows(self):
-        csv_uuids = ','.join([flow.uuid
-                              for flow in self.flows_to_claim])
+        uuids = [flow.uuid for flow in self.flows_to_claim]
         self.response = self.client.post('/claim_flows/',
-                                         {'uuids': csv_uuids})
+                                         json.dumps({'uuids': uuids}),
+                                         content_type='application/json')
 
     def test_response_data(self):
         self.assertEqual(self.response.status_code, 200)

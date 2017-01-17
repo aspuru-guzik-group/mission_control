@@ -66,8 +66,10 @@ class ClaimJobTestCase(TestCase):
         self._claimJobs()
 
     def _claimJobs(self):
-        csv_uuids = ','.join([job.uuid for job in self.jobs_to_claim])
-        self.response = self.client.post('/claim_jobs/', {'uuids': csv_uuids})
+        uuids = [job.uuid for job in self.jobs_to_claim]
+        self.response = self.client.post('/claim_jobs/',
+                                         json.dumps({'uuids': uuids}),
+                                         content_type='application/json')
 
     def test_response_data(self):
         self.assertEqual(self.response.status_code, 200)

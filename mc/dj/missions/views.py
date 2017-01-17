@@ -1,3 +1,4 @@
+import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
@@ -35,9 +36,9 @@ class FlowViewSet(viewsets.ModelViewSet):
 @require_http_methods(["POST"])
 def claim_flows(request):
     result = {}
-    csv_uuids = request.POST['uuids']
-    if csv_uuids:
-        uuids = csv_uuids.split(',')
+    post_data = json.loads(request.body.decode())
+    uuids = post_data.get('uuids', [])
+    if uuids:
         flows = Flow.objects.filter(uuid__in=uuids)
         for flow in flows:
             if flow.claimed:
