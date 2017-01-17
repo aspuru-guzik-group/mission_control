@@ -1,5 +1,7 @@
 import time
 
+import requests
+
 from flow_engines.flow_engine import FlowEngine
 from flow_client.flow_client import MissionControlFlowClient as FlowClient
 from job_client.job_client import MissionControlJobClient \
@@ -8,9 +10,10 @@ from .odyssey_push_job_runner import OdysseyPushJobRunner
 from flow_runners.base_flow_runner import BaseFlowRunner as FlowRunner
 
 class OdysseyPushRunner(object):
-    def __init__(self, *args, run_setup=True, tick_interval=None,
-                 odyssey_user=None, odyssey_host=None, job_server_url=None,
-                 flow_server_url=None, **setup_kwargs):
+    def __init__(self, *args, request_client=None, run_setup=True,
+                 tick_interval=None, odyssey_user=None, odyssey_host=None,
+                 job_server_url=None, flow_server_url=None, **setup_kwargs):
+        self.request_client = request_client or requests
         self.tick_interval = tick_interval
         self.odyssey_user = odyssey_user
         self.odyssey_host = odyssey_host
@@ -52,10 +55,12 @@ class OdysseyPushRunner(object):
         return flow_engine
 
     def generate_flow_client(self):
-        return FlowClient(base_url=self.flow_server_url)
+        return FlowClient(base_url=self.flow_server_url,
+                          request_client=self.request_client)
 
     def generate_job_client(self):
-        return JobClient(base_url=self.job_server_url)
+        return JobClient(base_url=self.job_server_url,
+                         request_client=self.request_client)
 
     def generate_job_runner(self): 
         return OdysseyPushJobRunner(job_client=self.job_client,
@@ -75,7 +80,6 @@ class OdysseyPushRunner(object):
 
     def generate_flow_runner(self):
         return FlowRunner(flow_client=self.flow_client,
-                          job_client=self.job_client,
                           flow_engine=self.flow_engine,
                           tick_ctx=self.tick_ctx)
 

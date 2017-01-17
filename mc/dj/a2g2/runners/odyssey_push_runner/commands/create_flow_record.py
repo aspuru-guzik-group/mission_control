@@ -2,6 +2,7 @@ import json
 
 from .base import BaseCommand
 
+
 class Command(BaseCommand):
     def add_arguments(self, parser=None):
         self.add_flow_spec_arguments(parser=parser)
@@ -21,16 +22,17 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         self.runner = self.generate_runner_from_options(options=options)
         flow_record = self.assemble_flow_record_from_options(options=options)
-        flow_uuid = self.runner.create_flow_record(flow_record=flow_record)
-        print("Created flow with uuid '%s'" % flow_uuid, file=self.stdout)
+        flow = self.runner.create_flow_record(flow_record=flow_record)
+        result = {'status': 'SUCCESS', 'flow': flow}
+        print(json.dumps(result), file=self.stdout)
 
     def assemble_flow_record_from_options(self, options):
         if options.get('flow_spec_json', None):
-            flow_spec = json.loads(options['flow_spec_json'])
+            flow_spec_json = options['flow_spec_json']
         elif options.get('flow_spec_file', None):
-            with open(options['flow_spec_file']) as f: flow_spec = json.load(f)
-        else: flow_spec = None
-        flow_record = {'spec': flow_spec}
+            with open(options['flow_spec_file']) as f: flow_spec_json = f.read()
+        else: flow_spec_json = None
+        flow_record = {'spec': flow_spec_json}
         return flow_record
 
 if __name__ == '__main__':

@@ -42,7 +42,12 @@ class BaseTestCase(TestCase):
         return odyssey_push_runner.OdysseyPushRunner(run_setup=run_setup,
                                                      **runner_kwargs)
     def generate_mock_runner(self):
-        return Mock()
+        mock_runner = Mock()
+        def call_real_method(method_name, *args, **kwargs):
+            return self.call_runner_method_with_mock(
+                mock=mock_runner, method_name=method_name, *args, **kwargs)
+        mock_runner.call_real_method = call_real_method
+        return mock_runner
 
     def call_runner_method_with_mock(self, mock=None, method_name=None,
                                      *args, **kwargs):
@@ -91,18 +96,20 @@ class CreateFlowRecordCommandTestCase(BaseTestCase):
             odyssey_push_runner, OdysseyPushRunner=DEFAULT)
 
     def test_handle_calls_runner_create_flow_record(self):
-        flow_spec = json.dumps({'mock': 'flow'})
+        mock_runner = self.mocks['odyssey_push_runner']['OdysseyPushRunner']\
+                .return_value
+        mock_flow = {'mock': 'flow'}
+        mock_runner.create_flow_record.return_value = mock_flow
+        flow_spec_json = json.dumps({'mock': 'flow'})
         command = create_flow_record_command.Command()
         stdout = io.StringIO()
         command.set_streams(stdout=stdout)
-        command.handle(flow_spec_json=json.dumps(flow_spec))
-        mock_runner = self.mocks['odyssey_push_runner']['OdysseyPushRunner']\
-                .return_value
+        command.handle(flow_spec_json=flow_spec_json)
         self.assertEqual(mock_runner.create_flow_record.call_args,
-                         call(flow_record={'spec': flow_spec}))
-        self.assertEqual(stdout.getvalue().strip(),
-                         "Created flow with uuid '{}'".format(
-                             mock_runner.create_flow_record.return_value))
+                         call(flow_record={'spec': flow_spec_json}))
+        expected_output = {"status": "SUCCESS",
+                           "flow": mock_runner.create_flow_record.return_value}
+        self.assertEqual(json.loads(stdout.getvalue().strip()), expected_output)
 
 class RunnerCreateFlowRecordTestCase(BaseTestCase):
     def test_wraps_flow_client_method(self):
@@ -134,16 +141,13 @@ class RunnerSetupTestCase(BaseTestCase):
         generator_method_name = 'generate_%s' % subcomponent_name
         mock_generator = Mock()
         setattr(self.mock_runner, generator_method_name, mock_generator)
-        self.call_real_setup_with_mock(
-            mock=self.mock_runner, **{subcomponent_name: Mock()})
+        self.call_real_setup(**{subcomponent_name: Mock()})
         self.assertEqual(mock_generator.call_count, 0)
-        self.call_real_setup_with_mock(
-            mock=self.mock_runner, **{subcomponent_name: None})
+        self.call_real_setup(**{subcomponent_name: None})
         self.assertEqual(mock_generator.call_count, 1)
 
-    def call_real_setup_with_mock(self, mock=None, *args, **kwargs):
-        self.call_runner_method_with_mock(mock=mock, method_name='setup',
-                                          *args, **kwargs)
+    def call_real_setup(self, *args, **kwargs):
+        self.mock_runner.call_real_method('setup', *args, **kwargs)
 
     def test_falls_back_to_generate_flow_engine(self):
         self.run_subcomponent_generator_fallback_test('flow_engine')
@@ -159,7 +163,7 @@ class RunnerSetupTestCase(BaseTestCase):
 
     def test_has_tick_ctx(self):
         tick_ctx = Mock()
-        self.call_real_setup_with_mock(mock=self.mock_runner, tick_ctx=tick_ctx)
+        self.call_real_setup(tick_ctx=tick_ctx)
         self.assertEqual(self.mock_runner.decorate_tick_ctx.call_args,
                          call(tick_ctx=tick_ctx))
 
@@ -200,11 +204,11 @@ class GenerateFlowClientTestCase(BaseTestCase):
                                                    'FlowClient')
 
     def test_generates_flow_client(self):
-        self.runner.flow_server_url = Mock()
-        self.assertEqual(self.runner.generate_flow_client(),
-                         self.mocks['FlowClient'].return_value)
+        result = self.mock_runner.call_real_method('generate_flow_client')
+        self.assertEqual(result, self.mocks['FlowClient'].return_value)
         self.assertEqual(self.mocks['FlowClient'].call_args,
-                         call(base_url=self.runner.flow_server_url))
+                         call(base_url=self.mock_runner.flow_server_url,
+                              request_client=self.mock_runner.request_client))
 
 class GenerateJobClientTestCase(BaseTestCase):
     def decorate_patchers(self):
@@ -212,11 +216,11 @@ class GenerateJobClientTestCase(BaseTestCase):
                                                   'JobClient')
 
     def test_generates_job_client(self):
-        self.runner.job_server_url = Mock()
-        self.assertEqual(self.runner.generate_job_client(),
-                         self.mocks['JobClient'].return_value)
+        result = self.mock_runner.call_real_method('generate_job_client')
+        self.assertEqual(result, self.mocks['JobClient'].return_value)
         self.assertEqual(self.mocks['JobClient'].call_args,
-                         call(base_url=self.runner.job_server_url))
+                         call(base_url=self.mock_runner.job_server_url,
+                              request_client=self.mock_runner.request_client))
 
 class GenerateJobRunnerTestCase(BaseTestCase):
     def decorate_patchers(self):
@@ -224,8 +228,7 @@ class GenerateJobRunnerTestCase(BaseTestCase):
                                                   'OdysseyPushJobRunner')
 
     def test_generates_job_client(self):
-        job_runner = self.call_runner_method_with_mock(
-            mock=self.mock_runner, method_name='generate_job_runner')
+        job_runner = self.mock_runner.call_real_method('generate_job_runner')
         self.assertEqual(job_runner, self.mocks['JobRunner'].return_value)
         self.assertEqual(self.mocks['JobRunner'].call_args,
                          call(job_client=self.mock_runner.job_client,
@@ -236,9 +239,8 @@ class DecorateTickCtxTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.orig_tick_ctx = {'k1': 'v1', 'k2': 'v2'}
-        self.decorated_tick_ctx = self.call_runner_method_with_mock(
-            mock=self.mock_runner, method_name='decorate_tick_ctx',
-            tick_ctx=self.orig_tick_ctx)
+        self.decorated_tick_ctx = self.mock_runner.call_real_method(
+            'decorate_tick_ctx', tick_ctx=self.orig_tick_ctx)
 
     def test_includes_original_tick_ctx(self):
         self.assert_is_subdict(self.orig_tick_ctx, self.decorated_tick_ctx)
@@ -274,12 +276,10 @@ class GenerateFlowRunnerTestCase(BaseTestCase):
         self.patchers['FlowRunner'] = patch.object(odyssey_push_runner,
                                                   'FlowRunner')
     def test_generates_flow_runner(self):
-        flow_runner = self.call_runner_method_with_mock(
-            mock=self.mock_runner, method_name='generate_flow_runner')
+        flow_runner = self.mock_runner.call_real_method('generate_flow_runner')
         self.assertEqual(flow_runner, self.mocks['FlowRunner'].return_value)
         self.assertEqual(self.mocks['FlowRunner'].call_args,
                          call(flow_client=self.mock_runner.flow_client,
-                              job_client=self.mock_runner.job_client,
                               flow_engine=self.mock_runner.flow_engine,
                               tick_ctx=self.mock_runner.tick_ctx))
 

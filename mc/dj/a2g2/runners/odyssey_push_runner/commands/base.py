@@ -2,6 +2,8 @@ import argparse
 import json
 import sys
 
+import requests as request_client
+
 from .. import odyssey_push_runner
 
 class BaseCommand(object):
@@ -50,4 +52,5 @@ class BaseCommand(object):
     def handle(self, *args, **kwargs): pass
 
     def generate_runner_from_options(self, options=None):
-        return odyssey_push_runner.OdysseyPushRunner(**options)
+        return odyssey_push_runner.OdysseyPushRunner(
+            request_client=request_client, **options)

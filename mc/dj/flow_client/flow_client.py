@@ -1,11 +1,13 @@
 import requests
+import logging
 
 
 class MissionControlFlowClient(object):
-    def __init__(self, base_url=None, request_client=None):
+    def __init__(self, base_url=None, request_client=None, logger=None):
         self.base_url = base_url
         self.urls = self.generate_urls()
         self.request_client = request_client or requests
+        self.logger = logger or logging
 
     def generate_urls(self):
         return {
@@ -14,8 +16,18 @@ class MissionControlFlowClient(object):
         }
 
     def create_flow(self, flow=None):
-        response = self.request_client.post(self.urls['flows'], data=flow)
-        return response.json()
+        try:
+            response = self.request_client.post(self.urls['flows'], data=flow)
+            if not str(response.status_code).startswith('2'):
+                raise Exception("Bad response: %s" % response)
+            return response.json()
+        except Exception as e:
+            msg = ("Client error, request was: {request}, error was:"
+                   " '{error}'"
+                  ).format(request={'url': self.urls['flows'], 'data': flow},
+                           error=e)
+            self.logger.error(msg)
+            raise e
 
     def fetch_flows(self, query_params=None):
         if query_params:
