@@ -1,3 +1,4 @@
+import collections
 import json
 import unittest
 from unittest.mock import MagicMock, Mock
@@ -114,18 +115,24 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
 
         self.runner.tick()
         self.assert_job_model_attr('status', 'RUNNING')
-        self.assert_child_flow_model_running()
-        self.assert_parent_flow_model_running()
+        self.assert_child_flow_model_attr('status', 'RUNNING')
+        self.assert_parent_flow_model_attr('status', 'RUNNING')
 
         self.mock_job_execution()
-
+        self.mock_start_transfer()
         self.runner.tick()
+
+        self.mock_job_transfer()
+        self.runner.tick()
+
         self.assert_job_model_attr('status', 'COMPLETED')
-        self.assert_child_flow_model_completed()
-        self.assert_parent_flow_model_running()
 
         self.runner.tick()
-        self.assert_parent_flow_model_completed()
+        self.assert_child_flow_model_attr('status', 'COMPLETED')
+        self.assert_parent_flow_model_attr('status', 'RUNNING')
+
+        self.runner.tick()
+        self.assert_parent_flow_model_attr('status', 'COMPLETED')
 
     def get_parent_flow_model(self):
         return FlowModel.objects.get(uuid=self.parent_flow_model.uuid)
@@ -152,7 +159,20 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
         self.assertEqual(getattr(job_model, attr), expected)
 
     def mock_job_execution(self):
-        raise NotImplementedError
+        mock_execution_state = collections.defaultdict(MagicMock)
+        mock_execution_state['executing'] = False
+        self.execution_client.get_execution_state.return_value = \
+                mock_execution_state
+
+    def mock_start_transfer(self):
+        mock_transfer_meta = {'mock': 'transfer meta'}
+        self.transfer_client.start_transfer.return_value = mock_transfer_meta
+
+    def mock_job_transfer(self):
+        mock_transfer_state = collections.defaultdict(MagicMock)
+        mock_transfer_state['transferring'] = False
+        self.transfer_client.get_transfer_state.return_value = \
+                mock_transfer_state
 
 if __name__ == '__main__':
     unittest.main()
