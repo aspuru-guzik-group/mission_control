@@ -13,4 +13,4 @@ class Job(TimeStampedModel):
     status = models.CharField(null=True, max_length=32,
                               choices=[(status.name, status.value['label'])
                                        for status in JobStatuses],
-                              default=JobStatuses.Pending.name)
+                              default=JobStatuses.PENDING.name)

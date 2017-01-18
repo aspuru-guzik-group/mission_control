@@ -17,7 +17,7 @@ class ListJobsTestCase(APITestCase):
                          sorted(expected_data, key=lambda j:j['uuid']))
 
     def test_status_filtering(self):
-        statuses = [JobStatuses.Pending.name, JobStatuses.Claimed.name]
+        statuses = [JobStatuses.PENDING.name, JobStatuses.CLAIMED.name]
         jobs_by_status = {
             status: [Job.objects.create(name="job_%s" % i, status=status)
                      for i in range(3)]
@@ -58,7 +58,7 @@ class ClaimJobTestCase(TestCase):
         self.unclaimed_jobs = [Job.objects.create(name="job_%s" % i)
                                for i in range(1)]
         self.claimed_jobs = [Job.objects.create(
-            name="job_%s" % i, status=JobStatuses.Claimed.name)
+            name="job_%s" % i, status=JobStatuses.CLAIMED.name)
             for i in range(1)]
         self.all_jobs = self.unclaimed_jobs + self.claimed_jobs
         self.jobs_to_claim = [j for j in self.unclaimed_jobs[:-1]] + [
@@ -83,9 +83,9 @@ class ClaimJobTestCase(TestCase):
         expected_statuses = {}
         for job in self.all_jobs:
             if job in set(self.jobs_to_claim + self.claimed_jobs):
-                expected_status = JobStatuses.Claimed.name
+                expected_status = JobStatuses.CLAIMED.name
             else:
-                expected_status = JobStatuses.Pending.name
+                expected_status = JobStatuses.PENDING.name
             expected_statuses[str(job.uuid)] = expected_status
         self.assertEqual(statuses, expected_statuses)
 

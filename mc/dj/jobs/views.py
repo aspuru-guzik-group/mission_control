@@ -23,8 +23,8 @@ def claim_jobs(request):
     if uuids:
         jobs = Job.objects.filter(uuid__in=uuids)
         for job in jobs:
-            if job.status == JobStatuses.Pending.name:
-                job.status = JobStatuses.Claimed.name
+            if job.status == JobStatuses.PENDING.name:
+                job.status = JobStatuses.CLAIMED.name
                 job.save()
                 result[job.uuid] = JobSerializer(job).data
             else:
