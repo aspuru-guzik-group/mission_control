@@ -1,6 +1,6 @@
 import json
 import unittest
-from unittest.mock import Mock
+from unittest.mock import MagicMock, Mock
 
 from django.test import override_settings
 
@@ -21,7 +21,7 @@ assert urlpatterns
 class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.execution_client = Mock()
+        self.execution_client = MagicMock()
         self.transfer_client = Mock()
         self.job_dir_factory = Mock()
         self.flow_generator_classes = self.generate_flow_generator_classes()
@@ -113,14 +113,14 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
         self.assertTrue(self.job_model is not None)
 
         self.runner.tick()
-        self.assert_job_model_running()
+        self.assert_job_model_attr('status', 'RUNNING')
         self.assert_child_flow_model_running()
         self.assert_parent_flow_model_running()
 
         self.mock_job_execution()
 
         self.runner.tick()
-        self.assert_job_model_completed()
+        self.assert_job_model_attr('status', 'COMPLETED')
         self.assert_child_flow_model_completed()
         self.assert_parent_flow_model_running()
 

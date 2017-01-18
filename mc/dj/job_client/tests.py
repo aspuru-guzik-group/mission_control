@@ -55,7 +55,7 @@ class FetchClaimableJobsTest(BaseTestCase):
             self.job_client.fetch_claimable_jobs()
             self.assertEqual(
                 self.job_client.fetch_jobs.call_args,
-                call(query_params={'status': JobStatuses.Pending.name}))
+                call(query_params={'status': JobStatuses.PENDING.name}))
 
 class FetchJobByUUIDTestCase(BaseTestCase):
     def decorate_patchers(self):

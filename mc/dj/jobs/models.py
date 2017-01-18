@@ -14,3 +14,4 @@ class Job(TimeStampedModel):
                               choices=[(status.name, status.value['label'])
                                        for status in JobStatuses],
                               default=JobStatuses.PENDING.name)
+    claimed = models.NullBooleanField(null=True, default=False)

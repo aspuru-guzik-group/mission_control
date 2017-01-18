@@ -24,7 +24,7 @@ def claim_jobs(request):
         jobs = Job.objects.filter(uuid__in=uuids)
         for job in jobs:
             if job.status == JobStatuses.PENDING.name:
-                job.status = JobStatuses.CLAIMED.name
+                job.status = JobStatuses.RUNNING.name
                 job.save()
                 result[job.uuid] = JobSerializer(job).data
             else:

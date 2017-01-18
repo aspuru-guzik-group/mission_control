@@ -310,7 +310,7 @@ class ProcessTransferredJobTestCase(JobRunnerBaseTestCase):
         self.assertEqual(
             self.mocks['update_job'].call_args,
             call(job=self.transferred_job['job'], updates={
-                'status': self.job_client.Statuses.Completed.name,
+                'status': self.job_client.Statuses.COMPLETED.name,
                 'transfer_meta': self.transferred_job['transfer']
             }))
         self.assertTrue(self.job_key not in self.runner.transferring_jobs)

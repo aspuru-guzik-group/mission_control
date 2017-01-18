@@ -151,7 +151,7 @@ class BaseJobRunner(object):
     def process_transferred_job(self, job=None):
         logging.debug('process_transferred_job')
         self.update_job(job=job['job'], updates={
-            'status': self.job_client.Statuses.Completed.name,
+            'status': self.job_client.Statuses.COMPLETED.name,
             'transfer_meta': job['transfer'],
         })
         del self.transferring_jobs[job['key']]

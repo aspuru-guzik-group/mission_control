@@ -11,6 +11,6 @@ class JobTestCase(TestCase):
         job = Job.objects.create(**kwargs)
         self.assertEqual(job.name, kwargs['name'])
         self.assertEqual(job.status, JobStatuses.PENDING.name)
-        expected_attrs = ['uuid', 'created', 'modified', 'spec']
+        expected_attrs = ['uuid', 'created', 'modified', 'spec', 'claimed']
         for attr in expected_attrs:
             self.assertTrue(hasattr(job, attr))

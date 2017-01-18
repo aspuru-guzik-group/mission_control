@@ -43,7 +43,7 @@ class MissionControlJobClient(object):
 
     def fetch_claimable_jobs(self):
         return self.fetch_jobs(
-            query_params={'status': self.Statuses.Pending.name})
+            query_params={'status': self.Statuses.PENDING.name})
 
     def fetch_job_by_uuid(self, uuid=None):
         fetch_jobs_result = self.fetch_jobs(

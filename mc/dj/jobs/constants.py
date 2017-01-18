@@ -2,5 +2,5 @@ import enum
 
 class JobStatuses(enum.Enum):
     PENDING = {'label': 'pending'}
-    CLAIMED = {'label': 'claimed'}
+    RUNNING = {'label': 'running'}
     COMPLETED = {'label': 'completed'}
