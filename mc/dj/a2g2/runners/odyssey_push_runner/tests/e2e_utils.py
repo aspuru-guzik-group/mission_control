@@ -15,7 +15,7 @@ urlpatterns = [
 
 class BaseTestCase(TestCase):
     def setUp(self):
-        test_utils.patch_request_client_to_use_json(client=self.client)
+        test_utils.patch_request_client(request_client=self.client)
         self.request_client_patcher = patch.object(
             base_command, 'request_client', new=self.client)
         self.request_client_patcher.start()

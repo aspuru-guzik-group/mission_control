@@ -18,7 +18,7 @@ urlpatterns = [
 @override_settings(ROOT_URLCONF=__name__)
 class FlowRunnerE2ETestCase(TestCase):
     def setUp(self):
-        test_utils.patch_request_client_to_use_json(client=self.client)
+        test_utils.patch_request_client(request_client=self.client)
         self.keyed_task_classes = self.generate_keyed_task_classes()
         self.flow_engine = self.generate_flow_engine(
             keyed_task_classes=self.keyed_task_classes)

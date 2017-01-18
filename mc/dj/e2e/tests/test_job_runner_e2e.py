@@ -14,11 +14,11 @@ urlpatterns = [
 @override_settings(ROOT_URLCONF=__name__)
 class JobRunnerE2ETestCase(TestCase):
     def setUp(self):
+        test_utils.patch_request_client(request_client=self.client)
         self.num_jobs = 10
         self.jobs = self.generate_jobs()
         self.runner = generate_stub_job_runner(base_url='/%s' % BASE_PATH,
                                                request_client=self.client)
-        test_utils.patch_request_client_to_use_json(client=self.client)
 
     def generate_jobs(self):
         jobs = []
