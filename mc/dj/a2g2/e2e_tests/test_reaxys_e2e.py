@@ -13,7 +13,7 @@ from job_runners.base_job_runner import BaseJobRunner
 from job_client.job_client import MissionControlJobClient
 
 
-BASE_PATH = 'test_api'
+BASE_PATH = 'test_api/'
 urlpatterns = [
     url(r'^%s' % BASE_PATH, include('missions.urls')),
     url(r'^%s' % BASE_PATH, include('jobs.urls')),
@@ -34,11 +34,15 @@ class ReaxysFlowE2ETestCase(TestCase):
         self.states = []
 
     def configure_request_client(self):
-        orig_patch = self.client.patch
-        def json_patch(path, data=None, **kwargs):
-            return orig_patch(path, json.dumps(data),
-                              content_type='application/json', **kwargs)
-        self.client.patch = json_patch
+        for method_name in ['patch', 'post']:
+            self.patch_client_method_to_use_json(method_name=method_name)
+
+    def patch_client_method_to_use_json(self, method_name=None):
+        orig_method = getattr(self.client, method_name)
+        def patched_method(path, data=None, **kwargs):
+            return orig_method(path, json.dumps(data), 
+                               content_type='application/json', **kwargs)
+        setattr(self.client, method_name, patched_method)
 
     def generate_flow_client(self):
         return MissionControlFlowClient(
@@ -61,16 +65,16 @@ class ReaxysFlowE2ETestCase(TestCase):
 
     def generate_tick_ctx(self):
 
-        def create_flow(flow_kwargs=None):
-            flow_spec = flow_kwargs.get('flow_spec', {})
+        def create_flow(flow=None):
+            flow_spec = json.loads(flow['spec'])
             flow = self.flow_engine.generate_flow(flow_spec=flow_spec)
             serialized_flow = self.flow_engine.serialize_flow(flow)
             created_flow = self.flow_client.create_flow(
                 flow={'serialization': json.dumps(serialized_flow)})
-            return created_flow['uuid']
+            return created_flow
 
-        def get_flow(flow_uuid=None):
-            return self.flow_client.fetch_flow_by_uuid(uuid=flow_uuid)
+        def get_flow(uuid=None):
+            return self.flow_client.fetch_flow_by_uuid(uuid=uuid)
 
         def get_job(job_uuid=None):
             return self.job_client.fetch_job_by_uuid(uuid=job_uuid)

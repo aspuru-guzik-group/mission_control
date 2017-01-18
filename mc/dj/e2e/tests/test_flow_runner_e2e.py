@@ -2,6 +2,7 @@ import json
 from django.conf.urls import url, include
 from django.test import TestCase, override_settings
 
+from mc_utils import test_utils
 from missions.models import Flow as FlowModel
 from flow_engines.flow import Flow
 from flow_runners.base_flow_runner import BaseFlowRunner
@@ -17,7 +18,7 @@ urlpatterns = [
 @override_settings(ROOT_URLCONF=__name__)
 class FlowRunnerE2ETestCase(TestCase):
     def setUp(self):
-        self.configure_request_client()
+        test_utils.patch_request_client_to_use_json(client=self.client)
         self.keyed_task_classes = self.generate_keyed_task_classes()
         self.flow_engine = self.generate_flow_engine(
             keyed_task_classes=self.keyed_task_classes)
@@ -29,13 +30,6 @@ class FlowRunnerE2ETestCase(TestCase):
             flow_client=self.flow_client,
             flow_engine=self.flow_engine)
         self.populate_flows()
-
-    def configure_request_client(self):
-        orig_patch = self.client.patch
-        def json_patch(path, data=None, **kwargs):
-            return orig_patch(path, json.dumps(data),
-                              content_type='application/json', **kwargs)
-        self.client.patch = json_patch
 
     def generate_keyed_task_classes(self):
         class BaseTestTask():

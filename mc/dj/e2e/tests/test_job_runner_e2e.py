@@ -1,12 +1,12 @@
 import copy
 from django.conf.urls import url, include
 from django.test import TestCase, override_settings
-import json
 from jobs.models import Job
 
+from mc_utils import test_utils
 from .stub_job_runner import generate_stub_job_runner
 
-BASE_PATH = 'test_api'
+BASE_PATH = 'test_api/'
 urlpatterns = [
     url(r'^%s' % BASE_PATH, include('jobs.urls')),
 ]
@@ -18,11 +18,7 @@ class JobRunnerE2ETestCase(TestCase):
         self.jobs = self.generate_jobs()
         self.runner = generate_stub_job_runner(base_url='/%s' % BASE_PATH,
                                                request_client=self.client)
-        orig_patch = self.client.patch
-        def json_patch(path, data=None, **kwargs):
-            return orig_patch(path, json.dumps(data),
-                              content_type='application/json', **kwargs)
-        self.client.patch = json_patch
+        test_utils.patch_request_client_to_use_json(client=self.client)
 
     def generate_jobs(self):
         jobs = []
