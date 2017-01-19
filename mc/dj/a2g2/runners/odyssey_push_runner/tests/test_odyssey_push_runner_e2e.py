@@ -17,7 +17,6 @@ from jobs.models import Job
 urlpatterns = e2e_utils.urlpatterns
 assert urlpatterns
 
-
 @override_settings(ROOT_URLCONF=__name__)
 class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
     def setUp(self):
