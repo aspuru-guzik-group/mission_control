@@ -4,7 +4,7 @@ from unittest.mock import call, DEFAULT, MagicMock, patch
 from ..base_job_runner import BaseJobRunner
 
 
-class JobRunnerBaseTestCase(unittest.TestCase):
+class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.job_client = MagicMock()
         self.job_dir_factory = MagicMock()
@@ -13,8 +13,21 @@ class JobRunnerBaseTestCase(unittest.TestCase):
             execution_client=self.execution_client,
             job_client=self.job_client,
             job_dir_factory=self.job_dir_factory)
+        self.runner_methods_to_patch = []
+        self.decorate_runner_methods_to_patch()
+        if self.runner_methods_to_patch:
+            self.patcher = patch.multiple(
+                self.runner,
+                **{method: DEFAULT for method in self.runner_methods_to_patch}
+            )
+            self.mocks = self.patcher.start()
 
-class RunTestCase(JobRunnerBaseTestCase):
+    def decorate_runner_methods_to_patch(self): pass
+
+    def tearDown(self):
+        if hasattr(self, 'patcher'): self.patcher.stop()
+
+class RunTestCase(BaseTestCase):
     def test_run(self):
         tick_intervals = [1, 2]
         self.runner.tick_interval = 10
@@ -26,17 +39,11 @@ class RunTestCase(JobRunnerBaseTestCase):
                 mock_sleep.call_args_list,
                 [call(tick_interval) for tick_interval in tick_intervals])
 
-class TickTestCase(JobRunnerBaseTestCase):
-
-    def setUp(self):
-        super().setUp()
-        self.patcher = patch.multiple(
-            self.runner, fetch_claimable_jobs=DEFAULT,
-            process_claimable_job=DEFAULT, process_executing_jobs=DEFAULT)
-        self.mocks = self.patcher.start()
-
-    def tearDown(self):
-        self.patcher.stop()
+class TickTestCase(BaseTestCase):
+    def decorate_runner_methods_to_patch(self):
+        self.runner_methods_to_patch.extend(['fetch_claimable_jobs',
+                                             'process_claimable_job',
+                                             'process_executing_jobs'])
 
     def test_fetches_claimable_job(self):
         self.runner.tick()
@@ -60,23 +67,20 @@ class TickTestCase(JobRunnerBaseTestCase):
         self.runner.tick()
         self.assertEqual(self.mocks['process_executing_jobs'].call_count, 1)
 
-class FetchClaimableJobsTestCase(JobRunnerBaseTestCase):
+class FetchClaimableJobsTestCase(BaseTestCase):
     def test_fetch_claimable_jobs(self):
         self.runner.fetch_claimable_jobs()
         self.assertEqual(
             self.job_client.fetch_claimable_jobs.call_count, 1)
 
-class ProcessClaimableJobTestCase(JobRunnerBaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.patcher = patch.multiple(self.runner, build_job_dir=DEFAULT,
-                                      start_job_execution=DEFAULT,
-                                      update_job=DEFAULT)
-        self.mocks = self.patcher.start()
+class ProcessClaimableJobTestCase(BaseTestCase):
+    def decorate_runner_methods_to_patch(self):
+        self.runner_methods_to_patch.extend(['build_job_dir',
+                                             'start_job_execution',
+                                             'update_job'])
 
     def tearDown(self):
         logging.disable(logging.NOTSET)
-        self.patcher.stop()
         super().tearDown()
 
     def test_claimable_job(self):
@@ -112,7 +116,7 @@ class ProcessClaimableJobTestCase(JobRunnerBaseTestCase):
             call(job=mock_claimed_job, updates={
                 'status': 'FAILED', 'error': exception}))
 
-class BuildJobDirTestCase(JobRunnerBaseTestCase):
+class BuildJobDirTestCase(BaseTestCase):
     def test_build_job_dir(self):
         job = {'uuid': 'abcd'}
         self.runner.build_job_dir(job=job)
@@ -120,7 +124,7 @@ class BuildJobDirTestCase(JobRunnerBaseTestCase):
             self.runner.job_dir_factory.build_dir_for_job.call_args,
             call(job=job))
 
-class StartJobExecutionTestCase(JobRunnerBaseTestCase):
+class StartJobExecutionTestCase(BaseTestCase):
     def test_start_job_execution(self):
         job = {'uuid': 'abcd'}
         execution_meta = self.runner.start_job_execution(job=job)
@@ -130,7 +134,7 @@ class StartJobExecutionTestCase(JobRunnerBaseTestCase):
         self.assertEqual(execution_meta,
                          self.execution_client.start_execution.return_value)
 
-class ProcessExecutingJobsTestCase(JobRunnerBaseTestCase):
+class ProcessExecutingJobsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.executed_jobs = [{'key': 'executed_%s' % i} for i in range(3)]
@@ -142,12 +146,12 @@ class ProcessExecutingJobsTestCase(JobRunnerBaseTestCase):
             **{j['key']: None for j in self.executed_jobs},
             **{j['key']: {'executing': True} for j in self.executing_jobs}
         }
-        self.patcher = patch.multiple(self.runner,
-                                      get_job_execution_states=DEFAULT,
-                                      process_executed_job=DEFAULT)
-        self.mocks = self.patcher.start()
         self.mocks['get_job_execution_states'].return_value = \
                 self.mock_job_execution_states
+
+    def decorate_runner_methods_to_patch(self):
+        self.runner_methods_to_patch.extend(['get_job_execution_states',
+                                             'process_executed_job'])
 
     def tearDown(self):
         self.patcher.stop()
@@ -161,7 +165,7 @@ class ProcessExecutingJobsTestCase(JobRunnerBaseTestCase):
         sorted_expected_calls = sorted(expected_calls, key=calls_sort_key_fn)
         self.assertEqual(sorted_calls, sorted_expected_calls)
 
-class GetJobExecutionStatesTestCase(JobRunnerBaseTestCase):
+class GetJobExecutionStatesTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.runner.executing_jobs = {}
@@ -183,19 +187,7 @@ class GetJobExecutionStatesTestCase(JobRunnerBaseTestCase):
         }
         self.assertEqual(job_execution_states, expected_execution_states)
 
-class ProcessExecutedJobTestCase(JobRunnerBaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.patcher = patch.multiple(self.runner)
-        self.mocks = self.patcher.start()
-        self.job_key = 'abcd'
-        self.executed_job = {'key': self.job_key}
-        self.runner.executing_jobs[self.job_key] = self.executed_job
-
-    def tearDown(self):
-        self.patcher.stop()
-
-class UpdateJobTestCase(JobRunnerBaseTestCase):
+class UpdateJobTestCase(BaseTestCase):
     def test_update_job(self):
         job = {'uuid': 'abcd'}
         updates = {'pie': 'blueberry', 'meat': 'beef'}
