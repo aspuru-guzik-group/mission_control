@@ -4,11 +4,12 @@ import time
 
 class BaseJobRunner(object):
     def __init__(self, job_client=None, job_dir_factory=None,
-                 execution_client=None, tick_interval=120, max_executing_jobs=3,
-                 logger=None):
+                 execution_client=None, action_processor=None,
+                 tick_interval=120, max_executing_jobs=3, logger=None):
         self.job_client = job_client
         self.job_dir_factory = job_dir_factory
         self.execution_client = execution_client
+        self.action_processor = action_processor
         self.tick_interval = tick_interval
         self.max_executing_jobs = max_executing_jobs
         self.logger = logger or logging
@@ -77,9 +78,46 @@ class BaseJobRunner(object):
 
     def build_job_dir(self, job=None):
         logging.debug('build_job_dir')
-        job_dir_meta = self.job_dir_factory.build_dir_for_job(
-            job=job)
+        pre_build_actions =  job.get('spec', {}).get('pre_build_actions', None)
+        if pre_build_actions:
+            self.process_actions(actions=pre_build_actions, job=job)
+        job_dir_meta = self.job_dir_factory.build_dir_for_job(job=job)
         return job_dir_meta
+
+    def process_actions(self, actions=None, job=None):
+        ctx = self.get_action_ctx_for_job(job=job)
+        for action in actions:
+            self.action_processor.process_action(action=action, ctx=ctx)
+
+    def get_action_ctx_for_job(self, job=None):
+        class ActionCtx(object):
+            def __init__(self, obj_to_wrap=None):
+                self.obj = obj_to_wrap
+
+            def get(self, target=None):
+                path_elements = target.split('.')
+                cursor = self.obj
+                for path_element in path_elements:
+                    cursor = self.get_attr_or_item(obj=cursor, key=path_element)
+                return cursor
+
+            def get_attr_or_item(self, obj=None, key=None):
+                if hasattr(obj, key): return getattr(obj, key)
+                elif key in obj: return obj['key']
+                else: return None
+
+            def set(self, target=None, value=None):
+                path_elements = target.split('.')
+                cursor = self.obj
+                for path_element in path_elements[:-1]:
+                    next_cursor = self.get_attr_or_item(obj=cursor)
+                    if next_cursor is None:
+                        cursor[path_element] = {}
+                        next_cursor = cursor[path_element]
+                    cursor = next_cursor
+                cursor[path_elements[-1]] = value
+
+        return ActionCtx(obj_to_wrap=job)
 
     def start_job_execution(self, job=None):
         logging.debug('start_job_execution')

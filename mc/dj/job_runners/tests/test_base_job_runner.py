@@ -6,10 +6,12 @@ from ..base_job_runner import BaseJobRunner
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
+        self.action_processor = MagicMock()
+        self.execution_client = MagicMock()
         self.job_client = MagicMock()
         self.job_dir_factory = MagicMock()
-        self.execution_client = MagicMock()
         self.runner = BaseJobRunner(
+            action_processor=self.action_processor,
             execution_client=self.execution_client,
             job_client=self.job_client,
             job_dir_factory=self.job_dir_factory)
@@ -117,12 +119,44 @@ class ProcessClaimableJobTestCase(BaseTestCase):
                 'status': 'FAILED', 'error': exception}))
 
 class BuildJobDirTestCase(BaseTestCase):
-    def test_build_job_dir(self):
-        job = {'uuid': 'abcd'}
-        self.runner.build_job_dir(job=job)
+    def setUp(self):
+        super().setUp()
+        self.job = {
+            'uuid': 'abcd',
+            'spec': {
+                'pre_build_actions': MagicMock(),
+            }
+        }
+
+    def decorate_runner_methods_to_patch(self):
+        self.runner_methods_to_patch.extend(['process_actions'])
+
+    def test_processes_pre_build_actions(self):
+        self.runner.build_job_dir(job=self.job)
+        self.assertEqual(self.runner.process_actions.call_args,
+                         call(actions=self.job['spec']['pre_build_actions'],
+                              job=self.job))
+
+    def test_calls_job_dir_factory(self):
+        self.runner.build_job_dir(job=self.job)
         self.assertEqual(
             self.runner.job_dir_factory.build_dir_for_job.call_args,
-            call(job=job))
+            call(job=self.job))
+
+class ProcessActionsTestCase(BaseTestCase):
+    def decorate_runner_methods_to_patch(self):
+        self.runner_methods_to_patch.extend(['get_action_ctx_for_job'])
+
+    def test_wraps_action_processor(self):
+        actions = [MagicMock() for i in range(3)]
+        job = MagicMock()
+        self.runner.process_actions(actions=actions, job=job)
+        self.assertEqual(
+            self.runner.action_processor.process_action.call_args_list,
+            [call(action=action,
+                  ctx=self.runner.get_action_ctx_for_job.return_value)
+             for action in actions]
+        )
 
 class StartJobExecutionTestCase(BaseTestCase):
     def test_start_job_execution(self):
