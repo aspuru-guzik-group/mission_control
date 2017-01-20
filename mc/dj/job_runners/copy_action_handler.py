@@ -1,20 +1,20 @@
-import os
-import tempfile
+import jinja2
 
 
 class CopyActionHandler(object):
-    def __init__(self, transfer_client=None, mkdtemp=None):
+    def __init__(self, transfer_client=None, render_tpl=None):
         self.transfer_client = transfer_client
-        self.mkdtemp = mkdtemp or tempfile.mkdtemp
+        self.render_tpl = render_tpl or self._render_tpl
+
+    def _render_tpl(self, tpl=None, ctx=None):
+        return jinja2.Template(tpl).render(ctx=ctx)
 
     def __call__(self, params=None, ctx=None):
-        intermediate_dir = self.get_intermediate_dir()
-        self.transfer_client.copy(src=params['src'], dest=intermediate_dir)
-        output = self.transfer_client.copy(src=intermediate_dir,
-                                           dest=params['dest'])
-        return output
+        formatted_params = self.format_params(params=params, ctx=ctx)
+        return self.transfer_client.copy(src=formatted_params['src'],
+                                         dest=formatted_params['dest'])
 
-    def get_intermediate_dir(self):
-        tmp_dir = self.mkdtemp()
-        intermediate_dir = os.path.join(tmp_dir, 'local_src')
-        return intermediate_dir
+    def format_params(self, params=None, ctx=None):
+        formatted_params = {key:self.render_tpl(tpl=params[key], ctx=ctx)
+                            for key in ['src', 'dest']}
+        return formatted_params
