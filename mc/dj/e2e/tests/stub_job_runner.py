@@ -4,14 +4,7 @@ from job_client.job_client import MissionControlJobClient
 
 def generate_stub_job_runner(base_url=None, request_client=None):
     class StubJobDirFactory(object):
-        def build_dir_for_spec(self, job=None):
-            return {}
-
-    class StubTransferClient(object):
-        def start_transfer(self, job=None):
-            return {}
-
-        def get_transfer_state(self, job=None):
+        def build_dir_for_job(self, job=None):
             return {}
 
     class StubExecutionClient(object):
@@ -27,7 +20,6 @@ def generate_stub_job_runner(base_url=None, request_client=None):
             base_url=base_url,
             request_client=request_client
         ),
-        job_dir_factory=StubJobDirFactory(),
-        transfer_client=StubTransferClient()
+        job_dir_factory=StubJobDirFactory()
     )
     return runner

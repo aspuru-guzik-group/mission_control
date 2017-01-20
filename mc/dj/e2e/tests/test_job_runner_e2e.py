@@ -46,8 +46,6 @@ class JobRunnerE2ETestCase(TestCase):
             key:j for key, j in state['jobs'].items()
             if j.status == self.runner.job_client.Statuses.COMPLETED.name}
         state['executing_jobs'] = copy.deepcopy(self.runner.executing_jobs)
-        state['transferring_jobs'] = copy.deepcopy(
-            self.runner.transferring_jobs)
         if prev_state:
             state['newly_claimed_jobs'] = {
                 key:j for key, j in state['claimed_jobs'].items()
@@ -65,21 +63,9 @@ class JobRunnerE2ETestCase(TestCase):
                 key:j for key, j in prev_state['executing_jobs'].items()
                 if key not in state['executing_jobs']
             }
-            state['newly_transferring_jobs'] = {
-                key:j for key, j in state['transferring_jobs'].items()
-                if key not in prev_state['transferring_jobs']
-            }
-            state['newly_transferred_jobs'] = {
-                key:j for key, j in prev_state['transferring_jobs'].items()
-                if key not in state['transferring_jobs']
-            }
         return state
 
     def check_state(self, state=None, prev_state=None):
-        self.assertEqual(
-            len(state.get('newly_transferring_jobs', {})),
-            len(state.get('newly_executed_jobs', {}))
-        )
         self.assertEqual(
             len(state.get('newly_executing_jobs', {})),
             len(state.get('newly_claimed_jobs', {}))
@@ -94,5 +80,5 @@ class JobRunnerE2ETestCase(TestCase):
                              expected_execution_slots))
         self.assertEqual(
             len(state.get('newly_completed_jobs', {})),
-            len(state.get('newly_transferred_jobs', {}))
+            len(state.get('newly_executed_jobs', {}))
         )

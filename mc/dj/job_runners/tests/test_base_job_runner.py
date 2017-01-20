@@ -171,14 +171,14 @@ class StartJobExecutionTestCase(BaseTestCase):
 class ProcessExecutingJobsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.executed_jobs = [{'key': 'executed_%s' % i} for i in range(3)]
-        self.executing_jobs = [{'key': 'executing_%s' % i} for i in range(3)]
+        self.executed_jobs = [{'uuid': 'executed_%s' % i} for i in range(3)]
+        self.executing_jobs = [{'uuid': 'executing_%s' % i} for i in range(3)]
         self.runner.executing_jobs = {
-            j['key']: j for j in self.executed_jobs + self.executing_jobs
+            j['uuid']: j for j in self.executed_jobs + self.executing_jobs
         }
         self.mock_job_execution_states = {
-            **{j['key']: None for j in self.executed_jobs},
-            **{j['key']: {'executing': True} for j in self.executing_jobs}
+            **{j['uuid']: None for j in self.executed_jobs},
+            **{j['uuid']: {'executing': True} for j in self.executing_jobs}
         }
         self.mocks['get_job_execution_states'].return_value = \
                 self.mock_job_execution_states
@@ -191,7 +191,7 @@ class ProcessExecutingJobsTestCase(BaseTestCase):
         self.runner.process_executing_jobs()
         expected_calls = [call(job=job) for job in self.executed_jobs]
         calls = self.mocks['process_executed_job'].mock_calls
-        calls_sort_key_fn = lambda c: c[2]['job']['key']
+        calls_sort_key_fn = lambda c: c[2]['job']['uuid']
         sorted_calls = sorted(calls, key=calls_sort_key_fn)
         sorted_expected_calls = sorted(expected_calls, key=calls_sort_key_fn)
         self.assertEqual(sorted_calls, sorted_expected_calls)
@@ -201,8 +201,8 @@ class GetJobExecutionStatesTestCase(BaseTestCase):
         super().setUp()
         self.runner.executing_jobs = {}
         for i in range(3):
-            job_key = 'job_key_%s' % i
-            self.runner.executing_jobs[job_key] = {'key': job_key}
+            job_uuid = 'job_uuid_%s' % i
+            self.runner.executing_jobs[job_uuid] = {'uuid': job_uuid}
 
     def test_get_job_execution_states(self):
         job_execution_states = self.runner.get_job_execution_states()
@@ -213,14 +213,14 @@ class GetJobExecutionStatesTestCase(BaseTestCase):
             self.execution_client.get_execution_state.call_args_list,
             expected_get_job_execution_state_calls)
         expected_execution_states = {
-            job['key']: self.execution_client.get_execution_state.return_value
+            job['uuid']: self.execution_client.get_execution_state.return_value
             for job in self.runner.executing_jobs.values()
         }
         self.assertEqual(job_execution_states, expected_execution_states)
 
 class ProcessExecutedJobTestCase(BaseTestCase):
     def decorate_runner_methods_to_patch(self):
-        self.runner_methods_to_patch.extend(['process_actions'])
+        self.runner_methods_to_patch.extend(['process_actions', 'complete_job'])
 
     def test_calls_post_exec_actions(self):
         actions = [MagicMock() for i in range(3)]
@@ -229,6 +229,21 @@ class ProcessExecutedJobTestCase(BaseTestCase):
         self.assertEqual(
             self.runner.process_actions.call_args,
             call(actions=job['spec']['post_exec_actions'], job=job))
+
+    def test_calls_complete_job(self):
+        job = MagicMock()
+        self.runner.process_executed_job(job=job)
+        self.assertEqual(self.runner.complete_job.call_args, call(job=job))
+
+class CompleteJobTestCase(BaseTestCase):
+    def decorate_runner_methods_to_patch(self):
+        self.runner_methods_to_patch.extend(['update_job'])
+
+    def test_updates_job(self):
+        self.fail()
+
+    def test_removes_job_from_registry(self):
+        self.fail()
 
 class UpdateJobTestCase(BaseTestCase):
     def test_update_job(self):

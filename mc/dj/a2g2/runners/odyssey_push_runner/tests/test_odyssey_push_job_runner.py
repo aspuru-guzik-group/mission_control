@@ -37,17 +37,14 @@ class SetupTestCase(BaseTestCase):
 
     def test_generates_base_job_runner(self):
         self.runner.generate_execution_client = Mock()
-        self.runner.generate_transfer_client = Mock()
         self.runner.setup()
         self.assertEqual(self.runner.base_job_runner,
                          self.mocks['BaseJobRunner'].return_value)
         self.assertEqual(self.mocks['BaseJobRunner'].call_args,
                          call(execution_client=self.runner\
-                              .generate_execution_client.return_value,
-                              transfer_client=self.runner\
-                              .generate_transfer_client.return_value
-                             )
-                        )
+                              .generate_execution_client.return_value
+
+                        ))
 
 class GenerateExecutionClientTestCase(BaseTestCase):
     def decorate_patchers(self):

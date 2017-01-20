@@ -4,7 +4,6 @@ import textwrap
 from uuid import uuid4
 
 from job_runners.base_job_runner import BaseJobRunner
-from job_runners.filesystem_storage_client import FileSystemStorageClient
 from job_runners.job_client import JobClient
 from job_runners.remote_slurm_execution_client import RemoteSlurmExecutionClient
 from job_runners.ssh_control_socket_client import SSHControlSocketClient
@@ -15,7 +14,6 @@ def main():
         job_client=generate_job_client(),
         job_dir_factory=generate_job_dir_factory(),
         execution_client=generate_execution_client(),
-        transfer_client=generate_transfer_client(),
         tick_interval=3
     )
     runner.start()
@@ -75,31 +73,6 @@ def generate_execution_client():
     ssh_client.connect()
     execution_client = RemoteSlurmExecutionClient(ssh_client=ssh_client)
     return execution_client
-
-def generate_transfer_client():
-    return StubTransferClient()
-
-class StubTransferClient(object):
-    def __init__(self):
-        self.state_dir = tempfile.mkdtemp(prefix='stc.state')
-
-    def start_transfer(self, job=None):
-        storage_client = self.get_storage_client_for_job(job=job)
-        storage_key = storage_client.put(job['dir']['dir'])
-        transfer_meta = {'key': storage_key}
-        return transfer_meta
-
-    def get_storage_client_for_job(self, job=None):
-        storage_client = FileSystemStorageClient(
-            storage_root_path='/tmp/TEST_STORAGE',
-            state_file_path=os.path.join(self.state_dir,
-                                         'TEST_STORAGE.json')
-        )
-        return storage_client
-
-    def get_transfer_state(self, job=None):
-        storage_client = self.get_storage_client_for_job(job=job)
-        return storage_client.poll(key=job['transfer']['key'])
 
 if __name__ == '__main__':
     main()

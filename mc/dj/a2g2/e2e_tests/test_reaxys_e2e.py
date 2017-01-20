@@ -94,13 +94,10 @@ class ReaxysFlowE2ETestCase(TestCase):
     def generate_job_runner(self):
         execution_client = MagicMock()
         job_dir_factory = MagicMock()
-        transfer_client = MagicMock()
         runner = BaseJobRunner(
             job_client=self.job_client,
             execution_client=execution_client,
-            job_dir_factory=job_dir_factory,
-            transfer_client=transfer_client,
-        )
+            job_dir_factory=job_dir_factory)
         return runner
 
     def generate_reaxys_flow_spec(self):

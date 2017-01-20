@@ -6,14 +6,12 @@ import textwrap
 from uuid import uuid4
 
 from local_job_runners.base_daemon import BaseDaemon
-from local_job_runners.filesystem_storage_client import FileSystemStorageClient
 from local_job_runners.job_client import JobClient
 
 
 def main():
     daemon = BaseDaemon(job_client=generate_job_client(),
                         job_dir_factory=generate_job_dir_factory(),
-                        transfer_client=generate_transfer_client(),
                         tick_interval=3)
     daemon.start()
 
@@ -72,36 +70,6 @@ class StubJobDirFactory():
             'entrypoint': entrypoint_path
         }
         return dir_meta
-
-def generate_transfer_client():
-    return StubTransferClient()
-
-class StubTransferClient(object):
-    def __init__(self):
-        self.state_dir = tempfile.mkdtemp(prefix='stc.state')
-
-    def start_transfer(self, job=None):
-        storage_client = self.get_storage_client_for_job(job=job)
-        storage_key = storage_client.put(job['dir']['dir'])
-        transfer_meta = {'key': storage_key}
-        return transfer_meta
-
-    def get_storage_client_for_job(self, job=None):
-        storage_uri = job['job']['storage']['uri']
-        return self.get_storage_client_for_storage_uri(storage_uri)
-
-    def get_storage_client_for_storage_uri(self, storage_uri):
-        if storage_uri == 'TEST_STORAGE':
-            storage_client = FileSystemStorageClient(
-                storage_root_path='/tmp/TEST_STORAGE',
-                state_file_path=os.path.join(self.state_dir,
-                                             'TEST_STORAGE.json')
-            )
-        return storage_client
-
-    def get_transfer_state(self, job=None):
-        storage_client = self.get_storage_client_for_job(job=job)
-        return storage_client.poll(key=job['transfer']['key'])
 
 if __name__ == '__main__':
     main()

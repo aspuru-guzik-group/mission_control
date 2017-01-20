@@ -143,21 +143,23 @@ class BaseJobRunner(object):
         return job_execution_states
 
     def job_is_executing(self, job=None, job_execution_states=None):
-        if not job_execution_states.get(job['key']):
+        if not job_execution_states.get(job['uuid']):
             is_executing = False
         else:
-            is_executing = job_execution_states[job['key']]['executing']
+            is_executing = job_execution_states[job['uuid']]['executing']
         return is_executing
 
     def process_executed_job(self, job=None):
-        actions =  job.get('spec', {}).get('post_exec_actions', None)
+        actions = job.get('spec', {}).get('post_exec_actions', None)
         if actions: self.process_actions(actions=actions, job=job)
+        self.complete_job(job=job)
 
     def complete_job(self, job=None):
-        self.update_job(job=job['job'], updates={
+        self.update_job(job=job, updates={
             'status': self.job_client.Statuses.COMPLETED.name,
+            'outputs': job.get('outputs', {}),
         })
-        del self.job[job['key']]
+        if job['uuid'] in self.jobs: del self.jobs[job['uuid']]
 
     def update_job(self, job=None, updates=None):
         self.job_client.update_jobs(updates_by_uuid={
