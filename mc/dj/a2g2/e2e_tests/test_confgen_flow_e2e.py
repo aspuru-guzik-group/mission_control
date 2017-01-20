@@ -1,7 +1,7 @@
 import json
 from unittest.mock import Mock
 
-from djanog.conf.urls import url, include
+from django.conf.urls import url, include
 from django.test import TestCase, override_settings
 
 from mc import urls as _mc_urls
