@@ -187,9 +187,6 @@ class ProcessExecutingJobsTestCase(BaseTestCase):
         self.runner_methods_to_patch.extend(['get_job_execution_states',
                                              'process_executed_job'])
 
-    def tearDown(self):
-        self.patcher.stop()
-
     def test_process_executing_jobs(self):
         self.runner.process_executing_jobs()
         expected_calls = [call(job=job) for job in self.executed_jobs]
@@ -220,6 +217,18 @@ class GetJobExecutionStatesTestCase(BaseTestCase):
             for job in self.runner.executing_jobs.values()
         }
         self.assertEqual(job_execution_states, expected_execution_states)
+
+class ProcessExecutedJobTestCase(BaseTestCase):
+    def decorate_runner_methods_to_patch(self):
+        self.runner_methods_to_patch.extend(['process_actions'])
+
+    def test_calls_post_exec_actions(self):
+        actions = [MagicMock() for i in range(3)]
+        job = {'spec': {'post_exec_actions': actions}}
+        self.runner.process_executed_job(job=job)
+        self.assertEqual(
+            self.runner.process_actions.call_args,
+            call(actions=job['spec']['post_exec_actions'], job=job))
 
 class UpdateJobTestCase(BaseTestCase):
     def test_update_job(self):

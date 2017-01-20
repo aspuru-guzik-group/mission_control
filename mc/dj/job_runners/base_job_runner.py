@@ -78,9 +78,8 @@ class BaseJobRunner(object):
 
     def build_job_dir(self, job=None):
         logging.debug('build_job_dir')
-        pre_build_actions =  job.get('spec', {}).get('pre_build_actions', None)
-        if pre_build_actions:
-            self.process_actions(actions=pre_build_actions, job=job)
+        actions =  job.get('spec', {}).get('pre_build_actions', None)
+        if actions: self.process_actions(actions=actions, job=job)
         job_dir_meta = self.job_dir_factory.build_dir_for_job(job=job)
         return job_dir_meta
 
@@ -151,7 +150,8 @@ class BaseJobRunner(object):
         return is_executing
 
     def process_executed_job(self, job=None):
-        raise NotImplementedError
+        actions =  job.get('spec', {}).get('post_exec_actions', None)
+        if actions: self.process_actions(actions=actions, job=job)
 
     def complete_job(self, job=None):
         self.update_job(job=job['job'], updates={
