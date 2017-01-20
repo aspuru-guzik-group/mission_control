@@ -5,19 +5,18 @@ import time
 class BaseJobRunner(object):
     def __init__(self, job_client=None, job_dir_factory=None,
                  execution_client=None, tick_interval=120, max_executing_jobs=3,
-                 transfer_client=None, logger=None):
+                 logger=None):
         self.job_client = job_client
         self.job_dir_factory = job_dir_factory
         self.execution_client = execution_client
         self.tick_interval = tick_interval
         self.max_executing_jobs = max_executing_jobs
-        self.transfer_client = transfer_client
         self.logger = logger or logging
 
         self._ticking = False
         self.tick_counter = 0
+        self.jobs = {}
         self.executing_jobs = {}
-        self.transferring_jobs = {}
 
     def start(self):
         self._ticking = True
@@ -43,7 +42,6 @@ class BaseJobRunner(object):
     def tick(self):
         self.tick_counter += 1
         logging.debug('tick #%s' % self.tick_counter)
-        self.process_transferring_jobs()
         self.process_executing_jobs()
         num_job_slots = self.max_executing_jobs - len(self.executing_jobs)
         if num_job_slots <= 0: return
@@ -57,35 +55,35 @@ class BaseJobRunner(object):
 
     def process_claimable_job(self, job=None):
         logging.debug('process_claimable_job')
-        claimed_spec = self.claim_job(job)
-        if not claimed_spec: return
-        dir_meta = self.build_job_dir(job=claimed_spec)
-        partial_job = {'key': claimed_spec['uuid'],
-                       'job': claimed_spec,
-                       'dir': dir_meta}
+        claimed_job = self.claim_job(job)
+        if not claimed_job: return
+        self.jobs[claimed_job['uuid']] = claimed_job
         try:
-            execution_meta = self.start_job_execution(job=partial_job)
-            full_job = {**partial_job, 'execution': execution_meta}
-            self.executing_jobs[partial_job['key']] = full_job
-        except Exception as exception:
-            logging.exception(exception)
-            self.update_job(job=claimed_spec,
-                                 updates={'status': 'Failed'})
+            claimed_job['dir'] = self.build_job_dir(job=claimed_job)
+            claimed_job['execution'] = self.start_job_execution(job=claimed_job)
+        except Exception as error:
+            self.fail_job(job=claimed_job, error=error)
+
+    def fail_job(self, job=None, error=None):
+        logging.exception(error)
+        self.update_job(job=job, updates={'status': 'FAILED', 'error': error})
+        del self.jobs[job['uuid']]
 
     def claim_job(self, job=None):
         logging.debug('claim_job')
-        claimed_specs = self.job_client.claim_jobs(
+        claimed_jobs = self.job_client.claim_jobs(
             uuids=[job['uuid']])
-        return claimed_specs.get(job['uuid'], False)
+        return claimed_jobs.get(job['uuid'], False)
 
     def build_job_dir(self, job=None):
         logging.debug('build_job_dir')
-        job_dir_meta = self.job_dir_factory.build_dir_for_spec(
+        job_dir_meta = self.job_dir_factory.build_dir_for_job(
             job=job)
         return job_dir_meta
 
     def start_job_execution(self, job=None):
         logging.debug('start_job_execution')
+        self.executing_jobs[job['uuid']] = job
         execution_meta = self.execution_client.start_execution(job=job)
         return execution_meta
 
@@ -115,46 +113,13 @@ class BaseJobRunner(object):
         return is_executing
 
     def process_executed_job(self, job=None):
-        transfer_meta = self.start_job_transfer(job=job)
-        self.transferring_jobs[job['key']] = {**job, 'transfer': transfer_meta}
-        del self.executing_jobs[job['key']]
+        raise NotImplementedError
 
-    def start_job_transfer(self, job=None):
-        transfer_meta = self.transfer_client.start_transfer(job=job)
-        return transfer_meta
-
-    def process_transferring_jobs(self):
-        job_transfer_states = self.get_job_transfer_states()
-        transferred_jobs = [
-            job for job in self.transferring_jobs.values()
-            if not self.job_is_transferring(
-                job=job, job_transfer_states=job_transfer_states)
-        ]
-        for transferred_job in transferred_jobs:
-            self.process_transferred_job(job=transferred_job)
-
-    def get_job_transfer_states(self):
-        job_transfer_states = {}
-        for job_key, job in self.transferring_jobs.items():
-            job_transfer_state = self.transfer_client.get_transfer_state(
-                job=job)
-            job_transfer_states[job_key] = job_transfer_state
-        return job_transfer_states
-
-    def job_is_transferring(self, job=None, job_transfer_states=None):
-        if not job_transfer_states.get(job['key']):
-            is_transferring = False
-        else:
-            is_transferring = job_transfer_states[job['key']]['transferring']
-        return is_transferring
-
-    def process_transferred_job(self, job=None):
-        logging.debug('process_transferred_job')
+    def complete_job(self, job=None):
         self.update_job(job=job['job'], updates={
             'status': self.job_client.Statuses.COMPLETED.name,
-            'transfer_meta': job['transfer'],
         })
-        del self.transferring_jobs[job['key']]
+        del self.job[job['key']]
 
     def update_job(self, job=None, updates=None):
         self.job_client.update_jobs(updates_by_uuid={
