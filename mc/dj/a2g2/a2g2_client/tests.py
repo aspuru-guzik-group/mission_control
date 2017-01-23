@@ -47,3 +47,13 @@ class GetCountsTestCase(BaseTestCase):
         self.assertEqual(
             result,
             self.mocks['requests'].get.return_value.json.return_value)
+
+class QueryTestCase(BaseTestCase):
+    def test_queries_mols(self):
+        result = self.a2g2_client.query(q={'collection': 'mols'})
+        expected_url = self.base_url + 'mols/'
+        self.assertEqual(self.mocks['requests'].get.call_args,
+                         call(expected_url))
+        self.assertEqual(
+            result,
+            self.mocks['requests'].get.return_value.json.return_value)

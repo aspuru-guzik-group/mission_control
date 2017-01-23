@@ -26,3 +26,9 @@ class A2G2_Client(object):
     def get_counts(self):
         response = self.request_client.get(self.urls['counts'])
         return self.json_raise_for_status(response=response)
+
+    def query(self, q=None):
+        obj_type = q.get('collection')
+        url = self.urls[obj_type]
+        response = self.request_client.get(url)
+        return self.json_raise_for_status(response=response)
