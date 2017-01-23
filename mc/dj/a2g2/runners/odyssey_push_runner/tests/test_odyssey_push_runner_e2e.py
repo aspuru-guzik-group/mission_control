@@ -124,9 +124,6 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
 
         self.runner.tick()
         self.assert_child_flow_model_attr('status', 'COMPLETED')
-        self.assert_parent_flow_model_attr('status', 'RUNNING')
-
-        self.runner.tick()
         self.assert_parent_flow_model_attr('status', 'COMPLETED')
 
     def get_parent_flow_model(self):
