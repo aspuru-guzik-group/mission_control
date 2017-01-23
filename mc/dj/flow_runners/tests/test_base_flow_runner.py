@@ -67,13 +67,6 @@ class TickTestCase(BaseTestCase):
         self.assertTrue(self.runner.process_flow_record.call_args_list,
                         expected_call_args_list)
 
-class FetchTickableFlowRecordsTestCase(BaseTestCase):
-    def test_fetch_tickable_flow_records(self):
-        self.runner.fetch_tickable_flow_records()
-        self.assertEqual(
-            self.flow_client.fetch_flows.call_args, 
-            call(query_params={'claimed': False, 'tickable': True}))
-
 class ProcessRecordBase(BaseTestCase):
     def setUp(self):
         super().setUp()

@@ -41,6 +41,10 @@ class MissionControlFlowClient(object):
         if len(fetch_flows_result) == 1: return fetch_flows_result[0]
         else: return None
 
+    def fetch_tickable_flows(self):
+        return self.fetch_flows(query_params={'claimed': False,
+                                              'tickable': True})
+
     def claim_flows(self, uuids=None):
         response = self.request_client.post(self.urls['claim_flows'], 
                                             {'uuids': uuids})

@@ -48,8 +48,7 @@ class BaseFlowRunner(object):
 
     def fetch_tickable_flow_records(self):
         self.logger.debug('fetch_tickable_flow_records')
-        return self.flow_client.fetch_flows(query_params={
-            'claimed': False, 'tickable': True})
+        return self.flow_client.fetch_tickable_flows()
 
     def process_flow_record(self, flow_record=None):
         self.logger.debug('process_claimable_flow')

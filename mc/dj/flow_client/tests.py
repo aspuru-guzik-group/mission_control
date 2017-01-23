@@ -62,6 +62,14 @@ class FetchFlowByUUIDTestCase(BaseTestCase):
                          call(query_params={'uuid': uuid}))
         self.assertEqual(result, mock_fetch_flows.return_value[0])
 
+class FetchTickableFlowsTestCase(BaseTestCase):
+    def test_fetch_tickable_flow_records(self):
+        self.flow_client.fetch_flows = Mock()
+        self.flow_client.fetch_tickable_flows()
+        self.assertEqual(
+            self.flow_client.fetch_flows.call_args, 
+            call(query_params={'claimed': False, 'tickable': True}))
+
 class ClaimFlowsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
