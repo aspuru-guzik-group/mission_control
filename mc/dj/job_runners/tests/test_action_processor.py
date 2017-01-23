@@ -18,7 +18,17 @@ class InitTestCase(BaseTestCase):
     def test_has_default_set_ctx_value_handler(self):
         action_processor = ActionProcessor()
         self.assertEqual(action_processor.handlers['set_ctx_value'],
-                         action_processor.set_ctx_value)
+                         action_processor.set_ctx_value_handler)
+
+class SetCtxValueHandler(BaseTestCase):
+    def test_wraps_set_ctx_value(self):
+        action_processor = ActionProcessor()
+        action_processor.set_ctx_value = Mock()
+        params = {str(i): Mock() for i in range(3)}
+        ctx = Mock()
+        action_processor.set_ctx_value_handler(params=params, ctx=ctx)
+        self.assertEqual(action_processor.set_ctx_value.call_args,
+                         call(ctx=ctx, **params))
 
 class SetCtxValueTestCase(BaseTestCase):
     def test_calls_ctx_set(self):

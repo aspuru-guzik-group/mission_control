@@ -8,10 +8,13 @@ class ActionProcessor(object):
             self.register_handler(key=key, handler=handler)
         if 'set_ctx_value' not in  self.handlers:
             self.register_handler(key='set_ctx_value',
-                                  handler=self.set_ctx_value)
+                                  handler=self.set_ctx_value_handler)
 
     def register_handler(self, key=None, handler=None):
         self.handlers[key] = handler
+
+    def set_ctx_value_handler(self, params=None, ctx=None): 
+        self.set_ctx_value(ctx=ctx, **params)
 
     def set_ctx_value(self, ctx=None, target=None, value=None):
         ctx.set(target=target, value=value)

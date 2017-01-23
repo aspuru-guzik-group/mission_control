@@ -108,14 +108,15 @@ class BaseJobRunner(object):
 
             def get_attr_or_item(self, obj=None, key=None):
                 if hasattr(obj, key): return getattr(obj, key)
-                elif key in obj: return obj['key']
+                elif key in obj: return obj[key]
                 else: return None
 
             def set(self, target=None, value=None):
                 path_elements = target.split('.')
                 cursor = self.obj
                 for path_element in path_elements[:-1]:
-                    next_cursor = self.get_attr_or_item(obj=cursor)
+                    next_cursor = self.get_attr_or_item(
+                        obj=cursor, key=path_element)
                     if next_cursor is None:
                         cursor[path_element] = {}
                         next_cursor = cursor[path_element]
