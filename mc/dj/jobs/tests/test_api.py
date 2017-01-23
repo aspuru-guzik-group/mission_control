@@ -6,7 +6,6 @@ from rest_framework.test import APITestCase
 from ..models import Job, JobStatuses
 from ..serializers import JobSerializer
 
-
 @override_settings(ROOT_URLCONF='jobs.urls')
 class ListJobsTestCase(APITestCase):
     def test_list_jobs(self):
@@ -29,6 +28,18 @@ class ListJobsTestCase(APITestCase):
                              for job in jobs_by_status[status]]
             self.assertEqual(sorted(response.data, key=lambda j: j['uuid']),
                              sorted(expected_data, key=lambda j: j['uuid']))
+
+    def test_uuid_filtering(self):
+        jobs = [Job.objects.create() for i in range(2)]
+        jobs_by_uuid = {job.uuid: job for job in jobs}
+        for uuid, job in jobs_by_uuid.items():
+            response = self.client.get('/jobs/', {'uuid': uuid})
+            expected_data = [JobSerializer(job).data]
+            self.assertEqual(self.key_by_uuid(response.data),
+                             self.key_by_uuid(expected_data))
+
+    def key_by_uuid(self, items=None):
+        return {item['uuid']: item for item in items}
 
 @override_settings(ROOT_URLCONF='jobs.urls')
 class PatchJobTestCase(APITestCase):

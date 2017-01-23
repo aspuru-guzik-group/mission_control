@@ -13,7 +13,7 @@ class JobViewSet(viewsets.ModelViewSet):
     queryset = Job.objects.all()
     serializer_class = JobSerializer
     filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('status',)
+    filter_fields = ('status', 'uuid',)
 
 @require_http_methods(["POST"])
 def claim_jobs(request):
