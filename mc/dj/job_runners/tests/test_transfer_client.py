@@ -34,18 +34,18 @@ class CopyTestCase(BaseTestCase):
 class DownloadTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.transfer_client.get_subclient_for_transfer_spec = Mock()
+        self.transfer_client.get_subclient_for_transfer_uri = Mock()
         self.result = self.transfer_client.download(src=self.src,
                                                     dest=self.dest)
 
     def test_gets_subclient_for_src(self):
         self.assertEqual(
-            self.transfer_client.get_subclient_for_transfer_spec.call_args,
-            call(transfer_spec=self.src)
+            self.transfer_client.get_subclient_for_transfer_uri.call_args,
+            call(transfer_uri=self.src)
         )
 
     def test_returns_subclient_download(self):
-        subclient = self.transfer_client.get_subclient_for_transfer_spec\
+        subclient = self.transfer_client.get_subclient_for_transfer_uri\
                 .return_value
         self.assertEqual(subclient.download.call_args,
                          call(src=self.src, dest=self.dest))
@@ -54,22 +54,33 @@ class DownloadTestCase(BaseTestCase):
 class UploadTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.transfer_client.get_subclient_for_transfer_spec = Mock()
+        self.transfer_client.get_subclient_for_transfer_uri = Mock()
         self.result = self.transfer_client.upload(src=self.src, dest=self.dest)
 
     def test_gets_subclient_for_dest(self):
         self.assertEqual(
-            self.transfer_client.get_subclient_for_transfer_spec.call_args,
-            call(transfer_spec=self.dest)
+            self.transfer_client.get_subclient_for_transfer_uri.call_args,
+            call(transfer_uri=self.dest)
         )
 
     def test_returns_subclient_upload(self):
-        subclient = self.transfer_client.get_subclient_for_transfer_spec\
+        subclient = self.transfer_client.get_subclient_for_transfer_uri\
                 .return_value
         self.assertEqual(subclient.upload.call_args,
                          call(src=self.src, dest=self.dest))
         self.assertEqual(self.result, subclient.upload.return_value)
 
-class GetSubclientForTransferSpecTestCase(BaseTestCase):
-    def test_gets_subclient_for_transfer_spec(self):
-        self.fail()
+class GetSubclientForTransferUriTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.storage_key = 'some_storage'
+        self.object_key = 'some_object'
+        self.transfer_uri = ':'.join([self.storage_key, self.object_key])
+        self.subclient = Mock()
+        self.transfer_client.register_subclient(subclient=self.subclient,
+                                                key=self.storage_key)
+
+    def test_gets_subclient_for_transfer_uri(self):
+        result = self.transfer_client.get_subclient_for_transfer_uri(
+            transfer_uri=self.transfer_uri)
+        self.assertEqual(result, self.subclient)

@@ -58,17 +58,23 @@ class BaseJobRunner(object):
         logging.debug('process_claimable_job')
         claimed_job = self.claim_job(job)
         if not claimed_job: return
-        self.jobs[claimed_job['uuid']] = claimed_job
+        self.register_job(job=claimed_job)
         try:
             claimed_job['dir'] = self.build_job_dir(job=claimed_job)
             claimed_job['execution'] = self.start_job_execution(job=claimed_job)
         except Exception as error:
             self.fail_job(job=claimed_job, error=error)
 
+    def register_job(self, job=None):
+        self.jobs[job['uuid']] = job
+
+    def unregister_job(self, job=None):
+        if job['uuid'] in self.jobs: del self.jobs[job['uuid']]
+
     def fail_job(self, job=None, error=None):
         logging.exception(error)
         self.update_job(job=job, updates={'status': 'FAILED', 'error': error})
-        del self.jobs[job['uuid']]
+        self.unregister_job(job=job)
 
     def claim_job(self, job=None):
         logging.debug('claim_job')
@@ -159,7 +165,7 @@ class BaseJobRunner(object):
             'status': self.job_client.Statuses.COMPLETED.name,
             'outputs': job.get('outputs', {}),
         })
-        if job['uuid'] in self.jobs: del self.jobs[job['uuid']]
+        self.unregister_job(job=job)
 
     def update_job(self, job=None, updates=None):
         self.job_client.update_jobs(updates_by_uuid={

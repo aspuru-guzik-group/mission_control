@@ -236,14 +236,27 @@ class ProcessExecutedJobTestCase(BaseTestCase):
         self.assertEqual(self.runner.complete_job.call_args, call(job=job))
 
 class CompleteJobTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.job = MagicMock()
+        self.runner.register_job(job=self.job)
+        self.runner.complete_job(job=self.job)
+
     def decorate_runner_methods_to_patch(self):
-        self.runner_methods_to_patch.extend(['update_job'])
+        self.runner_methods_to_patch.extend(['update_job', 'unregister_job'])
 
     def test_updates_job(self):
-        self.fail()
+        self.assertEqual(
+            self.runner.update_job.call_args,
+            call(job=self.job,
+                 updates={
+                     'status': self.runner.job_client.Statuses.COMPLETED.name,
+                     'outputs': self.job.get('outputs')
+                 }))
 
-    def test_removes_job_from_registry(self):
-        self.fail()
+    def test_unregisters_job(self):
+        self.assertEqual(self.runner.unregister_job.call_args,
+                         call(job=self.job))
 
 class UpdateJobTestCase(BaseTestCase):
     def test_update_job(self):
