@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'flow_runners',
     'flow_client',
     'a2g2.a2g2_dj.apps.A2G2_DJ_Config',
+    'storage',
 ]
 
 MIDDLEWARE = [
