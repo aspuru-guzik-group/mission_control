@@ -15,3 +15,4 @@ class Job(TimeStampedModel):
                                        for status in JobStatuses],
                               default=JobStatuses.PENDING.name)
     claimed = models.NullBooleanField(null=True, default=False)
+    data = models.TextField(null=True)

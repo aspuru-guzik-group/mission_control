@@ -49,7 +49,7 @@ class PatchJobTestCase(APITestCase):
 
     def test_patch_job(self):
         job_to_patch = self.jobs[0]
-        new_values = {'name': 'new_name'}
+        new_values = {'name': 'new_name', 'data': json.dumps({'new': 'data'})}
         response = self.client.patch('/jobs/%s/' % job_to_patch.uuid,
                                      new_values)
         self.assertEqual(response.status_code, 200)

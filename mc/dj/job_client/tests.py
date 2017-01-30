@@ -1,3 +1,4 @@
+import json
 import unittest
 from unittest.mock import call, DEFAULT, Mock, patch
 from jobs.models import JobStatuses
@@ -109,7 +110,8 @@ class UpdateJobsTestCase(BaseTestCase):
     def test_makes_patch_calls(self):
         self.job_client.update_jobs(updates_by_uuid=self.updates_by_uuid)
         expected_patch_calls = [
-            call(self.base_url + 'jobs/' + _uuid + '/', updates_for_uuid)
+            call(self.base_url + 'jobs/' + _uuid + '/',
+                 data=self.job_client.format_job_kwargs(updates_for_uuid))
             for _uuid, updates_for_uuid in self.updates_by_uuid.items()
         ]
         self.assertEqual(
@@ -133,8 +135,13 @@ class CreateJobTestCase(BaseTestCase):
 
     def test_makes_post_call(self):
         self.job_client.create_job(job_kwargs=self.job_kwargs)
-        self.assertEqual(self.mocks['requests']['post'].call_args,
-                         call(self.base_url + 'jobs/', data=self.job_kwargs))
+        self.assertEqual(
+            self.mocks['requests']['post'].call_args,
+            call(self.base_url + 'jobs/', data={
+                **self.job_kwargs,
+                'data': json.dumps(self.job_kwargs['data']),
+            })
+        )
 
     def test_returns_post_result(self):
         mock_result = {'some': 'result'}

@@ -1,3 +1,4 @@
+import json
 import logging
 import requests
 from jobs.constants import JobStatuses
@@ -21,7 +22,9 @@ class MissionControlJobClient(object):
 
     def create_job(self, job_kwargs=None):
         try:
-            response = self.request_client.post(self.urls['jobs'], data=job_kwargs)
+            formatted_job_kwargs = self.format_job_kwargs(job_kwargs)
+            response = self.request_client.post(self.urls['jobs'],
+                                                data=formatted_job_kwargs)
             if not str(response.status_code).startswith('2'):
                 raise Exception("Bad response: %s" % response)
             return response.json()
@@ -34,12 +37,34 @@ class MissionControlJobClient(object):
             self.logger.error(msg)
             raise e
 
+    def format_job_kwargs(self, job_kwargs=None):
+        formatted_job_kwargs = {**job_kwargs}
+        if 'data' in job_kwargs:
+            formatted_job_kwargs['data'] = self.serialize_job_data(
+                job_kwargs['data'])
+        return formatted_job_kwargs
+
+    def serialize_job_data(self, job_data=None):
+        return json.dumps(job_data)
+
     def fetch_jobs(self, query_params=None):
         if query_params:
             response = self.request_client.get(self.urls['jobs'], query_params)
         else:
             response = self.request_client.get(self.urls['jobs'])
-        return response.json()
+        jobs = [self.format_fetched_job(fetched_job)
+                for fetched_job in response.json()]
+        return jobs
+
+    def format_fetched_job(self, fetched_job=None):
+        formatted_job = {**fetched_job}
+        if 'data' in fetched_job:
+            formatted_job['data'] = self.deserialize_job_data(
+                fetched_job['data'])
+        return formatted_job
+
+    def deserialize_job_data(self, serialized_job_data=None):
+        return json.loads(serialized_job_data)
 
     def fetch_claimable_jobs(self):
         return self.fetch_jobs(
@@ -59,6 +84,9 @@ class MissionControlJobClient(object):
         results_by_uuid = {}
         for _uuid, updates_for_uuid in updates_by_uuid.items():
             job_url = self.urls['jobs'] + _uuid + '/'
-            response = self.request_client.patch(job_url, updates_for_uuid)
+            formatted_job_kwargs = self.format_job_kwargs(
+                job_kwargs=updates_for_uuid)
+            response = self.request_client.patch(job_url,
+                                                 data=formatted_job_kwargs)
             results_by_uuid[_uuid] = response.json()
         return results_by_uuid

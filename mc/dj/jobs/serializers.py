@@ -5,5 +5,6 @@ from .models import Job
 class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
-        fields = ('uuid', 'name', 'status', 'created', 'modified', 'spec')
+        fields = ('uuid', 'name', 'status', 'created', 'modified', 'spec',
+                  'data')
         read_only_fields = ('uuid', 'created', 'modified',)
