@@ -20,9 +20,11 @@ class ActionProcessor(object):
         ctx.set(target=target, value=value)
 
     def process_action(self, action=None, ctx=None):
-        handler = self.handlers[action['type']]
+        handler = self.get_handler_for_action(action=action)
         output = handler(params=action.get('params', None), ctx=ctx)
         output_target = action.get('output_to_ctx_target', None)
         if output_target: self.set_ctx_value(ctx=ctx, target=output_target,
                                              value=output)
 
+    def get_handler_for_action(self, action=None):
+        return self.handlers[action['action']]

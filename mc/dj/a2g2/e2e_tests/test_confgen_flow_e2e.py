@@ -32,6 +32,7 @@ class ConfgenFlow_E2E_TestCase(TestCase):
         test_utils.patch_request_client(request_client=self.client,
                                         json_methods=['get', 'post', 'patch'])
         self.a2g2_client = self.generate_a2g2_client()
+        self.storage_client = self.generate_storage_client()
         self.action_processor = self.generate_action_processor()
         self.execution_client = self.generate_execution_client()
         self.job_dir_factory = MagicMock()
@@ -43,8 +44,19 @@ class ConfgenFlow_E2E_TestCase(TestCase):
     def generate_a2g2_client(self):
         return A2G2_Client(base_url=BASE_URL, request_client=self.client)
 
+    def generate_storage_client(self):
+        storage_client = Mock()
+        storage_client.put.return_value = 'put_return'
+        storage_client.get.return_value = 'get_return'
+        return storage_client
+
     def generate_action_processor(self):
-        return ActionProcessor()
+        action_processor = ActionProcessor()
+        action_processor.register_handler(key='storage:put',
+                                          handler=self.storage_client.put)
+        action_processor.register_handler(key='storage:get',
+                                          handler=self.storage_client.get)
+        return action_processor
 
     def generate_execution_client(self):
         execution_client = MagicMock()
@@ -63,6 +75,9 @@ class ConfgenFlow_E2E_TestCase(TestCase):
         )
 
     def test_flow(self):
+        import logging
+        logging.getLogger().setLevel(logging.DEBUG)
+
         self.generate_molecule_library()
         self.create_flows()
         self.assertTrue(len(self.flow_client.fetch_tickable_flows()) > 0)
@@ -76,13 +91,13 @@ class ConfgenFlow_E2E_TestCase(TestCase):
             self.a2g2_client.create_mol({'props': {'smiles': smiles}})
 
     def create_flows(self):
-        for mol in self.a2g2_client.query(q={'collection': 'mols'}):
+        for mol in self.a2g2_client.query(q={'collection': 'mols'})[:1]:
             self.create_confgen_flow(mol=mol)
 
     def create_confgen_flow(self, mol=None):
         flow_spec = {
             'flow_type': ConfgenFlowGenerator.flow_type,
-            'inputs': {
+            'input': {
                 'smiles': mol['props']['smiles'],
                 'confgen_params': {},
             },
@@ -96,7 +111,8 @@ class ConfgenFlow_E2E_TestCase(TestCase):
         all_flows = self.fetch_and_key_flows()
         incomplete_flows = [flow for flow_uuid, flow in all_flows.items()
                             if flow_uuid not in complete_flows]
-        max_ticks = 30
+        #max_ticks = 30
+        max_ticks = 4
         while len(incomplete_flows) > 0:
             if self.flow_and_job_runner.tick_counter > max_ticks:
                 raise Exception("Exceeded max_ticks of '%s'" % max_ticks)
@@ -131,12 +147,29 @@ class ConfgenFlowGenerator(object):
                     'run_spec': {
                         'job_type': 'confgen',
                         'confgen': {
-                            'smiles': flow_spec['inputs']['smiles'],
-                            'params': flow_spec['inputs']['confgen_params'],
-                        }
+                            'smiles': flow_spec['input']['smiles'],
+                            'params': flow_spec['input']['confgen_params'],
+                        },
+                        'post_exec_actions': [
+                            {
+                                'action': 'storage:put',
+                                'params': {'src': '{ctx.completed_dir}'},
+                                'output_to_ctx_target': 'data.output.raw_dir'
+                            }
+                        ]
                     },
                     'load_spec': {
                         'job_type': 'confgen:load',
+                        'pre_build_actions': [
+                            {
+                                'action': 'storage:get',
+                                'params': {
+                                    'src': '{ctx.data.input.raw_dir}',
+                                    'dest': '{ctx.job_dir}/raw_dir',
+                                },
+                                'output_to_ctx_target': 'data.input.raw_dir'
+                            }
+                        ]
                     }
                 }
             })

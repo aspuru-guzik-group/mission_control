@@ -42,7 +42,7 @@ class BaseJobRunner(object):
 
     def tick(self):
         self.tick_counter += 1
-        logging.debug('tick #%s' % self.tick_counter)
+        self.logger.debug('%s, tick #%s' % (self, self.tick_counter))
         self.process_executing_jobs()
         num_job_slots = self.max_executing_jobs - len(self.executing_jobs)
         if num_job_slots <= 0: return
@@ -51,11 +51,11 @@ class BaseJobRunner(object):
             self.process_claimable_job(job=claimable_job)
 
     def fetch_claimable_jobs(self):
-        logging.debug('fetch_claimable_jobs')
+        self.logger.debug('fetch_claimable_jobs')
         return self.job_client.fetch_claimable_jobs()
 
     def process_claimable_job(self, job=None):
-        logging.debug('process_claimable_job')
+        self.logger.debug('process_claimable_job')
         claimed_job = self.claim_job(job)
         if not claimed_job: return
         self.register_job(job=claimed_job)
@@ -72,18 +72,18 @@ class BaseJobRunner(object):
         if job['uuid'] in self.jobs: del self.jobs[job['uuid']]
 
     def fail_job(self, job=None, error=None):
-        logging.exception(error)
+        self.logger.exception(error)
         self.update_job(job=job, updates={'status': 'FAILED', 'error': error})
         self.unregister_job(job=job)
 
     def claim_job(self, job=None):
-        logging.debug('claim_job')
+        self.logger.debug('claim_job')
         claimed_jobs = self.job_client.claim_jobs(
             uuids=[job['uuid']])
         return claimed_jobs.get(job['uuid'], False)
 
     def build_job_dir(self, job=None):
-        logging.debug('build_job_dir')
+        self.logger.debug('build_job_dir')
         actions =  job.get('spec', {}).get('pre_build_actions', None)
         if actions: self.process_actions(actions=actions, job=job)
         job_dir_meta = self.job_dir_factory.build_dir_for_job(job=job)
@@ -126,12 +126,13 @@ class BaseJobRunner(object):
         return ActionCtx(obj_to_wrap=job)
 
     def start_job_execution(self, job=None):
-        logging.debug('start_job_execution')
+        self.logger.debug('start_job_execution, %s' % job)
         self.executing_jobs[job['uuid']] = job
         execution_meta = self.execution_client.start_execution(job=job)
         return execution_meta
 
     def process_executing_jobs(self):
+        self.logger.debug('process_executing_jobs')
         job_execution_states = self.get_job_execution_states()
         executed_jobs = [
             job for job in self.executing_jobs.values()
@@ -162,9 +163,10 @@ class BaseJobRunner(object):
         self.complete_job(job=job)
 
     def complete_job(self, job=None):
+        self.logger.debug('complete_job, %s' % job)
         self.update_job(job=job, updates={
             'status': self.job_client.Statuses.COMPLETED.name,
-            'outputs': job.get('outputs', {}),
+            'output': job.get('output', {}),
         })
         self.unregister_job(job=job)
 

@@ -44,6 +44,11 @@ class RunAndLoadFlowGenerator(BaseFlowGenerator):
 class LoadPrepTask(BaseTask):
     def tick(self, *args, **kwargs):
         load_spec = self.flow.data['flow_spec'].get('load_spec', {})
-        self.output = {'job_spec': {**load_spec, 'dir': self.input['dir']}}
+        self.output = {
+            'job_spec': {
+                **load_spec,
+                'raw_dir': self.input['raw_dir']
+            }
+        }
         self.status = 'COMPLETED'
 

@@ -48,7 +48,7 @@ class ProcessActionTestCase(BaseTestCase):
         self.handlers = {self.handler_key: self.handler}
         self.action_processor = ActionProcessor(handlers=self.handlers)
         self.action = {
-            'type': self.handler_key,
+            'action': self.handler_key,
             'params': Mock(),
             'output_to_ctx_target': 'some.ctx.target',
         }

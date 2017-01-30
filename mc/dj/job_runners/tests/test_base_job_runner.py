@@ -251,7 +251,7 @@ class CompleteJobTestCase(BaseTestCase):
             call(job=self.job,
                  updates={
                      'status': self.runner.job_client.Statuses.COMPLETED.name,
-                     'outputs': self.job.get('outputs')
+                     'output': self.job.get('output')
                  }))
 
     def test_unregisters_job(self):

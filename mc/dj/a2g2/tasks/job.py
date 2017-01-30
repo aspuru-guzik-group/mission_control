@@ -21,12 +21,13 @@ class JobTask(BaseTask):
     def intermediate_tick(self, ctx=None):
         job = self.get_job(ctx=ctx)
         assert job is not None
+        job_data = job.get('data', None) or {}
         if job['status'] == 'COMPLETED':
             self.status = 'COMPLETED'
-            self.output = job.get('outputs', None)
+            self.output = job_data.get('output', None)
         elif job['status'] == 'FAILED':
             self.status = 'FAILED'
-            self.error = job.get('error', None)
+            self.error = job_data.get('error', None)
         else:
             self.status = 'RUNNING'
 

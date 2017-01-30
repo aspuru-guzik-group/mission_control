@@ -58,7 +58,7 @@ class MissionControlJobClient(object):
 
     def format_fetched_job(self, fetched_job=None):
         formatted_job = {**fetched_job}
-        if 'data' in fetched_job:
+        if fetched_job.get('data', None):
             formatted_job['data'] = self.deserialize_job_data(
                 fetched_job['data'])
         return formatted_job

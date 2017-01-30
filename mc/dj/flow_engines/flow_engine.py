@@ -125,7 +125,11 @@ class FlowEngine(object):
     def set_task_input(self, flow=None, task=None):
         existing_input = getattr(task, 'input', None)
         if existing_input is None:
-            _get_output = lambda t: getattr(t, 'output', None)
+            #_get_output = lambda t: getattr(t, 'output', None)
+            def _get_output(t): 
+                o = getattr(t, 'output', None)
+                print("t: ", t.key, "output: ", o)
+                return o
             precursors = flow.get_precursors(task=task)
             if len(precursors) == 0: _input = None
             elif len(precursors) == 1: _input = _get_output(precursors[0])

@@ -75,29 +75,28 @@ class CompletedJobTestCase(BaseTestCase, IntermediateTickMixin):
         super().setUp()
         self.setup_for_intermediate_tick(job_state={
             'status': 'COMPLETED',
-            'data': 'some job_data',
-            'outputs': 'some output',
+            'data': {'output': 'some output'},
         })
 
     def test_has_expected_state(self):
         self.assertEqual(self.task.status, 'COMPLETED')
         self.assertEqual(self.task.data, {**self.initial_state['data'],
                                           'ticks': self.initial_ticks + 1})
-        self.assertEqual(self.task.output, self.job['outputs'])
+        self.assertEqual(self.task.output, self.job['data']['output'])
 
 class FailedJobTestCase(BaseTestCase, IntermediateTickMixin):
     def setUp(self):
         super().setUp()
         self.setup_for_intermediate_tick(job_state={
             'status': 'FAILED',
-            'error': 'some error'
+            'data': {'error': 'some error'},
         })
 
     def test_has_expected_state(self):
         self.assertEqual(self.task.status, 'FAILED')
         self.assertEqual(self.task.data, {**self.initial_state['data'],
                                           'ticks': self.initial_ticks + 1})
-        self.assertEqual(self.task.error, self.job['error'])
+        self.assertEqual(self.task.error, self.job['data']['error'])
 
 if __name__ == '__main__':
     unittest.main()
