@@ -158,6 +158,7 @@ class BaseJobRunner(object):
         return is_executing
 
     def process_executed_job(self, job=None):
+        self.logger.debug('process_executed_job, %s' % job)
         actions = job.get('spec', {}).get('post_exec_actions', None)
         if actions: self.process_actions(actions=actions, job=job)
         self.complete_job(job=job)
@@ -166,11 +167,10 @@ class BaseJobRunner(object):
         self.logger.debug('complete_job, %s' % job)
         self.update_job(job=job, updates={
             'status': self.job_client.Statuses.COMPLETED.name,
-            'output': job.get('output', {}),
+            'data': job.get('data', {})
         })
         self.unregister_job(job=job)
 
     def update_job(self, job=None, updates=None):
         self.job_client.update_jobs(updates_by_uuid={
             job['uuid']: updates})
-

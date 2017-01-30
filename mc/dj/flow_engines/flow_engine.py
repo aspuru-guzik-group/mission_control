@@ -125,11 +125,7 @@ class FlowEngine(object):
     def set_task_input(self, flow=None, task=None):
         existing_input = getattr(task, 'input', None)
         if existing_input is None:
-            #_get_output = lambda t: getattr(t, 'output', None)
-            def _get_output(t): 
-                o = getattr(t, 'output', None)
-                print("t: ", t.key, "output: ", o)
-                return o
+            _get_output = lambda t: getattr(t, 'output', None)
             precursors = flow.get_precursors(task=task)
             if len(precursors) == 0: _input = None
             elif len(precursors) == 1: _input = _get_output(precursors[0])
@@ -149,8 +145,8 @@ class FlowEngine(object):
             self.logger.exception(msg)
 
     def complete_flow(self, flow=None):
-        flow.status = 'COMPLETED'
         flow.output = self.get_flow_output(flow=flow)
+        flow.status = 'COMPLETED'
 
     def get_flow_output(self, flow=None):
         _get_task_output = lambda t: getattr(t, 'output', None)

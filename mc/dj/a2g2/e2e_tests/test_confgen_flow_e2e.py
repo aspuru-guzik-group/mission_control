@@ -17,6 +17,57 @@ from a2g2.flow_generators.run_and_load import RunAndLoadFlowGenerator
 from job_runners.action_processor import ActionProcessor
 
 
+class ConfgenFlowGenerator(object):
+    flow_type = 'confgen'
+
+    @classmethod
+    def generate_flow(cls, *args, flow_spec=None, **kwargs):
+        flow = Flow()
+        flow.add_task(
+            key='confgen', 
+            as_root=True,
+            task=FlowTask(),
+            input={
+                'flow_spec': {
+                    'flow_type': RunAndLoadFlowGenerator.flow_type,
+                    'run_spec': {
+                        'job_type': 'confgen',
+                        'confgen': {
+                            'smiles': flow_spec['input']['smiles'],
+                            'params': flow_spec['input']['confgen_params'],
+                        },
+                        'post_exec_actions': [
+                            {
+                                'action': 'storage:put',
+                                'params': {'src': '{ctx.completed_dir}'},
+                                'output_to_ctx_target': 'data.output.raw_dir'
+                            }
+                        ]
+                    },
+                    'load_spec': {
+                        'job_type': 'confgen:load',
+                        'pre_build_actions': [
+                            {
+                                'action': 'storage:get',
+                                'params': {
+                                    'src': '{ctx.data.input.raw_dir}',
+                                    'dest': '{ctx.job_dir}/raw_dir',
+                                },
+                                'output_to_ctx_target': 'data.input.raw_dir'
+                            }
+                        ]
+                    }
+                }
+            })
+        return flow
+
+    @classmethod
+    def get_dependencies(cls):
+        return {
+            'task_classes': set([FlowTask]),
+            'flow_generator_classes': set([RunAndLoadFlowGenerator])
+        }
+
 BASE_PATH = 'test_api'
 BASE_URL = '/' + BASE_PATH
 urlpatterns = [
@@ -75,9 +126,6 @@ class ConfgenFlow_E2E_TestCase(TestCase):
         )
 
     def test_flow(self):
-        import logging
-        logging.getLogger().setLevel(logging.DEBUG)
-
         self.generate_molecule_library()
         self.create_flows()
         self.assertTrue(len(self.flow_client.fetch_tickable_flows()) > 0)
@@ -106,17 +154,21 @@ class ConfgenFlow_E2E_TestCase(TestCase):
         self.flow_client.create_flow(flow=flow)
 
     def run_flows_to_completion(self):
+        max_ticks = 20
+        incomplete_flows = self.get_incomplete_flows()
+        while len(incomplete_flows) > 0:
+            self.flow_and_job_runner.tick()
+            if self.flow_and_job_runner.tick_counter > max_ticks:
+                raise Exception("Exceeded max_ticks of '%s'" % max_ticks)
+            incomplete_flows = self.get_incomplete_flows()
+
+    def get_incomplete_flows(self):
         complete_flows = self.fetch_and_key_flows(
             query_params={'status': 'COMPLETED'})
         all_flows = self.fetch_and_key_flows()
         incomplete_flows = [flow for flow_uuid, flow in all_flows.items()
                             if flow_uuid not in complete_flows]
-        #max_ticks = 30
-        max_ticks = 4
-        while len(incomplete_flows) > 0:
-            if self.flow_and_job_runner.tick_counter > max_ticks:
-                raise Exception("Exceeded max_ticks of '%s'" % max_ticks)
-            self.flow_and_job_runner.tick()
+        return incomplete_flows
 
     def fetch_and_key_flows(self, query_params=None):
         keyed_flows = {
@@ -129,55 +181,3 @@ class ConfgenFlow_E2E_TestCase(TestCase):
         expected_counts = {'Mol': 10}
         actual_counts = self.a2g2_client.get_counts()
         self.assertEqual(actual_counts, expected_counts)
-
-
-class ConfgenFlowGenerator(object):
-    flow_type = 'confgen'
-
-    @classmethod
-    def generate_flow(cls, *args, flow_spec=None, **kwargs):
-        flow = Flow()
-        flow.add_task(
-            key='confgen', 
-            as_root=True,
-            task=FlowTask(),
-            input={
-                'flow_spec': {
-                    'flow_type': RunAndLoadFlowGenerator.flow_type,
-                    'run_spec': {
-                        'job_type': 'confgen',
-                        'confgen': {
-                            'smiles': flow_spec['input']['smiles'],
-                            'params': flow_spec['input']['confgen_params'],
-                        },
-                        'post_exec_actions': [
-                            {
-                                'action': 'storage:put',
-                                'params': {'src': '{ctx.completed_dir}'},
-                                'output_to_ctx_target': 'data.output.raw_dir'
-                            }
-                        ]
-                    },
-                    'load_spec': {
-                        'job_type': 'confgen:load',
-                        'pre_build_actions': [
-                            {
-                                'action': 'storage:get',
-                                'params': {
-                                    'src': '{ctx.data.input.raw_dir}',
-                                    'dest': '{ctx.job_dir}/raw_dir',
-                                },
-                                'output_to_ctx_target': 'data.input.raw_dir'
-                            }
-                        ]
-                    }
-                }
-            })
-        return flow
-
-    @classmethod
-    def get_dependencies(cls):
-        return {
-            'task_classes': set([FlowTask]),
-            'flow_generator_classes': set([RunAndLoadFlowGenerator])
-        }
