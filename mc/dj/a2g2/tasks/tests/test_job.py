@@ -76,14 +76,14 @@ class CompletedJobTestCase(BaseTestCase, IntermediateTickMixin):
         self.setup_for_intermediate_tick(job_state={
             'status': 'COMPLETED',
             'data': 'some job_data',
-            'output': 'some output',
+            'outputs': 'some output',
         })
 
     def test_has_expected_state(self):
         self.assertEqual(self.task.status, 'COMPLETED')
         self.assertEqual(self.task.data, {**self.initial_state['data'],
                                           'ticks': self.initial_ticks + 1})
-        self.assertEqual(self.task.output, self.job['output'])
+        self.assertEqual(self.task.output, self.job['outputs'])
 
 class FailedJobTestCase(BaseTestCase, IntermediateTickMixin):
     def setUp(self):

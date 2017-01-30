@@ -127,10 +127,10 @@ class FlowEngine(object):
         if existing_input is None:
             _get_output = lambda t: getattr(t, 'output', None)
             precursors = flow.get_precursors(task=task)
-            if len(precursors) == 0: task.input = None
-            elif len(precursors) == 1: task.input = _get_output(precursors[0])
-            else: task.input = [_get_output(precursor)
-                                for precursor in precursors]
+            if len(precursors) == 0: _input = None
+            elif len(precursors) == 1: _input = _get_output(precursors[0])
+            else: _input = [_get_output(precursor) for precursor in precursors]
+            task.input = _input
 
     def tick_running_tasks(self, flow=None, ctx=None):
         for task in flow.get_tasks_by_status(status='RUNNING'):

@@ -46,13 +46,13 @@ class RunAndLoadFlowTestCase(unittest.TestCase):
             self.ctx['create_job'].call_args,
             call(job_kwargs={'spec': tasks['run'].input['job_spec']}))
 
-        mock_run_job = {'status': 'COMPLETED', 'output': {'dir': 'some dir'}}
+        mock_run_job = {'status': 'COMPLETED', 'outputs': {'dir': 'some dir'}}
         self.ctx['get_job'].return_value = mock_run_job
 
         # t = 2
         _tick()
         self.assertEqual(tasks['run'].status, 'COMPLETED')
-        self.assertEqual(tasks['run'].output, mock_run_job['output'])
+        self.assertEqual(tasks['run'].output, mock_run_job['outputs'])
         self.assertEqual(tasks['load_prep'].status, 'PENDING')
 
         # t = 3
@@ -68,18 +68,18 @@ class RunAndLoadFlowTestCase(unittest.TestCase):
             call(job_kwargs={ 
                 'spec': {
                     **self.flow_spec['load_spec'],
-                    'dir': mock_run_job['output']['dir']
+                    'dir': mock_run_job['outputs']['dir']
                 }
             })
         )
 
-        mock_load_job = {'status': 'COMPLETED', 'output': 'some output'}
+        mock_load_job = {'status': 'COMPLETED', 'outputs': 'some output'}
         self.ctx['get_job'].return_value = mock_load_job
 
         # t = 5
         _tick()
         self.assertEqual(self.flow.status, 'COMPLETED')
-        self.assertEqual(self.flow.output, mock_load_job['output'])
+        self.assertEqual(self.flow.output, mock_load_job['outputs'])
 
 if __name__ == '__main__':
     unittest.main()

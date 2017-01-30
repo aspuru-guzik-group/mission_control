@@ -22,6 +22,7 @@ class OdysseyPushRunner(object):
         self.job_server_url = job_server_url
         self.flow_server_url = flow_server_url
         if run_setup: self.setup(**setup_kwargs)
+        self.tick_counter = 0
 
     def setup(self,
               flow_generator_classes=None, 
@@ -112,5 +113,6 @@ class OdysseyPushRunner(object):
         time.sleep(tick_interval)
 
     def tick(self):
+        self.tick_counter += 1
         self.flow_runner.tick()
         self.job_runner.tick()

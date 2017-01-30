@@ -23,7 +23,7 @@ class JobTask(BaseTask):
         assert job is not None
         if job['status'] == 'COMPLETED':
             self.status = 'COMPLETED'
-            self.output = job.get('output', None)
+            self.output = job.get('outputs', None)
         elif job['status'] == 'FAILED':
             self.status = 'FAILED'
             self.error = job.get('error', None)

@@ -46,10 +46,9 @@ class MissionControlJobClient(object):
             query_params={'status': self.Statuses.PENDING.name})
 
     def fetch_job_by_uuid(self, uuid=None):
-        fetch_jobs_result = self.fetch_jobs(
-            query_params={'uuid': uuid})
-        if len(fetch_jobs_result) == 1: return fetch_jobs_result[0]
-        else: return None
+        result = self.fetch_jobs(query_params={'uuid': uuid})
+        if len(result) == 1: return result[0]
+        else: raise Exception("Could not get job with uuid '%s'" % uuid)
 
     def claim_jobs(self, uuids=None):
         response = self.request_client.post(self.urls['claim_jobs'],

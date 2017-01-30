@@ -12,7 +12,9 @@ def patch_client_method_to_use_json(client=None, method_name=None):
     orig_method = getattr(client, method_name)
     def patched_method(path, data=None, **kwargs):
         if method_name == 'get':
-            response = orig_method(path, content_type='application/json',
+            if data: args = [data]
+            else: args = []
+            response = orig_method(path, *args, content_type='application/json',
                                    **kwargs)
         else:
             response =  orig_method(path, json.dumps(data), 
