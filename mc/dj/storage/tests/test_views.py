@@ -36,7 +36,7 @@ class TestPostDataTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.url = BASE_URL + 'post/'
-        self.expected_backend.post.return_value = 'some backend response'
+        self.expected_backend.post_data.return_value = 'some backend response'
         self.result = self.do_post()
 
     def do_post(self, data_to_post=None):
@@ -51,14 +51,14 @@ class TestPostDataTestCase(BaseTestCase):
         self.assertEqual(_views.storage_utils.get_storage_backend.call_args,
                          call(params=self.params))
 
-    def test_calls_backend_post(self):
-        self.assertEqual(self.expected_backend.post.call_args,
+    def test_calls_backend_post_data(self):
+        self.assertEqual(self.expected_backend.post_data.call_args,
                          call(data=self.data, params=self.params))
 
     def test_returns_result(self):
         self.assertEqual(
             self.result,
-            {'storage_uri': self.expected_backend.post.return_value}
+            {'storage_uri': self.expected_backend.post_data.return_value}
         )
 
 
@@ -66,7 +66,7 @@ class TestGetDataTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.url = BASE_URL + 'get/'
-        self.expected_backend.get.return_value = 'some backend response'
+        self.expected_backend.get_data.return_value = 'some backend response'
         self.result = self.do_get()
 
     def do_get(self):
@@ -80,12 +80,12 @@ class TestGetDataTestCase(BaseTestCase):
         self.assertEqual(_views.storage_utils.get_storage_backend.call_args,
                          call(params=self.params))
 
-    def test_calls_backend_get(self):
-        self.assertEqual(self.expected_backend.get.call_args,
+    def test_calls_backend_get_data(self):
+        self.assertEqual(self.expected_backend.get_data.call_args,
                          call(params=self.params))
 
     def test_returns_result(self):
         self.assertEqual(
             self.result,
-            {'data': self.expected_backend.get.return_value}
+            {'data': self.expected_backend.get_data.return_value}
         )

@@ -22,15 +22,16 @@ class FileSystemBackend(object):
 
     def get_key(self): return str(uuid4())
 
-    def post(self, data=None, params=None):
+    def post_data(self, data=None, params=None):
         key = self.get_key()
+        if isinstance(data, str): data = data.encode('utf-8')
         with open(self.get_path_for_key(key), 'wb') as f: f.write(data)
         return {'key': key}
 
     def get_path_for_key(self, key=None):
         return os.path.join(self.base_dir, key)
 
-    def get(self, params=None):
+    def get_data(self, params=None):
         key = params['key']
         with open(self.get_path_for_key(key), 'rb') as f:
             return {'data': f.read()}

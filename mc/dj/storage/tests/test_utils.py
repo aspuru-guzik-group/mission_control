@@ -28,18 +28,26 @@ class GetBaseDirFromSettingsTestCase(FileSystemBackendTestCase):
         base_dir_from_settings = self.backend.get_base_dir_from_settings()
         self.assertEqual(base_dir_from_settings, self.mock_base_dir)
 
-class FileSystemBackendPostTestCase(FileSystemBackendTestCase):
+class FileSystemBackendPostDataTestCase(FileSystemBackendTestCase):
     def test_creates_bytes_at_random_uuid(self):
         byte_data = b'some bytes'
-        post_result = self.backend.post(data=byte_data)
+        post_result = self.backend.post_data(data=byte_data)
         expected_file_path = os.path.join(self.backend.base_dir,
                                           post_result['key'])
         file_contents = open(expected_file_path, 'rb').read()
         self.assertEqual(file_contents, byte_data)
 
-class FileSystemBackendGetTestCase(FileSystemBackendTestCase):
+    def test_encodes_string_as_bytes(self):
+        str_data = 'some str'
+        post_result = self.backend.post_data(data=str_data)
+        expected_file_path = os.path.join(self.backend.base_dir,
+                                          post_result['key'])
+        file_contents = open(expected_file_path, 'rb').read()
+        self.assertEqual(file_contents, str_data.encode('utf-8'))
+
+class FileSystemBackendGetDataTestCase(FileSystemBackendTestCase):
     def test_returns_bytes_at_uuid(self):
         byte_data = b'some bytes'
-        post_result = self.backend.post(data=byte_data)
-        get_result = self.backend.get(params={'key': post_result['key']})
+        post_result = self.backend.post_data(data=byte_data)
+        get_result = self.backend.get_data(params={'key': post_result['key']})
         self.assertEqual(get_result, {'data': byte_data})
