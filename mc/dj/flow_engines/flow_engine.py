@@ -34,7 +34,7 @@ class FlowEngine(object):
 
     def deserialize_flow(self, serialized_flow=None):
         flow = Flow()
-        for attr in ['data', 'input', 'output', 'status']:
+        for attr in ['data', 'input', 'output', 'status', 'precursor_inputs']:
             setattr(flow, attr, serialized_flow.get(attr, None))
         tasks = [
             self.deserialize_task(serialized_task)
@@ -87,7 +87,8 @@ class FlowEngine(object):
 
     def serialize_task(self, task=None):
         serialized_task = {}
-        for attr in ['key', 'data', 'input', 'output', 'status']:
+        for attr in ['key', 'data', 'input', 'output', 'status',
+                     'precursor_inputs']:
             serialized_task[attr] = getattr(task, attr, None)
         serialized_task['task_type'] = getattr(task, 'task_type',
                                                task.__class__.__name__)
@@ -119,18 +120,19 @@ class FlowEngine(object):
             self.start_task(flow=flow, task=task)
 
     def start_task(self, flow=None, task=None):
-        self.set_task_input(flow=flow, task=task)
+        self.set_task_inputs(flow=flow, task=task)
         task.status = 'RUNNING'
 
-    def set_task_input(self, flow=None, task=None):
-        existing_input = getattr(task, 'input', None)
-        if existing_input is None:
-            _get_output = lambda t: getattr(t, 'output', None)
-            precursors = flow.get_precursors(task=task)
-            if len(precursors) == 0: _input = None
-            elif len(precursors) == 1: _input = _get_output(precursors[0])
-            else: _input = [_get_output(precursor) for precursor in precursors]
-            task.input = _input
+    def set_task_inputs(self, flow=None, task=None):
+        task.precursor_outputs = self.get_precursor_outputs(flow=flow,
+                                                            task=task)
+
+    def get_precursor_outputs(self, flow=None, task=None):
+        _get_output = lambda t: getattr(t, 'output', None)
+        precursors = flow.get_precursors(task=task)
+        precursor_outputs = {precursor.key: _get_output(precursor)
+                             for precursor in precursors} 
+        return precursor_outputs
 
     def tick_running_tasks(self, flow=None, ctx=None):
         for task in flow.get_tasks_by_status(status='RUNNING'):
