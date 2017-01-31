@@ -27,7 +27,8 @@ class CreateMolTestCase(BaseTestCase):
         self.a2g2_client.create_mol(mol=self.mol)
         expected_url = self.base_url + 'mols/'
         self.assertEqual(self.mocks['requests'].post.call_args,
-                         call(expected_url, data=self.mol))
+                         call(expected_url, data=self.mol,
+                              content_type='application/json'))
 
     def test_returns_response(self):
         result = self.a2g2_client.create_mol(mol=self.mol)

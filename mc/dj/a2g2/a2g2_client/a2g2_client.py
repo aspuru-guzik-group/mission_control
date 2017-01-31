@@ -16,7 +16,8 @@ class A2G2_Client(object):
         }
 
     def create_mol(self, mol=None):
-        response = self.request_client.post(self.urls['mols'], data=mol)
+        response = self.request_client.post(self.urls['mols'], data=mol,
+                                            content_type='application/json')
         return self.json_raise_for_status(response=response)
 
     def json_raise_for_status(self, response=None):

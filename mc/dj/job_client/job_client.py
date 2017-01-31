@@ -24,7 +24,8 @@ class MissionControlJobClient(object):
         try:
             formatted_job_kwargs = self.format_job_kwargs(job_kwargs)
             response = self.request_client.post(self.urls['jobs'],
-                                                data=formatted_job_kwargs)
+                                                data=formatted_job_kwargs,
+                                                content_type='application/json')
             if not str(response.status_code).startswith('2'):
                 raise Exception("Bad response: %s" % response)
             return response.json()
@@ -48,10 +49,9 @@ class MissionControlJobClient(object):
         return json.dumps(job_data)
 
     def fetch_jobs(self, query_params=None):
-        if query_params:
-            response = self.request_client.get(self.urls['jobs'], query_params)
-        else:
-            response = self.request_client.get(self.urls['jobs'])
+        args = [self.urls['jobs']]
+        if query_params: args.append(query_params)
+        response = self.request_client.get(*args)
         jobs = [self.format_fetched_job(fetched_job)
                 for fetched_job in response.json()]
         return jobs
@@ -77,7 +77,8 @@ class MissionControlJobClient(object):
 
     def claim_jobs(self, uuids=None):
         response = self.request_client.post(self.urls['claim_jobs'],
-                                            {'uuids': uuids})
+                                            data={'uuids': uuids},
+                                            content_type='application/json')
         return response.json()
 
     def update_jobs(self, updates_by_uuid=None):
@@ -86,7 +87,10 @@ class MissionControlJobClient(object):
             job_url = self.urls['jobs'] + _uuid + '/'
             formatted_job_kwargs = self.format_job_kwargs(
                 job_kwargs=updates_for_uuid)
-            response = self.request_client.patch(job_url,
-                                                 data=formatted_job_kwargs)
+            response = self.request_client.patch(
+                job_url,
+                data=formatted_job_kwargs,
+                content_type='application/json'
+            )
             results_by_uuid[_uuid] = response.json()
         return results_by_uuid

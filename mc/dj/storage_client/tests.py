@@ -36,7 +36,7 @@ class PostTestCase(BaseTestCase):
                 'data': self.data,
                 'params': self.storage_client.serialize_storage_params\
                     .return_value,
-            }, content_type=None))
+            }))
 
     def do_post(self):
         return self.storage_client.post_data(data=self.data,
@@ -63,7 +63,7 @@ class GetTestCase(BaseTestCase):
             call(expected_url, data={
                 'params': self.storage_client.serialize_storage_params\
                     .return_value
-            }, content_type=None))
+            }))
 
     def do_get(self):
         return self.storage_client.get_data(storage_params=self.storage_params)

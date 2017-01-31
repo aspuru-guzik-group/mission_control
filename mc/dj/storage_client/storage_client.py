@@ -23,7 +23,7 @@ class MissionControlStorageClient(object):
             response = self.request_client.post(url, data={
                 'data': data,
                 'params': self.serialize_storage_params(storage_params),
-            }, content_type=None)
+            })
             if not str(response.status_code).startswith('2'):
                 raise Exception("Bad response: %s" % response)
             return response.json()
@@ -42,7 +42,7 @@ class MissionControlStorageClient(object):
         try:
             response = self.request_client.get(url, data={
                 'params': self.serialize_storage_params(storage_params),
-            }, content_type=None)
+            })
             if not str(response.status_code).startswith('2'):
                 raise Exception("Bad response: %s" % response)
             return response.json()

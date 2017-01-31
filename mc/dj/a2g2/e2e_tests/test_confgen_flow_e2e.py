@@ -120,16 +120,18 @@ class ConfgenFlow_E2E_TestCase(TestCase):
     def generate_action_processor(self):
         action_processor = ActionProcessor()
         action_processor.register_handler(key='storage:upload',
-                                          handler=self._upload_action_handler)
+                                          handler=self._upload_wrapper)
         action_processor.register_handler(key='storage:download',
-                                          handler=self._download_action_handler)
+                                          handler=self._download_wrapper)
         return action_processor
 
-    def _upload_action_handler(self, *args, params=None, ctx=None, **kwargs):
-        pass
+    def _upload__wrapper(self, *args, params=None, **kwargs):
+        return _upload_action_handler(self.storage_client, *args,
+                                      params=params)
 
-    def _download_action_handler(self, *args, params=None, ctx=None, **kwargs):
-        pass
+    def _download_wrapper(self, *args, params=None, ctx=None, **kwargs):
+        return _download_action_handler(self.storage_client, *args,
+                                        params=params)
 
     def generate_execution_client(self):
         execution_client = MagicMock()

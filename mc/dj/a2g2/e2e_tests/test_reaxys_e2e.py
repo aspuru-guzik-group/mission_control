@@ -11,6 +11,7 @@ from flow_client.flow_client import MissionControlFlowClient
 from a2g2.flow_generators.reaxys import ReaxysFlowGenerator
 from job_runners.base_job_runner import BaseJobRunner
 from job_client.job_client import MissionControlJobClient
+from mc_utils import test_utils
 
 
 BASE_PATH = 'test_api/'
@@ -22,7 +23,8 @@ urlpatterns = [
 @override_settings(ROOT_URLCONF=__name__)
 class ReaxysFlowE2ETestCase(TestCase):
     def setUp(self):
-        self.configure_request_client()
+        test_utils.patch_request_client(request_client=self.client,
+                                        json_methods=['post', 'patch'])
         self.flow_client = self.generate_flow_client()
         self.job_client = self.generate_job_client()
         self.flow_engine = self.generate_flow_engine()
@@ -32,17 +34,6 @@ class ReaxysFlowE2ETestCase(TestCase):
         self.reaxys_flow_spec = self.generate_reaxys_flow_spec()
         self.reaxys_flow_uuid = self.generate_reaxys_flow_model().uuid
         self.states = []
-
-    def configure_request_client(self):
-        for method_name in ['patch', 'post']:
-            self.patch_client_method_to_use_json(method_name=method_name)
-
-    def patch_client_method_to_use_json(self, method_name=None):
-        orig_method = getattr(self.client, method_name)
-        def patched_method(path, data=None, **kwargs):
-            return orig_method(path, json.dumps(data), 
-                               content_type='application/json', **kwargs)
-        setattr(self.client, method_name, patched_method)
 
     def generate_flow_client(self):
         return MissionControlFlowClient(

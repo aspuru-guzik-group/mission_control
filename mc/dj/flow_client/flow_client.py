@@ -17,7 +17,8 @@ class MissionControlFlowClient(object):
 
     def create_flow(self, flow=None):
         try:
-            response = self.request_client.post(self.urls['flows'], data=flow)
+            response = self.request_client.post(self.urls['flows'], data=flow,
+                                                content_type='application/json')
             if not str(response.status_code).startswith('2'):
                 raise Exception("Bad response: %s" % response)
             return response.json()
@@ -30,10 +31,9 @@ class MissionControlFlowClient(object):
             raise e
 
     def fetch_flows(self, query_params=None):
-        if query_params:
-            response = self.request_client.get(self.urls['flows'], query_params)
-        else:
-            response = self.request_client.get(self.urls['flows'])
+        args = [self.urls['flows']]
+        if query_params: args.append(query_params)
+        response = self.request_client.get(*args)
         return response.json()
 
     def fetch_flow_by_uuid(self, uuid=None):
@@ -47,13 +47,18 @@ class MissionControlFlowClient(object):
 
     def claim_flows(self, uuids=None):
         response = self.request_client.post(self.urls['claim_flows'], 
-                                            {'uuids': uuids})
+                                            data={'uuids': uuids},
+                                            content_type='application/json')
         return response.json()
 
     def update_flows(self, updates_by_uuid=None):
         results_by_uuid = {}
         for _uuid, updates_for_uuid in updates_by_uuid.items():
             flow_url = self.base_url + 'flows/' + _uuid + '/'
-            response = self.request_client.patch(flow_url, updates_for_uuid)
+            response = self.request_client.patch(
+                flow_url,
+                data=updates_for_uuid,
+                content_type='application/json'
+            )
             results_by_uuid[_uuid] = response.json()
         return results_by_uuid

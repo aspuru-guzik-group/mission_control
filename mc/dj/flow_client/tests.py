@@ -78,7 +78,8 @@ class ClaimFlowsTestCase(BaseTestCase):
     def test_makes_post(self):
         self.flow_client.claim_flows(uuids=self.uuids)
         expected_url = self.base_url + 'claim_flows/'
-        expected_post_call = call(expected_url, {'uuids': self.uuids})
+        expected_post_call = call(expected_url, data={'uuids': self.uuids},
+                                  content_type='application/json')
         self.assertEqual(self.mocks['requests']['post'].call_args,
                          expected_post_call)
 
@@ -107,7 +108,9 @@ class UpdateFlowsTestCase(BaseTestCase):
     def test_makes_patch_calls(self):
         self.flow_client.update_flows(updates_by_uuid=self.updates_by_uuid)
         expected_patch_calls = [
-            call(self.base_url + 'flows/' + _uuid + '/', updates_for_uuid)
+            call(self.base_url + 'flows/' + _uuid + '/',
+                 data=updates_for_uuid,
+                 content_type='application/json')
             for _uuid, updates_for_uuid in self.updates_by_uuid.items()
         ]
         self.assertEqual(
@@ -132,7 +135,8 @@ class CreateFlowTestCase(BaseTestCase):
     def test_makes_post_call(self):
         self.flow_client.create_flow(flow=self.flow)
         self.assertEqual(self.mocks['requests']['post'].call_args,
-                         call(self.base_url + 'flows/', data=self.flow))
+                         call(self.base_url + 'flows/', data=self.flow,
+                              content_type='application/json'))
 
     def test_returns_post_result(self):
         mock_result = {'some': 'result'}
