@@ -1,3 +1,4 @@
+import json
 from django.conf.urls import url, include
 from django.test import TestCase, override_settings
 from unittest.mock import call, patch
@@ -39,7 +40,8 @@ class TestPostDataTestCase(BaseTestCase):
         self.result = self.do_post()
 
     def do_post(self, data_to_post=None):
-        post_data = data_to_post or {'data': self.data, 'params': self.params}
+        post_data = data_to_post or {'data': self.data,
+                                     'params': json.dumps(self.params)}
         response = self.client.post(self.url, data=post_data)
         if not str(response.status_code).startswith('2'):
             raise Exception("Bad response: %s" % response)
@@ -68,7 +70,8 @@ class TestGetDataTestCase(BaseTestCase):
         self.result = self.do_get()
 
     def do_get(self):
-        response = self.client.get(self.url, data={'params': self.params})
+        response = self.client.get(self.url, data={
+            'params': json.dumps(self.params)})
         if not str(response.status_code).startswith('2'):
             raise Exception("Bad response: %s" % response)
         return response.json()

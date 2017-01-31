@@ -1,3 +1,4 @@
+import json
 import requests
 import logging
 
@@ -16,11 +17,12 @@ class MissionControlStorageClient(object):
         }
 
     def post_data(self, data=None, storage_params=None):
+        storage_params = storage_params or {}
         url = self.urls['post']
         try:
             response = self.request_client.post(url, data={
                 'data': data,
-                'params': storage_params,
+                'params': self.serialize_storage_params(storage_params),
             })
             if not str(response.status_code).startswith('2'):
                 raise Exception("Bad response: %s" % response)
@@ -32,11 +34,14 @@ class MissionControlStorageClient(object):
             self.logger.error(msg)
             raise e
 
+    def serialize_storage_params(self, storage_params=None):
+        return json.dumps(storage_params)
+
     def get_data(self, storage_params=None):
         url = self.urls['get']
         try:
             response = self.request_client.get(url, data={
-                'params': storage_params,
+                'params': self.serialize_storage_params(storage_params),
             })
             if not str(response.status_code).startswith('2'):
                 raise Exception("Bad response: %s" % response)
