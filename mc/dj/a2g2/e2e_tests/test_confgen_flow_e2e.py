@@ -6,6 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import call, MagicMock, Mock
 
+import jinja2
 from django.conf.urls import url, include
 from django.conf import settings
 from django.test import TestCase, override_settings
@@ -125,13 +126,13 @@ class ConfgenFlow_E2E_TestCase(TestCase):
                                           handler=self._download_wrapper)
         return action_processor
 
-    def _upload__wrapper(self, *args, params=None, **kwargs):
+    def _upload_wrapper(self, *args, params=None, ctx=None, **kwargs):
         return _upload_action_handler(self.storage_client, *args,
-                                      params=params)
+                                      params=params, ctx=ctx)
 
     def _download_wrapper(self, *args, params=None, ctx=None, **kwargs):
         return _download_action_handler(self.storage_client, *args,
-                                        params=params)
+                                        params=params, ctx=ctx)
 
     def generate_execution_client(self):
         execution_client = MagicMock()
@@ -208,7 +209,8 @@ class ConfgenFlow_E2E_TestCase(TestCase):
 
 def _upload_action_handler(storage_client, *args, params=None, ctx=None,
                            **kwargs):
-    tgz_bytes = _dir_to_tgz_bytes(dir_path=params['src'])
+    dir_path = ctx.render_template(params['src'])
+    tgz_bytes = _dir_to_tgz_bytes(dir_path=dir_path)
     return storage_client.post_data(data=tgz_bytes)
 
 def _dir_to_tgz_bytes(dir_path=None):
@@ -222,6 +224,8 @@ class UploadActionHandlerTestCase(unittest.TestCase):
     def setUp(self):
         self.storage_client = Mock()
         self.src_dir = self.setup_src_dir()
+        self.ctx = Mock()
+        self.ctx.render_template.side_effect = self.render_template
         self.params = {'src': self.src_dir}
 
     def setup_src_dir(self):
@@ -231,13 +235,19 @@ class UploadActionHandlerTestCase(unittest.TestCase):
             with open(path, 'w') as f: f.write(str(i))
         return src_dir
 
+    def render_template(self, tpl):
+        return jinja2.Template(tpl).render(ctx=self.ctx)
+
     def do_upload(self):
         return _upload_action_handler(storage_client=self.storage_client,
-                                      params=self.params)
+                                      params=self.params, ctx=self.ctx)
 
-    def test_posts_tgz_of_src(self):
+    def test_posts_tgz_of_rendered_src_template(self):
         self.do_upload()
-        expected_data = _dir_to_tgz_bytes(dir_path=self.src_dir)
+        self.assertEqual(self.ctx.render_template.call_args,
+                         call(self.params['src']))
+        expected_data = _dir_to_tgz_bytes(
+            dir_path=self.render_template(self.params['src']))
         self.assertEqual(self.storage_client.post_data.call_args,
                          call(data=expected_data))
 
@@ -247,9 +257,11 @@ class UploadActionHandlerTestCase(unittest.TestCase):
 
 def _download_action_handler(storage_client, *args, params=None, ctx=None,
                            **kwargs):
-    tgz_bytes = storage_client.get_data(params=params['src'])
-    _tgz_bytes_to_dir(tgz_bytes=tgz_bytes, dir_path=params['dest'])
-    return params['dest']
+    rendered_src_params = ctx.render_template(params['src_params'])
+    rendered_dest = ctx.render_template(params['dest'])
+    tgz_bytes = storage_client.get_data(params=rendered_src_params)
+    _tgz_bytes_to_dir(tgz_bytes=tgz_bytes, dir_path=rendered_dest)
+    return rendered_dest
 
 def _tgz_bytes_to_dir(tgz_bytes=None, dir_path=None):
     mem_file = io.BytesIO(tgz_bytes)
@@ -259,13 +271,18 @@ def _tgz_bytes_to_dir(tgz_bytes=None, dir_path=None):
 class DownloadActionHandlerTestCase(unittest.TestCase):
     def setUp(self):
         self.storage_client = Mock()
-        self.src = Mock()
+        self.src_params = 'src params'
         self.src_dir = self.setup_src_dir()
         self.src_tgz_bytes = _dir_to_tgz_bytes(dir_path=self.src_dir)
         self.storage_client.get_data.return_value = self.src_tgz_bytes
         self.dest_dir = tempfile.mkdtemp()
         self.dest = os.path.join(self.dest_dir, 'dest')
-        self.params = {'src': self.src, 'dest': self.dest}
+        self.params = {'src_params': self.src_params, 'dest': self.dest}
+        self.ctx = Mock()
+        self.ctx.render_template.side_effect = self.render_template
+
+    def render_template(self, tpl):
+        return jinja2.Template(tpl).render(ctx=self.ctx)
 
     def setup_src_dir(self):
         src_dir = tempfile.mkdtemp()
@@ -276,16 +293,22 @@ class DownloadActionHandlerTestCase(unittest.TestCase):
 
     def do_download(self):
         return _download_action_handler(storage_client=self.storage_client,
-                                        params=self.params)
+                                        params=self.params, ctx=self.ctx)
 
-    def test_calls_get_data_with_src_params(self):
+    def test_calls_get_data_with_rendered_src_params(self):
         self.do_download()
-        self.assertEqual(self.storage_client.get_data.call_args,
-                         call(params=self.params['src']))
+        self.assertEqual(self.ctx.render_template.call_args_list[0],
+                         call(self.params['src_params']))
+        self.assertEqual(
+            self.storage_client.get_data.call_args,
+            call(params=self.render_template(self.params['src_params'])))
 
-    def test_writes_tgz_to_dest(self):
+    def test_writes_tgz_to_rendered_dest(self):
         self.do_download()
-        self.assert_dirs_equal(self.src_dir, self.dest)
+        self.assertEqual(self.ctx.render_template.call_args_list[-1],
+                         call(self.params['dest']))
+        expected_dest_dir = self.ctx.render_template(self.params['dest'])
+        self.assert_dirs_equal(self.src_dir, expected_dest_dir)
 
     def assert_dirs_equal(self, left, right):
         from filecmp import dircmp
@@ -293,7 +316,7 @@ class DownloadActionHandlerTestCase(unittest.TestCase):
         self.assertEqual(dcmp.left_only, [])
         self.assertEqual(dcmp.right_only, [])
 
-    def test_returns_dest(self):
+    def test_returns_rendered_dest(self):
         result = self.do_download()
-        self.assertEqual(result, self.dest)
+        self.assertEqual(result, self.render_template(self.params['dest']))
 

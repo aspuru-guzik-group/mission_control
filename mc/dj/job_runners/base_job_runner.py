@@ -1,6 +1,8 @@
 import logging
 import time
 
+import jinja2
+
 
 class BaseJobRunner(object):
     def __init__(self, job_client=None, job_dir_factory=None,
@@ -122,6 +124,9 @@ class BaseJobRunner(object):
                         next_cursor = cursor[path_element]
                     cursor = next_cursor
                 cursor[path_elements[-1]] = value
+
+            def render_template(self, template=None):
+                return jinja2.Template(template).render(ctx=self.obj)
 
         return ActionCtx(obj_to_wrap=job)
 
