@@ -1,7 +1,13 @@
+import io
 import json
-from unittest.mock import MagicMock, Mock
+import os
+import tarfile
+import tempfile
+import unittest
+from unittest.mock import call, MagicMock, Mock
 
 from django.conf.urls import url, include
+from django.conf import settings
 from django.test import TestCase, override_settings
 
 from mc_utils import test_utils
@@ -12,6 +18,8 @@ from a2g2.runners.odyssey_push_runner.odyssey_push_runner import (
 from a2g2.a2g2_dj import urls as _a2g2_dj_urls
 from jobs import urls as _jobs_urls
 from missions import urls as _missions_urls
+from storage import urls as _storage_urls
+from storage_client.storage_client import MissionControlStorageClient
 from a2g2.tasks.flow import FlowTask
 from a2g2.flow_generators.run_and_load import RunAndLoadFlowGenerator
 from job_runners.action_processor import ActionProcessor
@@ -38,7 +46,7 @@ class ConfgenFlowGenerator(object):
                         },
                         'post_exec_actions': [
                             {
-                                'action': 'storage:put',
+                                'action': 'storage:upload',
                                 'params': {'src': '{ctx.completed_dir}'},
                                 'output_to_ctx_target': 'data.output.raw_dir'
                             }
@@ -48,7 +56,7 @@ class ConfgenFlowGenerator(object):
                         'job_type': 'confgen:load',
                         'pre_build_actions': [
                             {
-                                'action': 'storage:get',
+                                'action': 'storage:download',
                                 'params': {
                                     'src': '{ctx.data.input.raw_dir}',
                                     'dest': '{ctx.job_dir}/raw_dir',
@@ -68,18 +76,21 @@ class ConfgenFlowGenerator(object):
             'flow_generator_classes': set([RunAndLoadFlowGenerator])
         }
 
-BASE_PATH = 'test_api'
+BASE_PATH = 'test_api/'
 BASE_URL = '/' + BASE_PATH
+STORAGE_PATH = BASE_PATH + 'storage/'
 urlpatterns = [
     url(r'^%s' % BASE_PATH, include(_a2g2_dj_urls.__name__)),
     url(r'^%s' % BASE_PATH, include(_jobs_urls.__name__)),
     url(r'^%s' % BASE_PATH, include(_missions_urls.__name__)),
+    url(r'^%s' % STORAGE_PATH, include(_storage_urls.__name__)),
 ]
 
 @override_settings(ROOT_URLCONF=__name__)
 class ConfgenFlow_E2E_TestCase(TestCase):
     def setUp(self):
         super().setUp()
+        self.setup_storage_basedir()
         test_utils.patch_request_client(request_client=self.client,
                                         json_methods=['get', 'post', 'patch'])
         self.a2g2_client = self.generate_a2g2_client()
@@ -92,22 +103,33 @@ class ConfgenFlow_E2E_TestCase(TestCase):
         self.flow_and_job_runner.tick = Mock(
             side_effect=self.flow_and_job_runner.tick)
 
+    def setup_storage_basedir(self):
+        self.storage_base_dir = tempfile.mkdtemp()
+        settings_attr = 'STORAGE_FILESYSTEM_BACKEND_BASEDIR'
+        setattr(settings, settings_attr, self.storage_base_dir)
+
     def generate_a2g2_client(self):
         return A2G2_Client(base_url=BASE_URL, request_client=self.client)
 
     def generate_storage_client(self):
-        storage_client = Mock()
-        storage_client.put.return_value = 'put_return'
-        storage_client.get.return_value = 'get_return'
+        storage_client = MissionControlStorageClient(
+            base_url='/' + STORAGE_PATH,
+            request_client=self.client)
         return storage_client
 
     def generate_action_processor(self):
         action_processor = ActionProcessor()
-        action_processor.register_handler(key='storage:put',
-                                          handler=self.storage_client.put)
-        action_processor.register_handler(key='storage:get',
-                                          handler=self.storage_client.get)
+        action_processor.register_handler(key='storage:upload',
+                                          handler=self._upload_action_handler)
+        action_processor.register_handler(key='storage:download',
+                                          handler=self._download_action_handler)
         return action_processor
+
+    def _upload_action_handler(self, *args, params=None, ctx=None, **kwargs):
+        pass
+
+    def _download_action_handler(self, *args, params=None, ctx=None, **kwargs):
+        pass
 
     def generate_execution_client(self):
         execution_client = MagicMock()
@@ -181,3 +203,95 @@ class ConfgenFlow_E2E_TestCase(TestCase):
         expected_counts = {'Mol': 10}
         actual_counts = self.a2g2_client.get_counts()
         self.assertEqual(actual_counts, expected_counts)
+
+def _upload_action_handler(storage_client, *args, params=None, ctx=None,
+                           **kwargs):
+    tgz_bytes = _dir_to_tgz_bytes(dir_path=params['src'])
+    return storage_client.post_data(data=tgz_bytes)
+
+def _dir_to_tgz_bytes(dir_path=None):
+    mem_file = io.BytesIO()
+    tgz = tarfile.open(mode='w:gz', fileobj=mem_file)
+    tgz.add(dir_path, arcname='.')
+    tgz.close()
+    return mem_file.getvalue()
+
+class UploadActionHandlerTestCase(unittest.TestCase):
+    def setUp(self):
+        self.storage_client = Mock()
+        self.src_dir = self.setup_src_dir()
+        self.params = {'src': self.src_dir}
+
+    def setup_src_dir(self):
+        src_dir = tempfile.mkdtemp()
+        for i in range(3):
+            path = os.path.join(src_dir, 'file_%s' % i)
+            with open(path, 'w') as f: f.write(str(i))
+        return src_dir
+
+    def do_upload(self):
+        return _upload_action_handler(storage_client=self.storage_client,
+                                      params=self.params)
+
+    def test_posts_tgz_of_src(self):
+        self.do_upload()
+        expected_data = _dir_to_tgz_bytes(dir_path=self.src_dir)
+        self.assertEqual(self.storage_client.post_data.call_args,
+                         call(data=expected_data))
+
+    def test_returns_result_of_post_data(self):
+        result = self.do_upload()
+        self.assertEqual(result, self.storage_client.post_data.return_value)
+
+def _download_action_handler(storage_client, *args, params=None, ctx=None,
+                           **kwargs):
+    tgz_bytes = storage_client.get_data(params=params['src'])
+    _tgz_bytes_to_dir(tgz_bytes=tgz_bytes, dir_path=params['dest'])
+    return params['dest']
+
+def _tgz_bytes_to_dir(tgz_bytes=None, dir_path=None):
+    mem_file = io.BytesIO(tgz_bytes)
+    tgz = tarfile.open(mode='r:gz', fileobj=mem_file)
+    tgz.extractall(path=dir_path)
+
+class DownloadActionHandlerTestCase(unittest.TestCase):
+    def setUp(self):
+        self.storage_client = Mock()
+        self.src = Mock()
+        self.src_dir = self.setup_src_dir()
+        self.src_tgz_bytes = _dir_to_tgz_bytes(dir_path=self.src_dir)
+        self.storage_client.get_data.return_value = self.src_tgz_bytes
+        self.dest_dir = tempfile.mkdtemp()
+        self.dest = os.path.join(self.dest_dir, 'dest')
+        self.params = {'src': self.src, 'dest': self.dest}
+
+    def setup_src_dir(self):
+        src_dir = tempfile.mkdtemp()
+        for i in range(3):
+            path = os.path.join(src_dir, 'file_%s' % i)
+            with open(path, 'w') as f: f.write(str(i))
+        return src_dir
+
+    def do_download(self):
+        return _download_action_handler(storage_client=self.storage_client,
+                                        params=self.params)
+
+    def test_calls_get_data_with_src_params(self):
+        self.do_download()
+        self.assertEqual(self.storage_client.get_data.call_args,
+                         call(params=self.params['src']))
+
+    def test_writes_tgz_to_dest(self):
+        self.do_download()
+        self.assert_dirs_equal(self.src_dir, self.dest)
+
+    def assert_dirs_equal(self, left, right):
+        from filecmp import dircmp
+        dcmp = dircmp(left, right)
+        self.assertEqual(dcmp.left_only, [])
+        self.assertEqual(dcmp.right_only, [])
+
+    def test_returns_dest(self):
+        result = self.do_download()
+        self.assertEqual(result, self.dest)
+
