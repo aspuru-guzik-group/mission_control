@@ -1,19 +1,32 @@
 import os
 import tempfile
-import unittest
+from django.conf import settings
+from django.test import TestCase, override_settings
 
 from .. import utils as storage_utils
 
 
-class GetStorageBackendTestCase(unittest.TestCase):
+class GetStorageBackendTestCase(TestCase):
     def test_gets_storage_backend(self):
         backend = storage_utils.get_storage_backend()
         self.assertTrue(isinstance(backend, storage_utils.FileSystemBackend))
 
-class FileSystemBackendTestCase(unittest.TestCase):
+class FileSystemBackendTestCase(TestCase):
     def setUp(self):
         self.tmpdir = tempfile.mkdtemp()
         self.backend = storage_utils.FileSystemBackend(base_dir=self.tmpdir)
+
+@override_settings()
+class GetBaseDirFromSettingsTestCase(FileSystemBackendTestCase):
+    def setUp(self):
+        super().setUp()
+        attr_name = 'STORAGE_FILESYSTEM_BACKEND_BASEDIR'
+        self.mock_base_dir = 'mock_base_dir'
+        setattr(settings, attr_name, self.mock_base_dir)
+
+    def test_gets_basedir_from_settings(self):
+        base_dir_from_settings = self.backend.get_base_dir_from_settings()
+        self.assertEqual(base_dir_from_settings, self.mock_base_dir)
 
 class FileSystemBackendPostTestCase(FileSystemBackendTestCase):
     def test_creates_bytes_at_random_uuid(self):
