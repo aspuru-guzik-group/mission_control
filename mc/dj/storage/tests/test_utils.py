@@ -37,17 +37,9 @@ class FileSystemBackendPostDataTestCase(FileSystemBackendTestCase):
         file_contents = open(expected_file_path, 'rb').read()
         self.assertEqual(file_contents, byte_data)
 
-    def test_encodes_string_as_bytes(self):
-        str_data = 'some str'
-        post_result = self.backend.post_data(data=str_data)
-        expected_file_path = os.path.join(self.backend.base_dir,
-                                          post_result['key'])
-        file_contents = open(expected_file_path, 'rb').read()
-        self.assertEqual(file_contents, str_data.encode('utf-8'))
-
 class FileSystemBackendGetDataTestCase(FileSystemBackendTestCase):
     def test_returns_bytes_at_uuid(self):
         byte_data = b'some bytes'
         post_result = self.backend.post_data(data=byte_data)
         get_result = self.backend.get_data(params={'key': post_result['key']})
-        self.assertEqual(get_result, {'data': byte_data})
+        self.assertEqual(get_result, byte_data)

@@ -24,7 +24,6 @@ class FileSystemBackend(object):
 
     def post_data(self, data=None, params=None):
         key = self.get_key()
-        if isinstance(data, str): data = data.encode('utf-8')
         with open(self.get_path_for_key(key), 'wb') as f: f.write(data)
         return {'key': key}
 
@@ -33,5 +32,4 @@ class FileSystemBackend(object):
 
     def get_data(self, params=None):
         key = params['key']
-        with open(self.get_path_for_key(key), 'rb') as f:
-            return {'data': f.read()}
+        with open(self.get_path_for_key(key), 'rb') as f: return f.read()
