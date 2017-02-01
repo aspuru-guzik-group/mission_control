@@ -39,7 +39,7 @@ class BaseFlowRunner(object):
 
     def tick(self):
         self.tick_counter += 1
-        self.logger.debug('tick #%s' % self.tick_counter)
+        self.logger.debug('%s, tick #%s' % (self, self.tick_counter))
         processed_counter = 0
         for flow_record in self.fetch_tickable_flow_records():
             did_process = self.process_flow_record(flow_record)
@@ -75,7 +75,7 @@ class BaseFlowRunner(object):
         return claimed_records.get(flow_record['uuid'], False)
 
     def tick_flow_record(self, flow_record=None):
-        self.logger.debug('tick_flow_record, %s' % flow_record)
+        self.logger.debug('tick_flow_record')
         flow = self.get_flow_for_flow_record(flow_record=flow_record)
         self.flow_engine.tick_flow(flow=flow, ctx=self.tick_ctx)
         updated_serialization = self.flow_engine.serialize_flow(flow=flow)

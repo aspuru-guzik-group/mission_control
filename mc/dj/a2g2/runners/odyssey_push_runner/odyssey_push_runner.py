@@ -25,6 +25,7 @@ class OdysseyPushRunner(object):
         self.tick_counter = 0
 
     def setup(self,
+              action_processor=None,
               flow_generator_classes=None, 
               flow_engine=None, 
               flow_client=None, 
@@ -36,10 +37,11 @@ class OdysseyPushRunner(object):
               flow_runner=None,
               **kwargs
              ):
+        self.action_processor = action_processor or \
+                self.generate_action_processor()
         self.flow_generator_classes = flow_generator_classes or \
                 self.generate_flow_generator_classes()
-        self.flow_engine = flow_engine or self.generate_flow_engine(
-            flow_generator_classes=self.flow_generator_classes)
+        self.flow_engine = flow_engine or self.generate_flow_engine()
         self.flow_client = flow_client or self.generate_flow_client()
         self.job_client = job_client or self.generate_job_client()
         self.job_dir_factory = job_dir_factory or \
@@ -49,13 +51,15 @@ class OdysseyPushRunner(object):
         self.tick_ctx = self.decorate_tick_ctx(tick_ctx=tick_ctx)
         self.flow_runner = flow_runner or self.generate_flow_runner()
 
+    def generate_action_processor(self): pass
+
     def generate_flow_generator_classes(self):
         flow_generator_classes = set()
         return flow_generator_classes
 
-    def generate_flow_engine(self, flow_generator_classes=None):
-        flow_engine = FlowEngine()
-        for flow_generator_class in (flow_generator_classes or []):
+    def generate_flow_engine(self):
+        flow_engine = FlowEngine(action_processor=self.action_processor)
+        for flow_generator_class in (self.flow_generator_classes or []):
             flow_engine.register_flow_generator_class(
                 flow_generator_class=flow_generator_class)
         return flow_engine

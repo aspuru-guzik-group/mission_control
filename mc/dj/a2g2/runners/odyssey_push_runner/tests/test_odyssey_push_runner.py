@@ -149,6 +149,9 @@ class RunnerSetupTestCase(BaseTestCase):
     def call_real_setup(self, *args, **kwargs):
         self.mock_runner.call_real_method('setup', *args, **kwargs)
 
+    def test_falls_back_to_generate_action_processor(self):
+        self.run_subcomponent_generator_fallback_test('action_processor')
+
     def test_falls_back_to_generate_flow_engine(self):
         self.run_subcomponent_generator_fallback_test('flow_engine')
 
@@ -180,23 +183,28 @@ class GenerateFlowGeneratorClassesTestCase(BaseTestCase):
                          expected_flow_generator_classes)
 
 class GenerateFlowEngineTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.runner.action_processor = Mock()
+        self.runner.flow_generator_classes = [Mock() for i in range(3)]
+
     def decorate_patchers(self):
         self.patchers['FlowEngine'] = patch.object(odyssey_push_runner,
                                                    'FlowEngine')
 
     def test_generates_flow_engine(self):
-        self.assertEqual(self.runner.generate_flow_engine(),
-                         self.mocks['FlowEngine'].return_value)
+        flow_engine = self.runner.generate_flow_engine()
+        self.assertEqual(self.mocks['FlowEngine'].call_args,
+                         call(action_processor=self.runner.action_processor))
+        self.assertEqual(flow_engine, self.mocks['FlowEngine'].return_value)
 
     def test_registers_flow_generator_classes_with_engine(self):
-        flow_generator_classes = [Mock() for i in range(3)]
-        self.runner.generate_flow_engine(
-            flow_generator_classes=flow_generator_classes)
+        self.runner.generate_flow_engine()
         call_args_list = self.mocks['FlowEngine'].return_value\
                 .register_flow_generator_class.call_args_list
         expected_call_args_list = [
             call(flow_generator_class=flow_generator_class)
-            for flow_generator_class in flow_generator_classes
+            for flow_generator_class in self.runner.flow_generator_classes
         ]
         self.assertEqual(call_args_list, expected_call_args_list)
 

@@ -5,9 +5,8 @@ from .flow import Flow
 
 
 class FlowEngine(object):
-    def __init__(self, action_processor=None, ctx=None, logger=None):
+    def __init__(self, action_processor=None, logger=None):
         self.action_processor = action_processor
-        self.ctx = ctx
         self.logger = logger or logging
         self.task_engine_registry = collections.OrderedDict()
         self.flow_generator_class_registry = collections.OrderedDict()

@@ -1,8 +1,6 @@
 import logging
 import time
 
-import jinja2
-
 
 class BaseJobRunner(object):
     def __init__(self, job_client=None, job_dir_factory=None,
@@ -71,11 +69,13 @@ class BaseJobRunner(object):
         self.jobs[job['uuid']] = job
 
     def unregister_job(self, job=None):
-        if job['uuid'] in self.jobs: del self.jobs[job['uuid']]
+        for registry in [self.jobs, self.executing_jobs]:
+            if job['uuid'] in registry: del registry[job['uuid']]
 
     def fail_job(self, job=None, error=None):
         self.logger.exception(error)
-        self.update_job(job=job, updates={'status': 'FAILED', 'error': error})
+        self.update_job(job=job, updates={'status': 'FAILED',
+                                          'error': str(error)})
         self.unregister_job(job=job)
 
     def claim_job(self, job=None):
@@ -86,49 +86,14 @@ class BaseJobRunner(object):
 
     def build_job_dir(self, job=None):
         self.logger.debug('build_job_dir')
-        actions =  job.get('spec', {}).get('pre_build_actions', None)
+        actions =  job.get('job_spec', {}).get('pre_build_actions', None)
         if actions: self.process_actions(actions=actions, job=job)
         job_dir_meta = self.job_dir_factory.build_dir_for_job(job=job)
         return job_dir_meta
 
     def process_actions(self, actions=None, job=None):
-        ctx = self.get_action_ctx_for_job(job=job)
         for action in actions:
-            self.action_processor.process_action(action=action, ctx=ctx)
-
-    def get_action_ctx_for_job(self, job=None):
-        class ActionCtx(object):
-            def __init__(self, obj_to_wrap=None):
-                self.obj = obj_to_wrap
-
-            def get(self, target=None):
-                path_elements = target.split('.')
-                cursor = self.obj
-                for path_element in path_elements:
-                    cursor = self.get_attr_or_item(obj=cursor, key=path_element)
-                return cursor
-
-            def get_attr_or_item(self, obj=None, key=None):
-                if hasattr(obj, key): return getattr(obj, key)
-                elif key in obj: return obj[key]
-                else: return None
-
-            def set(self, target=None, value=None):
-                path_elements = target.split('.')
-                cursor = self.obj
-                for path_element in path_elements[:-1]:
-                    next_cursor = self.get_attr_or_item(
-                        obj=cursor, key=path_element)
-                    if next_cursor is None:
-                        cursor[path_element] = {}
-                        next_cursor = cursor[path_element]
-                    cursor = next_cursor
-                cursor[path_elements[-1]] = value
-
-            def render_template(self, template=None):
-                return jinja2.Template(template).render(ctx=self.obj)
-
-        return ActionCtx(obj_to_wrap=job)
+            self.action_processor.process_action(action=action, ctx=job)
 
     def start_job_execution(self, job=None):
         self.logger.debug('start_job_execution, %s' % job)
@@ -145,6 +110,7 @@ class BaseJobRunner(object):
                 job=job, job_execution_states=job_execution_states)
         ]
         for executed_job in executed_jobs:
+            del self.executing_jobs[executed_job['uuid']]
             self.process_executed_job(job=executed_job)
 
     def get_job_execution_states(self):
@@ -163,14 +129,14 @@ class BaseJobRunner(object):
         return is_executing
 
     def process_executed_job(self, job=None):
-        self.logger.debug('process_executed_job, %s' % job)
+        self.logger.debug('process_executed_job')
         job['completed_dir'] = job['execution']['dir']
-        actions = job.get('spec', {}).get('post_exec_actions', None)
+        actions = job.get('job_spec', {}).get('post_exec_actions', None)
         if actions: self.process_actions(actions=actions, job=job)
         self.complete_job(job=job)
 
     def complete_job(self, job=None):
-        self.logger.debug('complete_job, %s' % job)
+        self.logger.debug('complete_job')
         self.update_job(job=job, updates={
             'status': self.job_client.Statuses.COMPLETED.name,
             'data': job.get('data', {})

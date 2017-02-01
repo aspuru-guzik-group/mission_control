@@ -117,14 +117,14 @@ class ProcessClaimableJobTestCase(BaseTestCase):
         self.assertEqual(
             self.mocks['update_job'].call_args,
             call(job=mock_claimed_job, updates={
-                'status': 'FAILED', 'error': exception}))
+                'status': 'FAILED', 'error': str(exception)}))
 
 class BuildJobDirTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.job = {
             'uuid': 'abcd',
-            'spec': {
+            'job_spec': {
                 'pre_build_actions': MagicMock(),
             }
         }
@@ -135,7 +135,7 @@ class BuildJobDirTestCase(BaseTestCase):
     def test_processes_pre_build_actions(self):
         self.runner.build_job_dir(job=self.job)
         self.assertEqual(self.runner.process_actions.call_args,
-                         call(actions=self.job['spec']['pre_build_actions'],
+                         call(actions=self.job['job_spec']['pre_build_actions'],
                               job=self.job))
 
     def test_calls_job_dir_factory(self):
@@ -145,18 +145,13 @@ class BuildJobDirTestCase(BaseTestCase):
             call(job=self.job))
 
 class ProcessActionsTestCase(BaseTestCase):
-    def decorate_runner_methods_to_patch(self):
-        self.runner_methods_to_patch.extend(['get_action_ctx_for_job'])
-
     def test_wraps_action_processor(self):
         actions = [MagicMock() for i in range(3)]
         job = MagicMock()
         self.runner.process_actions(actions=actions, job=job)
         self.assertEqual(
             self.runner.action_processor.process_action.call_args_list,
-            [call(action=action,
-                  ctx=self.runner.get_action_ctx_for_job.return_value)
-             for action in actions]
+            [call(action=action, ctx=job) for action in actions]
         )
 
 class StartJobExecutionTestCase(BaseTestCase):
@@ -183,19 +178,25 @@ class ProcessExecutingJobsTestCase(BaseTestCase):
         }
         self.mocks['get_job_execution_states'].return_value = \
                 self.mock_job_execution_states
+        self.runner.process_executing_jobs()
 
     def decorate_runner_methods_to_patch(self):
         self.runner_methods_to_patch.extend(['get_job_execution_states',
                                              'process_executed_job'])
 
     def test_process_executing_jobs(self):
-        self.runner.process_executing_jobs()
         expected_calls = [call(job=job) for job in self.executed_jobs]
         calls = self.mocks['process_executed_job'].mock_calls
         calls_sort_key_fn = lambda c: c[2]['job']['uuid']
         sorted_calls = sorted(calls, key=calls_sort_key_fn)
         sorted_expected_calls = sorted(expected_calls, key=calls_sort_key_fn)
         self.assertEqual(sorted_calls, sorted_expected_calls)
+
+    def test_removes_executed_jobs_from_executing_jobs_registry(self):
+        executed_job_uuids = [job['uuid'] for job in self.executed_jobs]
+        jobs_overlap = set(self.runner.executing_jobs.keys()).intersection(
+            set(executed_job_uuids))
+        self.assertEqual(len(jobs_overlap), 0)
 
 class GetJobExecutionStatesTestCase(BaseTestCase):
     def setUp(self):
@@ -234,11 +235,13 @@ class ProcessExecutedJobTestCase(BaseTestCase):
 
     def test_calls_post_exec_actions(self):
         actions = [MagicMock() for i in range(3)]
-        self.job['spec'] = {'post_exec_actions': actions}
+        self.job['job_spec'] = {'post_exec_actions': actions}
         self.runner.process_executed_job(job=self.job)
         self.assertEqual(
             self.runner.process_actions.call_args,
-            call(actions=self.job['spec']['post_exec_actions'], job=self.job))
+            call(actions=self.job['job_spec']['post_exec_actions'],
+                 job=self.job)
+        )
 
     def test_calls_complete_job(self):
         self.runner.process_executed_job(job=self.job)

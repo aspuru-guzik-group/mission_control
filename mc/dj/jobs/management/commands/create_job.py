@@ -8,16 +8,16 @@ class Command(BaseCommand):
     help = 'Create a job.'
 
     def add_arguments(self, parser):
-        parser.add_argument('--spec', 
+        parser.add_argument('--job_spec', 
                             help='path to spec to use for job')
 
     def handle(self, *args, **options):
-        if options['spec']:
-            spec = self.load_spec(spec_path=options['spec'])
+        if options['job_spec']:
+            job_spec = self.load_job_spec(spec_path=options['job_spec'])
         else:
-            spec = {}
-        job = Job.objects.create(spec=spec)
+            job_spec = {}
+        job = Job.objects.create(job_spec=job_spec)
         self.stdout.write("Created job '%s'." % job)
 
-    def load_spec(self, spec_path=None):
-        return json.load(open(spec_path))
+    def load_job_spec(self, job_spec_path=None):
+        return json.load(open(job_spec_path))

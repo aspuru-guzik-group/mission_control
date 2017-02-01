@@ -64,11 +64,12 @@ class ConfgenFlowGenerator(object):
                 'pre_start_actions': [
                     {
                         'action': 'set_ctx_value',
+                        'description': 'wire output from job task to job input',
                         'params': {
-                            'src': ('{{ctx.flow.tasks.confgen_run.output'
+                            'value': ('{{ctx.flow.tasks.confgen_run.output'
                                     '.raw_dir_storage_params}}'),
-                            'dest': ('{{ctx.task.input.job_spec.input'
-                                     '.raw_dir_storage_params}}'),
+                            'target': ('task.input.job_spec.input'
+                                       '.raw_dir_storage_params'),
                         }
                     }
                 ],
@@ -81,8 +82,8 @@ class ConfgenFlowGenerator(object):
                                 'action': 'storage:download',
                                 'params': {
                                     'src_params': (
-                                        '{{ctx.input.raw_dir_storage_params}}'
-                                    ),
+                                        '{{ctx.job_spec.input.'
+                                        'raw_dir_storage_params}}'),
                                     'dest': '{{ctx.job_dir}}/raw_dir',
                                 },
                                 'output_to_ctx_target': 'data.input.raw_dir'
@@ -168,6 +169,7 @@ class ConfgenFlow_E2E_TestCase(TestCase):
 
     def generate_flow_and_job_runner(self):
         return OdysseyPushRunner(
+            action_processor=self.action_processor,
             flow_generator_classes=[ConfgenFlowGenerator],
             request_client=self.client,
             job_server_url=BASE_URL,
@@ -284,6 +286,7 @@ class UploadActionHandlerTestCase(unittest.TestCase):
 
 def _download_action_handler(storage_client, *args, params=None, ctx=None,
                            **kwargs):
+    print("ctx: ", ctx.ctx)
     rendered_src_params = ctx.render_template(params['src_params'])
     rendered_dest = ctx.render_template(params['dest'])
     tgz_bytes = storage_client.get_data(params=rendered_src_params)

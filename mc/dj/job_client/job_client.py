@@ -83,14 +83,16 @@ class MissionControlJobClient(object):
 
     def update_jobs(self, updates_by_uuid=None):
         results_by_uuid = {}
-        for _uuid, updates_for_uuid in updates_by_uuid.items():
-            job_url = self.urls['jobs'] + _uuid + '/'
-            formatted_job_kwargs = self.format_job_kwargs(
-                job_kwargs=updates_for_uuid)
-            response = self.request_client.patch(
-                job_url,
-                data=formatted_job_kwargs,
-                content_type='application/json'
-            )
-            results_by_uuid[_uuid] = response.json()
+        for uuid, updates_for_uuid in updates_by_uuid.items():
+            results_by_uuid[uuid] = self.update_job(uuid=uuid,
+                                                    updates=updates_for_uuid)
         return results_by_uuid
+
+    def update_job(self, uuid=None, updates=None):
+        job_url = self.urls['jobs'] + uuid + '/'
+        formatted_job_kwargs = self.format_job_kwargs(job_kwargs=updates)
+        response = self.request_client.patch(job_url,
+                                             data=formatted_job_kwargs,
+                                             content_type='application/json')
+        update_result = response.json()
+        return update_result

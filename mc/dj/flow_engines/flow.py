@@ -93,7 +93,8 @@ class Flow(object):
         return self.filter_tasks(filters=[status_filter])
 
     def has_incomplete_tasks(self):
-        filter_fn = lambda task: task['status'] != 'COMPLETED'
+        dead_statuses = ['COMPLETED', 'FAILED']
+        filter_fn = lambda task: task['status'] not in dead_statuses
         incomplete_tasks = self.filter_tasks(filters=[filter_fn])
         return len(incomplete_tasks) > 0
 

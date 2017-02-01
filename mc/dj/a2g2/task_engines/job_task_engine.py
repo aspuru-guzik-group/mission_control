@@ -14,7 +14,7 @@ class JobTaskEngine(BaseTaskEngine):
 
     def initial_tick(self, task=None, ctx=None):
         create_job_fn = ctx['create_job']
-        job_kwargs = {'spec': task['input']['job_spec']}
+        job_kwargs = {'job_spec': task['input']['job_spec']}
         job = create_job_fn(job_kwargs=job_kwargs)
         task['data']['job_uuid'] = job['uuid']
         task['status'] = 'RUNNING'

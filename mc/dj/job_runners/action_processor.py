@@ -1,3 +1,6 @@
+import jinja2
+
+
 class ActionProcessor(object):
     def __init__(self, *args, handlers=None, **kwargs):
         self.handlers = {}
@@ -17,14 +20,54 @@ class ActionProcessor(object):
         self.set_ctx_value(ctx=ctx, **params)
 
     def set_ctx_value(self, ctx=None, target=None, value=None):
+        if 'render_template' in ctx: value = ctx['render_template'](value)
         ctx.set(target=target, value=value)
 
     def process_action(self, action=None, ctx=None):
         handler = self.get_handler_for_action(action=action)
-        output = handler(params=action.get('params', None), ctx=ctx)
+        wrapped_ctx = self._wrap_ctx_for_action(ctx=ctx)
+        output = handler(params=action.get('params', None), ctx=wrapped_ctx)
         output_target = action.get('output_to_ctx_target', None)
-        if output_target: self.set_ctx_value(ctx=ctx, target=output_target,
+        if output_target: self.set_ctx_value(ctx=wrapped_ctx,
+                                             target=output_target,
                                              value=output)
+
+    def _wrap_ctx_for_action(self, ctx=None):
+        return ActionCtx(ctx_to_wrap=ctx)
 
     def get_handler_for_action(self, action=None):
         return self.handlers[action['action']]
+
+class ActionCtx(object):
+    def __init__(self, ctx_to_wrap=None):
+        self.ctx = ctx_to_wrap
+
+    def __contains__(self, key=None):
+        return key in self.ctx
+
+    def get(self, target=None):
+        path_elements = target.split('.')
+        cursor = self.ctx
+        for path_element in path_elements:
+            cursor = self.get_attr_or_item(obj=cursor, key=path_element)
+        return cursor
+
+    def get_attr_or_item(self, obj=None, key=None):
+        if hasattr(obj, key): return getattr(obj, key)
+        elif key in obj: return obj[key]
+        else: return None
+
+    def set(self, target=None, value=None):
+        path_elements = target.split('.')
+        cursor = self.ctx
+        for path_element in path_elements[:-1]:
+            next_cursor = self.get_attr_or_item(
+                obj=cursor, key=path_element)
+            if next_cursor is None:
+                cursor[path_element] = {}
+                next_cursor = cursor[path_element]
+            cursor = next_cursor
+        cursor[path_elements[-1]] = value
+
+    def render_template(self, template=None):
+        return jinja2.Template(template).render(ctx=self.ctx)
