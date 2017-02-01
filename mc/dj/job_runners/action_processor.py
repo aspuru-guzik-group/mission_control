@@ -20,7 +20,7 @@ class ActionProcessor(object):
         self.set_ctx_value(ctx=ctx, **params)
 
     def set_ctx_value(self, ctx=None, target=None, value=None):
-        if 'render_template' in ctx: value = ctx['render_template'](value)
+        if hasattr(ctx, 'render_template'): value = ctx.render_template(value)
         ctx.set(target=target, value=value)
 
     def process_action(self, action=None, ctx=None):
@@ -41,9 +41,6 @@ class ActionProcessor(object):
 class ActionCtx(object):
     def __init__(self, ctx_to_wrap=None):
         self.ctx = ctx_to_wrap
-
-    def __contains__(self, key=None):
-        return key in self.ctx
 
     def get(self, target=None):
         path_elements = target.split('.')

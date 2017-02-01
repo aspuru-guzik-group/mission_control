@@ -69,7 +69,7 @@ class ConfgenFlowGenerator(object):
                             'value': ('{{ctx.flow.tasks.confgen_run.output'
                                     '.raw_dir_storage_params}}'),
                             'target': ('task.input.job_spec.input'
-                                       '.raw_dir_storage_params'),
+                                       '.json_storage_params'),
                         }
                     }
                 ],
@@ -81,9 +81,9 @@ class ConfgenFlowGenerator(object):
                             {
                                 'action': 'storage:download',
                                 'params': {
-                                    'src_params': (
+                                    'json_src_params': (
                                         '{{ctx.job_spec.input.'
-                                        'raw_dir_storage_params}}'),
+                                        'json_storage_params}}'),
                                     'dest': '{{ctx.job_dir}}/raw_dir',
                                 },
                                 'output_to_ctx_target': 'data.input.raw_dir'
@@ -240,7 +240,7 @@ def _upload_action_handler(storage_client, *args, params=None, ctx=None,
                            **kwargs):
     dir_path = ctx.render_template(params['src'])
     tgz_bytes = _dir_to_tgz_bytes(dir_path=dir_path)
-    return storage_client.post_data(data=tgz_bytes)
+    return json.dumps(storage_client.post_data(data=tgz_bytes))
 
 def _dir_to_tgz_bytes(dir_path=None):
     mem_file = io.BytesIO()
@@ -280,16 +280,18 @@ class UploadActionHandlerTestCase(unittest.TestCase):
         self.assertEqual(self.storage_client.post_data.call_args,
                          call(data=expected_data))
 
-    def test_returns_result_of_post_data(self):
+    def test_returns_serialized_result_of_post_data(self):
+        self.storage_client.post_data.return_value = {'some': 'object'}
         result = self.do_upload()
-        self.assertEqual(result, self.storage_client.post_data.return_value)
+        self.assertEqual(result,
+                         json.dumps(self.storage_client.post_data.return_value))
 
 def _download_action_handler(storage_client, *args, params=None, ctx=None,
                            **kwargs):
-    print("ctx: ", ctx.ctx)
-    rendered_src_params = ctx.render_template(params['src_params'])
+    json_src_params = ctx.render_template(params['json_src_params'])
+    src_params = json.loads(json_src_params)
     rendered_dest = ctx.render_template(params['dest'])
-    tgz_bytes = storage_client.get_data(params=rendered_src_params)
+    tgz_bytes = storage_client.get_data(storage_params=src_params)
     _tgz_bytes_to_dir(tgz_bytes=tgz_bytes, dir_path=rendered_dest)
     return rendered_dest
 
@@ -301,13 +303,15 @@ def _tgz_bytes_to_dir(tgz_bytes=None, dir_path=None):
 class DownloadActionHandlerTestCase(unittest.TestCase):
     def setUp(self):
         self.storage_client = Mock()
-        self.src_params = 'src params'
+        self.src_params = {'some': 'src params'}
+        self.json_src_params = json.dumps(self.src_params)
         self.src_dir = self.setup_src_dir()
         self.src_tgz_bytes = _dir_to_tgz_bytes(dir_path=self.src_dir)
         self.storage_client.get_data.return_value = self.src_tgz_bytes
         self.dest_dir = tempfile.mkdtemp()
         self.dest = os.path.join(self.dest_dir, 'dest')
-        self.params = {'src_params': self.src_params, 'dest': self.dest}
+        self.params = {'json_src_params': self.json_src_params,
+                       'dest': self.dest}
         self.ctx = Mock()
         self.ctx.render_template.side_effect = self.render_template
 
@@ -325,7 +329,7 @@ class DownloadActionHandlerTestCase(unittest.TestCase):
         return _download_action_handler(storage_client=self.storage_client,
                                         params=self.params, ctx=self.ctx)
 
-    def test_calls_get_data_with_rendered_src_params(self):
+    def test_calls_get_data_with_deserialized_rendered_src_params(self):
         self.do_download()
         self.assertEqual(self.ctx.render_template.call_args_list[0],
                          call(self.params['src_params']))
