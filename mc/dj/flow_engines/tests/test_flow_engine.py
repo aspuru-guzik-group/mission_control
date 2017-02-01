@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import call, DEFAULT, patch, Mock
+from unittest.mock import call, DEFAULT, patch, MagicMock, Mock
 from uuid import uuid4
 
 from ..flow_engine import FlowEngine
@@ -132,7 +132,7 @@ class TickTestCase(BaseTestCase):
         self.patchers = {'engine': patch.multiple(
             self.engine, start_task=DEFAULT, complete_flow=DEFAULT)}
         self.mocks = self.start_patchers(patchers=self.patchers)
-        def mock_tick_task(*args, task=None, ctx=None):
+        def mock_tick_task(*args, flow=None, task=None, ctx=None):
             task.setdefault('tick_count', 0)
             task['tick_count'] += 1
         self.engine.tick_task = mock_tick_task
@@ -222,6 +222,46 @@ class TickTestCase(BaseTestCase):
         self.engine.tick_flow(flow)
         self.assertEqual(self.mocks['engine']['complete_flow'].call_count, 1)
 
+class TickTaskTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.flow = Flow()
+        self.task = self.flow.add_task(task={})
+        self.engine.process_actions = Mock()
+        self.engine.get_engine_for_task = Mock()
+        self.mock_engine = self.engine.get_engine_for_task.return_value
+        self.ctx = MagicMock()
+        self.engine.complete_task = Mock()
+
+    def test_calls_task_engine_tick_task(self):
+        self.engine.tick_task(flow=self.flow, task=self.task, ctx=self.ctx)
+        self.assertEqual(
+            self.mock_engine.tick_task.call_args,
+            call(task=self.task, ctx={**self.ctx, 'flow': self.flow}))
+
+    def test_calls_complete_task_if_task_completes(self):
+        def mock_task_completion(*args, **kwargs):
+            self.task['status'] = 'COMPLETED'
+        self.mock_engine.tick_task.side_effect = mock_task_completion
+        self.engine.tick_task(flow=self.flow, task=self.task, ctx=self.ctx)
+        self.assertEqual(self.engine.complete_task.call_args,
+                         call(flow=self.flow, task=self.task))
+
+class CompleteTaskTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.flow = Flow()
+        self.task = self.flow.add_task(task={
+            'post_complete_actions': ['action_%s' % i for i in range(3)]
+        })
+        self.engine.process_actions = Mock()
+
+    def test_processes_post_complete_actions(self):
+        self.engine.complete_task(flow=self.flow, task=self.task)
+        self.assertEqual(self.engine.process_actions.call_args,
+                         call(actions=self.task['post_complete_actions'],
+                              ctx={'task': self.task, 'flow': self.flow}))
+
 class CompleteFlowTestCase(BaseTestCase):
     def test_sets_status_to_completed(self):
         flow = Flow()
@@ -256,24 +296,34 @@ class StartTaskTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.flow = Flow()
-        self.task = self.flow.add_task(task={})
+        self.task = self.flow.add_task(task={
+            'pre_start_actions': ['action_%s' % i for i in range(3)]
+        })
+        self.engine.process_actions = Mock()
 
-    def test_processes_precomplete_actions(self):
-        self.fail()
+    def test_processes_pre_start_actions(self):
+        self.engine.start_task(flow=self.flow, task=self.task)
+        self.assertEqual(self.engine.process_actions.call_args,
+                         call(actions=self.task['pre_start_actions'],
+                              ctx={'task': self.task, 'flow': self.flow}))
 
     def test_sets_status_to_running(self):
         self.engine.start_task(flow=self.flow, task=self.task)
         self.assertEqual(self.task['status'], 'RUNNING')
 
-class CompleteTaskTestCase(BaseTestCase):
+class ProcessActionsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.flow = Flow()
-        self.task = self.flow.add_task(task={})
+        self.actions = ['action_%s' % i for i in range(3)]
+        self.engine.action_processor = Mock()
+        self.ctx = Mock()
 
-    def test_processes_post_complete_actions(self):
-        self.fail()
-
+    def test_calls_action_processor_for_each_action(self):
+        self.engine.process_actions(actions=self.actions, ctx=self.ctx)
+        self.assertEqual(
+            self.engine.action_processor.process_action.call_args_list,
+            [call(action=action, ctx=self.ctx) for action in self.actions]
+        )
 
 class GenerateFlowTestCase(BaseTestCase):
     def test_generates_flow_from_spec(self):

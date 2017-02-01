@@ -5,7 +5,8 @@ from .flow import Flow
 
 
 class FlowEngine(object):
-    def __init__(self, ctx=None, logger=None):
+    def __init__(self, action_processor=None, ctx=None, logger=None):
+        self.action_processor = action_processor
         self.ctx = ctx
         self.logger = logger or logging
         self.task_engine_registry = collections.OrderedDict()
@@ -65,20 +66,38 @@ class FlowEngine(object):
             self.start_task(flow=flow, task=task)
 
     def start_task(self, flow=None, task=None):
+        pre_start_actions = task.get('pre_start_actions', None)
+        if pre_start_actions: self.process_actions(
+            actions=pre_start_actions,
+            ctx={'flow': flow, 'task': task}
+        )
         task['status'] = 'RUNNING'
+
+    def process_actions(self, actions=None, ctx=None):
+        for action in actions:
+            self.action_processor.process_action(action=action, ctx=ctx)
 
     def tick_running_tasks(self, flow=None, ctx=None):
         for task in flow.get_tasks_by_status(status='RUNNING'):
-            self.tick_task(task=task, ctx=ctx)
+            self.tick_task(flow=flow, task=task, ctx=ctx)
 
-    def tick_task(self, task=None, ctx=None):
+    def tick_task(self, flow=None, task=None, ctx=None):
         try:
             task_engine = self.get_engine_for_task(task=task)
-            task_engine.tick_task(task=task, ctx=ctx)
+            task_engine.tick_task(task=task, ctx={**ctx, 'flow': flow})
+            if task.get('status', None) == 'COMPLETED':
+                self.complete_task(flow=flow, task=task)
         except Exception as e:
             msg = "tick failed for task with key '{key}': {e}".format(
                 key=task['key'], e=e)
             self.logger.exception(msg)
+
+    def complete_task(self, flow=None, task=None):
+        actions = task.get('post_complete_actions', None)
+        if actions: self.process_actions(
+            actions=actions,
+            ctx={'flow': flow, 'task': task}
+        )
 
     def get_engine_for_task(self, task=None):
         task_engine =  self.task_engine_registry.get(task['task_engine'], None)
