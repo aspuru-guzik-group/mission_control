@@ -9,8 +9,8 @@ from missions.models import Flow as FlowModel
 from ..odyssey_push_runner import OdysseyPushRunner
 from . import e2e_utils
 from flow_engines.flow import Flow
-from a2g2.tasks.job import JobTask
-from a2g2.tasks.flow import FlowTask
+from a2g2.task_engines.job_task_engine import JobTaskEngine
+from a2g2.task_engines.flow_task_engine import FlowTaskEngine
 from jobs.models import Job
 
 
@@ -38,16 +38,23 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
                 flow = Flow()
                 flow.add_task(
                     key='a.1',
+                    task={
+                        'task_engine': JobTaskEngine.__name__,
+                        'input': {
+                            'job_spec': {
+                                'type': 'Job_A'
+                            }
+                        },
+                        'status': 'PENDING',
+                    },
                     as_root=True,
-                    task=JobTask(),
-                    input={'job_spec': {'type': 'Job_A'}}
                 )
                 return flow
 
             @classmethod
             def get_dependencies(cls):
                 return {
-                    'task_classes': set([JobTask])
+                    'task_engines': set([JobTaskEngine()])
                 }
         flow_generator_classes['A'] = FlowGeneratorA
 
@@ -60,9 +67,14 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
                 flow.add_task(
                     key='b.1',
                     as_root=True,
-                    task=FlowTask(),
-                    input={
-                        'flow_spec': {'flow_type': FlowGeneratorA.flow_type}
+                    task={
+                        'task_engine': FlowTaskEngine.__name__,
+                        'input': {
+                            'flow_spec': {
+                                'flow_type': FlowGeneratorA.flow_type
+                            }
+                        },
+                        'status': 'PENDING'
                     }
                 )
                 return flow
@@ -70,7 +82,7 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
             @classmethod
             def get_dependencies(cls):
                 return {
-                    'task_classes': set([FlowTask]),
+                    'task_engines': set([FlowTaskEngine()]),
                     'flow_generator_classes': set([FlowGeneratorA])
                 }
         flow_generator_classes['B'] = FlowGeneratorB

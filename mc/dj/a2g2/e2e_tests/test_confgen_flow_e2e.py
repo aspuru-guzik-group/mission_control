@@ -21,8 +21,7 @@ from jobs import urls as _jobs_urls
 from missions import urls as _missions_urls
 from storage import urls as _storage_urls
 from storage_client.storage_client import MissionControlStorageClient
-from a2g2.tasks.flow import FlowTask
-from a2g2.flow_generators.run_and_load import RunAndLoadFlowGenerator
+from a2g2.task_engines.job_task_engine import JobTaskEngine
 from job_runners.action_processor import ActionProcessor
 
 
@@ -32,14 +31,14 @@ class ConfgenFlowGenerator(object):
     @classmethod
     def generate_flow(cls, *args, flow_spec=None, **kwargs):
         flow = Flow()
+        flow.data['flow_spec'] = flow_spec
         flow.add_task(
-            key='confgen', 
+            key='confgen_run', 
             as_root=True,
-            task=FlowTask(),
-            input={
-                'flow_spec': {
-                    'flow_type': RunAndLoadFlowGenerator.flow_type,
-                    'run_spec': {
+            task={
+                'task_engine': JobTaskEngine.__name__,
+                'input': {
+                    'job_spec': {
                         'job_type': 'confgen',
                         'confgen': {
                             'smiles': flow_spec['input']['smiles'],
@@ -48,33 +47,58 @@ class ConfgenFlowGenerator(object):
                         'post_exec_actions': [
                             {
                                 'action': 'storage:upload',
-                                'params': {'src': '{ctx.completed_dir}'},
-                                'output_to_ctx_target': 'data.output.raw_dir'
+                                'params': {'src': '{{ctx.completed_dir}}'},
+                                'output_to_ctx_target': (
+                                    'data.output.raw_dir_storage_params')
                             }
                         ]
-                    },
-                    'load_spec': {
+                    }
+                },
+                'status': 'PENDING',
+            }
+        )
+        flow.add_task(
+            key='confgen_load',
+            precursor_keys=['confgen_run'],
+            task={
+                'pre_start_actions': [
+                    {
+                        'action': 'set_ctx_value',
+                        'params': {
+                            'src': ('{{ctx.flow.tasks.confgen_run.output'
+                                    '.raw_dir_storage_params}}'),
+                            'dest': ('{{ctx.task.input.job_spec.input'
+                                     '.raw_dir_storage_params}}'),
+                        }
+                    }
+                ],
+                'task_engine': JobTaskEngine.__name__,
+                'input': {
+                    'job_spec': {
                         'job_type': 'confgen:load',
                         'pre_build_actions': [
                             {
                                 'action': 'storage:download',
                                 'params': {
-                                    'src': '{ctx.data.input.raw_dir}',
-                                    'dest': '{ctx.job_dir}/raw_dir',
+                                    'src_params': (
+                                        '{{ctx.input.raw_dir_storage_params}}'
+                                    ),
+                                    'dest': '{{ctx.job_dir}}/raw_dir',
                                 },
                                 'output_to_ctx_target': 'data.input.raw_dir'
                             }
                         ]
                     }
-                }
-            })
+                },
+                'status': 'PENDING'
+            }
+        )
         return flow
 
     @classmethod
     def get_dependencies(cls):
         return {
-            'task_classes': set([FlowTask]),
-            'flow_generator_classes': set([RunAndLoadFlowGenerator])
+            'task_engines': set([JobTaskEngine()]),
         }
 
 BASE_PATH = 'test_api/'
@@ -137,6 +161,9 @@ class ConfgenFlow_E2E_TestCase(TestCase):
     def generate_execution_client(self):
         execution_client = MagicMock()
         execution_client.get_execution_state = Mock(return_value={})
+        def mock_start_execution(job=None):
+            return {'dir': tempfile.mkdtemp()}
+        execution_client.start_execution.side_effect = mock_start_execution
         return execution_client
 
     def generate_flow_and_job_runner(self):

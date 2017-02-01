@@ -83,7 +83,7 @@ class FlowRunnerE2ETestCase(TestCase):
     def generate_flow_engine(self, keyed_task_engines=None):
         flow_engine = FlowEngine()
         for task_engine in keyed_task_engines.values():
-            flow_engine.register_task_engine(task_engine=task_engine)
+            flow_engine.register_task_engine(task_engine=task_engine())
         return flow_engine
 
     def generate_flow_runner(self, flow_engine=None, flow_client=None):

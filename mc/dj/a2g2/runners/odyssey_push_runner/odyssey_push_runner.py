@@ -51,8 +51,6 @@ class OdysseyPushRunner(object):
 
     def generate_flow_generator_classes(self):
         flow_generator_classes = set()
-        from a2g2.flow_generators import reaxys
-        flow_generator_classes.add(reaxys.ReaxysFlowGenerator)
         return flow_generator_classes
 
     def generate_flow_engine(self, flow_generator_classes=None):

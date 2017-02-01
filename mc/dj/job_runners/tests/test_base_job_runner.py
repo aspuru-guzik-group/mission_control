@@ -1,3 +1,4 @@
+from collections import defaultdict
 import logging
 import unittest
 from unittest.mock import call, DEFAULT, MagicMock, patch
@@ -219,21 +220,29 @@ class GetJobExecutionStatesTestCase(BaseTestCase):
         self.assertEqual(job_execution_states, expected_execution_states)
 
 class ProcessExecutedJobTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.job = defaultdict(MagicMock)
+
     def decorate_runner_methods_to_patch(self):
         self.runner_methods_to_patch.extend(['process_actions', 'complete_job'])
 
+    def test_adds_completed_dir_to_job_state(self):
+        self.job['execution'] = {'dir': 'some_dir'}
+        self.runner.process_executed_job(job=self.job)
+        self.assertEqual(self.job['completed_dir'], self.job['execution']['dir'])
+
     def test_calls_post_exec_actions(self):
         actions = [MagicMock() for i in range(3)]
-        job = {'spec': {'post_exec_actions': actions}}
-        self.runner.process_executed_job(job=job)
+        self.job['spec'] = {'post_exec_actions': actions}
+        self.runner.process_executed_job(job=self.job)
         self.assertEqual(
             self.runner.process_actions.call_args,
-            call(actions=job['spec']['post_exec_actions'], job=job))
+            call(actions=self.job['spec']['post_exec_actions'], job=self.job))
 
     def test_calls_complete_job(self):
-        job = MagicMock()
-        self.runner.process_executed_job(job=job)
-        self.assertEqual(self.runner.complete_job.call_args, call(job=job))
+        self.runner.process_executed_job(job=self.job)
+        self.assertEqual(self.runner.complete_job.call_args, call(job=self.job))
 
 class CompleteJobTestCase(BaseTestCase):
     def setUp(self):

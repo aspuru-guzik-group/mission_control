@@ -12,8 +12,10 @@ class FlowEngine(object):
         self.task_engine_registry = collections.OrderedDict()
         self.flow_generator_class_registry = collections.OrderedDict()
 
-    def register_task_engine(self, task_engine=None):
-        key = getattr(task_engine, 'task_engine', task_engine.__name__)
+    def register_task_engine(self, task_engine=None, key=None):
+        if not key:
+            key = getattr(task_engine, 'task_engine',
+                          task_engine.__class__.__name__)
         self.task_engine_registry[key] = task_engine
 
     def register_flow_generator_class(self, flow_generator_class=None):
@@ -27,7 +29,7 @@ class FlowEngine(object):
                                                    flow_generator_class=None):
         if not hasattr(flow_generator_class, 'get_dependencies'): return
         dependencies = flow_generator_class.get_dependencies()
-        for task_engine in dependencies.get('task_enginees', []):
+        for task_engine in dependencies.get('task_engines', []):
             self.register_task_engine(task_engine)
         for generator_class in dependencies.get('flow_generator_classes', []):
             self.register_flow_generator_class(
@@ -46,8 +48,8 @@ class FlowEngine(object):
             **{attr: getattr(flow, attr, None)
                for attr in ['data', 'input', 'output', 'status',
                             'root_task_key']},
-            'tasks': flow.tasks.values(),
-            'edges': flow.edges.values(),
+            'tasks': list(flow.tasks.values()),
+            'edges': list(flow.edges.values()),
         }
         return serialized_flow
 
@@ -82,6 +84,7 @@ class FlowEngine(object):
             self.tick_task(flow=flow, task=task, ctx=ctx)
 
     def tick_task(self, flow=None, task=None, ctx=None):
+        ctx = ctx or {}
         try:
             task_engine = self.get_engine_for_task(task=task)
             task_engine.tick_task(task=task, ctx={**ctx, 'flow': flow})
@@ -100,9 +103,10 @@ class FlowEngine(object):
         )
 
     def get_engine_for_task(self, task=None):
-        task_engine =  self.task_engine_registry.get(task['task_engine'], None)
+        task_engine = self.task_engine_registry.get(task['task_engine'], None)
         if not task_engine:
             raise Exception("Could not find task_engine for task '%s'" % task)
+        return task_engine
 
     def complete_flow(self, flow=None):
         flow.output = self.get_flow_output(flow=flow)

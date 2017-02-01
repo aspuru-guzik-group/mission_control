@@ -164,6 +164,7 @@ class BaseJobRunner(object):
 
     def process_executed_job(self, job=None):
         self.logger.debug('process_executed_job, %s' % job)
+        job['completed_dir'] = job['execution']['dir']
         actions = job.get('spec', {}).get('post_exec_actions', None)
         if actions: self.process_actions(actions=actions, job=job)
         self.complete_job(job=job)

@@ -175,8 +175,7 @@ class RunnerSetupTestCase(BaseTestCase):
 
 class GenerateFlowGeneratorClassesTestCase(BaseTestCase):
     def test_generates_flow_generator_classes(self):
-        from a2g2.flow_generators import reaxys
-        expected_flow_generator_classes = set([reaxys.ReaxysFlowGenerator])
+        expected_flow_generator_classes = set()
         self.assertEqual(self.runner.generate_flow_generator_classes(),
                          expected_flow_generator_classes)
 
