@@ -286,39 +286,6 @@ class StartTaskTestCase(BaseTestCase):
         self.engine.start_task(flow=self.flow, task=self.task)
         self.assertEqual(self.task.status, 'RUNNING')
 
-    def test_sets_task_inputs(self):
-        self.engine.set_task_inputs = Mock()
-        self.engine.start_task(flow=self.flow, task=self.task)
-        self.assertEqual(self.engine.set_task_inputs.call_args,
-                         call(flow=self.flow, task=self.task))
-
-class SetTaskInputsTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.flow = Flow()
-        self.task = self.flow.add_task(task=Mock())
-
-    def test_sets_precursor_outputs(self):
-        self.engine.get_precursor_outputs = Mock()
-        self.engine.set_task_inputs(flow=self.flow, task=self.task)
-        self.assertEqual(self.task.precursor_outputs,
-                         self.engine.get_precursor_outputs.return_value)
-
-class GetPrecursorOutputsTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.flow = Flow()
-
-    def test_returns_keyed_precursor_outputs(self):
-        precursors = [self.flow.add_task(task=Mock()) for i in range(3)]
-        successor = self.flow.add_task(task=Mock(), precursor=precursors)
-        successor.input = None
-        result = self.engine.get_precursor_outputs(flow=self.flow,
-                                                   task=successor)
-        expected_result = {precursor.key: precursor.output
-                           for precursor in precursors}
-        self.assertEqual(result, expected_result)
-
 class GenerateFlowTestCase(BaseTestCase):
     def test_generates_flow_from_spec(self):
         class MockFlowGenerator(object):
