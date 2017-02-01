@@ -8,12 +8,12 @@ class FlowEngine(object):
     def __init__(self, ctx=None, logger=None):
         self.ctx = ctx
         self.logger = logger or logging
-        self.task_class_registry = collections.OrderedDict()
+        self.task_engine_registry = collections.OrderedDict()
         self.flow_generator_class_registry = collections.OrderedDict()
 
-    def register_task_class(self, task_class=None):
-        key = getattr(task_class, 'task_type', task_class.__name__)
-        self.task_class_registry[key] = task_class
+    def register_task_engine(self, task_engine=None):
+        key = getattr(task_engine, 'task_engine', task_engine.__name__)
+        self.task_engine_registry[key] = task_engine
 
     def register_flow_generator_class(self, flow_generator_class=None):
         key = getattr(flow_generator_class, 'flow_type',
@@ -26,83 +26,29 @@ class FlowEngine(object):
                                                    flow_generator_class=None):
         if not hasattr(flow_generator_class, 'get_dependencies'): return
         dependencies = flow_generator_class.get_dependencies()
-        for task_class in dependencies.get('task_classes', []):
-            self.register_task_class(task_class)
+        for task_engine in dependencies.get('task_enginees', []):
+            self.register_task_engine(task_engine)
         for generator_class in dependencies.get('flow_generator_classes', []):
             self.register_flow_generator_class(
                 flow_generator_class=generator_class)
 
     def deserialize_flow(self, serialized_flow=None):
         flow = Flow()
-        for attr in ['data', 'input', 'output', 'status']:
+        for attr in ['data', 'input', 'output', 'status', 'root_task_key']:
             setattr(flow, attr, serialized_flow.get(attr, None))
-        tasks = [
-            self.deserialize_task(serialized_task)
-            for serialized_task in serialized_flow.get('tasks', [])
-        ]
-        flow.add_tasks(tasks=tasks)
-        root_task_key = serialized_flow.get('root_task_key')
-        if root_task_key is not None:
-            flow.root_task = flow.tasks[root_task_key]
-        edges = [
-            {'src': flow.tasks[serialized_edge['src_key']],
-             'dest': flow.tasks[serialized_edge['dest_key']]}
-            for serialized_edge in serialized_flow.get('edges', [])
-        ]
-        flow.add_edges(edges=edges)
+        for task in serialized_flow.get('tasks', []): flow.add_task(task=task)
+        for edge in serialized_flow.get('edges', []): flow.add_edge(edge=edge)
         return flow
-
-    def deserialize_task(self, serialized_task):
-        task_class = self.get_task_class_for_serialized_task(
-            serialized_task=serialized_task)
-        if not task_class:
-            msg = "Could not find task_class for serialized_task '{}'".format( 
-                serialized_task)
-            raise Exception(msg)
-        task_kwargs = self.get_task_kwargs_for_serialized_task(
-            serialized_task=serialized_task)
-        task = task_class(ctx=self.ctx, **task_kwargs)
-        return task
-
-    def get_task_class_for_serialized_task(self, serialized_task=None):
-        return self.task_class_registry.get(serialized_task['task_type'], None)
-
-    def get_task_kwargs_for_serialized_task(self, serialized_task=None):
-        return serialized_task
 
     def serialize_flow(self, flow=None):
         serialized_flow = {
             **{attr: getattr(flow, attr, None)
-               for attr in ['data', 'input', 'output', 'status']},
-            'tasks': self.serialize_tasks(tasks=flow.tasks.values()),
-            'edges': self.serialize_edges(edges=flow.edges.values()),
+               for attr in ['data', 'input', 'output', 'status',
+                            'root_task_key']},
+            'tasks': flow.tasks.values(),
+            'edges': flow.edges.values(),
         }
-        if flow.root_task is not None:
-            serialized_flow['root_task_key'] = flow.root_task.key
         return serialized_flow
-
-    def serialize_tasks(self, tasks=None):
-        serialized_tasks = [self.serialize_task(task=task) for task in tasks]
-        return serialized_tasks
-
-    def serialize_task(self, task=None):
-        serialized_task = {}
-        for attr in ['key', 'data', 'input', 'output', 'status']:
-            serialized_task[attr] = getattr(task, attr, None)
-        serialized_task['task_type'] = getattr(task, 'task_type',
-                                               task.__class__.__name__)
-        return serialized_task
-
-    def serialize_edges(self, edges=None):
-        serialized_edges = [self.serialize_edge(edge=edge) for edge in edges]
-        return serialized_edges
-
-    def serialize_edge(self, edge=None):
-        serialized_edge = {
-            'src_key': edge['src'].key,
-            'dest_key': edge['dest'].key,
-        }
-        return serialized_edge
 
     def tick_flow(self, flow=None, ctx=None):
         if flow.status == 'PENDING': self.start_flow(flow=flow)
@@ -119,7 +65,7 @@ class FlowEngine(object):
             self.start_task(flow=flow, task=task)
 
     def start_task(self, flow=None, task=None):
-        task.status = 'RUNNING'
+        task['status'] = 'RUNNING'
 
     def tick_running_tasks(self, flow=None, ctx=None):
         for task in flow.get_tasks_by_status(status='RUNNING'):
@@ -127,23 +73,29 @@ class FlowEngine(object):
 
     def tick_task(self, task=None, ctx=None):
         try:
-            task.tick(engine=self, ctx=ctx)
+            task_engine = self.get_engine_for_task(task=task)
+            task_engine.tick_task(task=task, ctx=ctx)
         except Exception as e:
             msg = "tick failed for task with key '{key}': {e}".format(
-                key=task.key, e=e)
+                key=task['key'], e=e)
             self.logger.exception(msg)
+
+    def get_engine_for_task(self, task=None):
+        task_engine =  self.task_engine_registry.get(task['task_engine'], None)
+        if not task_engine:
+            raise Exception("Could not find task_engine for task '%s'" % task)
 
     def complete_flow(self, flow=None):
         flow.output = self.get_flow_output(flow=flow)
         flow.status = 'COMPLETED'
 
     def get_flow_output(self, flow=None):
-        _get_task_output = lambda t: getattr(t, 'output', None)
+        _get_task_output = lambda t: t.get('output', None)
         tail_tasks = flow.get_tail_tasks()
         if len (tail_tasks) == 0: output = None
         elif len(tail_tasks) == 1: output = _get_task_output(tail_tasks[0])
         elif len(tail_tasks) > 1: output = {
-            tail_task.key: _get_task_output(tail_task)
+            tail_task['key']: _get_task_output(tail_task)
             for tail_task in tail_tasks
         }
         return output
