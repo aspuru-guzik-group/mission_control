@@ -1,3 +1,4 @@
+import io
 import json
 from django.conf.urls import url, include
 from django.test import TestCase, override_settings
@@ -18,7 +19,7 @@ class _BaseTestCase(TestCase):
         self.decorate_patchers()
         self.mocks = {key: patcher.start()
                       for key, patcher in self.patchers.items()}
-        self.data = 'some data'
+        self.data = b'some data'
         self.params = 'some params'
         self.expected_backend = _views.storage_utils.get_storage_backend\
                 .return_value
@@ -40,8 +41,10 @@ class TestPostDataTestCase(BaseTestCase):
         self.result = self.do_post()
 
     def do_post(self, data_to_post=None):
-        post_data = data_to_post or {'data': self.data,
-                                     'params': json.dumps(self.params)}
+        post_data = data_to_post or {
+            'data': io.BytesIO(self.data),
+            'params': io.StringIO(json.dumps(self.params))
+        }
         response = self.client.post(self.url, data=post_data)
         if not str(response.status_code).startswith('2'):
             raise Exception("Bad response: %s" % response)
@@ -51,10 +54,12 @@ class TestPostDataTestCase(BaseTestCase):
         self.assertEqual(_views.storage_utils.get_storage_backend.call_args,
                          call(params=self.params))
 
-    def test_calls_backend_post_data_with_data_as_bytes(self):
-        self.assertEqual(self.expected_backend.post_data.call_args,
-                         call(data=self.data.encode('utf-8'),
-                              params=self.params))
+    def test_calls_backend_post_data_with_data(self):
+        call_args = self.expected_backend.post_data.call_args
+        data_arg = call_args[1]['data']
+        params_arg = call_args[1]['params']
+        self.assertEqual(data_arg.name, 'data')
+        self.assertEqual(params_arg, self.params)
 
     def test_returns_result(self):
         self.assertEqual(
@@ -62,20 +67,19 @@ class TestPostDataTestCase(BaseTestCase):
             {'params': self.expected_backend.post_data.return_value}
         )
 
-
 class TestGetDataTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.url = BASE_URL + 'get/'
         self.expected_backend.get_data.return_value = b'some backend response'
-        self.result = self.do_get()
+        self.response = self.do_get()
 
     def do_get(self):
         response = self.client.get(self.url, data={
             'params': json.dumps(self.params)})
         if not str(response.status_code).startswith('2'):
             raise Exception("Bad response: %s" % response)
-        return response.json()
+        return response
 
     def test_gets_backend_for_params(self):
         self.assertEqual(_views.storage_utils.get_storage_backend.call_args,
@@ -85,9 +89,6 @@ class TestGetDataTestCase(BaseTestCase):
         self.assertEqual(self.expected_backend.get_data.call_args,
                          call(params=self.params))
 
-    def test_returns_result_with_bytes_decoded(self):
-        self.assertEqual(
-            self.result,
-            {'data': self.expected_backend.get_data.return_value\
-                .decode('utf-8')}
-        )
+    def test_returns_raw_data(self):
+        self.assertEqual(self.response.content,
+                         self.expected_backend.get_data.return_value)

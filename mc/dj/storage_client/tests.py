@@ -32,11 +32,14 @@ class PostTestCase(BaseTestCase):
         expected_url = self.base_url + 'post/'
         self.assertEqual(
             self.mocks['requests'].post.call_args,
-            call(expected_url, data={
-                'data': self.data,
-                'params': self.storage_client.serialize_storage_params\
-                    .return_value,
-            }))
+            call(expected_url, files=[
+                ('data', ('data', self.data, 'application/octet-stream')),
+                ('params', ('params',
+                            self.storage_client.serialize_storage_params\
+                                .return_value,
+                            'application/json'))
+            ])
+        )
 
     def do_post(self):
         return self.storage_client.post_data(data=self.data,
@@ -60,19 +63,23 @@ class GetTestCase(BaseTestCase):
         expected_url = self.base_url + 'get/'
         self.assertEqual(
             self.mocks['requests'].get.call_args,
-            call(expected_url, data={
-                'params': self.storage_client.serialize_storage_params\
-                    .return_value
-            }))
+            call(
+                expected_url,
+                data={
+                    'params': self.storage_client.serialize_storage_params\
+                        .return_value
+                },
+                stream=True
+            )
+        )
 
     def do_get(self):
         return self.storage_client.get_data(storage_params=self.storage_params)
 
-    def test_returns_response_data(self):
-        response = {'data': Mock()}
-        self.mocks['requests'].get.return_value.json.return_value = response
+    def test_returns_raw_data(self):
         result = self.do_get()
-        self.assertEqual(result, response['data'])
+        self.assertEqual(result,
+                         self.mocks['requests'].get.return_value.content)
 
 class SerializeStorageParamsTestCase(BaseTestCase):
     def decorate_patchers(self):

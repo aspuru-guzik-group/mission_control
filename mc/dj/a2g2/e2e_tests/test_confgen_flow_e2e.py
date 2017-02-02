@@ -6,7 +6,6 @@ import tempfile
 import unittest
 from unittest.mock import call, MagicMock, Mock
 
-import jinja2
 from django.conf.urls import url, include
 from django.conf import settings
 from django.test import TestCase, override_settings
@@ -47,7 +46,11 @@ class ConfgenFlowGenerator(object):
                         'post_exec_actions': [
                             {
                                 'action': 'storage:upload',
-                                'params': {'src': '{{ctx.completed_dir}}'},
+                                'params': {
+                                    'src': {
+                                        'template': '{{ctx.completed_dir}}'
+                                    }
+                                },
                                 'output_to_ctx_target': (
                                     'data.output.raw_dir_storage_params')
                             }
@@ -66,8 +69,12 @@ class ConfgenFlowGenerator(object):
                         'action': 'set_ctx_value',
                         'description': 'wire output from job task to job input',
                         'params': {
-                            'value': ('{{ctx.flow.tasks.confgen_run.output'
-                                    '.raw_dir_storage_params}}'),
+                            'value': {
+                                'template': (
+                                    '{{ctx.flow.tasks.confgen_run.output'
+                                    '.raw_dir_storage_params}}'
+                                ),
+                            },
                             'target': ('task.input.job_spec.input'
                                        '.json_storage_params'),
                         }
@@ -81,10 +88,15 @@ class ConfgenFlowGenerator(object):
                             {
                                 'action': 'storage:download',
                                 'params': {
-                                    'json_src_params': (
-                                        '{{ctx.job_spec.input.'
-                                        'json_storage_params}}'),
-                                    'dest': '{{ctx.job_dir}}/raw_dir',
+                                    'json_src_params': {
+                                        'template': (
+                                            '{{ctx.job_spec.input.'
+                                            'json_storage_params}}'
+                                        ),
+                                    },
+                                    'dest': {
+                                        'template': '{{ctx.job_dir}}/raw_dir'
+                                    }
                                 },
                                 'output_to_ctx_target': 'data.input.raw_dir'
                             }
@@ -117,8 +129,10 @@ class ConfgenFlow_E2E_TestCase(TestCase):
     def setUp(self):
         super().setUp()
         self.setup_storage_basedir()
-        test_utils.patch_request_client(request_client=self.client,
-                                        json_methods=['get', 'post', 'patch'])
+        test_utils.patch_request_client(
+            request_client=self.client,
+            methods_to_patch=['get', 'post', 'patch']
+        )
         self.a2g2_client = self.generate_a2g2_client()
         self.storage_client = self.generate_storage_client()
         self.action_processor = self.generate_action_processor()
@@ -238,9 +252,11 @@ class ConfgenFlow_E2E_TestCase(TestCase):
 
 def _upload_action_handler(storage_client, *args, params=None, ctx=None,
                            **kwargs):
-    dir_path = ctx.render_template(params['src'])
+    dir_path = ctx.transform_value(params['src'])
     tgz_bytes = _dir_to_tgz_bytes(dir_path=dir_path)
-    return json.dumps(storage_client.post_data(data=tgz_bytes))
+    updated_params = storage_client.post_data(data=tgz_bytes)
+    serialized_params = json.dumps(updated_params)
+    return serialized_params
 
 def _dir_to_tgz_bytes(dir_path=None):
     mem_file = io.BytesIO()
@@ -252,10 +268,16 @@ def _dir_to_tgz_bytes(dir_path=None):
 class UploadActionHandlerTestCase(unittest.TestCase):
     def setUp(self):
         self.storage_client = Mock()
+        self.storage_client.post_data.return_value = {'some': 'object'}
         self.src_dir = self.setup_src_dir()
-        self.ctx = Mock()
-        self.ctx.render_template.side_effect = self.render_template
+        self.ctx = self.generate_ctx()
         self.params = {'src': self.src_dir}
+
+    def generate_ctx(self):
+        ctx = Mock()
+        def transform_value(value): return value
+        ctx.transform_value.side_effect = transform_value
+        return ctx
 
     def setup_src_dir(self):
         src_dir = tempfile.mkdtemp()
@@ -264,36 +286,32 @@ class UploadActionHandlerTestCase(unittest.TestCase):
             with open(path, 'w') as f: f.write(str(i))
         return src_dir
 
-    def render_template(self, tpl):
-        return jinja2.Template(tpl).render(ctx=self.ctx)
-
     def do_upload(self):
         return _upload_action_handler(storage_client=self.storage_client,
                                       params=self.params, ctx=self.ctx)
 
-    def test_posts_tgz_of_rendered_src_template(self):
+    def test_posts_tgz_of_transformed_src(self):
         self.do_upload()
-        self.assertEqual(self.ctx.render_template.call_args,
+        self.assertEqual(self.ctx.transform_value.call_args,
                          call(self.params['src']))
         expected_data = _dir_to_tgz_bytes(
-            dir_path=self.render_template(self.params['src']))
+            dir_path=self.ctx.transform_value(self.params['src']))
         self.assertEqual(self.storage_client.post_data.call_args,
                          call(data=expected_data))
 
     def test_returns_serialized_result_of_post_data(self):
-        self.storage_client.post_data.return_value = {'some': 'object'}
         result = self.do_upload()
         self.assertEqual(result,
                          json.dumps(self.storage_client.post_data.return_value))
 
 def _download_action_handler(storage_client, *args, params=None, ctx=None,
                            **kwargs):
-    json_src_params = ctx.render_template(params['json_src_params'])
+    json_src_params = ctx.transform_value(params['json_src_params'])
     src_params = json.loads(json_src_params)
-    rendered_dest = ctx.render_template(params['dest'])
+    transformed_dest = ctx.transform_value(params['dest'])
     tgz_bytes = storage_client.get_data(storage_params=src_params)
-    _tgz_bytes_to_dir(tgz_bytes=tgz_bytes, dir_path=rendered_dest)
-    return rendered_dest
+    _tgz_bytes_to_dir(tgz_bytes=tgz_bytes, dir_path=transformed_dest)
+    return transformed_dest
 
 def _tgz_bytes_to_dir(tgz_bytes=None, dir_path=None):
     mem_file = io.BytesIO(tgz_bytes)
@@ -312,11 +330,7 @@ class DownloadActionHandlerTestCase(unittest.TestCase):
         self.dest = os.path.join(self.dest_dir, 'dest')
         self.params = {'json_src_params': self.json_src_params,
                        'dest': self.dest}
-        self.ctx = Mock()
-        self.ctx.render_template.side_effect = self.render_template
-
-    def render_template(self, tpl):
-        return jinja2.Template(tpl).render(ctx=self.ctx)
+        self.ctx = self.generate_ctx()
 
     def setup_src_dir(self):
         src_dir = tempfile.mkdtemp()
@@ -325,24 +339,28 @@ class DownloadActionHandlerTestCase(unittest.TestCase):
             with open(path, 'w') as f: f.write(str(i))
         return src_dir
 
+    def generate_ctx(self):
+        ctx = Mock()
+        def transform_value(value): return value
+        ctx.transform_value.side_effect = transform_value
+        return ctx
+
     def do_download(self):
         return _download_action_handler(storage_client=self.storage_client,
                                         params=self.params, ctx=self.ctx)
 
-    def test_calls_get_data_with_deserialized_rendered_src_params(self):
+    def test_calls_get_data_with_deserialized_transformed_src_params(self):
         self.do_download()
-        self.assertEqual(self.ctx.render_template.call_args_list[0],
-                         call(self.params['src_params']))
-        self.assertEqual(
-            self.storage_client.get_data.call_args,
-            call(params=self.render_template(self.params['src_params'])))
+        transformed_params = self.ctx.transform_value(
+            self.params['json_src_params'])
+        deserialized_params = json.loads(transformed_params)
+        self.assertEqual(self.storage_client.get_data.call_args,
+                         call(storage_params=deserialized_params))
 
-    def test_writes_tgz_to_rendered_dest(self):
+    def test_writes_tgz_to_transformed_dest(self):
         self.do_download()
-        self.assertEqual(self.ctx.render_template.call_args_list[-1],
-                         call(self.params['dest']))
-        expected_dest_dir = self.ctx.render_template(self.params['dest'])
-        self.assert_dirs_equal(self.src_dir, expected_dest_dir)
+        self.assert_dirs_equal(self.src_dir,
+                               self.ctx.transform_value(self.params['dest']))
 
     def assert_dirs_equal(self, left, right):
         from filecmp import dircmp
@@ -350,7 +368,6 @@ class DownloadActionHandlerTestCase(unittest.TestCase):
         self.assertEqual(dcmp.left_only, [])
         self.assertEqual(dcmp.right_only, [])
 
-    def test_returns_rendered_dest(self):
+    def test_returns_transformed_dest(self):
         result = self.do_download()
-        self.assertEqual(result, self.render_template(self.params['dest']))
-
+        self.assertEqual(result, self.ctx.transform_value(self.params['dest']))

@@ -13,7 +13,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if options['job_spec']:
-            job_spec = self.load_job_spec(spec_path=options['job_spec'])
+            job_spec = self.load_job_spec(job_spec_path=options['job_spec'])
         else:
             job_spec = {}
         job = Job.objects.create(job_spec=job_spec)

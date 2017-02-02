@@ -14,9 +14,10 @@ urlpatterns = [
 
 class BaseTestCase(TestCase):
     def setUp(self):
-        test_utils.patch_request_client(request_client=self.client,
-                                        json_methods=['get', 'post', 'patch'])
-
+        test_utils.patch_request_client(
+            request_client=self.client,
+            methods_to_patch=['get', 'post', 'patch']
+        )
         self.a2g2_client = A2G2_Client(base_url='/' + BASE_PATH,
                                        request_client=self.client)
 

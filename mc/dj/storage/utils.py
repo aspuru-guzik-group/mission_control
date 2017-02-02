@@ -24,7 +24,15 @@ class FileSystemBackend(object):
 
     def post_data(self, data=None, params=None):
         key = self.get_key()
-        with open(self.get_path_for_key(key), 'wb') as f: f.write(data)
+        with open(self.get_path_for_key(key), 'wb') as f:
+            if hasattr(data, 'read'):
+                chunk_size = 1024
+                chunk = data.read(chunk_size)
+                while chunk:
+                    f.write(chunk)
+                    chunk = data.read(chunk_size)
+            else:
+                f.write(data)
         return {'key': key}
 
     def get_path_for_key(self, key=None):

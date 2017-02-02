@@ -3,6 +3,7 @@ from django.conf.urls import url, include
 from django.conf import settings
 from django.test import TestCase, override_settings
 
+from mc_utils import test_utils
 from storage_client.storage_client import MissionControlStorageClient
 
 from storage import urls as _storage_urls
@@ -15,12 +16,13 @@ urlpatterns = [
 @override_settings(ROOT_URLCONF=__name__)
 class StorageClientE2ETestCase(TestCase):
     def setUp(self):
+        test_utils.patch_request_client(self.client)
         self.setup_storage_basedir()
         self.storage_client = MissionControlStorageClient(
             base_url='/%s' % BASE_PATH,
             request_client=self.client
         )
-        self.data = 'some data'
+        self.data = b'some data'
         self.storage_params = 'some params'
 
     def setup_storage_basedir(self):
@@ -31,5 +33,5 @@ class StorageClientE2ETestCase(TestCase):
     def test_storage(self):
         updated_params = self.storage_client.post_data(
             data=self.data, storage_params=self.storage_params)
-        get_result = self.storage_client.get_data(storage_params=updated_params)
-        self.assertEqual(get_result['data'], self.data)
+        data = self.storage_client.get_data(storage_params=updated_params)
+        self.assertEqual(data, self.data)

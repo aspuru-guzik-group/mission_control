@@ -155,7 +155,7 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
     def get_job_model(self):
         job_models = Job.objects.all()
         job_model = [job_model for job_model in job_models
-                     if job_model.spec['type'] == 'Job_A'][0]
+                     if job_model.job_spec['type'] == 'Job_A'][0]
         return job_model
 
     def assert_job_model_attr(self, attr, expected):
