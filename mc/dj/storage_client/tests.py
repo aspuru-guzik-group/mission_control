@@ -42,11 +42,11 @@ class PostTestCase(BaseTestCase):
         return self.storage_client.post_data(data=self.data,
                                              storage_params=self.storage_params)
 
-    def test_returns_response_data(self):
-        response = {'key': Mock()}
+    def test_returns_response_params(self):
+        response = {'params': {'key': Mock()}}
         self.mocks['requests'].post.return_value.json.return_value = response
         result = self.do_post()
-        self.assertEqual(result, response)
+        self.assertEqual(result, response['params'])
 
 class GetTestCase(BaseTestCase):
     def setUp(self):

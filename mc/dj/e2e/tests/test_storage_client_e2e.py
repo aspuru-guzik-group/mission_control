@@ -29,8 +29,7 @@ class StorageClientE2ETestCase(TestCase):
         setattr(settings, settings_attr, self.storage_base_dir)
 
     def test_storage(self):
-        post_result = self.storage_client.post_data(
+        updated_params = self.storage_client.post_data(
             data=self.data, storage_params=self.storage_params)
-        updated_params = post_result['params']
         get_result = self.storage_client.get_data(storage_params=updated_params)
         self.assertEqual(get_result['data'], self.data)
