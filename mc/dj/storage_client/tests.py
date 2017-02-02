@@ -72,7 +72,7 @@ class GetTestCase(BaseTestCase):
         response = {'data': Mock()}
         self.mocks['requests'].get.return_value.json.return_value = response
         result = self.do_get()
-        self.assertEqual(result, response)
+        self.assertEqual(result, response['data'])
 
 class SerializeStorageParamsTestCase(BaseTestCase):
     def decorate_patchers(self):

@@ -46,7 +46,7 @@ class MissionControlStorageClient(object):
             })
             if not str(response.status_code).startswith('2'):
                 raise Exception("Bad response: %s" % response)
-            return response.json()
+            return response.json()['data']
         except Exception as e:
             msg = ("Client error, request was: {request}, error was:"
                    " '{error}'"
