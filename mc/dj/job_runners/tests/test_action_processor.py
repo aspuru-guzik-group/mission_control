@@ -31,14 +31,31 @@ class SetCtxValueHandler(BaseTestCase):
                          call(ctx=ctx, **params))
 
 class SetCtxValueTestCase(BaseTestCase):
-    def test_calls_ctx_set(self):
-        ctx = MagicMock()
-        target = Mock()
-        value = Mock()
-        action_processor = ActionProcessor()
-        action_processor.set_ctx_value(ctx=ctx, target=target, value=value)
-        self.assertEqual(ctx.set.call_args,
-                         call(target=target, value=value))
+    def setUp(self):
+        super().setUp()
+        self.ctx = MagicMock()
+        self.target = Mock()
+        self.action_processor = ActionProcessor()
+
+    def test_renders_template_values(self):
+        value = {'template': 'some template'}
+        self._set_ctx_value(value=value)
+        self.assertEqual(self.ctx.render_template.call_args,
+                         call(value['template']))
+        self.assertEqual(self.ctx.set.call_args,
+                         call(target=self.target,
+                              value=self.ctx.render_template.return_value))
+
+    def _set_ctx_value(self, value=None):
+        self.action_processor.set_ctx_value(ctx=self.ctx, target=self.target,
+                                            value=value)
+
+    def test_does_not_render_non_template_values(self):
+        value = 'some non-template value'
+        self._set_ctx_value(value=value)
+        self.assertEqual(self.ctx.render_template.call_count, 00)
+        self.assertEqual(self.ctx.set.call_args,
+                         call(target=self.target, value=value))
 
 class ProcessActionTestCase(BaseTestCase):
     def setUp(self):

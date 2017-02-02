@@ -1,3 +1,4 @@
+import collections
 import jinja2
 
 
@@ -20,8 +21,12 @@ class ActionProcessor(object):
         self.set_ctx_value(ctx=ctx, **params)
 
     def set_ctx_value(self, ctx=None, target=None, value=None):
-        if hasattr(ctx, 'render_template'): value = ctx.render_template(value)
+        if self.is_template_value(value):
+            value = ctx.render_template(value['template'])
         ctx.set(target=target, value=value)
+
+    def is_template_value(self, value=None):
+        return isinstance(value, collections.Mapping) and ('template' in value)
 
     def process_action(self, action=None, ctx=None):
         handler = self.get_handler_for_action(action=action)
