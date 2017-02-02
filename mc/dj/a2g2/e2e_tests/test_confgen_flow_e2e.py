@@ -177,9 +177,16 @@ class ConfgenFlow_E2E_TestCase(TestCase):
         execution_client = MagicMock()
         execution_client.get_execution_state = Mock(return_value={})
         def mock_start_execution(job=None):
-            return {'dir': tempfile.mkdtemp()}
+            output_dir = tempfile.mkdtemp()
+            if job['job_spec']['job_type'] == 'confgen':
+                self.populate_confgen_dir(output_dir=output_dir)
+            if job['job_spec']['job_type'] == 'confgen:load': pass
+            return {'dir': output_dir}
         execution_client.start_execution.side_effect = mock_start_execution
         return execution_client
+
+    def populate_confgen_dir(self, output_dir=None):
+        pass
 
     def generate_flow_and_job_runner(self):
         return OdysseyPushRunner(
