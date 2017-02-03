@@ -5,13 +5,20 @@ import pybel
 
 
 class ConfgenLoadJobEngine(object):
+    def __init__(self, a2g2_client=None):
+        self.a2g2_client = a2g2_client
+
+    def execute_job(self, job=None):
+        chemthings = self.parse_job_dir(job_dir=job['input']['dir_to_parse'])
+        job['output'] = self.upload_chemthings(chemthings)
+
     def parse_job_dir(self, job_dir=None, includes=None, excludes=None):
         paths_to_parse = self.get_paths_to_parse(job_dir=job_dir,
                                                  includes=includes,
                                                  excludes=excludes)
-        chemthing_dicts = []
-        for path in paths_to_parse: chemthing_dicts.extend(self.parse_path(path))
-        return chemthing_dicts
+        chemthings = []
+        for path in paths_to_parse: chemthings.extend(self.parse_path(path))
+        return chemthings
 
     def get_paths_to_parse(self, job_dir=None, includes=None, excludes=None):
         if not includes: includes = ['raw_data/**']
@@ -33,19 +40,25 @@ class ConfgenLoadJobEngine(object):
         return paths
 
     def parse_path(self, path=None):
-        chemthing_dicts = []
+        chemthings = []
         pb_mols = self.file_to_pb_mols(path=path)
         for i, pb_mol in enumerate(pb_mols):
-            chemthing_dict = self.pb_mol_to_chemthing_dict(pb_mol)
-            chemthing_dict['props']['mol_idx'] = i
-            chemthing_dicts.append(chemthing_dict)
-        return chemthing_dicts
+            chemthing = self.pb_mol_to_chemthing(pb_mol)
+            chemthing['props']['mol_idx'] = i
+            chemthings.append(chemthing)
+        return chemthings
 
     def file_to_pb_mols(self, path=None):
         ext = os.path.splitext(path)[1].lstrip('.')
         return pybel.readfile(ext, path)
 
-    def pb_mol_to_chemthing_dict(self, pb_mol=None):
-        chemthing_dict = {'cml': pb_mol.write('cml'), 'props': {}}
-        return chemthing_dict
+    def pb_mol_to_chemthing(self, pb_mol=None):
+        chemthing = {'cml': pb_mol.write('cml'), 'props': {}}
+        return chemthing
 
+    def upload_chemthings(self, chemthings=None):
+        results = []
+        for chemthing in chemthings:
+            result = self.a2g2_client.create_chemthing(chemthing=chemthing)
+            results.append(result)
+        return results

@@ -14,20 +14,23 @@ class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.engine = ConfgenLoadJobEngine()
 
-class RunJobDirTestCase(BaseTestCase):
+class ExecuteJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
+        self.engine.parse_job_dir = Mock()
+        self.engine.upload_chemthings = Mock()
+        self.job = {'input': {'dir_to_parse': Mock()}}
+        self.engine.execute_job(job=self.job)
 
     def test_uploads_parse_results(self):
-        self.engine.parse_inputs = Mock()
-        self.engine.upload_objects = Mock()
-        self.engine.execute_job(job_dir=self.job_dir)
-        self.assertEqual(
-            self.engine.parse_inputs.call_args,
-            call(inputs_dir=os.path.join(self.job_dir, 'raw_data'))
-        )
-        self.assertEqual(self.engine.upload_objects.call_args,
-                         call(objects=self.engine.parse_inputs.return_value))
+        self.assertEqual(self.engine.parse_job_dir.call_args,
+                         call(job_dir=self.job['input']['dir_to_parse']))
+        self.assertEqual(self.engine.upload_chemthings.call_args,
+                         call(self.engine.parse_job_dir.return_value))
+
+    def test_sets_job_output_to_upload_results(self):
+        self.assertEqual(self.job['output'],
+                         self.engine.upload_chemthings.return_value)
 
 class ParseJobDirTestCase(BaseTestCase):
     def setUp(self):
@@ -86,9 +89,22 @@ class ParseJobDirTestCase(BaseTestCase):
     def get_sorted_chemthings(self, chemthings):
         return sorted(chemthings, key=lambda cthing: cthing['props']['mol_idx'])
 
-class UploadTestCase(BaseTestCase):
-    def test_uploads_chemthings(self):
-        self.fail()
+class UploadChemthingsTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.chemthings = [Mock() for i in range(3)]
+        self.engine.a2g2_client = Mock()
+        self.result = self.engine.upload_chemthings(chemthings=self.chemthings)
+
+    def test_creates_chemthings_via_client(self):
+        expected_call_args_list = [call(chemthing=chemthing)
+                                   for chemthing in self.chemthings]
+        self.assertEqual(
+            self.engine.a2g2_client.create_chemthing.call_args_list,
+            expected_call_args_list
+        )
 
     def test_outputs_upload_results(self):
-        self.fail()
+        expected_result = [self.engine.a2g2_client.create_chemthing.return_value
+                           for chemthing in self.chemthings]
+        self.assertEqual(self.result, expected_result)
