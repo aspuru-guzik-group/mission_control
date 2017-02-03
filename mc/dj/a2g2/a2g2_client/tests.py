@@ -18,20 +18,20 @@ class BaseTestCase(TestCase):
     def tearDown(self):
         for patcher in self.patchers.values(): patcher.stop()
 
-class CreateMolTestCase(BaseTestCase):
+class CreateChemThingTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.mol = Mock()
+        self.chemthing = Mock()
 
     def test_makes_post(self):
-        self.a2g2_client.create_mol(mol=self.mol)
-        expected_url = self.base_url + 'mols/'
+        self.a2g2_client.create_chemthing(chemthing=self.chemthing)
+        expected_url = self.base_url + 'chemthings/'
         self.assertEqual(self.mocks['requests'].post.call_args,
-                         call(expected_url, data=self.mol,
+                         call(expected_url, data=self.chemthing,
                               content_type='application/json'))
 
     def test_returns_response(self):
-        result = self.a2g2_client.create_mol(mol=self.mol)
+        result = self.a2g2_client.create_chemthing(chemthing=self.chemthing)
         self.assertEqual(
             result,
             self.mocks['requests'].post.return_value.json.return_value)
@@ -50,9 +50,9 @@ class GetCountsTestCase(BaseTestCase):
             self.mocks['requests'].get.return_value.json.return_value)
 
 class QueryTestCase(BaseTestCase):
-    def test_queries_mols(self):
-        result = self.a2g2_client.query(q={'collection': 'mols'})
-        expected_url = self.base_url + 'mols/'
+    def test_queries_chemthings(self):
+        result = self.a2g2_client.query(q={'collection': 'chemthings'})
+        expected_url = self.base_url + 'chemthings/'
         self.assertEqual(self.mocks['requests'].get.call_args,
                          call(expected_url))
         self.assertEqual(

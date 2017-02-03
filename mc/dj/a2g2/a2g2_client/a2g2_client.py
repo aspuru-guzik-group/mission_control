@@ -11,12 +11,13 @@ class A2G2_Client(object):
 
     def generate_urls(self):
         return {
-            'mols': self.base_url + 'mols/',
+            'chemthings': self.base_url + 'chemthings/',
             'counts': self.base_url + 'counts/',
         }
 
-    def create_mol(self, mol=None):
-        response = self.request_client.post(self.urls['mols'], data=mol,
+    def create_chemthing(self, chemthing=None):
+        response = self.request_client.post(self.urls['chemthings'],
+                                            data=chemthing,
                                             content_type='application/json')
         return self.json_raise_for_status(response=response)
 

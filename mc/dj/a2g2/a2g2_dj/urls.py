@@ -5,7 +5,7 @@ from . import views
 
 
 router = DefaultRouter()
-router.register(r'mols', views.MolViewSet)
+router.register(r'chemthings', views.ChemThingViewSet)
 
 urlpatterns = [
     url(r'^', include(router.urls)),

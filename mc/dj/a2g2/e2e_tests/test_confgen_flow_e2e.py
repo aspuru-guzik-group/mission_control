@@ -201,27 +201,27 @@ class ConfgenFlow_E2E_TestCase(TestCase):
         )
 
     def test_flow(self):
-        self.generate_molecule_library()
+        self.generate_chemthingecule_library()
         self.create_flows()
         self.assertTrue(len(self.flow_client.fetch_tickable_flows()) > 0)
         self.run_flows_to_completion()
         self.assertTrue(self.flow_and_job_runner.tick_counter > 0)
         self.assert_domain_db_has_expected_state()
 
-    def generate_molecule_library(self):
+    def generate_chemthingecule_library(self):
         initial_smiles = ['smiles_%s' % i for i in range(3)]
         for smiles in initial_smiles:
-            self.a2g2_client.create_mol({'props': {'smiles': smiles}})
+            self.a2g2_client.create_chemthing({'props': {'smiles': smiles}})
 
     def create_flows(self):
-        for mol in self.a2g2_client.query(q={'collection': 'mols'})[:1]:
-            self.create_confgen_flow(mol=mol)
+        for chemthing in self.a2g2_client.query(q={'collection': 'chemthings'})[:1]:
+            self.create_confgen_flow(chemthing=chemthing)
 
-    def create_confgen_flow(self, mol=None):
+    def create_confgen_flow(self, chemthing=None):
         flow_spec = {
             'flow_type': ConfgenFlowGenerator.flow_type,
             'input': {
-                'smiles': mol['props']['smiles'],
+                'smiles': chemthing['props']['smiles'],
                 'confgen_params': {},
             },
         }
@@ -253,7 +253,7 @@ class ConfgenFlow_E2E_TestCase(TestCase):
         return keyed_flows
 
     def assert_domain_db_has_expected_state(self):
-        expected_counts = {'Mol': 10}
+        expected_counts = {'ChemThing': 10}
         actual_counts = self.a2g2_client.get_counts()
         self.assertEqual(actual_counts, expected_counts)
 

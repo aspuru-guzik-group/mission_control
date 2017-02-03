@@ -1,9 +1,9 @@
 from rest_framework import serializers
 
-from .models import Mol
+from .models import ChemThing
 
-class MolSerializer(serializers.ModelSerializer):
+class ChemThingSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Mol
+        model = ChemThing
         fields = ('uuid', 'created', 'modified', 'cml', 'props')
         read_only_fields = ('uuid', 'created', 'modified',)

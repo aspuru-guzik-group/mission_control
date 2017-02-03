@@ -1,16 +1,16 @@
 from django.test import TestCase
 
-from ..models import Mol
+from ..models import ChemThing
 
 
-class MolTestCase(TestCase):
+class ChemThingTestCase(TestCase):
     def test_has_expected_fields(self):
         kwargs = {
             'cml': 'some cml',
             'props': {'some': 'prop'},
         }
-        mol = Mol.objects.create(**kwargs)
+        chemthing = ChemThing.objects.create(**kwargs)
         for kwarg, value in kwargs.items():
-            self.assertEqual(getattr(mol, kwarg), value)
+            self.assertEqual(getattr(chemthing, kwarg), value)
         expected_attrs = ['uuid', 'created', 'modified']
-        for attr in expected_attrs: self.assertTrue(hasattr(mol, attr))
+        for attr in expected_attrs: self.assertTrue(hasattr(chemthing, attr))

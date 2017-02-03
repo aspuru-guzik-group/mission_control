@@ -3,7 +3,7 @@ from django.test import TestCase, override_settings
 
 from mc_utils import test_utils
 
-from ..a2g2_dj.models import Mol
+from ..a2g2_dj.models import ChemThing
 from ..a2g2_dj import urls as _a2g2_dj_urls
 from ..a2g2_client.a2g2_client import A2G2_Client
 
@@ -22,19 +22,19 @@ class BaseTestCase(TestCase):
                                        request_client=self.client)
 
 @override_settings(ROOT_URLCONF=__name__)
-class CreateMolsTestCase(BaseTestCase):
-    def test_creates_mols(self):
-        self.assertEqual(Mol.objects.count(), 0)
-        self.a2g2_client.create_mol(mol={})
-        self.assertEqual(Mol.objects.count(), 1)
+class CreateChemThingsTestCase(BaseTestCase):
+    def test_creates_chemthings(self):
+        self.assertEqual(ChemThing.objects.count(), 0)
+        self.a2g2_client.create_chemthing(chemthing={})
+        self.assertEqual(ChemThing.objects.count(), 1)
 
     def test_response_has_uuid(self):
-        created_mol = self.a2g2_client.create_mol(mol={})
-        self.assertTrue(created_mol['uuid'] is not None)
+        created_chemthing = self.a2g2_client.create_chemthing(chemthing={})
+        self.assertTrue(created_chemthing['uuid'] is not None)
 
 @override_settings(ROOT_URLCONF=__name__)
 class GetCountsTestCase(BaseTestCase):
-    def test_gets_mol_counts(self):
-        for i in range(3): Mol.objects.create()
-        self.assertEqual(self.a2g2_client.get_counts().get('Mol'),
-                         Mol.objects.count())
+    def test_gets_chemthing_counts(self):
+        for i in range(3): ChemThing.objects.create()
+        self.assertEqual(self.a2g2_client.get_counts().get('ChemThing'),
+                         ChemThing.objects.count())
