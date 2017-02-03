@@ -1,0 +1,3 @@
+class ConfgenLoadJobEngine(object):
+    pass
+
