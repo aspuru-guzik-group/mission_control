@@ -1,0 +1,9 @@
+name: a2g2
+dependencies:
+  - rdkit::rdkit=2016.03.4=np111py35_1
+  - openbabel::openbabel=2.4.1=py35_1
+  - pip:
+    - psutil
+    - requests
+    - pexpect
+    - jinja2

@@ -128,6 +128,7 @@ urlpatterns = [
 class ConfgenFlow_E2E_TestCase(TestCase):
     def setUp(self):
         super().setUp()
+        self.setup_docker_containers()
         self.setup_storage_basedir()
         test_utils.patch_request_client(
             request_client=self.client,
@@ -142,6 +143,10 @@ class ConfgenFlow_E2E_TestCase(TestCase):
         self.flow_client = self.flow_and_job_runner.flow_client
         self.flow_and_job_runner.tick = Mock(
             side_effect=self.flow_and_job_runner.tick)
+
+    def setup_docker_containers(self):
+        self.setup_docker_network()
+        pass
 
     def setup_storage_basedir(self):
         self.storage_base_dir = tempfile.mkdtemp()
