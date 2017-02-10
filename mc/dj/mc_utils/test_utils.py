@@ -13,8 +13,10 @@ def patch_client_method(client=None, method_name=None):
     orig_method = getattr(client, method_name)
     def patched_method(*args, data=None, files=None, **kwargs):
         args = list(args) or []
-        if kwargs.get('content_type', None) == 'application/json':
-            if method_name is not 'get' and data: data = json.dumps(data)
+        if 'json' in kwargs:
+            if method_name is not 'get':
+                data = json.dumps(kwargs['json'])
+                kwargs = {**kwargs, 'content_type': 'application/json'}
         else:
             data = data or {}
             for name, requests_file in (files or []):

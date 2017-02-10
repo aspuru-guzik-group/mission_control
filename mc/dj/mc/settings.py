@@ -25,7 +25,10 @@ SECRET_KEY = '*czp&bwuh_h-vn0olxc1buz+^*g)al6%fn@!3y$7hao!kcr=8x'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+if DEBUG:
+    ALLOWED_HOSTS = ['*']
+else:
+    ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -47,6 +50,7 @@ INSTALLED_APPS = [
     'flow_client',
     'a2g2.a2g2_dj.apps.A2G2_DJ_Config',
     'storage',
+    'rest_framework',
 ]
 
 MIDDLEWARE = [

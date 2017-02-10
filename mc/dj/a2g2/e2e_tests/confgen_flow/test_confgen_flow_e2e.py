@@ -1,27 +1,18 @@
-import io
 import json
-import os
-import tarfile
 import tempfile
 import unittest
-from unittest.mock import call, MagicMock, Mock
+from unittest.mock import MagicMock, Mock
 
-from django.conf.urls import url, include
-from django.conf import settings
-from django.test import TestCase, override_settings
-
-from mc_utils import test_utils
 from flow_engines.flow import Flow
 from a2g2.a2g2_client.a2g2_client import A2G2_Client
 from a2g2.runners.odyssey_push_runner.odyssey_push_runner import (
     OdysseyPushRunner)
-from a2g2.a2g2_dj import urls as _a2g2_dj_urls
-from jobs import urls as _jobs_urls
-from missions import urls as _missions_urls
-from storage import urls as _storage_urls
 from storage_client.storage_client import MissionControlStorageClient
 from a2g2.task_engines.job_task_engine import JobTaskEngine
 from job_runners.action_processor import ActionProcessor
+
+from .docker_utils import DockerEnv
+from . import storage_action_handlers
 
 
 class ConfgenFlowGenerator(object):
@@ -114,26 +105,10 @@ class ConfgenFlowGenerator(object):
             'task_engines': set([JobTaskEngine()]),
         }
 
-BASE_PATH = 'test_api/'
-BASE_URL = '/' + BASE_PATH
-STORAGE_PATH = BASE_PATH + 'storage/'
-urlpatterns = [
-    url(r'^%s' % BASE_PATH, include(_a2g2_dj_urls.__name__)),
-    url(r'^%s' % BASE_PATH, include(_jobs_urls.__name__)),
-    url(r'^%s' % BASE_PATH, include(_missions_urls.__name__)),
-    url(r'^%s' % STORAGE_PATH, include(_storage_urls.__name__)),
-]
-
-@override_settings(ROOT_URLCONF=__name__)
-class ConfgenFlow_E2E_TestCase(TestCase):
+class ConfgenFlow_E2E_TestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
-        self.setup_docker_containers()
-        self.setup_storage_basedir()
-        test_utils.patch_request_client(
-            request_client=self.client,
-            methods_to_patch=['get', 'post', 'patch']
-        )
+        self.docker_env = self.setup_docker_env()
         self.a2g2_client = self.generate_a2g2_client()
         self.storage_client = self.generate_storage_client()
         self.action_processor = self.generate_action_processor()
@@ -144,22 +119,22 @@ class ConfgenFlow_E2E_TestCase(TestCase):
         self.flow_and_job_runner.tick = Mock(
             side_effect=self.flow_and_job_runner.tick)
 
-    def setup_docker_containers(self):
-        self.setup_docker_network()
+    def tearDown(self):
+        #self.docker_env.teardown()
         pass
 
-    def setup_storage_basedir(self):
-        self.storage_base_dir = tempfile.mkdtemp()
-        settings_attr = 'STORAGE_FILESYSTEM_BACKEND_BASEDIR'
-        setattr(settings, settings_attr, self.storage_base_dir)
+    def setup_docker_env(self):
+        docker_env = DockerEnv()
+        docker_env.setup()
+        return docker_env
 
     def generate_a2g2_client(self):
-        return A2G2_Client(base_url=BASE_URL, request_client=self.client)
+        return A2G2_Client(
+            base_url='http://' + self.docker_env.mc_ip_addr + '/a2g2/')
 
     def generate_storage_client(self):
         storage_client = MissionControlStorageClient(
-            base_url='/' + STORAGE_PATH,
-            request_client=self.client)
+            base_url=self.docker_env.mc_ip_addr + '/storage/')
         return storage_client
 
     def generate_action_processor(self):
@@ -171,12 +146,12 @@ class ConfgenFlow_E2E_TestCase(TestCase):
         return action_processor
 
     def _upload_wrapper(self, *args, params=None, ctx=None, **kwargs):
-        return _upload_action_handler(self.storage_client, *args,
-                                      params=params, ctx=ctx)
+        return storage_action_handlers.upload_action_handler(
+            self.storage_client, *args, params=params, ctx=ctx)
 
     def _download_wrapper(self, *args, params=None, ctx=None, **kwargs):
-        return _download_action_handler(self.storage_client, *args,
-                                        params=params, ctx=ctx)
+        return storage_action_handlers.download_action_handler(
+            self.storage_client, *args, params=params, ctx=ctx)
 
     def generate_execution_client(self):
         execution_client = MagicMock()
@@ -197,29 +172,31 @@ class ConfgenFlow_E2E_TestCase(TestCase):
         return OdysseyPushRunner(
             action_processor=self.action_processor,
             flow_generator_classes=[ConfgenFlowGenerator],
-            request_client=self.client,
-            job_server_url=BASE_URL,
-            flow_server_url=BASE_URL,
+            job_server_url='http://' + self.docker_env.mc_ip_addr + '/jobs/',
+            flow_server_url=('http://' + self.docker_env.mc_ip_addr 
+                             + '/missions/'),
             job_dir_factory=self.job_dir_factory,
             job_runner_kwargs={'execution_client': self.execution_client,
                                'action_processor': self.action_processor,}
         )
 
     def test_flow(self):
-        self.generate_chemthingecule_library()
+        self.generate_molecule_library()
         self.create_flows()
         self.assertTrue(len(self.flow_client.fetch_tickable_flows()) > 0)
         self.run_flows_to_completion()
         self.assertTrue(self.flow_and_job_runner.tick_counter > 0)
         self.assert_domain_db_has_expected_state()
 
-    def generate_chemthingecule_library(self):
+    def generate_molecule_library(self):
         initial_smiles = ['smiles_%s' % i for i in range(3)]
         for smiles in initial_smiles:
             self.a2g2_client.create_chemthing({'props': {'smiles': smiles}})
 
     def create_flows(self):
-        for chemthing in self.a2g2_client.query(q={'collection': 'chemthings'})[:1]:
+        for chemthing in self.a2g2_client.query(
+            q={'collection': 'chemthings'}
+        )[:1]:
             self.create_confgen_flow(chemthing=chemthing)
 
     def create_confgen_flow(self, chemthing=None):
@@ -262,124 +239,3 @@ class ConfgenFlow_E2E_TestCase(TestCase):
         actual_counts = self.a2g2_client.get_counts()
         self.assertEqual(actual_counts, expected_counts)
 
-def _upload_action_handler(storage_client, *args, params=None, ctx=None,
-                           **kwargs):
-    dir_path = ctx.transform_value(params['src'])
-    tgz_bytes = _dir_to_tgz_bytes(dir_path=dir_path)
-    updated_params = storage_client.post_data(data=tgz_bytes)
-    serialized_params = json.dumps(updated_params)
-    return serialized_params
-
-def _dir_to_tgz_bytes(dir_path=None):
-    mem_file = io.BytesIO()
-    tgz = tarfile.open(mode='w:gz', fileobj=mem_file)
-    tgz.add(dir_path, arcname='.')
-    tgz.close()
-    return mem_file.getvalue()
-
-class UploadActionHandlerTestCase(unittest.TestCase):
-    def setUp(self):
-        self.storage_client = Mock()
-        self.storage_client.post_data.return_value = {'some': 'object'}
-        self.src_dir = self.setup_src_dir()
-        self.ctx = self.generate_ctx()
-        self.params = {'src': self.src_dir}
-
-    def generate_ctx(self):
-        ctx = Mock()
-        def transform_value(value): return value
-        ctx.transform_value.side_effect = transform_value
-        return ctx
-
-    def setup_src_dir(self):
-        src_dir = tempfile.mkdtemp()
-        for i in range(3):
-            path = os.path.join(src_dir, 'file_%s' % i)
-            with open(path, 'w') as f: f.write(str(i))
-        return src_dir
-
-    def do_upload(self):
-        return _upload_action_handler(storage_client=self.storage_client,
-                                      params=self.params, ctx=self.ctx)
-
-    def test_posts_tgz_of_transformed_src(self):
-        self.do_upload()
-        self.assertEqual(self.ctx.transform_value.call_args,
-                         call(self.params['src']))
-        expected_data = _dir_to_tgz_bytes(
-            dir_path=self.ctx.transform_value(self.params['src']))
-        self.assertEqual(self.storage_client.post_data.call_args,
-                         call(data=expected_data))
-
-    def test_returns_serialized_result_of_post_data(self):
-        result = self.do_upload()
-        self.assertEqual(result,
-                         json.dumps(self.storage_client.post_data.return_value))
-
-def _download_action_handler(storage_client, *args, params=None, ctx=None,
-                           **kwargs):
-    json_src_params = ctx.transform_value(params['json_src_params'])
-    src_params = json.loads(json_src_params)
-    transformed_dest = ctx.transform_value(params['dest'])
-    tgz_bytes = storage_client.get_data(storage_params=src_params)
-    _tgz_bytes_to_dir(tgz_bytes=tgz_bytes, dir_path=transformed_dest)
-    return transformed_dest
-
-def _tgz_bytes_to_dir(tgz_bytes=None, dir_path=None):
-    mem_file = io.BytesIO(tgz_bytes)
-    tgz = tarfile.open(mode='r:gz', fileobj=mem_file)
-    tgz.extractall(path=dir_path)
-
-class DownloadActionHandlerTestCase(unittest.TestCase):
-    def setUp(self):
-        self.storage_client = Mock()
-        self.src_params = {'some': 'src params'}
-        self.json_src_params = json.dumps(self.src_params)
-        self.src_dir = self.setup_src_dir()
-        self.src_tgz_bytes = _dir_to_tgz_bytes(dir_path=self.src_dir)
-        self.storage_client.get_data.return_value = self.src_tgz_bytes
-        self.dest_dir = tempfile.mkdtemp()
-        self.dest = os.path.join(self.dest_dir, 'dest')
-        self.params = {'json_src_params': self.json_src_params,
-                       'dest': self.dest}
-        self.ctx = self.generate_ctx()
-
-    def setup_src_dir(self):
-        src_dir = tempfile.mkdtemp()
-        for i in range(3):
-            path = os.path.join(src_dir, 'file_%s' % i)
-            with open(path, 'w') as f: f.write(str(i))
-        return src_dir
-
-    def generate_ctx(self):
-        ctx = Mock()
-        def transform_value(value): return value
-        ctx.transform_value.side_effect = transform_value
-        return ctx
-
-    def do_download(self):
-        return _download_action_handler(storage_client=self.storage_client,
-                                        params=self.params, ctx=self.ctx)
-
-    def test_calls_get_data_with_deserialized_transformed_src_params(self):
-        self.do_download()
-        transformed_params = self.ctx.transform_value(
-            self.params['json_src_params'])
-        deserialized_params = json.loads(transformed_params)
-        self.assertEqual(self.storage_client.get_data.call_args,
-                         call(storage_params=deserialized_params))
-
-    def test_writes_tgz_to_transformed_dest(self):
-        self.do_download()
-        self.assert_dirs_equal(self.src_dir,
-                               self.ctx.transform_value(self.params['dest']))
-
-    def assert_dirs_equal(self, left, right):
-        from filecmp import dircmp
-        dcmp = dircmp(left, right)
-        self.assertEqual(dcmp.left_only, [])
-        self.assertEqual(dcmp.right_only, [])
-
-    def test_returns_transformed_dest(self):
-        result = self.do_download()
-        self.assertEqual(result, self.ctx.transform_value(self.params['dest']))

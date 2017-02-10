@@ -27,8 +27,7 @@ class CreateChemThingTestCase(BaseTestCase):
         self.a2g2_client.create_chemthing(chemthing=self.chemthing)
         expected_url = self.base_url + 'chemthings/'
         self.assertEqual(self.mocks['requests'].post.call_args,
-                         call(expected_url, data=self.chemthing,
-                              content_type='application/json'))
+                         call(expected_url, json=self.chemthing))
 
     def test_returns_response(self):
         result = self.a2g2_client.create_chemthing(chemthing=self.chemthing)

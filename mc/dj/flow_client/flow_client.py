@@ -16,25 +16,24 @@ class MissionControlFlowClient(object):
         }
 
     def create_flow(self, flow=None):
+        response = self.request_client.post(self.urls['flows'], json=flow)
+        return self.json_raise_for_status(response=response)
+
+    def json_raise_for_status(self, response=None):
         try:
-            response = self.request_client.post(self.urls['flows'], data=flow,
-                                                content_type='application/json')
-            if not str(response.status_code).startswith('2'):
-                raise Exception("Bad response: %s" % response)
+            response.raise_for_status()
             return response.json()
-        except Exception as e:
-            msg = ("Client error, request was: {request}, error was:"
-                   " '{error}'"
-                  ).format(request={'url': self.urls['flows'], 'data': flow},
-                           error=e)
-            self.logger.error(msg)
-            raise e
+        except Exception as exception:
+            wrapped_exception = Exception("%s; %s" % (exception,
+                                                      response.content))
+            self.logger.exception(wrapped_exception)
+            raise wrapped_exception
 
     def fetch_flows(self, query_params=None):
         args = [self.urls['flows']]
         if query_params: args.append(query_params)
         response = self.request_client.get(*args)
-        return response.json()
+        return self.json_raise_for_status(response=response)
 
     def fetch_flow_by_uuid(self, uuid=None):
         fetch_flows_result = self.fetch_flows(query_params={'uuid': uuid})
@@ -47,18 +46,18 @@ class MissionControlFlowClient(object):
 
     def claim_flows(self, uuids=None):
         response = self.request_client.post(self.urls['claim_flows'], 
-                                            data={'uuids': uuids},
-                                            content_type='application/json')
-        return response.json()
+                                            json={'uuids': uuids})
+        return self.json_raise_for_status(response=response)
 
     def update_flows(self, updates_by_uuid=None):
         results_by_uuid = {}
         for _uuid, updates_for_uuid in updates_by_uuid.items():
             flow_url = self.base_url + 'flows/' + _uuid + '/'
-            response = self.request_client.patch(
-                flow_url,
-                data=updates_for_uuid,
-                content_type='application/json'
-            )
-            results_by_uuid[_uuid] = response.json()
+            response = self.request_client.patch(flow_url,
+                                                 json=updates_for_uuid)
+            try:
+                result = self.json_raise_for_status(response=response)
+            except Exception as exception:
+                result = {"error", str(exception)}
+            results_by_uuid[_uuid] = result
         return results_by_uuid

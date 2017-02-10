@@ -1,6 +1,7 @@
 import json
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework import viewsets
 
@@ -34,6 +35,7 @@ class FlowViewSet(viewsets.ModelViewSet):
     filter_class = FlowFilter
 
 @require_http_methods(["POST"])
+@csrf_exempt
 def claim_flows(request):
     result = {}
     post_data = json.loads(request.body.decode())

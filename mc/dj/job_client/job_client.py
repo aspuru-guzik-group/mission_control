@@ -24,8 +24,7 @@ class MissionControlJobClient(object):
         try:
             formatted_job_kwargs = self.format_job_kwargs(job_kwargs)
             response = self.request_client.post(self.urls['jobs'],
-                                                data=formatted_job_kwargs,
-                                                content_type='application/json')
+                                                json=formatted_job_kwargs)
             if not str(response.status_code).startswith('2'):
                 raise Exception("Bad response: %s" % response)
             return response.json()
@@ -77,8 +76,7 @@ class MissionControlJobClient(object):
 
     def claim_jobs(self, uuids=None):
         response = self.request_client.post(self.urls['claim_jobs'],
-                                            data={'uuids': uuids},
-                                            content_type='application/json')
+                                            json={'uuids': uuids})
         return response.json()
 
     def update_jobs(self, updates_by_uuid=None):
@@ -92,7 +90,6 @@ class MissionControlJobClient(object):
         job_url = self.urls['jobs'] + uuid + '/'
         formatted_job_kwargs = self.format_job_kwargs(job_kwargs=updates)
         response = self.request_client.patch(job_url,
-                                             data=formatted_job_kwargs,
-                                             content_type='application/json')
+                                             json=formatted_job_kwargs)
         update_result = response.json()
         return update_result

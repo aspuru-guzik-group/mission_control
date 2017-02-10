@@ -81,8 +81,7 @@ class ClaimJobsTestCase(BaseTestCase):
     def test_makes_post(self):
         self.job_client.claim_jobs(uuids=self.uuids)
         expected_url = self.base_url + 'claim_jobs/'
-        expected_post_call = call(expected_url, data={'uuids': self.uuids},
-                                  content_type='application/json')
+        expected_post_call = call(expected_url, json={'uuids': self.uuids})
         self.assertEqual(self.mocks['requests']['post'].call_args,
                          expected_post_call)
 
@@ -112,8 +111,7 @@ class UpdateJobsTestCase(BaseTestCase):
         self.job_client.update_jobs(updates_by_uuid=self.updates_by_uuid)
         expected_patch_calls = [
             call(self.base_url + 'jobs/' + _uuid + '/',
-                 data=self.job_client.format_job_kwargs(updates_for_uuid),
-                 content_type='application/json')
+                 json=self.job_client.format_job_kwargs(updates_for_uuid))
             for _uuid, updates_for_uuid in self.updates_by_uuid.items()
         ]
         self.assertEqual(
@@ -139,10 +137,10 @@ class CreateJobTestCase(BaseTestCase):
         self.job_client.create_job(job_kwargs=self.job_kwargs)
         self.assertEqual(
             self.mocks['requests']['post'].call_args,
-            call(self.base_url + 'jobs/', data={
+            call(self.base_url + 'jobs/', json={
                 **self.job_kwargs,
                 'data': json.dumps(self.job_kwargs['data']),
-            }, content_type='application/json')
+            })
         )
 
     def test_returns_post_result(self):

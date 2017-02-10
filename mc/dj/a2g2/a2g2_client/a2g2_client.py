@@ -17,13 +17,18 @@ class A2G2_Client(object):
 
     def create_chemthing(self, chemthing=None):
         response = self.request_client.post(self.urls['chemthings'],
-                                            data=chemthing,
-                                            content_type='application/json')
+                                            json=chemthing)
         return self.json_raise_for_status(response=response)
 
     def json_raise_for_status(self, response=None):
-        response.raise_for_status()
-        return response.json()
+        try:
+            response.raise_for_status()
+            return response.json()
+        except Exception as exception:
+            wrapped_exception = Exception("%s; %s" % (exception,
+                                                      response.content))
+            self.logger.exception(wrapped_exception)
+            raise wrapped_exception
 
     def get_counts(self):
         response = self.request_client.get(self.urls['counts'])

@@ -1,22 +1,16 @@
 import json
 import os
 import subprocess
-import unittest
 
 import mc
 
 
-class BaseTestCase(unittest.TestCase):
-    def setUp(self):
-        super().setUp()
+class DockerEnv(object):
+    def __init__(self):
         this_dir = os.path.dirname(__file__)
         self.docker_dir = os.path.join(this_dir, 'docker')
-        self.setup_docker_env()
 
-    def tearDown(self):
-        self.teardown_docker_env()
-
-    def setup_docker_env(self):
+    def setup(self):
         self.mc_network = self.get_mc_network()
         self.start_dockers()
         container_infos = self.get_container_infos()
@@ -93,7 +87,7 @@ class BaseTestCase(unittest.TestCase):
         return container_info['NetworkSettings']['Networks']\
                 [network]['IPAddress']
 
-    def teardown_docker_env(self):
+    def teardown(self):
         subprocess.run(
             'cd {docker_dir} && \
             docker-compose down'.format(
@@ -101,7 +95,3 @@ class BaseTestCase(unittest.TestCase):
             ),
             shell=True
         )
-
-    def test_dockers(self):
-        self.fail()
-
