@@ -49,6 +49,7 @@ fi
 
 chown slurm:slurm /var/spool/slurmd /var/run/slurmd /var/lib/slurmd /var/log/slurm
 
+mkdir -p /etc/ssh
 ssh-keygen -t rsa -f /etc/ssh/ssh_host_rsa_key -N ''
 ssh-keygen -t ecdsa -f /etc/ssh/ssh_host_ecdsa_key -N ''
 ssh-keygen -t ed25519 -f /etc/ssh/ssh_host_ed25519_key -N ''

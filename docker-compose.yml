@@ -1,7 +1,9 @@
-version: "2"
+version: "2.1"
+
 services:
   mc_pg:
     image: postgres
+
   mc_base:
     build:
       context: ./
@@ -13,6 +15,7 @@ services:
       MC_DB_USER: postgres
       MC_DB_PASSWORD: postgres
       MC_DB_HOST: mc_pg
+
   mc_server:
     extends:
       service: mc_base
@@ -23,12 +26,22 @@ services:
       - ./mc:/mc
     depends_on:
       - mc_pg
+
   mc_shell:
     extends:
       service: mc_base
     command: /bin/bash
+    environment:
+      - "MC_ROOT=$PWD"
     volumes:
       - ./mc:/mc
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       - mc_pg
-      - mc_server
+    privileged: true
+
+networks:
+  default:
+    driver: bridge
+    labels:
+      - "mc.network=mc"

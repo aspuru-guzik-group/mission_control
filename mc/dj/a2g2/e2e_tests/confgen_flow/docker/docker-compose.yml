@@ -1,0 +1,36 @@
+version: '2.1'
+
+services:
+  odyssey:
+    build:
+      context: ./odyssey
+      args:
+        - TEST_USER_USERNAME=test_user
+        - TEST_USER_PASS=test_pass
+    volumes:
+      - $MC_ROOT/mc/dj/a2g2:/a2g2_env-packages/a2g2
+    command: "tail -f /dev/null"
+
+  mission_control:
+    build:
+      context: ./mission_control
+    volumes:
+      - $MC_ROOT/mc:/mc
+    links:
+      - db
+    ports:
+      - "8000:80"
+    environment:
+      MC_DB_NAME: 'postgres'
+      MC_DB_USER: 'postgres'
+      MC_DB_PASSWORD: 'postgres'
+      MC_DB_HOST: 'db'
+    command: '/bin/bash -l -c /start_mc_server.sh'
+
+  db:
+    image: "postgres"
+
+networks:
+  default:
+    external:
+      name: $MC_NETWORK
