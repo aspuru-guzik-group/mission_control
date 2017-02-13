@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 from rest_framework.test import APITestCase
 
-from ..models import ChemThing
+from ..models import a2g2_dj_models, ChemThing
 from ..serializers import ChemThingSerializer
 from .. import urls as _urls
 
@@ -49,8 +49,7 @@ class GetCountsTestCase(TestCase):
         for i in range(3): ChemThing.objects.create()
 
     def _get_counts(self):
-        return self.client.get('/' + BASE_PATH + 'counts/',
-                               content_type='application/json')
+        return self.client.get('/' + BASE_PATH + 'counts/')
 
     def test_response_data(self):
         response = self._get_counts()
@@ -58,3 +57,25 @@ class GetCountsTestCase(TestCase):
         expected_data = {'ChemThing': ChemThing.objects.count()}
         self.assertEqual(json.loads(response.content.decode()),
                          expected_data)
+
+@override_settings(ROOT_URLCONF=__name__)
+class FlushTestCase(TestCase):
+    def setUp(self):
+        self.create_models()
+
+    def create_models(self):
+        for model in a2g2_dj_models:
+            for i in range(3): model.objects.create()
+
+    def _flush(self):
+        return self.client.get('/' + BASE_PATH + 'flush/')
+
+    def test_response_data(self):
+        response = self._flush()
+        self.assertEqual(response.status_code, 200)
+        for model in a2g2_dj_models:
+            self.assertEqual(model.objects.count(), 0)
+        expected_flush_results = {model.__name__: 'flushed'
+                                  for model in a2g2_dj_models}
+        self.assertEqual(json.loads(response.content.decode()), 
+                         expected_flush_results)

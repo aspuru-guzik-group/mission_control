@@ -10,4 +10,5 @@ router.register(r'chemthings', views.ChemThingViewSet)
 urlpatterns = [
     url(r'^', include(router.urls)),
     url(r'^counts/', views.counts, name='counts'),
+    url(r'^flush/', views.flush, name='flush'),
 ]

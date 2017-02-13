@@ -3,7 +3,7 @@ from django.views.decorators.http import require_http_methods
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import viewsets
 
-from .models import ChemThing 
+from .models import ChemThing, a2g2_dj_models
 from .serializers import ChemThingSerializer
 
 
@@ -19,3 +19,11 @@ def counts(request):
         'ChemThing': ChemThing.objects.count()
     }
     return JsonResponse(counts)
+
+@require_http_methods(["GET"])
+def flush(request):
+    flush_results = {}
+    for model in a2g2_dj_models:
+        model.objects.all().delete()
+        flush_results[model.__name__] = 'flushed'
+    return JsonResponse(flush_results)

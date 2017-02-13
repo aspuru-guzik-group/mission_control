@@ -57,3 +57,13 @@ class QueryTestCase(BaseTestCase):
         self.assertEqual(
             result,
             self.mocks['requests'].get.return_value.json.return_value)
+
+class FlushTestCase(BaseTestCase):
+    def test_gets_flush_endpoint(self):
+        result = self.a2g2_client.flush_a2g2_db()
+        expected_url = self.base_url + 'flush/'
+        self.assertEqual(self.mocks['requests'].get.call_args,
+                         call(expected_url))
+        self.assertEqual(
+            result,
+            self.mocks['requests'].get.return_value.json.return_value)

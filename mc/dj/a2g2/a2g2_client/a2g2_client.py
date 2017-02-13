@@ -13,6 +13,7 @@ class A2G2_Client(object):
         return {
             'chemthings': self.base_url + 'chemthings/',
             'counts': self.base_url + 'counts/',
+            'flush': self.base_url + 'flush/',
         }
 
     def create_chemthing(self, chemthing=None):
@@ -37,5 +38,10 @@ class A2G2_Client(object):
     def query(self, q=None):
         obj_type = q.get('collection')
         url = self.urls[obj_type]
+        response = self.request_client.get(url)
+        return self.json_raise_for_status(response=response)
+
+    def flush_a2g2_db(self):
+        url = self.urls['flush']
         response = self.request_client.get(url)
         return self.json_raise_for_status(response=response)
