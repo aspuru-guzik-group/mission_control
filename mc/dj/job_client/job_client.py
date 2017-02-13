@@ -21,21 +21,20 @@ class MissionControlJobClient(object):
         }
 
     def create_job(self, job_kwargs=None):
-        try:
             formatted_job_kwargs = self.format_job_kwargs(job_kwargs)
             response = self.request_client.post(self.urls['jobs'],
                                                 json=formatted_job_kwargs)
-            if not str(response.status_code).startswith('2'):
-                raise Exception("Bad response: %s" % response)
+            return self.json_raise_for_status(response=response)
+
+    def json_raise_for_status(self, response=None):
+        try:
+            response.raise_for_status()
             return response.json()
-        except Exception as e:
-            msg = ("Client error, request was: {request}, error was:"
-                   " '{error}'"
-                  ).format(request={'url': self.urls['jobs'],
-                                    'data': job_kwargs},
-                           error=e)
-            self.logger.error(msg)
-            raise e
+        except Exception as exception:
+            wrapped_exception = Exception("%s; %s" % (exception,
+                                                      response.content))
+            self.logger.exception(wrapped_exception)
+            raise wrapped_exception
 
     def format_job_kwargs(self, job_kwargs=None):
         formatted_job_kwargs = {**job_kwargs}
@@ -51,8 +50,10 @@ class MissionControlJobClient(object):
         args = [self.urls['jobs']]
         if query_params: args.append(query_params)
         response = self.request_client.get(*args)
-        jobs = [self.format_fetched_job(fetched_job)
-                for fetched_job in response.json()]
+        jobs = [
+            self.format_fetched_job(fetched_job)
+            for fetched_job in self.json_raise_for_status(response=response)
+        ]
         return jobs
 
     def format_fetched_job(self, fetched_job=None):
@@ -77,7 +78,7 @@ class MissionControlJobClient(object):
     def claim_jobs(self, uuids=None):
         response = self.request_client.post(self.urls['claim_jobs'],
                                             json={'uuids': uuids})
-        return response.json()
+        return self.json_raise_for_status(response=response)
 
     def update_jobs(self, updates_by_uuid=None):
         results_by_uuid = {}
@@ -91,5 +92,4 @@ class MissionControlJobClient(object):
         formatted_job_kwargs = self.format_job_kwargs(job_kwargs=updates)
         response = self.request_client.patch(job_url,
                                              json=formatted_job_kwargs)
-        update_result = response.json()
-        return update_result
+        return self.json_raise_for_status(response=response)

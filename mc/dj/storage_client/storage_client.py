@@ -27,7 +27,8 @@ class MissionControlStorageClient(object):
                             'application/json'))
             ])
             if not str(response.status_code).startswith('2'):
-                raise Exception("Bad response: %s" % response)
+                raise Exception("Bad response: %s; %s" % (response,
+                                                          response.content))
             result = response.json()
             return result['params']
         except Exception as e:
@@ -43,11 +44,12 @@ class MissionControlStorageClient(object):
     def get_data(self, storage_params=None):
         url = self.urls['get']
         try:
-            response = self.request_client.get(url, data={
+            response = self.request_client.get(url, params={
                 'params': self.serialize_storage_params(storage_params),
             }, stream=True)
             if not str(response.status_code).startswith('2'):
-                raise Exception("Bad response: %s" % response)
+                raise Exception("Bad response: %s; %s" % (response,
+                                                          response.content))
             return response.content
         except Exception as e:
             msg = ("Client error, request was: {request}, error was:"

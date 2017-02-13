@@ -134,7 +134,7 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
 
     def generate_storage_client(self):
         storage_client = MissionControlStorageClient(
-            base_url=self.docker_env.mc_ip_addr + '/storage/')
+            base_url='http://' + self.docker_env.mc_ip_addr + '/storage/')
         return storage_client
 
     def generate_action_processor(self):

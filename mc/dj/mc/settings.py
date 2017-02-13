@@ -136,3 +136,6 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.10/howto/static-files/
 
 STATIC_URL = '/static/'
+
+STORAGE_FILESYSTEM_BACKEND_BASEDIR = os.environ.get("MC_STORAGE_DIR",
+                                                    '/storage')

@@ -65,7 +65,7 @@ class GetTestCase(BaseTestCase):
             self.mocks['requests'].get.call_args,
             call(
                 expected_url,
-                data={
+                params={
                     'params': self.storage_client.serialize_storage_params\
                         .return_value
                 },
