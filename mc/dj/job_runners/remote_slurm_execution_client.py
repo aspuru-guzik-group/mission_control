@@ -19,7 +19,7 @@ class RemoteSlurmExecutionClient(object):
     def upload_job(self, job=None):
         self.ensure_remote_workdir()
         local_src = job['dir']['dir']
-        remote_dest = os.path.join(self.remote_workdir, job['key'])
+        remote_dest = os.path.join(self.remote_workdir, job['uuid'])
         self.ssh_client.rsync_to_remote(local_src_path=local_src + '/',
                                         remote_dest_path=remote_dest,
                                         flags='-a')

@@ -34,4 +34,6 @@ RUN conda install --yes --channel https://conda.anaconda.org/openbabel openbabel
 ADD requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
 
+RUN apt-get install -y openssh-client
+
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*

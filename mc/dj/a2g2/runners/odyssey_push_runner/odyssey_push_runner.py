@@ -13,12 +13,10 @@ from .odyssey_job_dir_factory import OdysseyJobDirFactory as JobDirFactory
 
 class OdysseyPushRunner(object):
     def __init__(self, *args, request_client=None, run_setup=True,
-                 tick_interval=None, odyssey_user=None, odyssey_host=None,
+                 tick_interval=None,
                  job_server_url=None, flow_server_url=None, **setup_kwargs):
         self.request_client = request_client or requests
         self.tick_interval = tick_interval
-        self.odyssey_user = odyssey_user
-        self.odyssey_host = odyssey_host
         self.job_server_url = job_server_url
         self.flow_server_url = flow_server_url
         if run_setup: self.setup(**setup_kwargs)
@@ -33,6 +31,7 @@ class OdysseyPushRunner(object):
               job_dir_factory=None,
               job_runner=None,
               job_runner_kwargs=None,
+              ssh_client=None,
               tick_ctx=None,
               flow_runner=None,
               **kwargs
@@ -46,6 +45,7 @@ class OdysseyPushRunner(object):
         self.job_client = job_client or self.generate_job_client()
         self.job_dir_factory = job_dir_factory or \
                 self.generate_job_dir_factory()
+        self.ssh_client = ssh_client
         self.job_runner = job_runner or self.generate_job_runner(
             job_runner_kwargs=job_runner_kwargs)
         self.tick_ctx = self.decorate_tick_ctx(tick_ctx=tick_ctx)
@@ -78,8 +78,7 @@ class OdysseyPushRunner(object):
     def generate_job_runner(self, job_runner_kwargs=None): 
         return OdysseyPushJobRunner(job_client=self.job_client,
                                     job_dir_factory=self.job_dir_factory,
-                                    odyssey_user=self.odyssey_user,
-                                    odyssey_host=self.odyssey_host,
+                                    ssh_client=self.ssh_client,
                                     **(job_runner_kwargs or {}))
 
     def decorate_tick_ctx(self, tick_ctx=None):

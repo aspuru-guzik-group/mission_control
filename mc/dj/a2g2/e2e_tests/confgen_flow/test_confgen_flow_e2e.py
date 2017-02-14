@@ -1,6 +1,9 @@
 import json
+import sys
 import unittest
 from unittest.mock import MagicMock, Mock
+
+import pexpect
 
 from flow_engines.flow import Flow
 from a2g2.a2g2_client.a2g2_client import A2G2_Client
@@ -12,6 +15,7 @@ from job_runners.action_processor import ActionProcessor
 
 from .docker_utils import DockerEnv
 from . import storage_action_handlers
+from job_runners.ssh_control_socket_client import SSHControlSocketClient
 
 
 class ConfgenFlowGenerator(object):
@@ -153,8 +157,7 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
 
     def generate_flow_and_job_runner(self):
         return OdysseyPushRunner(
-            odyssey_user=self.docker_env.odyssey_user_username,
-            odyssey_host=self.docker_env.odyssey_ip_addr,
+            ssh_client=self.generate_connected_ssh_client(),
             action_processor=self.action_processor,
             flow_generator_classes=[ConfgenFlowGenerator],
             job_server_url='http://' + self.docker_env.mc_ip_addr + '/jobs/',
@@ -163,6 +166,26 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
             job_dir_factory=self.job_dir_factory,
             job_runner_kwargs={'action_processor': self.action_processor}
         )
+
+    def generate_connected_ssh_client(self):
+        def auth_fn(*args, ssh_client=None, ssh_cmd=None, **kwargs):
+            child = pexpect.spawn(ssh_cmd, timeout=5)
+            child.expect('.+')
+            child.sendline(self.docker_env.odyssey_user_password)
+            child.expect('.+')
+            child.sendline(ssh_client.user)
+            child.wait()
+            if child.exitstatus != 0:
+                raise Exception("Authorization failed")
+            print("AUTHORIZED", file=sys.stderr)
+
+        ssh_client = SSHControlSocketClient(
+            user=self.docker_env.odyssey_user_username,
+            host=self.docker_env.odyssey_ip_addr,
+            auth_fn=auth_fn,
+        )
+        ssh_client.connect()
+        return ssh_client
 
     def test_flow(self):
         self.a2g2_client.flush_a2g2_db()

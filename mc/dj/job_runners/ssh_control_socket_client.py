@@ -1,8 +1,8 @@
 import os
+import logging
 import string
 import random
 import subprocess
-import sys
 import pexpect
 
 
@@ -11,7 +11,7 @@ class NotAuthorizedException(Exception):
 
 class SSHControlSocketClient(object):
     def __init__(self, user=None, host=None, control_socket=None,
-                 control_dir=None):
+                 control_dir=None, auth_fn=None, logger=None):
         self.user = user or os.environ.get('USER')
         self.host = host
         if not control_socket:
@@ -23,6 +23,8 @@ class SSHControlSocketClient(object):
                                  for i in range(10)])
             control_socket = os.path.join(control_dir, socket_id)
         self.control_socket = control_socket
+        self.logger = logger or logging
+        self.auth_fn = auth_fn or self.default_auth_fn
 
     def _ensure_dir(self, _dir):
         if not os.path.isdir(_dir):
@@ -31,10 +33,16 @@ class SSHControlSocketClient(object):
 
     def connect(self):
         if not self._is_authorized():
-            child = pexpect.spawn("ssh -fNMS %s %s@%s" % (
-                self.control_socket, self.user, self.host))
-            child.interact()
-        print("connected", file=sys.stderr)
+            ssh_cmd = ("ssh -o \"StrictHostKeyChecking no\" -fNMS {socket} "
+                       "{user}@{host}"
+                      ).format(socket=self.control_socket,
+                               user=self.user,
+                               host=self.host)
+            self.auth_fn(ssh_client=self, ssh_cmd=ssh_cmd)
+        self.logger.info("connected")
+
+    def default_auth_fn(self, ssh_cmd=None, **kwargs):
+        pexpect.spawn(ssh_cmd).interact()
 
     def _is_authorized(self, check=False):
         completed_process = self._run_ssh_control_cmd('check', check=check)
@@ -96,4 +104,7 @@ class SSHControlSocketClient(object):
                           flags=flags)
 
     def _ensure_authorized(self):
-        self._is_authorized(check=True)
+        try:
+            self._is_authorized(check=True)
+        except Exception as error:
+            raise Exception("SSH connection not authorized: %s" % error)
