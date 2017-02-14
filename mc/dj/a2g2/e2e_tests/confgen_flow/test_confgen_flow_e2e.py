@@ -1,5 +1,4 @@
 import json
-import tempfile
 import unittest
 from unittest.mock import MagicMock, Mock
 
@@ -112,7 +111,6 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
         self.a2g2_client = self.generate_a2g2_client()
         self.storage_client = self.generate_storage_client()
         self.action_processor = self.generate_action_processor()
-        self.execution_client = self.generate_execution_client()
         self.job_dir_factory = MagicMock()
         self.flow_and_job_runner = self.generate_flow_and_job_runner()
         self.flow_client = self.flow_and_job_runner.flow_client
@@ -153,34 +151,21 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
         return storage_action_handlers.download_action_handler(
             self.storage_client, *args, params=params, ctx=ctx)
 
-    def generate_execution_client(self):
-        execution_client = MagicMock()
-        execution_client.get_execution_state = Mock(return_value={})
-        def mock_start_execution(job=None):
-            output_dir = tempfile.mkdtemp()
-            if job['job_spec']['job_type'] == 'confgen':
-                self.populate_confgen_dir(output_dir=output_dir)
-            if job['job_spec']['job_type'] == 'confgen:load': pass
-            return {'dir': output_dir}
-        execution_client.start_execution.side_effect = mock_start_execution
-        return execution_client
-
-    def populate_confgen_dir(self, output_dir=None):
-        pass
-
     def generate_flow_and_job_runner(self):
         return OdysseyPushRunner(
+            odyssey_user=self.docker_env.odyssey_user_username,
+            odyssey_host=self.docker_env.odyssey_ip_addr,
             action_processor=self.action_processor,
             flow_generator_classes=[ConfgenFlowGenerator],
             job_server_url='http://' + self.docker_env.mc_ip_addr + '/jobs/',
             flow_server_url=('http://' + self.docker_env.mc_ip_addr 
                              + '/missions/'),
             job_dir_factory=self.job_dir_factory,
-            job_runner_kwargs={'execution_client': self.execution_client,
-                               'action_processor': self.action_processor,}
+            job_runner_kwargs={'action_processor': self.action_processor}
         )
 
     def test_flow(self):
+        self.a2g2_client.flush_a2g2_db()
         self.generate_molecule_library()
         self.create_flows()
         self.assertTrue(len(self.flow_client.fetch_tickable_flows()) > 0)

@@ -20,7 +20,9 @@ class DockerEnv(object):
             network=self.mc_network,
             container_info=container_infos_by_service['mission_control']
         )
-        self.ody_ip_addr = self.get_container_ip_addr(
+        self.odyssey_user_username = 'test_user'
+        self.odyssey_user_password = 'test_pass'
+        self.odyssey_ip_addr = self.get_container_ip_addr(
             network=self.mc_network,
             container_info=container_infos_by_service['odyssey']
         )

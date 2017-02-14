@@ -54,8 +54,6 @@ RUN yum -y install \
       openssh-server openssh-clients \
       openssl
 
-RUN yum clean all
-
 COPY ./setup_odyssey.sh /setup_odyssey.sh
 RUN chmod a+x /setup_odyssey.sh && /setup_odyssey.sh
 
@@ -76,3 +74,11 @@ RUN chmod a+rx /setup_conda.sh && su - $TEST_USER_USERNAME -c  /setup_conda.sh
 COPY a2g2_conda_env.yml /conda_env.yml
 RUN su - $TEST_USER_USERNAME -c "conda env create -f /conda_env.yml -n a2g2_env"
 RUN su - $TEST_USER_USERNAME -c "source activate a2g2_env && conda develop /a2g2_env-packages"
+
+RUN yum -y install pam-devel
+
+COPY fake_2factor /fake_2factor
+#RUN /fake_2factor/setup_fake_2factor.sh && rm -r /fake_2factor
+RUN /fake_2factor/setup_fake_2factor.sh
+
+RUN yum clean all
