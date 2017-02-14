@@ -1,7 +1,6 @@
 import json
 import sys
 import unittest
-from unittest.mock import MagicMock, Mock
 
 import pexpect
 
@@ -115,11 +114,9 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
         self.a2g2_client = self.generate_a2g2_client()
         self.storage_client = self.generate_storage_client()
         self.action_processor = self.generate_action_processor()
-        self.job_dir_factory = MagicMock()
+        self.job_dir_factory = self.generate_job_dir_factory()
         self.flow_and_job_runner = self.generate_flow_and_job_runner()
         self.flow_client = self.flow_and_job_runner.flow_client
-        self.flow_and_job_runner.tick = Mock(
-            side_effect=self.flow_and_job_runner.tick)
 
     def tearDown(self):
         #self.docker_env.teardown()
@@ -154,6 +151,17 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
     def _download_wrapper(self, *args, params=None, ctx=None, **kwargs):
         return storage_action_handlers.download_action_handler(
             self.storage_client, *args, params=params, ctx=ctx)
+
+    def generate_job_dir_factory(self):
+        from a2g2.job_dir_builders.confgen.confgen import ConfgenJobDirBuilder
+        class JobDirFactory(object):
+            def build_dir_for_job(self, job=None):
+                if job['job_spec']['job_type'] == 'confgen':
+                    job_dir = ConfgenJobDirBuilder.build_odyssey_dir(job=job)
+                dir_meta = {'dir': job_dir, 'entrypoint': 'job.sh'}
+                return dir_meta
+
+        return JobDirFactory()
 
     def generate_flow_and_job_runner(self):
         return OdysseyPushRunner(

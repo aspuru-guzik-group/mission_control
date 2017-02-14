@@ -39,9 +39,10 @@ class RemoteSlurmExecutionClient(object):
 
     def on_job_completed(self, job=None):
         self.download_job(job=job)
+        job['execution']['completed_dir'] = job['dir']['dir']
 
     def download_job(self, job=None):
-        remote_src = job['execution']['remote_dir']
+        remote_src = job['execution']['remote_dir']['dir']
         local_dest = job['dir']['dir']
         self.ssh_client.rsync_from_remote(remote_src_path=remote_src + '/',
                                           local_dest_path=local_dest,

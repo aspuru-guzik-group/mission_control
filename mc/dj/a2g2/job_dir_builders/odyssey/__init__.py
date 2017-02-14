@@ -13,6 +13,7 @@ class OdysseyJobDirBuilder(object):
         if not os.path.exists(output_dir): os.makedirs(output_dir)
         cls.write_job_script(dir_spec=dir_spec, output_dir=output_dir)
         cls.write_templates(dir_spec=dir_spec, output_dir=output_dir)
+        return output_dir
 
     @classmethod
     def write_job_script(cls, dir_spec=None, output_dir=None):

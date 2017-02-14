@@ -37,7 +37,7 @@ class ConfgenJobDirBuilder(object):
                     {
                         'target': 'confgen.params.json',
                         'content': json.dumps({
-                            'smiles': job['spec']['smiles']
+                            'smiles': job['job_spec']['confgen']['smiles']
                         }, indent=2)
                     }
                 ],

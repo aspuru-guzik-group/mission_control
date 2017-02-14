@@ -16,7 +16,9 @@ class BuildDirTestCase(BaseTestCase):
         snapshot_dir = os.path.join(this_dir, 'snapshots', 'spec_1')
         dir_spec = json.load(open(os.path.join(snapshot_dir, 'dir_spec.json')))
         output_dir = tempfile.mkdtemp(prefix='ody.test.')
-        OdysseyJobDirBuilder.build_dir(dir_spec=dir_spec, output_dir=output_dir)
+        result = OdysseyJobDirBuilder.build_dir(dir_spec=dir_spec,
+                                                output_dir=output_dir)
+        self.assertEqual(result, output_dir)
         expected_dir = os.path.join(snapshot_dir, 'expected_output')
         _test_utils.assert_dirs_equal(self, output_dir, expected_dir)
 

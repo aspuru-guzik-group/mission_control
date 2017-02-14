@@ -8,7 +8,13 @@ from ..confgen import ConfgenJobDirBuilder
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.job = {'spec': {'smiles': 'some smiles'}}
+        self.job = {
+            'job_spec': {
+                'confgen': {
+                    'smiles': 'some smiles'
+                }
+            }
+        }
 
 class TestBuildOdysseyDir(BaseTestCase):
     def setUp(self):
@@ -38,7 +44,7 @@ class TestBuildOdysseyDir(BaseTestCase):
                 'specs': [
                     {'target': 'confgen.params.json',
                      'content': json.dumps({
-                         'smiles': self.job['spec']['smiles']
+                         'smiles': self.job['job_spec']['confgen']['smiles']
                      }, indent=2)}
                 ]
             }

@@ -60,8 +60,15 @@ class BaseJobRunner(object):
         if not claimed_job: return
         self.register_job(job=claimed_job)
         try:
-            claimed_job['dir'] = self.build_job_dir(job=claimed_job)
-            claimed_job['execution'] = self.start_job_execution(job=claimed_job)
+            try:
+                claimed_job['dir'] = self.build_job_dir(job=claimed_job)
+            except Exception as error:
+                raise Exception("Error building job directory: %s" % error)
+            try:
+                claimed_job['execution'] = self.start_job_execution(
+                    job=claimed_job)
+            except Exception as error:
+                raise Exception("Error starting job execution: %s" % error)
         except Exception as error:
             self.fail_job(job=claimed_job, error=error)
 
@@ -130,7 +137,7 @@ class BaseJobRunner(object):
 
     def process_executed_job(self, job=None):
         self.logger.debug('process_executed_job')
-        job['completed_dir'] = job['execution']['dir']
+        job['completed_dir'] = job['execution']['completed_dir']
         actions = job.get('job_spec', {}).get('post_exec_actions', None)
         if actions: self.process_actions(actions=actions, job=job)
         self.complete_job(job=job)

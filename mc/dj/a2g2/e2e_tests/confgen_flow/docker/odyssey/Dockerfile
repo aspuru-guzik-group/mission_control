@@ -17,7 +17,8 @@ RUN yum makecache fast \
         supervisor \
         mariadb-server \
         mariadb-devel \
-        psmisc
+        psmisc \
+        rsync
 
 RUN groupadd -r slurm && useradd -r -g slurm slurm
 

@@ -108,18 +108,24 @@ class OnCompletedTestCase(BaseTestCase):
             'rsclient': patch.multiple(self.rsclient, download_job=DEFAULT),
         }
         self.start_patchers()
+        self.rsclient.on_job_completed(job=self.job)
 
     def test_downloads_job_dir(self):
-        self.rsclient.on_job_completed(job=self.job)
         self.assertEqual(self.rsclient.download_job.call_args,
                          call(job=self.job))
+
+    def test_sets_completed_dir_in_execution_meta(self):
+        self.assertEqual(self.job['execution']['completed_dir'],
+                         self.job['dir']['dir'])
 
 class DownloadJobTestCase(BaseTestCase):
     def test_calls_rsync(self):
         self.rsclient.download_job(job=self.job)
+        expected_remote_src_path = (
+            self.job['execution']['remote_dir']['dir'] + '/')
         self.assertEqual(
             self.rsclient.ssh_client.rsync_from_remote.call_args,
-            call(remote_src_path=(self.job['execution']['remote_dir'] + '/'),
+            call(remote_src_path=expected_remote_src_path,
                  local_dest_path=self.job['dir']['dir'], flags='-a')
         )
 
