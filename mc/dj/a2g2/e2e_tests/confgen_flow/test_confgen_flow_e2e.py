@@ -153,12 +153,24 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
             self.storage_client, *args, params=params, ctx=ctx)
 
     def generate_job_submission_factory(self):
-        from a2g2.job_dir_builders.confgen.confgen import ConfgenJobDirBuilder
+        a2g2_client_cfg_json = json.dumps({
+            'base_url': self.a2g2_client.base_url
+        })
+
         class JobSubmissionFactory(object):
             def build_job_submission(self, job=None):
                 job_type = job['job_spec']['job_type']
                 if job_type == 'confgen':
+                    from a2g2.job_dir_builders.confgen.confgen \
+                            import ConfgenJobDirBuilder
                     job_dir = ConfgenJobDirBuilder.build_odyssey_dir(job=job)
+                elif job_type == 'confgen:load':
+                    from a2g2.job_dir_builders.confgen_load.confgen_load \
+                            import ConfgenLoadJobDirBuilder
+                    job_dir = ConfgenLoadJobDirBuilder.build_odyssey_dir(
+                        job=job,
+                        a2g2_client_cfg_json=a2g2_client_cfg_json
+                    )
                 else:
                     raise Exception("Unknown job type '%s',"
                                     " can't build job dir" % job_type)

@@ -22,20 +22,25 @@ class TestBuildOdysseyDir(BaseTestCase):
     def test_passes_expected_dir_spec(self):
         mock_odyssey_builder = MagicMock()
         mock_output_dir = MagicMock()
+        a2g2_client_cfg_json = 'mock_cfg'
         ConfgenLoadJobDirBuilder.build_odyssey_dir(
             job=self.job, odyssey_dir_builder=mock_odyssey_builder,
-            output_dir=mock_output_dir)
+            output_dir=mock_output_dir,
+            a2g2_client_cfg_json=a2g2_client_cfg_json
+        )
         expected_dir_spec = {
             'modules': ['conda'],
             'job_script_body': textwrap.dedent(
                 '''
                 echo "starting, $(date)"
                 source activate /n/aagfs01/software/conda_envs/a2g2_env
+                export A2G2_CLIENT_CFG_JSON={a2g2_client_cfg_json}
                 python -m a2g2.job_engines.confgen_load_job_engine \\
                     --job="./job.json" \\
                     --cfg="./cfg.json" \\
                 echo "finished, $(date)"
-                '''),
+                '''
+            ).format(a2g2_client_cfg_json=a2g2_client_cfg_json),
             'templates': {
                 'specs': [
                     {

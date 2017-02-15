@@ -102,10 +102,13 @@ class OdysseyJobDirBuilder(object):
 
     @classmethod
     def render_template_spec(cls, template_spec=None, ctx=None):
-        template = Template(template_spec['content'])
-        template.environment.keep_trailing_newline = True
-        merged_ctx = {**(ctx or {}), **template_spec.get('ctx', {})}
-        rendered = template.render(merged_ctx)
+        if template_spec.get('no_render', None):
+            rendered = template_spec['content']
+        else:
+            template = Template(template_spec['content'])
+            template.environment.keep_trailing_newline = True
+            merged_ctx = {**(ctx or {}), **template_spec.get('ctx', {})}
+            rendered = template.render(merged_ctx)
         return rendered
 
     @classmethod
