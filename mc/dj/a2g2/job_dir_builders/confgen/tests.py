@@ -3,7 +3,7 @@ import textwrap
 import unittest
 from unittest.mock import MagicMock
 
-from ..confgen import ConfgenJobDirBuilder
+from .confgen import ConfgenJobDirBuilder
 
 
 class BaseTestCase(unittest.TestCase):
