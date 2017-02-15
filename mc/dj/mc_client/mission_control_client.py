@@ -16,6 +16,7 @@ class MissionControlClient(object):
             'claim_flows': self.base_url + 'claim_flows/',
             'jobs': self.base_url + 'jobs/',
             'claim_jobs': self.base_url + 'claim_jobs/',
+            'flush': self.base_url + 'flush/',
         }
 
     def create_flow(self, flow=None):
@@ -126,4 +127,9 @@ class MissionControlClient(object):
         formatted_job_kwargs = self.format_job_kwargs(job_kwargs=updates)
         response = self.request_client.patch(job_url,
                                              json=formatted_job_kwargs)
+        return self.json_raise_for_status(response=response)
+
+    def flush_mc_db(self):
+        url = self.urls['flush']
+        response = self.request_client.get(url)
         return self.json_raise_for_status(response=response)

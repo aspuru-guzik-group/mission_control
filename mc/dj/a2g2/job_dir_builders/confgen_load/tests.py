@@ -1,4 +1,5 @@
 import json
+import shlex
 import textwrap
 import unittest
 from unittest.mock import MagicMock
@@ -34,18 +35,19 @@ class TestBuildOdysseyDir(BaseTestCase):
                 '''
                 echo "starting, $(date)"
                 source activate /n/aagfs01/software/conda_envs/a2g2_env
-                export A2G2_CLIENT_CFG_JSON={a2g2_client_cfg_json}
+                export A2G2_CLIENT_CFG_JSON="{a2g2_client_cfg_json}"
                 python -m a2g2.job_engines.confgen_load_job_engine \\
                     --job="./job.json" \\
                     --cfg="./cfg.json" \\
                 echo "finished, $(date)"
                 '''
-            ).format(a2g2_client_cfg_json=a2g2_client_cfg_json),
+            ).format(a2g2_client_cfg_json=shlex.quote(a2g2_client_cfg_json)),
             'templates': {
                 'specs': [
                     {
                         'target': 'job.json',
-                        'content': json.dumps(self.job, indent=2)
+                        'content': json.dumps(self.job, indent=2),
+                        'no_render': True,
                     }
                 ]
             }
