@@ -61,7 +61,7 @@ class Job(TimeStampedModel):
     claimed = models.NullBooleanField(null=True, default=False)
     data = models.TextField(null=True)
 
-missions_models.append(Flow)
+missions_models.append(Job)
 
 class FlowJob(TimeStampedModel):
     uuid = models.CharField(primary_key=True, default=str_uuid4,
