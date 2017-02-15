@@ -36,4 +36,6 @@ RUN pip install -r /requirements.txt
 
 RUN apt-get install -y openssh-client
 
+RUN conda install -c conda-forge xorg-libxrender=0.9.10
+
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
