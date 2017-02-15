@@ -1,18 +1,19 @@
+import json
 import os
 import tempfile
 import unittest
-from unittest.mock import call, Mock
+from unittest.mock import call, patch, Mock
 
 import pybel
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
-from ..confgen_load_job_engine import ConfgenLoadJobEngine
+from .. import confgen_load_job_engine
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.engine = ConfgenLoadJobEngine()
+        self.engine = confgen_load_job_engine.ConfgenLoadJobEngine()
 
 class ExecuteJobTestCase(BaseTestCase):
     def setUp(self):
@@ -108,3 +109,56 @@ class UploadChemthingsTestCase(BaseTestCase):
         expected_result = [self.engine.a2g2_client.create_chemthing.return_value
                            for chemthing in self.chemthings]
         self.assertEqual(self.result, expected_result)
+
+class CmdTestCase(BaseTestCase):
+    def setUp(self):
+        self.setup_inputs()
+        self.setup_argv()
+        self.command = confgen_load_job_engine.Command()
+
+    def setup_inputs(self):
+        self.inputs = {
+            'job': {},
+            'cfg': {
+                'a2g2_client': {
+                    'base_url': 'mock_url'
+                }
+            }
+        }
+        self.tmpdir = tempfile.mkdtemp()
+        self.input_paths = {}
+        for input_name, input_value in self.inputs.items():
+            input_path = os.path.join(self.tmpdir, input_name) +  '.json'
+            with open(input_path, 'w') as f: json.dump(input_value, f)
+            self.input_paths[input_name] = input_path
+
+    def setup_argv(self):
+        self.argv = []
+        for input_name, input_path in self.input_paths.items():
+            self.argv.append('--%s=%s' % (input_name, input_path))
+
+    def _execute_command(self):
+        self.command.execute(argv=self.argv)
+
+    def test_generates_a2g2_client(self):
+        with patch.object(confgen_load_job_engine, 'A2G2_Client') as MockClient:
+            with patch.object(self.command, 'execute_job'):
+                self._execute_command()
+                self.assertEqual(MockClient.call_args,
+                                 call(**self.inputs['cfg']['a2g2_client']))
+
+    def test_calls_execute_job(self):
+        with patch.object(self.command, 'generate_a2g2_client') \
+                as mock_gen_client:
+            with patch.object(confgen_load_job_engine, 'ConfgenLoadJobEngine') \
+                    as MockEngine:
+                self._execute_command()
+                self.assertEqual(
+                    MockEngine.call_args,
+                    call(a2g2_client=mock_gen_client.return_value)
+                )
+                self.assertEqual(
+                    MockEngine.return_value.execute_job.call_args,
+                    call(job=self.inputs['job'])
+                )
+

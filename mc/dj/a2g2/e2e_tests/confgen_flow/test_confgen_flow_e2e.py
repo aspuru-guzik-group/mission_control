@@ -156,8 +156,12 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
         from a2g2.job_dir_builders.confgen.confgen import ConfgenJobDirBuilder
         class JobDirFactory(object):
             def build_dir_for_job(self, job=None):
-                if job['job_spec']['job_type'] == 'confgen':
+                job_type = job['job_spec']['job_type']
+                if job_type == 'confgen':
                     job_dir = ConfgenJobDirBuilder.build_odyssey_dir(job=job)
+                else:
+                    raise Exception("Unknown job type '%s',"
+                                    " can't build job dir" % job_type)
                 dir_meta = {'dir': job_dir, 'entrypoint': 'job.sh'}
                 return dir_meta
 
