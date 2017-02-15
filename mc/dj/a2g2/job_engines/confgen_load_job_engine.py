@@ -93,15 +93,23 @@ class Command(object):
         def json_file_type(file_path):
             return json.load(open(file_path))
         parser.add_argument('--job', type=json_file_type)
-        parser.add_argument('--cfg', type=json_file_type)
+        parser.add_argument('--cfg', type=json_file_type, default={})
 
     def handle(self, *args, job=None, cfg=None, **kwargs):
         a2g2_client = self.generate_a2g2_client(cfg=cfg)
         self.execute_job(job=job, a2g2_client=a2g2_client)
 
     def generate_a2g2_client(self, cfg=None):
-        a2g2_client = A2G2_Client(**cfg['a2g2_client'])
+        a2g2_client_cfg_json = self.get_cfg_value(
+            cfg=cfg, key='A2G2_CLIENT_CFG_JSON', default='{}')
+        a2g2_client_cfg = json.loads(a2g2_client_cfg_json)
+        a2g2_client = A2G2_Client(**a2g2_client_cfg)
         return a2g2_client
+
+    def get_cfg_value(self, cfg=None, key=None, default=None):
+        if key in os.environ: cfg_value = os.environ[key]
+        else: cfg_value = (cfg or {}).get(key, default)
+        return cfg_value
 
     def execute_job(self, job=None, a2g2_client=None):
         engine = ConfgenLoadJobEngine(a2g2_client=a2g2_client)

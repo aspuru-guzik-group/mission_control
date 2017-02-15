@@ -120,9 +120,7 @@ class CmdTestCase(BaseTestCase):
         self.inputs = {
             'job': {},
             'cfg': {
-                'a2g2_client': {
-                    'base_url': 'mock_url'
-                }
+                'A2G2_CLIENT_CFG_JSON': json.dumps({'base_url': 'mock_url'})
             }
         }
         self.tmpdir = tempfile.mkdtemp()
@@ -140,12 +138,27 @@ class CmdTestCase(BaseTestCase):
     def _execute_command(self):
         self.command.execute(argv=self.argv)
 
+    def test_get_cfg_value_from_cfg(self):
+        cfg = {'key1': 'value1'}
+        cfg_value = self.command.get_cfg_value(cfg=cfg, key='key1')
+        self.assertEqual(cfg_value, cfg['key1'])
+
+    def test_get_cfg_value_from_env(self):
+        cfg = {'key1': 'value1'}
+        mock_environ = {'key1': 'value_from_env'}
+        with patch.object(os, 'environ', new=mock_environ):
+            cfg_value = self.command.get_cfg_value(cfg=cfg, key='key1')
+            self.assertEqual(cfg_value, mock_environ['key1'])
+
     def test_generates_a2g2_client(self):
         with patch.object(confgen_load_job_engine, 'A2G2_Client') as MockClient:
             with patch.object(self.command, 'execute_job'):
                 self._execute_command()
-                self.assertEqual(MockClient.call_args,
-                                 call(**self.inputs['cfg']['a2g2_client']))
+                self.assertEqual(
+                    MockClient.call_args,
+                    call(**json.loads(
+                        self.inputs['cfg']['A2G2_CLIENT_CFG_JSON']))
+                )
 
     def test_calls_execute_job(self):
         with patch.object(self.command, 'generate_a2g2_client') \
