@@ -8,7 +8,8 @@ from job_client.job_client import MissionControlJobClient \
         as JobClient
 from .odyssey_push_job_runner import OdysseyPushJobRunner
 from flow_runners.base_flow_runner import BaseFlowRunner as FlowRunner
-from .odyssey_job_dir_factory import OdysseyJobDirFactory as JobDirFactory
+from .odyssey_job_submission_factory import OdysseyJobSubmissionFactory as \
+        JobSubmissionFactory
 
 
 class OdysseyPushRunner(object):
@@ -28,7 +29,7 @@ class OdysseyPushRunner(object):
               flow_engine=None, 
               flow_client=None, 
               job_client=None,
-              job_dir_factory=None,
+              job_submission_factory=None,
               job_runner=None,
               job_runner_kwargs=None,
               ssh_client=None,
@@ -43,8 +44,8 @@ class OdysseyPushRunner(object):
         self.flow_engine = flow_engine or self.generate_flow_engine()
         self.flow_client = flow_client or self.generate_flow_client()
         self.job_client = job_client or self.generate_job_client()
-        self.job_dir_factory = job_dir_factory or \
-                self.generate_job_dir_factory()
+        self.job_submission_factory = job_submission_factory or \
+                self.generate_job_submission_factory()
         self.ssh_client = ssh_client
         self.job_runner = job_runner or self.generate_job_runner(
             job_runner_kwargs=job_runner_kwargs)
@@ -72,14 +73,16 @@ class OdysseyPushRunner(object):
         return JobClient(base_url=self.job_server_url,
                          request_client=self.request_client)
 
-    def generate_job_dir_factory(self):
-        return JobDirFactory()
+    def generate_job_submission_factory(self):
+        return JobSubmissionFactory()
 
     def generate_job_runner(self, job_runner_kwargs=None): 
-        return OdysseyPushJobRunner(job_client=self.job_client,
-                                    job_dir_factory=self.job_dir_factory,
-                                    ssh_client=self.ssh_client,
-                                    **(job_runner_kwargs or {}))
+        return OdysseyPushJobRunner(
+            job_client=self.job_client,
+            job_submission_factory=self.job_submission_factory,
+            ssh_client=self.ssh_client,
+            **(job_runner_kwargs or {})
+        )
 
     def decorate_tick_ctx(self, tick_ctx=None):
         tick_ctx = tick_ctx or {}

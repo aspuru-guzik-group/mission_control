@@ -10,12 +10,12 @@ class BaseTestCase(unittest.TestCase):
         self.action_processor = MagicMock()
         self.execution_client = MagicMock()
         self.job_client = MagicMock()
-        self.job_dir_factory = MagicMock()
+        self.job_submission_factory = MagicMock()
         self.runner = BaseJobRunner(
             action_processor=self.action_processor,
             execution_client=self.execution_client,
             job_client=self.job_client,
-            job_dir_factory=self.job_dir_factory)
+            job_submission_factory=self.job_submission_factory)
         self.runner_methods_to_patch = []
         self.decorate_runner_methods_to_patch()
         if self.runner_methods_to_patch:
@@ -78,7 +78,7 @@ class FetchClaimableJobsTestCase(BaseTestCase):
 
 class ProcessClaimableJobTestCase(BaseTestCase):
     def decorate_runner_methods_to_patch(self):
-        self.runner_methods_to_patch.extend(['build_job_dir',
+        self.runner_methods_to_patch.extend(['build_job_submission',
                                              'start_job_execution',
                                              'update_job'])
 
@@ -90,12 +90,13 @@ class ProcessClaimableJobTestCase(BaseTestCase):
         job = {'uuid': 'abcd'}
         self.job_client.claim_jobs.return_value = {job['uuid']: job}
         self.runner.process_claimable_job(job=job)
-        expected_dir_meta = self.mocks['build_job_dir'].return_value
+        expected_submission_meta = self.mocks['build_job_submission']\
+                .return_value
         expected_execution_meta = self.mocks['start_job_execution'].return_value
-        self.assertEqual(self.mocks['build_job_dir'].call_count, 1)
+        self.assertEqual(self.mocks['build_job_submission'].call_count, 1)
         self.assertEqual(self.mocks['start_job_execution'].call_args,
                          call(job=job))
-        self.assertEqual(job['dir'], expected_dir_meta)
+        self.assertEqual(job['submission'], expected_submission_meta)
         self.assertEqual(job['execution'], expected_execution_meta)
 
     def test_unclaimable_job(self):
@@ -117,7 +118,9 @@ class ProcessClaimableJobTestCase(BaseTestCase):
         self.assertEqual(
             self.mocks['update_job'].call_args,
             call(job=mock_claimed_job, updates={
-                'status': 'FAILED', 'error': str(exception)}))
+                'status': 'FAILED',
+                'error': 'Error starting job execution: %s' % exception
+            }))
 
 class BuildJobDirTestCase(BaseTestCase):
     def setUp(self):
@@ -133,15 +136,15 @@ class BuildJobDirTestCase(BaseTestCase):
         self.runner_methods_to_patch.extend(['process_actions'])
 
     def test_processes_pre_build_actions(self):
-        self.runner.build_job_dir(job=self.job)
+        self.runner.build_job_submission(job=self.job)
         self.assertEqual(self.runner.process_actions.call_args,
                          call(actions=self.job['job_spec']['pre_build_actions'],
                               job=self.job))
 
-    def test_calls_job_dir_factory(self):
-        self.runner.build_job_dir(job=self.job)
+    def test_calls_job_submission_factory(self):
+        self.runner.build_job_submission(job=self.job)
         self.assertEqual(
-            self.runner.job_dir_factory.build_dir_for_job.call_args,
+            self.runner.job_submission_factory.build_job_submission.call_args,
             call(job=self.job))
 
 class ProcessActionsTestCase(BaseTestCase):
@@ -229,9 +232,10 @@ class ProcessExecutedJobTestCase(BaseTestCase):
         self.runner_methods_to_patch.extend(['process_actions', 'complete_job'])
 
     def test_adds_completed_dir_to_job_state(self):
-        self.job['execution'] = {'dir': 'some_dir'}
+        self.job['execution'] = {'completed_dir': 'some_dir'}
         self.runner.process_executed_job(job=self.job)
-        self.assertEqual(self.job['completed_dir'], self.job['execution']['dir'])
+        self.assertEqual(self.job['completed_dir'],
+                         self.job['execution']['completed_dir'])
 
     def test_calls_post_exec_actions(self):
         actions = [MagicMock() for i in range(3)]

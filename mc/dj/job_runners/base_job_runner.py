@@ -3,11 +3,11 @@ import time
 
 
 class BaseJobRunner(object):
-    def __init__(self, job_client=None, job_dir_factory=None,
+    def __init__(self, job_client=None, job_submission_factory=None,
                  execution_client=None, action_processor=None,
                  tick_interval=120, max_executing_jobs=3, logger=None):
         self.job_client = job_client
-        self.job_dir_factory = job_dir_factory
+        self.job_submission_factory = job_submission_factory
         self.execution_client = execution_client
         self.action_processor = action_processor
         self.tick_interval = tick_interval
@@ -61,7 +61,8 @@ class BaseJobRunner(object):
         self.register_job(job=claimed_job)
         try:
             try:
-                claimed_job['dir'] = self.build_job_dir(job=claimed_job)
+                claimed_job['submission'] = self.build_job_submission(
+                    job=claimed_job)
             except Exception as error:
                 raise Exception("Error building job directory: %s" % error)
             try:
@@ -91,12 +92,13 @@ class BaseJobRunner(object):
             uuids=[job['uuid']])
         return claimed_jobs.get(job['uuid'], False)
 
-    def build_job_dir(self, job=None):
-        self.logger.debug('build_job_dir')
+    def build_job_submission(self, job=None):
+        self.logger.debug('build_job_submission')
         actions =  job.get('job_spec', {}).get('pre_build_actions', None)
         if actions: self.process_actions(actions=actions, job=job)
-        job_dir_meta = self.job_dir_factory.build_dir_for_job(job=job)
-        return job_dir_meta
+        job_submission_meta = self.job_submission_factory.build_job_submission(
+            job=job)
+        return job_submission_meta
 
     def process_actions(self, actions=None, job=None):
         for action in actions:

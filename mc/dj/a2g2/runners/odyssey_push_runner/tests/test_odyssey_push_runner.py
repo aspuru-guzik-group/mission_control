@@ -161,8 +161,8 @@ class RunnerSetupTestCase(BaseTestCase):
     def test_has_job_client(self):
         self.run_subcomponent_generator_fallback_test('job_client')
 
-    def test_has_job_dir_factory(self):
-        self.run_subcomponent_generator_fallback_test('job_dir_factory')
+    def test_has_job_submission_factory(self):
+        self.run_subcomponent_generator_fallback_test('job_submission_factory')
 
     def test_has_job_runner(self):
         self.run_subcomponent_generator_fallback_test('job_runner')
@@ -232,14 +232,16 @@ class GenerateJobClientTestCase(BaseTestCase):
                          call(base_url=self.mock_runner.job_server_url,
                               request_client=self.mock_runner.request_client))
 
-class GenerateJobDirFactoryTestCase(BaseTestCase):
+class GenerateJobSubmissionFactoryTestCase(BaseTestCase):
     def decorate_patchers(self):
-        self.patchers['JobDirFactory'] = patch.object(odyssey_push_runner,
-                                                      'JobDirFactory')
+        self.patchers['JobSubmissionFactory'] = patch.object(
+            odyssey_push_runner, 'JobSubmissionFactory')
 
-    def test_generates_job_dir_factory(self):
-        result = self.mock_runner.call_real_method('generate_job_dir_factory')
-        self.assertEqual(result, self.mocks['JobDirFactory'].return_value)
+    def test_generates_job_submission_factory(self):
+        result = self.mock_runner.call_real_method(
+            'generate_job_submission_factory')
+        self.assertEqual(result,
+                         self.mocks['JobSubmissionFactory'].return_value)
 
 class GenerateJobRunnerTestCase(BaseTestCase):
     def decorate_patchers(self):
@@ -251,12 +253,13 @@ class GenerateJobRunnerTestCase(BaseTestCase):
         job_runner = self.mock_runner.call_real_method(
             'generate_job_runner', **{'job_runner_kwargs': job_runner_kwargs})
         self.assertEqual(job_runner, self.mocks['JobRunner'].return_value)
-        self.assertEqual(self.mocks['JobRunner'].call_args,
-                         call(job_client=self.mock_runner.job_client,
-                              job_dir_factory=self.mock_runner.job_dir_factory,
-                              odyssey_user=self.mock_runner.odyssey_user,
-                              odyssey_host=self.mock_runner.odyssey_host,
-                              **job_runner_kwargs))
+        self.assertEqual(
+            self.mocks['JobRunner'].call_args,
+            call(job_client=self.mock_runner.job_client,
+                 job_submission_factory=self.mock_runner.job_submission_factory,
+                 ssh_client=self.mock_runner.ssh_client,
+                 **job_runner_kwargs)
+        )
 
 class DecorateTickCtxTestCase(BaseTestCase):
     def setUp(self):

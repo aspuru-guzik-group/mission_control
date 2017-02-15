@@ -114,7 +114,7 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
         self.a2g2_client = self.generate_a2g2_client()
         self.storage_client = self.generate_storage_client()
         self.action_processor = self.generate_action_processor()
-        self.job_dir_factory = self.generate_job_dir_factory()
+        self.job_submission_factory = self.generate_job_submission_factory()
         self.flow_and_job_runner = self.generate_flow_and_job_runner()
         self.flow_client = self.flow_and_job_runner.flow_client
 
@@ -152,20 +152,19 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
         return storage_action_handlers.download_action_handler(
             self.storage_client, *args, params=params, ctx=ctx)
 
-    def generate_job_dir_factory(self):
+    def generate_job_submission_factory(self):
         from a2g2.job_dir_builders.confgen.confgen import ConfgenJobDirBuilder
-        class JobDirFactory(object):
-            def build_dir_for_job(self, job=None):
+        class JobSubmissionFactory(object):
+            def build_job_submission(self, job=None):
                 job_type = job['job_spec']['job_type']
                 if job_type == 'confgen':
                     job_dir = ConfgenJobDirBuilder.build_odyssey_dir(job=job)
                 else:
                     raise Exception("Unknown job type '%s',"
                                     " can't build job dir" % job_type)
-                dir_meta = {'dir': job_dir, 'entrypoint': 'job.sh'}
-                return dir_meta
-
-        return JobDirFactory()
+                submission_meta = {'dir': job_dir, 'entrypoint': 'job.sh'}
+                return submission_meta
+        return JobSubmissionFactory()
 
     def generate_flow_and_job_runner(self):
         return OdysseyPushRunner(
@@ -175,7 +174,7 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
             job_server_url='http://' + self.docker_env.mc_ip_addr + '/jobs/',
             flow_server_url=('http://' + self.docker_env.mc_ip_addr 
                              + '/missions/'),
-            job_dir_factory=self.job_dir_factory,
+            job_submission_factory=self.job_submission_factory,
             job_runner_kwargs={'action_processor': self.action_processor}
         )
 

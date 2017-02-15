@@ -48,20 +48,17 @@ class SetupTestCase(BaseTestCase):
 
 class GenerateExecutionClientTestCase(BaseTestCase):
     def decorate_patchers(self):
-        self.patchers['SSHClient'] = patch.object(
-            odyssey_push_job_runner, 'SSHControlSocketClient')
         self.patchers['SlurmClient'] = patch.object(
             odyssey_push_job_runner, 'RemoteSlurmExecutionClient')
 
     def test_generates_remote_slurm_execution_client(self):
-        execution_client = self.runner.generate_execution_client()
+        ssh_client = Mock()
+        execution_client = self.runner.generate_execution_client(
+            ssh_client=ssh_client)
         self.assertEqual(execution_client,
                          self.mocks['SlurmClient'].return_value)
         self.assertEqual(self.mocks['SlurmClient'].call_args,
-                         call(ssh_client=self.mocks['SSHClient'].return_value))
-        self.assertEqual(self.mocks['SSHClient'].call_args,
-                         call(user=self.runner.odyssey_user,
-                              host=self.runner.odyssey_host))
+                         call(ssh_client=ssh_client))
 
 class RunTestCase(BaseTestCase):
     def test_wraps_base_job_runner(self):

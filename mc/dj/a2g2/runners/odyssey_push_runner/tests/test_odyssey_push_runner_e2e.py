@@ -22,7 +22,7 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
     def setUp(self):
         super().setUp()
         self.execution_client = MagicMock()
-        self.job_dir_factory = Mock()
+        self.job_submission_factory = Mock()
         self.flow_generator_classes = self.generate_flow_generator_classes()
         self.runner = self.generate_runner()
         self.flow_spec = self.generate_flow_spec()
@@ -96,7 +96,7 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
             job_server_url=mc_server_url,
             flow_server_url=mc_server_url,
             flow_generator_classes=self.flow_generator_classes.values(),
-            job_dir_factory=self.job_dir_factory,
+            job_submission_factory=self.job_submission_factory,
             job_runner_kwargs={'execution_client': self.execution_client}
         )
         return runner

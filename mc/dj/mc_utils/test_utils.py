@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 
 def patch_request_client(request_client=None,
-                         methods_to_patch=['patch', 'put', 'post']):
+                         methods_to_patch=['get', 'patch', 'put', 'post']):
     for method_name in methods_to_patch:
         patch_client_method(client=request_client, method_name=method_name)
     request_client.raise_for_status = Mock()
@@ -19,6 +19,7 @@ def patch_client_method(client=None, method_name=None):
                 kwargs = {**kwargs, 'content_type': 'application/json'}
         else:
             data = data or {}
+            if 'params' in kwargs: data.update(kwargs['params'])
             for name, requests_file in (files or []):
                 data[name] = _requests_file_to_file_handle(requests_file)
         if data: args.append(data)

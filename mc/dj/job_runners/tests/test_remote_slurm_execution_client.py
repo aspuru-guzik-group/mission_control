@@ -44,8 +44,8 @@ class StartExecutionTestCase(BaseTestCase):
         self.rsclient.start_execution(job=self.job)
         expected_job_arg = {
             **self.job, 
-            'dir': {
-                **self.job['dir'],
+            'submission': {
+                **self.job['submission'],
                 'dir': self.rsclient.upload_job.return_value['dir']
             }
         }
@@ -63,7 +63,7 @@ class UploadJobDirTestCase(BaseTestCase):
         self.rsclient.upload_job(job=self.job)
         self.assertEqual(
             self.rsclient.ssh_client.rsync_to_remote.call_args,
-            call(local_src_path=self.job['dir']['dir'] + '/',
+            call(local_src_path=self.job['submission']['dir'] + '/',
                  remote_dest_path=os.path.join(self.rsclient.remote_workdir,
                                                self.job['uuid']),
                  flags='-a')

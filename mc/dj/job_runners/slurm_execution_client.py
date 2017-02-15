@@ -11,9 +11,12 @@ class SlurmExecutionClient(object):
         self.process_runner = process_runner
 
     def start_execution(self, job=None):
-        cmd = ['sbatch',
-               '--workdir=%s' % job['dir']['dir'],
-               os.path.join(job['dir']['dir'], job['dir']['entrypoint'])]
+        cmd = [
+            'sbatch',
+            '--workdir=%s' % job['submission']['dir'],
+            os.path.join(job['submission']['dir'],
+                         job['submission']['entrypoint'])
+        ]
         completed_proc = self.process_runner.run_process(cmd=cmd, check=True)
         slurm_job_id = self.parse_sbatch_output(completed_proc.stdout)
         return {'job_id': slurm_job_id}

@@ -12,13 +12,19 @@ class RemoteSlurmExecutionClient(object):
         remote_dir_meta = self.upload_job(job=job)
         # Execute job, but use remote dir instead of local dir.
         execution_meta = self.slurm_execution_client.start_execution(
-            job={**job, 'dir': {**job['dir'], 'dir': remote_dir_meta['dir']}})
+            job={
+                **job,
+                'submission': {
+                    **job['submission'],
+                    'dir': remote_dir_meta['dir']
+                }
+            })
         execution_meta['remote_dir'] = remote_dir_meta
         return execution_meta
 
     def upload_job(self, job=None):
         self.ensure_remote_workdir()
-        local_src = job['dir']['dir']
+        local_src = job['submission']['dir']
         remote_dest = os.path.join(self.remote_workdir, job['uuid'])
         self.ssh_client.rsync_to_remote(local_src_path=local_src + '/',
                                         remote_dest_path=remote_dest,
@@ -39,11 +45,11 @@ class RemoteSlurmExecutionClient(object):
 
     def on_job_completed(self, job=None):
         self.download_job(job=job)
-        job['execution']['completed_dir'] = job['dir']['dir']
+        job['execution']['completed_dir'] = job['submission']['dir']
 
     def download_job(self, job=None):
         remote_src = job['execution']['remote_dir']['dir']
-        local_dest = job['dir']['dir']
+        local_dest = job['submission']['dir']
         self.ssh_client.rsync_from_remote(remote_src_path=remote_src + '/',
                                           local_dest_path=local_dest,
                                           flags='-a')
