@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Flow
+from .models import Flow, Job
 
 class FlowSerializer(serializers.ModelSerializer):
     class Meta:
@@ -8,3 +8,10 @@ class FlowSerializer(serializers.ModelSerializer):
         fields = ('uuid', 'serialization', 'spec', 'status',
                   'created', 'modified', 'mission', 'claimed')
         read_only_fields = ('uuid', 'created', 'modified')
+
+class JobSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Job
+        fields = ('uuid', 'name', 'status', 'created', 'modified', 'job_spec',
+                  'data')
+        read_only_fields = ('uuid', 'created', 'modified',)

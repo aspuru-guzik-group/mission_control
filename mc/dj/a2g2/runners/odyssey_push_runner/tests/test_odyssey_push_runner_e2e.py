@@ -5,13 +5,12 @@ from unittest.mock import MagicMock, Mock
 
 from django.test import override_settings
 
-from missions.models import Flow as FlowModel
+from missions.models import Flow as FlowModel, Job as JobModel
 from ..odyssey_push_runner import OdysseyPushRunner
 from . import e2e_utils
 from flow_engines.flow import Flow
 from a2g2.task_engines.job_task_engine import JobTaskEngine
 from a2g2.task_engines.flow_task_engine import FlowTaskEngine
-from jobs.models import Job
 
 
 urlpatterns = e2e_utils.urlpatterns
@@ -93,8 +92,7 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
         runner = OdysseyPushRunner(
             request_client=self.client,
             run_setup=True,
-            job_server_url=mc_server_url,
-            flow_server_url=mc_server_url,
+            mc_server_url=mc_server_url,
             flow_generator_classes=self.flow_generator_classes.values(),
             job_submission_factory=self.job_submission_factory,
             job_runner_kwargs={'execution_client': self.execution_client}
@@ -153,7 +151,7 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
         self.assertEqual(getattr(child_flow_model, attr), expected)
 
     def get_job_model(self):
-        job_models = Job.objects.all()
+        job_models = JobModel.objects.all()
         job_model = [job_model for job_model in job_models
                      if job_model.job_spec['type'] == 'Job_A'][0]
         return job_model

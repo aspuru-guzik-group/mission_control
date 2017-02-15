@@ -28,8 +28,7 @@ class CreateFlowRecordE2ETestCase(e2e_utils.BaseTestCase):
     def run_create_flow_record_command(self, flow_spec=None):
         arg_strs = [
             "--flow_spec_json='%s'" % json.dumps(flow_spec),
-            "--flow_server_url='/%s/'" % e2e_utils.BASE_PATH,
-            "--job_server_url=''",
+            "--mc_server_url='/%s/'" % e2e_utils.BASE_PATH,
         ]
         args = shlex.split(' '.join(arg_strs))
         stdout = io.StringIO()

@@ -266,7 +266,7 @@ class CompleteJobTestCase(BaseTestCase):
             self.runner.update_job.call_args,
             call(job=self.job,
                  updates={
-                     'status': self.runner.job_client.Statuses.COMPLETED.name,
+                     'status': 'COMPLETED',
                      'data': self.job.get('data')
                  }))
 

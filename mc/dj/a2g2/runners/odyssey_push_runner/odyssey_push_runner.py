@@ -3,9 +3,7 @@ import time
 import requests
 
 from flow_engines.flow_engine import FlowEngine
-from flow_client.flow_client import MissionControlFlowClient as FlowClient
-from job_client.job_client import MissionControlJobClient \
-        as JobClient
+from mc_client.mission_control_client import MissionControlClient
 from .odyssey_push_job_runner import OdysseyPushJobRunner
 from flow_runners.base_flow_runner import BaseFlowRunner as FlowRunner
 from .odyssey_job_submission_factory import OdysseyJobSubmissionFactory as \
@@ -14,12 +12,10 @@ from .odyssey_job_submission_factory import OdysseyJobSubmissionFactory as \
 
 class OdysseyPushRunner(object):
     def __init__(self, *args, request_client=None, run_setup=True,
-                 tick_interval=None,
-                 job_server_url=None, flow_server_url=None, **setup_kwargs):
+                 tick_interval=None, mc_server_url=None, **setup_kwargs):
         self.request_client = request_client or requests
         self.tick_interval = tick_interval
-        self.job_server_url = job_server_url
-        self.flow_server_url = flow_server_url
+        self.mc_server_url = mc_server_url
         if run_setup: self.setup(**setup_kwargs)
         self.tick_counter = 0
 
@@ -27,8 +23,7 @@ class OdysseyPushRunner(object):
               action_processor=None,
               flow_generator_classes=None, 
               flow_engine=None, 
-              flow_client=None, 
-              job_client=None,
+              mc_client=None, 
               job_submission_factory=None,
               job_runner=None,
               job_runner_kwargs=None,
@@ -42,8 +37,7 @@ class OdysseyPushRunner(object):
         self.flow_generator_classes = flow_generator_classes or \
                 self.generate_flow_generator_classes()
         self.flow_engine = flow_engine or self.generate_flow_engine()
-        self.flow_client = flow_client or self.generate_flow_client()
-        self.job_client = job_client or self.generate_job_client()
+        self.mc_client = mc_client or self.generate_mc_client()
         self.job_submission_factory = job_submission_factory or \
                 self.generate_job_submission_factory()
         self.ssh_client = ssh_client
@@ -65,43 +59,39 @@ class OdysseyPushRunner(object):
                 flow_generator_class=flow_generator_class)
         return flow_engine
 
-    def generate_flow_client(self):
-        return FlowClient(base_url=self.flow_server_url,
-                          request_client=self.request_client)
-
-    def generate_job_client(self):
-        return JobClient(base_url=self.job_server_url,
-                         request_client=self.request_client)
+    def generate_mc_client(self):
+        return MissionControlClient(base_url=self.mc_server_url,
+                                    request_client=self.request_client)
 
     def generate_job_submission_factory(self):
         return JobSubmissionFactory()
 
     def generate_job_runner(self, job_runner_kwargs=None): 
         return OdysseyPushJobRunner(
-            job_client=self.job_client,
             job_submission_factory=self.job_submission_factory,
             ssh_client=self.ssh_client,
+            job_client=self.mc_client,
             **(job_runner_kwargs or {})
         )
 
     def decorate_tick_ctx(self, tick_ctx=None):
         tick_ctx = tick_ctx or {}
         decorated_tick_ctx = {
-            'create_job': self.job_client.create_job,
-            'get_job': self.job_client.fetch_job_by_uuid,
-            'create_flow': self.flow_client.create_flow,
-            'get_flow': self.flow_client.fetch_flow_by_uuid,
+            'create_job': self.mc_client.create_job,
+            'get_job': self.mc_client.fetch_job_by_uuid,
+            'create_flow': self.mc_client.create_flow,
+            'get_flow': self.mc_client.fetch_flow_by_uuid,
             **tick_ctx
         }
         return decorated_tick_ctx
 
     def generate_flow_runner(self):
-        return FlowRunner(flow_client=self.flow_client,
+        return FlowRunner(flow_client=self.mc_client,
                           flow_engine=self.flow_engine,
                           tick_ctx=self.tick_ctx)
 
     def create_flow_record(self, *args, flow_record=None, **kwargs):
-        return self.flow_client.create_flow(flow=flow_record)
+        return self.mc_client.create_flow(flow=flow_record)
 
     def run(self, ntimes=None, tick_interval=None):
         if ntimes:

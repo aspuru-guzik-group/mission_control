@@ -39,15 +39,9 @@ class BaseCommand(object):
                   " will override parameters provided on the command line."),
         )
 
-    def add_job_and_flow_server_url_arguments(self, parser):
-        self.add_job_server_url_argument(parser)
-        self.add_flow_server_url_argument(parser)
-
-    def add_job_server_url_argument(self, parser):
-        parser.add_argument('--job_server_url', help="URL of job server")
-
-    def add_flow_server_url_argument(self, parser):
-        parser.add_argument('--flow_server_url', help="URL of flow server")
+    def add_mc_server_url_arguments(self, parser):
+        parser.add_argument('--mc_server_url',
+                            help="URL of mission control server")
 
     def handle(self, *args, **kwargs): pass
 

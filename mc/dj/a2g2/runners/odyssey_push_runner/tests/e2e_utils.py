@@ -10,7 +10,6 @@ from ..commands import base as base_command
 BASE_PATH = 'test_api'
 urlpatterns = [
     url(r'^%s/' % BASE_PATH, include('missions.urls')),
-    url(r'^%s/' % BASE_PATH, include('jobs.urls')),
 ]
 
 class BaseTestCase(TestCase):

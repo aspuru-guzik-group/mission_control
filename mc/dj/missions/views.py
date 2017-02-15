@@ -5,8 +5,9 @@ from django.views.decorators.csrf import csrf_exempt
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework import viewsets
 
-from .models import Flow, FlowStatuses, missions_models
-from .serializers import FlowSerializer
+from .constants import JobStatuses
+from .models import Job, Flow, FlowStatuses, missions_models
+from .serializers import JobSerializer, FlowSerializer
 
 class FlowFilter(FilterSet):
     class Meta:
@@ -51,6 +52,29 @@ def claim_flows(request):
                 result[flow.uuid] = FlowSerializer(flow).data
     return JsonResponse(result)
 
+class JobViewSet(viewsets.ModelViewSet):
+    queryset = Job.objects.all()
+    serializer_class = JobSerializer
+    filter_backends = (DjangoFilterBackend,)
+    filter_fields = ('status', 'uuid',)
+
+@require_http_methods(["POST"])
+@csrf_exempt
+def claim_jobs(request):
+    result = {}
+    post_data = json.loads(request.body.decode())
+    uuids = post_data.get('uuids', [])
+    if uuids:
+        jobs = Job.objects.filter(uuid__in=uuids)
+        for job in jobs:
+            if job.status == JobStatuses.PENDING.name:
+                job.status = JobStatuses.RUNNING.name
+                job.save()
+                result[job.uuid] = JobSerializer(job).data
+            else:
+                result[job.uuid] = None
+    return JsonResponse(result)
+
 @require_http_methods(["GET"])
 def flush(request):
     flush_results = {}
@@ -58,3 +82,4 @@ def flush(request):
         model.objects.all().delete()
         flush_results[model.__name__] = 'flushed'
     return JsonResponse(flush_results)
+

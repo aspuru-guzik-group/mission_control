@@ -147,7 +147,7 @@ class BaseJobRunner(object):
     def complete_job(self, job=None):
         self.logger.debug('complete_job')
         self.update_job(job=job, updates={
-            'status': self.job_client.Statuses.COMPLETED.name,
+            'status': 'COMPLETED',
             'data': job.get('data', {})
         })
         self.unregister_job(job=job)

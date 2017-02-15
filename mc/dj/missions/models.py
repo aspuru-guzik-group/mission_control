@@ -4,6 +4,8 @@ from django.db import models
 from django_extensions.db.models import TimeStampedModel
 from django.contrib.postgres.fields import JSONField
 
+from .constants import JobStatuses
+
 def str_uuid4(): return str(uuid.uuid4())
 
 def uuid_model_str(instance):
@@ -47,12 +49,26 @@ class Flow(TimeStampedModel):
 
 missions_models.append(Flow)
 
+class Job(TimeStampedModel):
+    uuid = models.CharField(primary_key=True, default=str_uuid4,
+                            editable=False, max_length=64)
+    name = models.CharField(null=True, max_length=1024)
+    job_spec = JSONField(default=dict)
+    status = models.CharField(null=True, max_length=32,
+                              choices=[(status.name, status.value['label'])
+                                       for status in JobStatuses],
+                              default=JobStatuses.PENDING.name)
+    claimed = models.NullBooleanField(null=True, default=False)
+    data = models.TextField(null=True)
+
+missions_models.append(Flow)
+
 class FlowJob(TimeStampedModel):
     uuid = models.CharField(primary_key=True, default=str_uuid4,
                             editable=False, max_length=64)
     flow = models.ForeignKey(Flow, on_delete=models.CASCADE,
                                  related_name='flow_jobs')
-    job = models.ForeignKey('jobs.Job', on_delete=models.CASCADE)
+    job = models.ForeignKey('Job', on_delete=models.CASCADE)
     finished = models.NullBooleanField(null=True, default=False)
     meta = JSONField(default=dict)
 

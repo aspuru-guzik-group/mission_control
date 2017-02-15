@@ -7,7 +7,7 @@ from missions.models import Flow as FlowModel
 from flow_engines.flow import Flow
 from flow_runners.base_flow_runner import BaseFlowRunner
 from flow_engines.flow_engine import FlowEngine
-from flow_client.flow_client import MissionControlFlowClient
+from mc_client.mission_control_client import MissionControlClient
 
 
 BASE_PATH = 'test_api'
@@ -22,7 +22,7 @@ class FlowRunnerE2ETestCase(TestCase):
         self.keyed_task_engines = self.generate_keyed_task_engines()
         self.flow_engine = self.generate_flow_engine(
             keyed_task_engines=self.keyed_task_engines)
-        self.flow_client = MissionControlFlowClient(
+        self.flow_client = MissionControlClient(
             base_url='/%s' % BASE_PATH,
             request_client=self.client
         )

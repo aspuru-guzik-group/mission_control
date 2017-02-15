@@ -6,7 +6,7 @@ from .base import BaseCommand
 class Command(BaseCommand):
     def add_arguments(self, parser=None):
         self.add_flow_spec_arguments(parser=parser)
-        self.add_job_and_flow_server_url_arguments(parser)
+        self.add_mc_server_url_arguments(parser)
 
     def add_flow_spec_arguments(self, parser=None):
         group = parser.add_mutually_exclusive_group()
