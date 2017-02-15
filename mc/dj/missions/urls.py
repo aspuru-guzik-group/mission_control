@@ -10,4 +10,5 @@ router.register(r'flows', views.FlowViewSet)
 urlpatterns = [
     url(r'^', include(router.urls)),
     url(r'^claim_flows/', views.claim_flows, name='claim_flows'),
+    url(r'^flush/', views.flush, name='flush'),
 ]

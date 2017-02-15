@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework import viewsets
 
-from .models import Flow, FlowStatuses
+from .models import Flow, FlowStatuses, missions_models
 from .serializers import FlowSerializer
 
 class FlowFilter(FilterSet):
@@ -50,3 +50,11 @@ def claim_flows(request):
                 flow.save()
                 result[flow.uuid] = FlowSerializer(flow).data
     return JsonResponse(result)
+
+@require_http_methods(["GET"])
+def flush(request):
+    flush_results = {}
+    for model in missions_models:
+        model.objects.all().delete()
+        flush_results[model.__name__] = 'flushed'
+    return JsonResponse(flush_results)

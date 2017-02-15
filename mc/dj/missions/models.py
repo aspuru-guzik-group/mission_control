@@ -11,6 +11,8 @@ def uuid_model_str(instance):
         class_name=instance.__class__.__name__,
         uuid=instance.uuid)
 
+missions_models = []
+
 class Mission(TimeStampedModel):
     uuid = models.CharField(primary_key=True, default=str_uuid4,
                             editable=False, max_length=64)
@@ -18,6 +20,8 @@ class Mission(TimeStampedModel):
 
     def __str__(self):
         return uuid_model_str(self)
+
+missions_models.append(Mission)
 
 class FlowStatuses(enum.Enum):
     PENDING = {'label': 'pending'}
@@ -40,6 +44,8 @@ class Flow(TimeStampedModel):
 
     def __str__(self):
         return uuid_model_str(self)
+
+missions_models.append(Flow)
 
 class FlowJob(TimeStampedModel):
     uuid = models.CharField(primary_key=True, default=str_uuid4,

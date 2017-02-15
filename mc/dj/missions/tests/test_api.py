@@ -1,20 +1,28 @@
 import json
+from django.conf.urls import url, include
 from django.test import TestCase
 from django.test.utils import override_settings
 from rest_framework.test import APITestCase
 
-from ..models import Flow, FlowStatuses
+from ..models import Flow, FlowStatuses, missions_models
 from ..serializers import FlowSerializer
+from .. import urls as _urls
 
 
 def key_by_uuid(items=None):
     return {item['uuid']: item for item in items}
 
-@override_settings(ROOT_URLCONF='missions.urls')
+BASE_PATH = 'test_api/'
+BASE_URL = '/' + BASE_PATH
+urlpatterns = [
+    url(r'^%s' % BASE_PATH, include(_urls.__name__))
+]
+
+@override_settings(ROOT_URLCONF=__name__)
 class ListFlowsTestCase(APITestCase):
     def test_list_flows(self):
         flows = [Flow.objects.create() for i in range(3)]
-        response = self.client.get('/flows/')
+        response = self.client.get(BASE_URL + 'flows/')
         expected_data = [FlowSerializer(flow).data
                          for flow in flows]
         self.assertEqual(key_by_uuid(response.data), key_by_uuid(expected_data))
@@ -27,7 +35,7 @@ class ListFlowsTestCase(APITestCase):
             for status in statuses
         }
         for status in statuses:
-            response = self.client.get('/flows/', {'status': status})
+            response = self.client.get(BASE_URL + 'flows/', {'status': status})
             expected_data = [FlowSerializer(flow).data
                              for flow in flows_by_status[status]]
             self.assertEqual(key_by_uuid(response.data),
@@ -37,12 +45,12 @@ class ListFlowsTestCase(APITestCase):
         flows = [Flow.objects.create() for i in range(2)]
         flows_by_uuid = {flow.uuid: flow for flow in flows}
         for uuid, flow in flows_by_uuid.items():
-            response = self.client.get('/flows/', {'uuid': uuid})
+            response = self.client.get(BASE_URL + 'flows/', {'uuid': uuid})
             expected_data = [FlowSerializer(flow).data]
             self.assertEqual(key_by_uuid(response.data),
                              key_by_uuid(expected_data))
 
-@override_settings(ROOT_URLCONF='missions.urls')
+@override_settings(ROOT_URLCONF=__name__)
 class TickableFlowsTestCase(APITestCase):
     def setUp(self):
         super().setUp()
@@ -64,14 +72,14 @@ class TickableFlowsTestCase(APITestCase):
         return flow_groups
 
     def test_returns_tickable_flows(self):
-        response = self.client.get('/flows/', {'tickable': True})
+        response = self.client.get(BASE_URL + 'flows/', {'tickable': True})
         expected_data = [
             FlowSerializer(flow).data
             for flow in self.flow_groups['tickable']
         ]
         self.assertEqual(key_by_uuid(response.data), key_by_uuid(expected_data))
 
-@override_settings(ROOT_URLCONF='missions.urls')
+@override_settings(ROOT_URLCONF=__name__)
 class PatchFlowTestCase(APITestCase):
     def setUp(self):
         self.flows = [Flow.objects.create() for i in range(1)]
@@ -79,8 +87,8 @@ class PatchFlowTestCase(APITestCase):
     def test_patch_flow(self):
         flow_to_patch = self.flows[0]
         new_values = {'status': FlowStatuses.RUNNING.name}
-        response = self.client.patch('/flows/%s/' % flow_to_patch.uuid,
-                                     new_values)
+        response = self.client.patch(
+            BASE_URL + 'flows/%s/' % flow_to_patch.uuid, new_values)
         self.assertEqual(response.status_code, 200)
         patched_flow = Flow.objects.get(uuid=flow_to_patch.uuid)
         patched_flow_attrs = {attr: getattr(patched_flow, attr)
@@ -88,11 +96,11 @@ class PatchFlowTestCase(APITestCase):
         self.assertEqual(patched_flow_attrs, new_values)
 
     def test_patch_with_bad_status(self):
-        response = self.client.patch('/flows/%s/' % self.flows[0].uuid,
-                                     {'status': 'BADDO!'})
+        response = self.client.patch(
+            BASE_URL + 'flows/%s/' % self.flows[0].uuid, {'status': 'BADDO!'})
         self.assertEqual(response.status_code, 400)
 
-@override_settings(ROOT_URLCONF='missions.urls')
+@override_settings(ROOT_URLCONF=__name__)
 class ClaimFlowTestCase(TestCase):
     def setUp(self):
         self.unclaimed_flows = [Flow.objects.create() for i in range(1)]
@@ -105,9 +113,11 @@ class ClaimFlowTestCase(TestCase):
 
     def _claimFlows(self):
         uuids = [flow.uuid for flow in self.flows_to_claim]
-        self.response = self.client.post('/claim_flows/',
-                                         json.dumps({'uuids': uuids}),
-                                         content_type='application/json')
+        self.response = self.client.post(
+            BASE_URL + 'claim_flows/', 
+            json.dumps({'uuids': uuids}),
+            content_type='application/json'
+        )
 
     def test_response_data(self):
         self.assertEqual(self.response.status_code, 200)
@@ -129,3 +139,24 @@ class ClaimFlowTestCase(TestCase):
             expected_claimed_values[flow.uuid] = expected_claimed_value
         self.assertEqual(claimed_values, expected_claimed_values)
 
+@override_settings(ROOT_URLCONF=__name__)
+class FlushTestCase(TestCase):
+    def setUp(self):
+        self.create_models()
+
+    def create_models(self):
+        for model in missions_models:
+            for i in range(3): model.objects.create()
+
+    def _flush(self):
+        return self.client.get(BASE_URL + 'flush/')
+
+    def test_response_data(self):
+        response = self._flush()
+        self.assertEqual(response.status_code, 200)
+        for model in missions_models:
+            self.assertEqual(model.objects.count(), 0)
+        expected_flush_results = {model.__name__: 'flushed'
+                                  for model in missions_models}
+        self.assertEqual(json.loads(response.content.decode()), 
+                         expected_flush_results)
