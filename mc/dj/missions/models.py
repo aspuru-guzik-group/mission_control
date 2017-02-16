@@ -60,6 +60,7 @@ class Job(TimeStampedModel):
                               default=JobStatuses.PENDING.name)
     claimed = models.NullBooleanField(null=True, default=False)
     data = models.TextField(null=True)
+    error = models.TextField(null=True, blank=True)
 
 missions_models.append(Job)
 
