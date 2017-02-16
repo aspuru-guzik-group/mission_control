@@ -45,7 +45,7 @@ class ConfgenFlowGenerator(object):
                                     }
                                 },
                                 'output_to_ctx_target': (
-                                    'data.output.raw_dir_storage_params')
+                                    'data.output.storage_meta')
                             }
                         ]
                     }
@@ -65,11 +65,10 @@ class ConfgenFlowGenerator(object):
                             'value': {
                                 'template': (
                                     '{{ctx.flow.tasks.confgen_run.output'
-                                    '.raw_dir_storage_params}}'
+                                    '.storage_meta}}'
                                 ),
                             },
-                            'target': ('task.input.job_spec.input'
-                                       '.json_storage_params'),
+                            'target': 'task.input.job_spec.input.storage_meta',
                         }
                     }
                 ],
@@ -81,10 +80,9 @@ class ConfgenFlowGenerator(object):
                             {
                                 'action': 'storage:download',
                                 'params': {
-                                    'json_src_params': {
+                                    'storage_meta': {
                                         'template': (
-                                            '{{ctx.job_spec.input.'
-                                            'json_storage_params}}'
+                                            '{{ctx.job_spec.input.storage_meta}}'
                                         ),
                                     },
                                     'dest': {
@@ -115,8 +113,8 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
         self.storage_client = self.generate_storage_client()
         self.action_processor = self.generate_action_processor()
         self.job_submission_factory = self.generate_job_submission_factory()
-        self.flow_and_job_runner = self.generate_flow_and_job_runner()
-        self.flow_client = self.flow_and_job_runner.flow_client
+        self.mc_runner = self.generate_mc_runner()
+        self.mc_client = self.mc_runner.mc_client
 
     def tearDown(self):
         #self.docker_env.teardown()
@@ -163,29 +161,29 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
                 if job_type == 'confgen':
                     from a2g2.job_dir_builders.confgen.confgen \
                             import ConfgenJobDirBuilder
-                    job_dir = ConfgenJobDirBuilder.build_odyssey_dir(job=job)
+                    job_dir_meta = ConfgenJobDirBuilder.build_odyssey_dir(
+                        job=job
+                    )
                 elif job_type == 'confgen:load':
                     from a2g2.job_dir_builders.confgen_load.confgen_load \
                             import ConfgenLoadJobDirBuilder
-                    job_dir = ConfgenLoadJobDirBuilder.build_odyssey_dir(
+                    job_dir_meta = ConfgenLoadJobDirBuilder.build_odyssey_dir(
                         job=job,
                         a2g2_client_cfg_json=a2g2_client_cfg_json
                     )
                 else:
                     raise Exception("Unknown job type '%s',"
                                     " can't build job dir" % job_type)
-                submission_meta = {'dir': job_dir, 'entrypoint': 'job.sh'}
+                submission_meta = job_dir_meta
                 return submission_meta
         return JobSubmissionFactory()
 
-    def generate_flow_and_job_runner(self):
+    def generate_mc_runner(self):
         return OdysseyPushRunner(
             ssh_client=self.generate_connected_ssh_client(),
             action_processor=self.action_processor,
             flow_generator_classes=[ConfgenFlowGenerator],
-            job_server_url='http://' + self.docker_env.mc_ip_addr + '/jobs/',
-            flow_server_url=('http://' + self.docker_env.mc_ip_addr 
-                             + '/missions/'),
+            mc_server_url='http://' + self.docker_env.mc_ip_addr + '/missions/',
             job_submission_factory=self.job_submission_factory,
             job_runner_kwargs={'action_processor': self.action_processor}
         )
@@ -211,16 +209,25 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
         return ssh_client
 
     def test_flow(self):
+        self.mc_client.flush_mc_db()
         self.a2g2_client.flush_a2g2_db()
         self.generate_molecule_library()
         self.create_flows()
-        self.assertTrue(len(self.flow_client.fetch_tickable_flows()) > 0)
-        self.run_flows_to_completion()
-        self.assertTrue(self.flow_and_job_runner.tick_counter > 0)
+        self.assertTrue(len(self.mc_client.fetch_tickable_flows()) > 0)
+        try:
+            self.run_flows_to_completion()
+            err = None
+        except Exception as error:
+            err = error
+        jobs = self.mc_client.fetch_jobs()
+        print("len: ", len(jobs))
+        print(json.dumps(jobs, indent=2))
+        if err: raise err
+        self.assertTrue(self.mc_runner.tick_counter > 0)
         self.assert_domain_db_has_expected_state()
 
     def generate_molecule_library(self):
-        initial_smiles = ['smiles_%s' % i for i in range(3)]
+        initial_smiles = ['smiles_%s' % i for i in range(1)]
         for smiles in initial_smiles:
             self.a2g2_client.create_chemthing({'props': {'smiles': smiles}})
 
@@ -239,14 +246,14 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
             },
         }
         flow = {'spec': json.dumps(flow_spec)}
-        self.flow_client.create_flow(flow=flow)
+        self.mc_client.create_flow(flow=flow)
 
     def run_flows_to_completion(self):
         max_ticks = 20
         incomplete_flows = self.get_incomplete_flows()
         while len(incomplete_flows) > 0:
-            self.flow_and_job_runner.tick()
-            if self.flow_and_job_runner.tick_counter > max_ticks:
+            self.mc_runner.tick()
+            if self.mc_runner.tick_counter > max_ticks:
                 raise Exception("Exceeded max_ticks of '%s'" % max_ticks)
             incomplete_flows = self.get_incomplete_flows()
 
@@ -261,7 +268,7 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
     def fetch_and_key_flows(self, query_params=None):
         keyed_flows = {
             flow['uuid']: flow
-            for flow in self.flow_client.fetch_flows(query_params=query_params)
+            for flow in self.mc_client.fetch_flows(query_params=query_params)
         }
         return keyed_flows
 

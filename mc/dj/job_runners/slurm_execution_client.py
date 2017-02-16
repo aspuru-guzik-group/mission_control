@@ -1,4 +1,4 @@
-import os
+import logging
 import re
 
 
@@ -7,17 +7,24 @@ SLURM_JOB_STATES_TO_RUN_STATES = {
 }
 
 class SlurmExecutionClient(object):
-    def __init__(self, process_runner=None):
+    def __init__(self, process_runner=None, logger=None):
         self.process_runner = process_runner
+        self.logger = logger or logging
 
     def start_execution(self, job=None):
-        cmd = [
-            'sbatch',
-            '--workdir=%s' % job['submission']['dir'],
-            os.path.join(job['submission']['dir'],
-                         job['submission']['entrypoint'])
-        ]
-        completed_proc = self.process_runner.run_process(cmd=cmd, check=True)
+        workdir = job['submission']['dir']
+        entrypoint = workdir + '/' + job['submission']['entrypoint']
+        cmd = ['sbatch', '--workdir=%s' % workdir, entrypoint]
+        try:
+            completed_proc = self.process_runner.run_process(cmd=cmd, check=True)
+        except self.process_runner.CalledProcessError as called_process_error:
+            error_msg = ("Submission error: {error}, stdout: {stdout},"
+                         " stderr: {stderr}").format(
+                             error=called_process_error,
+                             stdout=called_process_error.stdout,
+                             stderr=called_process_error.stderr,
+                         )
+            raise Exception(error_msg)
         slurm_job_id = self.parse_sbatch_output(completed_proc.stdout)
         return {'job_id': slurm_job_id}
 

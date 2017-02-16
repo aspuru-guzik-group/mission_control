@@ -5,13 +5,15 @@ import time
 class BaseJobRunner(object):
     def __init__(self, job_client=None, job_submission_factory=None,
                  execution_client=None, action_processor=None,
-                 tick_interval=120, max_executing_jobs=3, logger=None):
+                 tick_interval=120, max_executing_jobs=3, 
+                 get_job_execution_result=None, logger=None):
         self.job_client = job_client
         self.job_submission_factory = job_submission_factory
         self.execution_client = execution_client
         self.action_processor = action_processor
         self.tick_interval = tick_interval
         self.max_executing_jobs = max_executing_jobs
+        self._get_job_execution_result = get_job_execution_result
         self.logger = logger or logging
 
         self._ticking = False
@@ -140,17 +142,34 @@ class BaseJobRunner(object):
     def process_executed_job(self, job=None):
         self.logger.debug('process_executed_job')
         job['completed_dir'] = job['execution']['completed_dir']
+        job['execution']['result'] = self.get_job_execution_result(job=job)
         actions = job.get('job_spec', {}).get('post_exec_actions', None)
         if actions: self.process_actions(actions=actions, job=job)
         self.complete_job(job=job)
 
+    def get_job_execution_result(self, job=None):
+        _get_job_execution_result = getattr(self, '_get_job_execution_result',
+                                            None)
+        if _get_job_execution_result:
+            result = _get_job_execution_result(job_state=job)
+        else:
+            result = 'COMPLETED'
+        return result
+
     def complete_job(self, job=None):
         self.logger.debug('complete_job')
-        self.update_job(job=job, updates={
-            'status': 'COMPLETED',
-            'data': job.get('data', {})
-        })
-        self.unregister_job(job=job)
+        execution_result = job['execution']['result']
+        if execution_result['result'] == 'COMPLETED':
+            self.update_job(job=job, updates={
+                'status': 'COMPLETED',
+                'data': job.get('data', {})
+            })
+            self.unregister_job(job=job)
+        else:
+            self.fail_job(
+                job=job,
+                error=execution_result.get('error', 'error unknown')
+            )
 
     def update_job(self, job=None, updates=None):
         self.job_client.update_jobs(updates_by_uuid={

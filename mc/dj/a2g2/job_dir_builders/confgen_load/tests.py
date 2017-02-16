@@ -33,6 +33,7 @@ class TestBuildOdysseyDir(BaseTestCase):
             'modules': ['conda'],
             'job_script_body': textwrap.dedent(
                 '''
+                set -o errexit
                 echo "starting, $(date)"
                 source activate /n/aagfs01/software/conda_envs/a2g2_env
                 export A2G2_CLIENT_CFG_JSON="{a2g2_client_cfg_json}"

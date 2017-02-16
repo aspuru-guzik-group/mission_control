@@ -12,9 +12,9 @@ class ConfgenJobDirBuilder(object):
         if not output_dir: output_dir = tempfile.mkdtemp(prefix='confgen.ody')
         if not odyssey_dir_builder: odyssey_dir_builder = OdysseyJobDirBuilder
         dir_spec = cls.generate_odyssey_dir_spec(job=job)
-        dir_path = odyssey_dir_builder.build_dir(dir_spec=dir_spec,
+        dir_meta = odyssey_dir_builder.build_dir(dir_spec=dir_spec,
                                                  output_dir=output_dir)
-        return dir_path
+        return dir_meta
 
     @classmethod
     def generate_odyssey_dir_spec(cls, job=None):
@@ -22,6 +22,7 @@ class ConfgenJobDirBuilder(object):
             'modules': ['conda'],
             'job_script_body': textwrap.dedent(
                 '''
+                set -o errexit
                 echo "starting, $(date)"
                 source activate /n/aagfs01/software/conda_envs/a2g2_env
                 SCRATCH_DIR="/scratch/conformers.$$"

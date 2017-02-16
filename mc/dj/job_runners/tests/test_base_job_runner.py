@@ -11,11 +11,7 @@ class BaseTestCase(unittest.TestCase):
         self.execution_client = MagicMock()
         self.job_client = MagicMock()
         self.job_submission_factory = MagicMock()
-        self.runner = BaseJobRunner(
-            action_processor=self.action_processor,
-            execution_client=self.execution_client,
-            job_client=self.job_client,
-            job_submission_factory=self.job_submission_factory)
+        self.runner = self.generate_base_job_runner()
         self.runner_methods_to_patch = []
         self.decorate_runner_methods_to_patch()
         if self.runner_methods_to_patch:
@@ -29,6 +25,24 @@ class BaseTestCase(unittest.TestCase):
 
     def tearDown(self):
         if hasattr(self, 'patcher'): self.patcher.stop()
+
+    def generate_base_job_runner(self, runner_kwargs=None):
+        runner_kwargs = runner_kwargs or {}
+        default_kwargs = {
+            'action_processor': self.action_processor,
+            'execution_client': self.execution_client,
+            'job_client': self.job_client,
+            'job_submission_factory': self.job_submission_factory,
+        }
+        return BaseJobRunner(**{**default_kwargs, **runner_kwargs})
+
+class InitTestCase(BaseTestCase):
+    def test_sets_get_job_execution_result(self):
+        mock = MagicMock()
+        runner = self.generate_base_job_runner(runner_kwargs={
+            'get_job_execution_result': mock
+        })
+        self.assertEqual(runner._get_job_execution_result, mock)
 
 class RunTestCase(BaseTestCase):
     def test_run(self):
@@ -227,15 +241,23 @@ class ProcessExecutedJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.job = defaultdict(MagicMock)
+        self.job['execution'] = {'completed_dir': 'some_dir'}
 
     def decorate_runner_methods_to_patch(self):
-        self.runner_methods_to_patch.extend(['process_actions', 'complete_job'])
+        self.runner_methods_to_patch.extend(['process_actions', 'complete_job',
+                                             'get_job_execution_result'])
 
     def test_adds_completed_dir_to_job_state(self):
-        self.job['execution'] = {'completed_dir': 'some_dir'}
         self.runner.process_executed_job(job=self.job)
         self.assertEqual(self.job['completed_dir'],
                          self.job['execution']['completed_dir'])
+
+    def test_gets_job_execution_result(self):
+        self.runner.process_executed_job(job=self.job)
+        self.assertEqual(self.runner.get_job_execution_result.call_args,
+                         call(job=self.job))
+        self.assertEqual(self.job['execution']['result'],
+                         self.runner.get_job_execution_result.return_value)
 
     def test_calls_post_exec_actions(self):
         actions = [MagicMock() for i in range(3)]
@@ -251,26 +273,56 @@ class ProcessExecutedJobTestCase(BaseTestCase):
         self.runner.process_executed_job(job=self.job)
         self.assertEqual(self.runner.complete_job.call_args, call(job=self.job))
 
-class CompleteJobTestCase(BaseTestCase):
+class GetJobExecutionResult(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.job = MagicMock()
+
+    def test_calls_get_execution_result_if_set(self):
+        self.runner._get_job_execution_result = MagicMock()
+        result = self.runner.get_job_execution_result(job=self.job)
+        self.assertEqual(self.runner._get_job_execution_result.call_args,
+                         call(job_state=self.job))
+        self.assertEqual(result,
+                         self.runner._get_job_execution_result.return_value)
+
+    def test_returns_completed_if_get_execution_result_is_not_set(self):
+        self.runner._get_job_execution_result = None
+        result = self.runner.get_job_execution_result(job=self.job)
+        self.assertEqual(result, 'COMPLETED')
+
+class CompleteJobTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.job = defaultdict(MagicMock)
+        self.job['execution'] = defaultdict(MagicMock)
         self.runner.register_job(job=self.job)
-        self.runner.complete_job(job=self.job)
 
     def decorate_runner_methods_to_patch(self):
         self.runner_methods_to_patch.extend(['update_job', 'unregister_job'])
 
-    def test_updates_job(self):
+    def test_updates_successful_job(self):
+        self.job['execution']['result'] = {'result': 'COMPLETED'}
+        self.job['data'] = 'some data'
+        self.runner.complete_job(job=self.job)
         self.assertEqual(
             self.runner.update_job.call_args,
             call(job=self.job,
                  updates={
                      'status': 'COMPLETED',
-                     'data': self.job.get('data')
+                     'data': self.job['data']
                  }))
 
+    def test_fails_failed_job(self):
+        error = 'some error'
+        self.job['execution']['result'] = {'result': 'FAILED', 'error': error}
+        self.runner.fail_job = MagicMock()
+        self.runner.complete_job(job=self.job)
+        self.assertEqual(self.runner.fail_job.call_args,
+                         call(job=self.job, error=error))
+
     def test_unregisters_job(self):
+        self.runner.complete_job(job=self.job)
         self.assertEqual(self.runner.unregister_job.call_args,
                          call(job=self.job))
 

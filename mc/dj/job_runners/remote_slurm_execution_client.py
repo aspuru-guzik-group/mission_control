@@ -28,7 +28,7 @@ class RemoteSlurmExecutionClient(object):
         remote_dest = os.path.join(self.remote_workdir, job['uuid'])
         self.ssh_client.rsync_to_remote(local_src_path=local_src + '/',
                                         remote_dest_path=remote_dest,
-                                        flags='-a')
+                                        flags=['-a', '--no-owner'])
         remote_dir_meta = {'dir': remote_dest}
         return remote_dir_meta
 
@@ -52,4 +52,4 @@ class RemoteSlurmExecutionClient(object):
         local_dest = job['submission']['dir']
         self.ssh_client.rsync_from_remote(remote_src_path=remote_src + '/',
                                           local_dest_path=local_dest,
-                                          flags='-a')
+                                          flags=['-a', '--no-owner'])

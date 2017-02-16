@@ -7,13 +7,30 @@ from jinja2 import Template
 
 
 class OdysseyJobDirBuilder(object):
+
+    checkpoint_files = {
+        'completed': 'ODYSSEY_JOB__COMPLETED',
+        'failed': 'ODYSSEY_JOB__FAILED',
+    }
+
+    output_files = {
+        'stdout': 'ODYSSEY_JOB.stdout',
+        'stderr': 'ODYSSEY_JOB.stderr',
+    }
+
     @classmethod
     def build_dir(cls, dir_spec=None, output_dir=None):
         if not output_dir: output_dir = tempfile.mkdtemp(prefix='odyssey.')
         if not os.path.exists(output_dir): os.makedirs(output_dir)
         cls.write_job_script(dir_spec=dir_spec, output_dir=output_dir)
         cls.write_templates(dir_spec=dir_spec, output_dir=output_dir)
-        return output_dir
+        dir_meta = {
+            'dir': output_dir,
+            'checkpoint_files': cls.checkpoint_files,
+            'entrypoint': 'job.sh',
+            'output_files': cls.output_files,
+        }
+        return dir_meta
 
     @classmethod
     def write_job_script(cls, dir_spec=None, output_dir=None):
@@ -28,6 +45,8 @@ class OdysseyJobDirBuilder(object):
             #!/bin/bash
             {sbatch_section}
 
+            {status_file_section}
+
             {env_section}
 
             {module_section}
@@ -36,6 +55,8 @@ class OdysseyJobDirBuilder(object):
             """
         ).format(
             sbatch_section=cls.generate_sbatch_section(dir_spec=dir_spec),
+            status_file_section=cls.generate_status_file_section(
+                dir_spec=dir_spec),
             env_section=cls.generate_env_section(dir_spec=dir_spec),
             module_section=cls.generate_module_section(dir_spec=dir_spec),
             body_section=cls.generate_body_section(dir_spec=dir_spec)
@@ -44,20 +65,69 @@ class OdysseyJobDirBuilder(object):
 
     @classmethod
     def generate_sbatch_section(cls, dir_spec=None):
-        sbatch_params = cls.flatten_kvp_list(dir_spec.get('sbatch', []))
+        output_files = cls.get_output_files(dir_spec=dir_spec)
+        output_file_sbatch_params = [
+            ('error', output_files['stderr']),
+            ('output', output_files['stdout']),
+        ]
+        sbatch_params = dir_spec.get('sbatch', []) + output_file_sbatch_params
+        squashed_sbatch_params = cls.squash_kvp_list(sbatch_params)
         sbatch_lines = ["#SBATCH --{key}={value}".format(key=key, value=value)
-                        for key, value in sbatch_params]
+                        for key, value in squashed_sbatch_params]
         return "\n".join(sbatch_lines)
 
     @classmethod
-    def flatten_kvp_list(cls, kvp_list=None):
-        flattened = collections.OrderedDict()
-        for k, v in kvp_list: flattened[k] = v
-        return flattened.items()
+    def get_output_files(cls, dir_spec=None):
+        return {
+            **cls.output_files,
+            **dir_spec.get('output_files', {})
+        }
+
+    @classmethod
+    def squash_kvp_list(cls, kvp_list=None):
+        squashed = collections.OrderedDict()
+        for k, v in kvp_list: squashed[k] = v
+        return squashed.items()
+
+    @classmethod
+    def generate_status_file_section(cls, dir_spec=None):
+        output_files = cls.get_output_files(dir_spec=dir_spec)
+
+        def generate_tail_cmd(file_name):
+            return 'tail -n 50 %s' % file_name
+
+        return textwrap.dedent(
+            '''
+            START_DIR=$PWD
+            output_status_file () {{
+                PREV_RETURN_CODE=$?
+                pushd $START_DIR
+                if [ $PREV_RETURN_CODE -eq 0 ]; then
+                    touch {completed_checkpoint_file}
+                else
+                    touch {failed_checkpoint_file}
+                    echo "{tail_stdout_cmd}:" > {failed_checkpoint_file}
+                    {tail_stdout_cmd} > {failed_checkpoint_file}
+                    echo "{tail_stderr_cmd}:" > {failed_checkpoint_file}
+                    {tail_stderr_cmd} > {failed_checkpoint_file}
+                    echo "{ls_cmd}:" > {failed_checkpoint_file}
+                    {tail_stderr_cmd} > {failed_checkpoint_file}
+                fi
+                popd
+            }}
+            trap "output_status_file" EXIT
+            '''
+        ).strip().format(
+            completed_checkpoint_file=cls.checkpoint_files['completed'],
+            failed_checkpoint_file=cls.checkpoint_files['failed'],
+            tail_stdout_cmd=generate_tail_cmd(output_files['stdout']),
+            tail_stderr_cmd=generate_tail_cmd(output_files['stderr']),
+            ls_cmd='ls -1'
+        )
 
     @classmethod
     def generate_env_section(cls, dir_spec=None):
-        env_vars = cls.flatten_kvp_list(dir_spec.get('env_vars', []))
+        env_vars = cls.squash_kvp_list(dir_spec.get('env_vars', []))
         env_lines = ["{key}={value}".format(key=key, value=value)
                      for key, value in env_vars]
         return "\n".join(env_lines)
@@ -75,7 +145,7 @@ class OdysseyJobDirBuilder(object):
         for module in (modules or []):
             if isinstance(module, str): module = [module, True]
             prepared_modules.append(module)
-        prepared_modules = cls.flatten_kvp_list(prepared_modules)
+        prepared_modules = cls.squash_kvp_list(prepared_modules)
         return prepared_modules
 
     @classmethod

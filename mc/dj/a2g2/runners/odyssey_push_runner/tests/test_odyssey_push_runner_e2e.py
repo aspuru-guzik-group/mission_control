@@ -1,7 +1,7 @@
 import collections
 import json
 import unittest
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 
 from django.test import override_settings
 
@@ -20,12 +20,18 @@ assert urlpatterns
 class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.execution_client = MagicMock()
-        self.job_submission_factory = Mock()
+        self.execution_client = self.generate_execution_client()
+        self.job_submission_factory = MagicMock()
         self.flow_generator_classes = self.generate_flow_generator_classes()
         self.runner = self.generate_runner()
         self.flow_spec = self.generate_flow_spec()
         self.parent_flow_model = self.generate_flow_model()
+
+    def generate_execution_client(self):
+        execution_client = MagicMock()
+        execution_client.start_execution.return_value = \
+                collections.defaultdict(MagicMock)
+        return execution_client
 
     def generate_flow_generator_classes(self):
         flow_generator_classes = {}
@@ -97,6 +103,8 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
             job_submission_factory=self.job_submission_factory,
             job_runner_kwargs={'execution_client': self.execution_client}
         )
+        runner.job_runner.get_job_execution_result = MagicMock(
+            return_value={'result': 'COMPLETED'})
         return runner
 
     def generate_flow_spec(self):

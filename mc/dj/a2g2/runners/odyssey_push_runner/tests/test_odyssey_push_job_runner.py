@@ -1,5 +1,7 @@
+from collections import defaultdict
+import os
 import unittest
-from unittest.mock import call, Mock, patch
+from unittest.mock import call, MagicMock, Mock, patch
 
 
 from .. import odyssey_push_job_runner
@@ -40,25 +42,64 @@ class SetupTestCase(BaseTestCase):
         self.runner.setup()
         self.assertEqual(self.runner.base_job_runner,
                          self.mocks['BaseJobRunner'].return_value)
-        self.assertEqual(self.mocks['BaseJobRunner'].call_args,
-                         call(execution_client=self.runner\
-                              .generate_execution_client.return_value
-
-                        ))
+        self.assertEqual(
+            self.mocks['BaseJobRunner'].call_args,
+            call(execution_client=\
+                 self.runner.generate_execution_client.return_value,
+                 get_job_execution_result=\
+                 self.runner.get_job_execution_result)
+        )
 
 class GenerateExecutionClientTestCase(BaseTestCase):
     def decorate_patchers(self):
-        self.patchers['SlurmClient'] = patch.object(
-            odyssey_push_job_runner, 'RemoteSlurmExecutionClient')
+        self.patchers['ExecutionClient'] = patch.object(
+            odyssey_push_job_runner, 'ExecutionClient')
 
     def test_generates_remote_slurm_execution_client(self):
         ssh_client = Mock()
         execution_client = self.runner.generate_execution_client(
             ssh_client=ssh_client)
         self.assertEqual(execution_client,
-                         self.mocks['SlurmClient'].return_value)
-        self.assertEqual(self.mocks['SlurmClient'].call_args,
+                         self.mocks['ExecutionClient'].return_value)
+        self.assertEqual(self.mocks['ExecutionClient'].call_args,
                          call(ssh_client=ssh_client))
+
+class GetJobExecutionResultTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.job_state = defaultdict(MagicMock)
+
+    @patch('os.path.exists')
+    def test_returns_success_if_completed_checkpoint_file_exists(
+        self, mock_exists):
+        mock_exists.return_value = True
+        result = self.runner.get_job_execution_result(
+            job_state=self.job_state)
+        expected_checkpoint_path = os.path.join(
+            self.job_state['completed_dir'],
+            self.job_state['submission']['checkpoint_files']['completed']
+        )
+        self.assertEqual(mock_exists.call_args,
+                         call(expected_checkpoint_path))
+        self.assertEqual(result, {'result': 'COMPLETED'})
+
+    @patch.object(odyssey_push_job_runner, 'open')
+    @patch('os.path.exists')
+    def test_returns_error_if_job_failed(self, mock_exists, mock_open):
+        mock_exists.return_value = False
+        result = self.runner.get_job_execution_result(job_state=self.job_state)
+        expected_checkpoint_path = os.path.join(
+            self.job_state['completed_dir'],
+            self.job_state['submission']['checkpoint_files']['failed']
+        )
+        self.assertEqual(mock_open.call_args, call(expected_checkpoint_path))
+        self.assertEqual(
+            result,
+            {
+                'result': 'FAILED',
+                'error': mock_open.return_value.read.return_value
+            }
+        )
 
 class RunTestCase(BaseTestCase):
     def test_wraps_base_job_runner(self):

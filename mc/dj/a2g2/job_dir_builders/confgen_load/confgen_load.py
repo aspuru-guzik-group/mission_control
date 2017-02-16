@@ -17,11 +17,11 @@ class ConfgenLoadJobDirBuilder(object):
             job=job,
             a2g2_client_cfg_json=a2g2_client_cfg_json
         )
-        dir_path = odyssey_dir_builder.build_dir(
+        dir_meta = odyssey_dir_builder.build_dir(
             dir_spec=dir_spec,
             output_dir=output_dir
         )
-        return dir_path
+        return dir_meta
 
     @classmethod
     def generate_odyssey_dir_spec(cls, job=None, a2g2_client_cfg_json=None):
@@ -29,6 +29,7 @@ class ConfgenLoadJobDirBuilder(object):
             'modules': ['conda'],
             'job_script_body': textwrap.dedent(
                 '''
+                set -o errexit
                 echo "starting, $(date)"
                 source activate /n/aagfs01/software/conda_envs/a2g2_env
                 export A2G2_CLIENT_CFG_JSON="{a2g2_client_cfg_json}"

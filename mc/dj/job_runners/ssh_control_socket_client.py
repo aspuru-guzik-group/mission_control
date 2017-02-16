@@ -10,6 +10,9 @@ class NotAuthorizedException(Exception):
     pass
 
 class SSHControlSocketClient(object):
+
+    CalledProcessError = subprocess.CalledProcessError
+
     def __init__(self, user=None, host=None, control_socket=None,
                  control_dir=None, auth_fn=None, logger=None):
         self.user = user or os.environ.get('USER')
@@ -67,39 +70,40 @@ class SSHControlSocketClient(object):
             check=check,
             universal_newlines=True)
 
-    def scp(self, src=None, dest=None, flags=''):
+    def scp(self, src=None, dest=None, flags=None):
         self._ensure_authorized()
         subprocess.run(['scp', '-o ControlPath=%s' % self.control_socket,
-                        flags, src, dest], check=True)
+                        *(flags or []), src, dest], check=True)
 
     def scp_from_remote(self, remote_src_path=None, local_dest_path=None,
-                        flags=''):
+                        flags=None):
         prefixed_src_path = '%s@%s:%s' % (self.user, self.host, remote_src_path)
         return self.scp(src=prefixed_src_path, dest=local_dest_path,
                         flags=flags)
 
     def scp_to_remote(self, local_src_path=None, remote_dest_path=None,
-                      flags=''):
+                      flags=None):
         prefixed_dest_path = '%s@%s:%s' % (self.user, self.host,
                                            remote_dest_path)
         return self.scp(src=local_src_path, dest=prefixed_dest_path,
                         flags=flags)
 
-    def rsync(self, src=None, dest=None, flags=''):
+    def rsync(self, src=None, dest=None, flags=None):
         self._ensure_authorized()
         cmd = ['rsync', '-e', 'ssh -o "ControlPath=%s"' % self.control_socket,
-               flags, src, dest]
+               *(flags or []), src, dest]
         subprocess.run(cmd, check=True)
 
     def rsync_from_remote(self, remote_src_path=None, local_dest_path=None,
-                          flags=''):
+                          flags=None):
         prefixed_src_path = '%s@%s:%s' % (self.user, self.host, remote_src_path)
         return self.rsync(src=prefixed_src_path, dest=local_dest_path,
                         flags=flags)
 
-    def rsync_to_remote(self, local_src_path=None, remote_dest_path=None, flags=''):
-        prefixed_dest_path = '%s@%s:%s' % (self.user, self.host,
-                                           remote_dest_path)
+    def rsync_to_remote(self, local_src_path=None, remote_dest_path=None,
+                        flags=None):
+        prefixed_dest_path = '{user}@{host}:{path}'.format(
+            user=self.user, host=self.host, path=remote_dest_path)
         return self.rsync(src=local_src_path, dest=prefixed_dest_path,
                           flags=flags)
 
