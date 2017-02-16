@@ -62,8 +62,10 @@ class DownloadActionHandlerTestCase(StorageActionHandlerTestCase):
         self.storage_client.get_data.return_value = self.src_tgz_bytes
         self.dest_dir = tempfile.mkdtemp()
         self.dest = os.path.join(self.dest_dir, 'dest')
-        self.params = {'json_src_params': self.json_src_params,
-                       'dest': self.dest}
+        self.params = {
+            'storage_meta': {'params': self.json_src_params},
+            'dest': self.dest
+        }
 
     def setup_src_dir(self):
         src_dir = tempfile.mkdtemp()
@@ -86,7 +88,7 @@ class DownloadActionHandlerTestCase(StorageActionHandlerTestCase):
     def test_calls_get_data_with_deserialized_transformed_src_params(self):
         self.do_download()
         transformed_params = self.ctx.transform_value(
-            self.params['json_src_params'])
+            self.params['storage_meta']['params'])
         deserialized_params = json.loads(transformed_params)
         self.assertEqual(self.storage_client.get_data.call_args,
                          call(storage_params=deserialized_params))

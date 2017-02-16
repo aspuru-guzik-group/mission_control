@@ -10,7 +10,7 @@ from .. import urls as _urls
 BASE_PATH = 'storage'
 BASE_URL = '/%s' % BASE_PATH
 urlpatterns = [
-    url(r'^%s' % BASE_PATH, include(_urls.__name__)),
+    url(r'^%s' % BASE_PATH, include(_urls.__name__, namespace='storage')),
 ]
 
 class _BaseTestCase(TestCase):
@@ -62,9 +62,13 @@ class TestPostDataTestCase(BaseTestCase):
         self.assertEqual(params_arg, self.params)
 
     def test_returns_result(self):
+        expected_params = self.expected_backend.post_data.return_value
         self.assertEqual(
             self.result,
-            {'params': self.expected_backend.post_data.return_value}
+            {
+                'params': expected_params,
+                'url': _views.get_url_for_params(params=expected_params)
+            }
         )
 
 class TestGetDataTestCase(BaseTestCase):

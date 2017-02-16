@@ -30,7 +30,7 @@ class MissionControlStorageClient(object):
                 raise Exception("Bad response: %s; %s" % (response,
                                                           response.content))
             result = response.json()
-            return result['params']
+            return result
         except Exception as e:
             msg = ("Client error, request was: {request}, error was:"
                    " '{error}'"
