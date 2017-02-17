@@ -28,14 +28,9 @@ ENV PATH="/conda/bin:$PATH"
 RUN rm /tmp/miniconda.sh
 RUN echo 'export PATH=/conda/bin:$PATH' >> /root/.bashrc
 RUN conda install --yes conda-build python=3.5
-RUN conda install --yes --channel https://conda.anaconda.org/rdkit rdkit
-RUN conda install --yes --channel https://conda.anaconda.org/openbabel openbabel
-
-ADD requirements.txt /requirements.txt
-RUN pip install -r /requirements.txt
+COPY a2g2_mc_conda_env.yml /a2g2_mc_conda_env.yml
+RUN conda env update -f /a2g2_mc_conda_env.yml --name=root
 
 RUN apt-get install -y openssh-client
-
-RUN conda install -c conda-forge xorg-libxrender=0.9.10
 
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*

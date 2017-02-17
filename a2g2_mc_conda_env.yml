@@ -1,0 +1,16 @@
+name: a2g2_mc
+dependencies:
+  - rdkit::rdkit=2016.03.4=np111py35_1
+  - openbabel::openbabel=2.4.1=py35_1
+  - conda-forge::xorg-libxrender=0.9.10
+  - pkgw::modern-xorg-stack=2016.03
+  - pip:
+    - Django
+    - django-extensions
+    - psycopg2
+    - djangorestframework
+    - psutil
+    - requests
+    - django-filter
+    - pexpect
+    - jinja2
