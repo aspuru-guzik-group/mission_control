@@ -66,7 +66,7 @@ class UploadJobDirTestCase(BaseTestCase):
             call(local_src_path=self.job['submission']['dir'] + '/',
                  remote_dest_path=os.path.join(self.rsclient.remote_workdir,
                                                self.job['uuid']),
-                 flags='-a')
+                 flags=['-a', '--no-owner'])
         )
 
     def test_returns_remote_dir_meta(self):
@@ -126,7 +126,8 @@ class DownloadJobTestCase(BaseTestCase):
         self.assertEqual(
             self.rsclient.ssh_client.rsync_from_remote.call_args,
             call(remote_src_path=expected_remote_src_path,
-                 local_dest_path=self.job['dir']['dir'], flags='-a')
+                 local_dest_path=self.job['dir']['dir'],
+                 flags=['-a', '--no-owner'])
         )
 
 if __name__ == '__main__':

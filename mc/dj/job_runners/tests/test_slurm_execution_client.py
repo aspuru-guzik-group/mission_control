@@ -1,4 +1,3 @@
-import os
 import textwrap
 import unittest
 from unittest.mock import call, MagicMock
@@ -25,14 +24,11 @@ class StartExecutionTestCase(SlurmExecutionClientBaseTestCase):
         self.process_runner.run_process.return_value = \
                 self.generate_successful_sbatch_proc()
         self.slurm_client.start_execution(job=self.job)
-        expected_cmd = ['sbatch',
-                        '--workdir=%s' % self.job['dir']['dir'],
-                        os.path.join(self.job['dir']['dir'],
-                                     self.job['dir']['entrypoint'])]
-        self.assertEqual(
-            self.process_runner.run_process.call_args,
-            call(cmd=expected_cmd, check=True)
-        )
+        workdir = self.job['submission']['dir']
+        entrypoint = workdir + '/' + self.job['submission']['entrypoint']
+        expected_cmd = ['sbatch', '--workdir=%s' % workdir, entrypoint]
+        self.assertEqual(self.process_runner.run_process.call_args,
+                         call(cmd=expected_cmd, check=True))
 
     def generate_successful_sbatch_proc(self, job_id='12345'):
         proc = MagicMock()
