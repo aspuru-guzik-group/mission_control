@@ -21,6 +21,7 @@ class BuildDirTestCase(BaseTestCase):
         expected_dir_meta = {
             'dir': output_dir, 
             'checkpoint_files': OdysseyJobDirBuilder.checkpoint_files,
+            'output_files': OdysseyJobDirBuilder.output_files,
             'entrypoint': 'job.sh',
         }
         self.assertEqual(dir_meta, expected_dir_meta)

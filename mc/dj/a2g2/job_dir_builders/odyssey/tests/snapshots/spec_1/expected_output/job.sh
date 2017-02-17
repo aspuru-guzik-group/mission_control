@@ -1,12 +1,24 @@
 #!/bin/bash
 #SBATCH --sbatch_1=sbatch_1_value
+#SBATCH --error=ODYSSEY_JOB.stderr
+#SBATCH --output=ODYSSEY_JOB.stdout
 
+START_DIR=$PWD
 output_status_file () {
-    if [ $? -eq 0 ]; then
+    PREV_RETURN_CODE=$?
+    pushd $START_DIR
+    if [ $PREV_RETURN_CODE -eq 0 ]; then
         touch ODYSSEY_JOB__COMPLETED
     else
         touch ODYSSEY_JOB__FAILED
+        echo "tail -n 50 ODYSSEY_JOB.stdout:" > ODYSSEY_JOB__FAILED
+        tail -n 50 ODYSSEY_JOB.stdout > ODYSSEY_JOB__FAILED
+        echo "tail -n 50 ODYSSEY_JOB.stderr:" > ODYSSEY_JOB__FAILED
+        tail -n 50 ODYSSEY_JOB.stderr > ODYSSEY_JOB__FAILED
+        echo "ls -1:" > ODYSSEY_JOB__FAILED
+        tail -n 50 ODYSSEY_JOB.stderr > ODYSSEY_JOB__FAILED
     fi
+    popd
 }
 trap "output_status_file" EXIT
 
