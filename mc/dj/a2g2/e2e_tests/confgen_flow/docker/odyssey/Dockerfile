@@ -87,3 +87,5 @@ RUN su - $TEST_USER_USERNAME -c "source $CONDA_ROOT/bin/activate /$A2G2_CONDA_EN
 ENV A2G2_CONDA_ENV_PATH=$A2G2_CONDA_ENV_PATH
 
 RUN yum clean all
+
+RUN /bin/bash -c "mkdir /scratch && chmod 777 /scratch"
