@@ -7,8 +7,6 @@ RUN apt-get update && apt-get install -yq --no-install-recommends \
     curl \
     ca-certificates \
     vim \
-    postgresql \
-    libpq-dev \
     rsync
 
 # Install docker. We use docker w/in docker to run integration tests.
@@ -20,16 +18,20 @@ RUN mkdir /mc
 WORKDIR /mc/dj
 
 # conda setup
-RUN curl https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh \
-  > /tmp/miniconda.sh
+ARG MINICONDA_URL
+RUN curl $MINICONDA_URL > /tmp/miniconda.sh
 RUN chmod 0755 /tmp/miniconda.sh
-RUN /tmp/miniconda.sh -b -p /conda
-ENV PATH="/conda/bin:$PATH"
+ARG CONDA_ROOT=/conda/
+RUN /tmp/miniconda.sh -b -p $CONDA_ROOT
 RUN rm /tmp/miniconda.sh
-RUN echo 'export PATH=/conda/bin:$PATH' >> /root/.bashrc
-RUN conda install --yes conda-build python=3.5
-COPY a2g2_mc_conda_env.yml /a2g2_mc_conda_env.yml
-RUN conda env update -f /a2g2_mc_conda_env.yml --name=root
+RUN echo "export PATH=$CONDA_ROOT/bin:\$PATH" >> /root/.bashrc
+RUN $CONDA_ROOT/bin/conda install --yes conda-build
+ARG CONDA_ENV_FILE=a2g2_mc_conda_env.yml
+COPY $CONDA_ENV_FILE /$CONDA_ENV_FILE
+RUN $CONDA_ROOT/bin/conda env update -f /$CONDA_ENV_FILE --name=root
+#ARG PIP_REQUIREMENTS_FILE=a2g2_mc_pip_requirements.txt
+#COPY $PIP_REQUIREMENTS_FILE /$PIP_REQUIREMENTS_FILE
+#RUN /bin/bash -c "source $CONDA_ROOT/bin/activate root && pip install -r /$PIP_REQUIREMENTS_FILE"
 
 RUN apt-get install -y openssh-client
 

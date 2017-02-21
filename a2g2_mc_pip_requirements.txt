@@ -1,0 +1,8 @@
+Django
+django-extensions
+djangorestframework
+psutil
+requests
+django-filter
+pexpect
+jinja2

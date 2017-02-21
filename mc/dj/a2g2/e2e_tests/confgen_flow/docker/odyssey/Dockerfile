@@ -1,5 +1,8 @@
 FROM centos:7
 
+ARG COMPOSE_ROOT=.
+ARG CTX_ROOT=.
+
 ENV SLURM_VERSION 16.05.9
 ENV SLURM_DOWNLOAD_MD5 c0e7fe9d9beaf5ca4599e554f1029fc3
 ENV SLURM_DOWNLOAD_URL https://www.schedmd.com/downloads/latest/slurm-"$SLURM_VERSION".tar.bz2
@@ -17,8 +20,7 @@ RUN yum makecache fast \
         supervisor \
         mariadb-server \
         mariadb-devel \
-        psmisc \
-        rsync
+        psmisc
 
 RUN groupadd -r slurm && useradd -r -g slurm slurm
 
@@ -47,39 +49,41 @@ RUN set -x \
         /var/log/slurm \
     && /sbin/create-munge-key
 
-COPY slurm.conf /etc/slurm/slurm.conf
-COPY slurmdbd.conf /etc/slurm/slurmdbd.conf
-COPY supervisord.conf /etc/
+COPY $CTX_ROOT/slurm.conf /etc/slurm/slurm.conf
+COPY $CTX_ROOT/slurmdbd.conf /etc/slurm/slurmdbd.conf
+COPY $CTX_ROOT/supervisord.conf /etc/
 
 RUN yum -y install \
       openssh-server openssh-clients \
-      openssl
+      openssl \
+      rsync
 
-COPY ./setup_odyssey.sh /setup_odyssey.sh
+COPY $CTX_ROOT/setup_odyssey.sh /setup_odyssey.sh
 RUN chmod a+x /setup_odyssey.sh && /setup_odyssey.sh
 
-COPY ./entrypoint.sh /entrypoint.sh
-ENTRYPOINT ["/entrypoint.sh"]
-CMD ["/bin/bash"]
+# Fake 2factor auth, via pam/sshd.
+RUN yum -y install pam-devel
+COPY $CTX_ROOT/fake_2factor /fake_2factor
+RUN /fake_2factor/setup_fake_2factor.sh && rm -r /fake_2factor
 
 # Setup test user.
-
 ARG TEST_USER_USERNAME=test_user
 ARG TEST_USER_PASS=test_pass
 
 RUN useradd $TEST_USER_USERNAME -p `openssl passwd -crypt $TEST_USER_PASS`
 
-COPY ./setup_conda.sh /setup_conda.sh
-RUN chmod a+rx /setup_conda.sh && su - $TEST_USER_USERNAME -c  /setup_conda.sh
+ARG CONDA_ROOT=/conda
+COPY $COMPOSE_ROOT/setup_conda.sh /setup_conda.sh
+ARG MINICONDA_URL
+RUN /bin/bash -c "CONDA_ROOT=$CONDA_ROOT MINICONDA_URL=$MINICONDA_URL /setup_conda.sh"
 
-COPY a2g2_conda_env.yml /conda_env.yml
-RUN su - $TEST_USER_USERNAME -c "conda env create -f /conda_env.yml -n a2g2_env"
-RUN su - $TEST_USER_USERNAME -c "source activate a2g2_env && conda develop /a2g2_env-packages"
-
-RUN yum -y install pam-devel
-
-COPY fake_2factor /fake_2factor
-#RUN /fake_2factor/setup_fake_2factor.sh && rm -r /fake_2factor
-RUN /fake_2factor/setup_fake_2factor.sh
+ARG IMG_CONDA_ENV_FILE=/conda_env.yml
+ARG CONDA_ENV_FILE
+COPY $COMPOSE_ROOT/$CONDA_ENV_FILE $IMG_CONDA_ENV_FILE
+ARG A2G2_CONDA_ENV_PATH="/a2g2_env"
+RUN mkdir -p $A2G2_CONDA_ENV_PATH && chown -R test_user $A2G2_CONDA_ENV_PATH
+RUN su - $TEST_USER_USERNAME -c "source $CONDA_ROOT/bin/activate && conda env create -f $IMG_CONDA_ENV_FILE --prefix $A2G2_CONDA_ENV_PATH"
+RUN su - $TEST_USER_USERNAME -c "source $CONDA_ROOT/bin/activate /$A2G2_CONDA_ENV_PATH && conda develop /a2g2_env-packages"
+ENV A2G2_CONDA_ENV_PATH=$A2G2_CONDA_ENV_PATH
 
 RUN yum clean all

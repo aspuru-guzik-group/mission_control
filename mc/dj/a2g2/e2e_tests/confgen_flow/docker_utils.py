@@ -28,17 +28,25 @@ class DockerEnv(object):
         )
 
     def start_dockers(self):
-        subprocess.run(
+        return self.run_compose_cmd('up -d')
+
+    def run_compose_cmd(self, compose_cmd=None, check=True, **run_kwargs):
+        completed_proc = subprocess.run(
             'cd {docker_dir} && \
             MC_ROOT={mc_root} \
             MC_NETWORK={mc_network} \
-            docker-compose up -d'.format(
+            docker-compose {compose_cmd}'.format(
                 docker_dir=self.docker_dir,
                 mc_root=os.environ.get('MC_ROOT', mc.__path__),
                 mc_network=self.mc_network,
+                compose_cmd=compose_cmd
             ),
-            shell=True
+            stdout=subprocess.PIPE,
+            shell=True,
+            check=check,
+            **run_kwargs
         )
+        return completed_proc
 
     def get_mc_network(self):
         mc_network = subprocess.check_output(
@@ -65,15 +73,8 @@ class DockerEnv(object):
         return inspection_info
 
     def get_container_ids(self):
-        container_ids = subprocess.check_output(
-            'cd {docker_dir} && \
-            MC_NETWORK={mc_network} \
-            docker-compose ps -q'.format(
-                docker_dir=self.docker_dir,
-                mc_network=self.mc_network,
-            ),
-            shell=True
-        ).decode()
+        container_ids = self.run_compose_cmd('ps -q', check=True)\
+                .stdout.decode()
         return container_ids.split()
 
     def key_container_infos_by_service(self, container_infos=None):
@@ -85,15 +86,8 @@ class DockerEnv(object):
         return keyed_container_infos
 
     def get_container_ip_addr(self, network=None, container_info=None):
-        #print(json.dumps(container_info, indent=2))
         return container_info['NetworkSettings']['Networks']\
                 [network]['IPAddress']
 
     def teardown(self):
-        subprocess.run(
-            'cd {docker_dir} && \
-            docker-compose down'.format(
-                docker_dir=self.docker_dir
-            ),
-            shell=True
-        )
+        self.run_compose_cmd('down', check=True)

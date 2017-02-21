@@ -8,13 +8,15 @@ services:
     build:
       context: ./
       dockerfile: mc.Dockerfile
+      args:
+        MINICONDA_URL: ${MINICONDA_URL-https://repo.continuum.io/miniconda/Miniconda3-4.1.11-Linux-x86_64.sh}
     environment:
       DJANGO_SETTINGS_MODULE: 'mc.settings'
-      FW_CONFIG_FILE: '/mc/fireworks/FW_config.yaml'
       MC_DB_NAME: postgres
       MC_DB_USER: postgres
       MC_DB_PASSWORD: postgres
       MC_DB_HOST: mc_pg
+      MINICONDA_URL: ${MINICONDA_URL-https://repo.continuum.io/miniconda/Miniconda3-4.1.11-Linux-x86_64.sh}
 
   mc_server:
     extends:

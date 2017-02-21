@@ -7,22 +7,24 @@ RUN yum makecache fast \
       gcc \
       gcc-c++ \
       make \
-      postgresql \
-      postgresql-devel \
       supervisor
 
 RUN yum clean all
 
-ARG CONDA_ROOT=/root/conda
-COPY ./setup_conda.sh /setup_conda.sh
-RUN chmod a+x /setup_conda.sh && CONDA_ROOT=$CONDA_ROOT /setup_conda.sh
+ARG CONDA_ROOT=/conda
+ARG COMPOSE_ROOT
+COPY $COMPOSE_ROOT/setup_conda.sh /setup_conda.sh
+ARG MINICONDA_URL
+RUN /bin/bash -c "CONDA_ROOT=$CONDA_ROOT MINICONDA_URL=$MINICONDA_URL /setup_conda.sh"
 
-COPY ./entrypoint.sh /entrypoint.sh
+ARG CTX_ROOT
+ARG CONDA_ENV_FILE
+ARG IMG_CONDA_ENV_FILE=/conda_env.yml
+COPY $COMPOSE_ROOT/$CONDA_ENV_FILE $IMG_CONDA_ENV_FILE
+RUN /bin/bash -c "source $CONDA_ROOT/bin/activate root && conda env update -f $IMG_CONDA_ENV_FILE --name=root"
+
+COPY $CTX_ROOT/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
-ARG CONDA_ENV_FILENAME=mc_conda_env.yml
-COPY ./$CONDA_ENV_FILENAME /$CONDA_ENV_FILENAME
-RUN $CONDA_ROOT/bin/conda env update -f /$CONDA_ENV_FILENAME
-
-COPY ./start_mc_server.sh /start_mc_server.sh
+COPY $CTX_ROOT/start_mc_server.sh /start_mc_server.sh
 CMD /start_mc_server.sh

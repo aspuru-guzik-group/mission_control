@@ -1,19 +1,34 @@
 version: '2.1'
 
+
 services:
   odyssey:
     build:
-      context: ./odyssey
+      context: .
+      dockerfile: odyssey/Dockerfile
       args:
+        - CTX_ROOT=odyssey
+        - COMPOSE_ROOT=.
         - TEST_USER_USERNAME=test_user
         - TEST_USER_PASS=test_pass
+        - CONDA_ENV_FILE=a2g2_mc_conda_env.yml
+        - MINICONDA_URL=${MINICONDA_URL-https://repo.continuum.io/miniconda/Miniconda3-4.2.12-Linux-x86_64.sh}
+    environment:
+      ODYSSEY_A2G2_CONDA_ENV_PATH: "/n/aagfs01/software/conda_envs/a2g2_env"
     volumes:
       - $MC_ROOT/mc/dj/a2g2:/a2g2_env-packages/a2g2
-    command: "tail -f /dev/null"
+      - $MC_ROOT/mc/dj/a2g2/e2e_tests/confgen_flow/docker/odyssey/entrypoint.sh:/entrypoint.sh
+    command: "/entrypoint.sh tail -f /dev/null"
 
   mission_control:
     build:
-      context: ./mission_control
+      context: .
+      dockerfile: mission_control/Dockerfile
+      args:
+        - COMPOSE_ROOT=.
+        - CTX_ROOT=mission_control
+        - CONDA_ENV_FILE=a2g2_mc_conda_env.yml
+        - MINICONDA_URL=${MINICONDA_URL-https://repo.continuum.io/miniconda/Miniconda3-4.2.12-Linux-x86_64.sh}
     volumes:
       - $MC_ROOT/mc:/mc
       - /storage
