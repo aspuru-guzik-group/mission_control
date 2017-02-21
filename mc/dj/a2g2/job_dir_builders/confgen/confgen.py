@@ -26,13 +26,15 @@ class ConfgenJobDirBuilder(object):
                 source {conda_env_root}/bin/activate {conda_env_root}
                 SCRATCH_DIR="/scratch/conformers.$$"
                 mkdir -p $SCRATCH_DIR
-                python -m a2g2_utils.conformer_generators.rdkit_conformer_generator.cmd \\
+                python -m {confgen_module} \\
                     --params_file="./confgen.params.json" \\
                     --output_dir="$SCRATCH_DIR"
                 cp -r $SCRATCH_DIR ./conformers
                 echo "finished, $(date)"
                 ''').format(
-                    conda_env_root='/n/aagfs01/software/conda_envs/a2g2_env'
+                    conda_env_root='/n/aagfs01/software/conda_envs/a2g2_env',
+                    confgen_module=('a2g2.a2g2_utils.conformer_generators'
+                                    '.rdkit_conformer_generator.cmd')
                 ),
             'templates': {
                 'specs': [
