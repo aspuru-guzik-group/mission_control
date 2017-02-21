@@ -27,12 +27,11 @@ class TestBuildOdysseyDir(BaseTestCase):
             job=self.job, odyssey_dir_builder=mock_odyssey_builder,
             output_dir=mock_output_dir)
         expected_dir_spec = {
-            'modules': ['conda'],
             'job_script_body': textwrap.dedent(
                 '''
                 set -o errexit
                 echo "starting, $(date)"
-                source activate /n/aagfs01/software/conda_envs/a2g2_env
+                source {conda_env_root}/bin/activate {conda_env_root}
                 SCRATCH_DIR="/scratch/conformers.$$"
                 mkdir -p $SCRATCH_DIR
                 python -m a2g2_utils.conformer_generators.rdkit_conformer_generator.cmd \\
@@ -40,7 +39,9 @@ class TestBuildOdysseyDir(BaseTestCase):
                     --output_dir="$SCRATCH_DIR"
                 cp -r $SCRATCH_DIR ./conformers
                 echo "finished, $(date)"
-                '''),
+                ''').format(
+                    conda_env_root='/n/aagfs01/software/conda_envs/a2g2_env'
+                ),
             'templates': {
                 'specs': [
                     {'target': 'confgen.params.json',
