@@ -13,7 +13,7 @@ class BaseTestCase(unittest.TestCase):
         self.a2g2_job_engine = a2g2_job_engine.A2G2JobEngine()
         self.job = {
             'job_spec': {
-                'type': 'job_type'
+                'job_type': 'job_type'
             }
         }
         self.cfg = defaultdict(MagicMock)
@@ -37,10 +37,10 @@ class GetJobModuleCase(BaseTestCase):
     def test_imports_expected_module(self, patched_importlib):
         result = self.a2g2_job_engine.get_job_module(job=self.job, cfg=self.cfg)
         expected_module_name = '{job_type}_job_module'.format(
-            job_type=self.job['job_spec']['type'])
+            job_type=self.job['job_spec']['job_type'])
         self.assertEqual(
             patched_importlib.import_module.call_args,
-            call(expected_module_name, package=a2g2_job_engine.__name__))
+            call(expected_module_name, package=a2g2_job_engine.__package__))
         self.assertEqual(result, patched_importlib.import_module.return_value)
 
 class ExecuteJobCommandTestCase(BaseTestCase):

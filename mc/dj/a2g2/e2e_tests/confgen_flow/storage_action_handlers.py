@@ -19,8 +19,9 @@ def dir_to_tgz_bytes(dir_path=None):
 
 def download_action_handler(storage_client, *args, params=None, ctx=None,
                            **kwargs):
-    storage_meta = ctx.transform_value(params['storage_meta'])
-    src_params = json.loads(storage_meta['params'])
+    serialized_storage_meta = ctx.transform_value(params['storage_meta'])
+    storage_meta = json.loads(serialized_storage_meta)
+    src_params = storage_meta['params']
     transformed_dest = ctx.transform_value(params['dest'])
     tgz_bytes = storage_client.get_data(storage_params=src_params)
     tgz_bytes_to_dir(tgz_bytes=tgz_bytes, dir_path=transformed_dest)

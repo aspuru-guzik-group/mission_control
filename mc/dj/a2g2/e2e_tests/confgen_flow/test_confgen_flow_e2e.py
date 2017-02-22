@@ -148,9 +148,6 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
             self.storage_client, *args, params=params, ctx=ctx)
 
     def _download_wrapper(self, *args, params=None, ctx=None, **kwargs):
-        print("params: ")
-        for k,v in (params or {}).items(): print("k: ", k, "v: ", v, "t(v)",
-                                                 type(v))
         return storage_action_handlers.download_action_handler(
             self.storage_client, *args, params=params, ctx=ctx)
 

@@ -8,12 +8,12 @@ import pybel
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
-from .. import confgen_load_job_engine
+from .. import confgen_load_job_module
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.engine = confgen_load_job_engine.ConfgenLoadJobEngine()
+        self.engine = confgen_load_job_module.ConfgenLoadJobEngine()
 
 class ExecuteJobTestCase(BaseTestCase):
     def setUp(self):
@@ -114,7 +114,7 @@ class CmdTestCase(BaseTestCase):
     def setUp(self):
         self.setup_inputs()
         self.setup_argv()
-        self.command = confgen_load_job_engine.Command()
+        self.command = confgen_load_job_module.Command()
 
     def setup_inputs(self):
         self.inputs = {
@@ -151,7 +151,7 @@ class CmdTestCase(BaseTestCase):
             self.assertEqual(cfg_value, mock_environ['key1'])
 
     def test_generates_a2g2_client(self):
-        with patch.object(confgen_load_job_engine, 'A2G2_Client') as MockClient:
+        with patch.object(confgen_load_job_module, 'A2G2_Client') as MockClient:
             with patch.object(self.command, 'execute_job'):
                 self._execute_command()
                 self.assertEqual(
@@ -163,7 +163,7 @@ class CmdTestCase(BaseTestCase):
     def test_calls_execute_job(self):
         with patch.object(self.command, 'generate_a2g2_client') \
                 as mock_gen_client:
-            with patch.object(confgen_load_job_engine, 'ConfgenLoadJobEngine') \
+            with patch.object(confgen_load_job_module, 'ConfgenLoadJobEngine') \
                     as MockEngine:
                 self._execute_command()
                 self.assertEqual(

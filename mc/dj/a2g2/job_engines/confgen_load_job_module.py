@@ -8,6 +8,8 @@ import pybel
 
 from a2g2.a2g2_client.a2g2_client import A2G2_Client
 
+def execute_job(*args, job=None, cfg=None, output_dir=None):
+    Command().handle(job=job, cfg=cfg)
 
 class ConfgenLoadJobEngine(object):
     def __init__(self, a2g2_client=None):

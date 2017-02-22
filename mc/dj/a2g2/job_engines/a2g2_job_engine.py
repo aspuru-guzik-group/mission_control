@@ -5,15 +5,16 @@ import sys
 
 
 class A2G2JobEngine(object):
-    def execute_job(self, job=None, cfg=None):
+    def execute_job(self, job=None, cfg=None, output_dir=None):
         job_module = self.get_job_module(job=job, cfg=cfg)
-        return job_module.execute_job(job=job, cfg=cfg)
+        return job_module.execute_job(job=job, cfg=cfg, output_dir=output_dir)
 
     def get_job_module(self, job=None, cfg=None):
-        module_name = '{job_type}_job_module'.format(
-            job_type=job['job_spec']['type'])
         try:
-            job_module = importlib.import_module(module_name, package=__name__)
+            module_name = '.{job_type}_job_module'.format(
+                job_type=job['job_spec']['job_type'])
+            job_module = importlib.import_module(
+                module_name, package=sys.modules[__name__].__package__)
         except Exception as error:
             raise Exception("Could not load job_module for job: %s" % error)
         return job_module
@@ -43,20 +44,24 @@ class ExecuteJobCommand(object):
         def json_file_type(file_path): return json.load(open(file_path))
         parser.add_argument('--job', type=json_file_type)
         parser.add_argument('--cfg', type=json_file_type, default={})
+        parser.add_argument('--output_dir', type=str)
 
-    def handle(self, *args, job=None, cfg=None, **kwargs):
+    def handle(self, *args, job=None, cfg=None, output_dir=None, **kwargs):
         self.execute_job(
             job=job,
             cfg=cfg,
-            a2g2_job_engine=self.generate_a2g2_job_engine()
+            output_dir=output_dir,
+            a2g2_job_engine=self.generate_a2g2_job_engine(),
         )
 
     def generate_a2g2_job_engine(self):
         return A2G2JobEngine()
 
-    def execute_job(self, job=None, cfg=None, a2g2_job_engine=None):
-        return a2g2_job_engine.execute_job(job=job, cfg=cfg)
+    def execute_job(self, job=None, cfg=None, output_dir=None,
+                    a2g2_job_engine=None):
+        return a2g2_job_engine.execute_job(job=job, cfg=cfg,
+                                           output_dir=output_dir)
 
 if __name__ == '__main__':
     cmd = ExecuteJobCommand()
-    cmd.run(argv=sys.argv)
+    cmd.execute(argv=sys.argv[1:])
