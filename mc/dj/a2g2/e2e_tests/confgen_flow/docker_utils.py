@@ -1,18 +1,22 @@
 import json
+import logging
 import os
+import socket
 import subprocess
+import time
 
 import mc
 
 
 class DockerEnv(object):
-    def __init__(self):
+    def __init__(self, logger=None):
         this_dir = os.path.dirname(__file__)
         self.docker_dir = os.path.join(this_dir, 'docker')
+        self.logger = logger or logging
 
     def setup(self):
         self.mc_network = self.get_mc_network()
-        self.start_dockers()
+        self.start_containers()
         container_infos = self.get_container_infos()
         container_infos_by_service = self.key_container_infos_by_service(
             container_infos=container_infos)
@@ -26,8 +30,9 @@ class DockerEnv(object):
             network=self.mc_network,
             container_info=container_infos_by_service['odyssey']
         )
+        self.await_containers()
 
-    def start_dockers(self):
+    def start_containers(self):
         return self.run_compose_cmd('up -d')
 
     def run_compose_cmd(self, compose_cmd=None, check=True, **run_kwargs):
@@ -88,6 +93,38 @@ class DockerEnv(object):
     def get_container_ip_addr(self, network=None, container_info=None):
         return container_info['NetworkSettings']['Networks']\
                 [network]['IPAddress']
+
+    def await_containers(self):
+        self.logger.debug('awaiting containers')
+        timeout = 10
+        start_time = time.time()
+        services_are_ready = False
+        mc_is_ready = False
+        odyssey_is_ready = False
+        def services_are_ready(): return mc_is_ready and odyssey_is_ready
+        while not services_are_ready():
+            if (time.time() - start_time) > timeout:
+                raise Exception("Timed out waiting for docker services.")
+            mc_is_ready = mc_is_ready or self.get_mc_ready_status()
+            odyssey_is_ready = odyssey_is_ready or \
+                    self.get_odyssey_ready_status()
+            if not services_are_ready(): time.sleep(1)
+
+    def get_mc_ready_status(self):
+        return self.socket_is_connected(host=self.mc_ip_addr, port=80)
+
+    def get_odyssey_ready_status(self):
+        return self.socket_is_connected(host=self.odyssey_ip_addr, port=22)
+
+    def socket_is_connected(self, host=None, port=None):
+        try:
+            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            sock.connect((host, port))
+            sock.close()
+            is_connected = True
+        except:
+            is_connected = False
+        return is_connected
 
     def teardown(self):
         self.run_compose_cmd('down', check=True)

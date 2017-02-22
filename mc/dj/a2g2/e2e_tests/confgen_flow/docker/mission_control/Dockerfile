@@ -26,5 +26,7 @@ RUN /bin/bash -c "source $CONDA_ROOT/bin/activate root && conda env update -f $I
 COPY $CTX_ROOT/entrypoint.sh /entrypoint.sh
 ENTRYPOINT ["/entrypoint.sh"]
 
+COPY $CTX_ROOT/wait_for_postgres.sh /wait_for_postgres.sh
 COPY $CTX_ROOT/start_mc_server.sh /start_mc_server.sh
-CMD /start_mc_server.sh
+ENV CONDA_ROOT=$CONDA_ROOT
+CMD /bin/bash -c "source \$CONDA_ROOT/bin/activate root && /wait_for_postgres.sh /start_mc_server.sh"

@@ -42,7 +42,6 @@ services:
       MC_DB_PASSWORD: 'postgres'
       MC_DB_HOST: 'db'
       MC_STORAGE_DIR: '/storage'
-    command: '/bin/bash -l -c /start_mc_server.sh'
 
   db:
     image: "postgres"

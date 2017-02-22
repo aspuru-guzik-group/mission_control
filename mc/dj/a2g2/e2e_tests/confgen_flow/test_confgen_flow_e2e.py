@@ -1,5 +1,4 @@
 import json
-import sys
 import unittest
 
 import pexpect
@@ -15,6 +14,8 @@ from job_runners.action_processor import ActionProcessor
 from .docker_utils import DockerEnv
 from . import storage_action_handlers
 from job_runners.ssh_control_socket_client import SSHControlSocketClient
+from a2g2.job_dir_builders.a2g2_job_engine.a2g2_job_engine_dir_builder import (
+    A2G2JobEngineDirBuilder)
 
 
 class ConfgenFlowGenerator(object):
@@ -147,6 +148,9 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
             self.storage_client, *args, params=params, ctx=ctx)
 
     def _download_wrapper(self, *args, params=None, ctx=None, **kwargs):
+        print("params: ")
+        for k,v in (params or {}).items(): print("k: ", k, "v: ", v, "t(v)",
+                                                 type(v))
         return storage_action_handlers.download_action_handler(
             self.storage_client, *args, params=params, ctx=ctx)
 
@@ -157,23 +161,12 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
 
         class JobSubmissionFactory(object):
             def build_job_submission(self, job=None):
-                job_type = job['job_spec']['job_type']
-                if job_type == 'confgen':
-                    from a2g2.job_dir_builders.confgen.confgen \
-                            import ConfgenJobDirBuilder
-                    job_dir_meta = ConfgenJobDirBuilder.build_odyssey_dir(
-                        job=job
-                    )
-                elif job_type == 'confgen:load':
-                    from a2g2.job_dir_builders.confgen_load.confgen_load \
-                            import ConfgenLoadJobDirBuilder
-                    job_dir_meta = ConfgenLoadJobDirBuilder.build_odyssey_dir(
-                        job=job,
-                        a2g2_client_cfg_json=a2g2_client_cfg_json
-                    )
-                else:
-                    raise Exception("Unknown job type '%s',"
-                                    " can't build job dir" % job_type)
+                job_dir_meta = A2G2JobEngineDirBuilder.build_odyssey_dir(
+                    job=job,
+                    cfg={
+                        'a2g2_client': a2g2_client_cfg_json
+                    }
+                )
                 submission_meta = job_dir_meta
                 return submission_meta
         return JobSubmissionFactory()
@@ -196,9 +189,7 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
             child.expect('.+')
             child.sendline(ssh_client.user)
             child.wait()
-            if child.exitstatus != 0:
-                raise Exception("Authorization failed")
-            print("AUTHORIZED", file=sys.stderr)
+            if child.exitstatus != 0: raise Exception("Authorization failed")
 
         ssh_client = SSHControlSocketClient(
             user=self.docker_env.odyssey_user_username,
@@ -227,7 +218,7 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
         self.assert_domain_db_has_expected_state()
 
     def generate_molecule_library(self):
-        initial_smiles = ['smiles_%s' % i for i in range(1)]
+        initial_smiles = ['CC' for i in range(1)]
         for smiles in initial_smiles:
             self.a2g2_client.create_chemthing({'props': {'smiles': smiles}})
 
