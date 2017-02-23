@@ -1,0 +1,52 @@
+version: '2.1'
+
+
+services:
+  odyssey:
+    build:
+      context: .
+      dockerfile: odyssey/Dockerfile
+      args:
+        - CTX_ROOT=odyssey
+        - COMPOSE_ROOT=.
+        - TEST_USER_USERNAME=test_user
+        - TEST_USER_PASS=test_pass
+        - CONDA_ENV_FILE=a2g2_mc_conda_env.yml
+        - MINICONDA_URL=${MINICONDA_URL-https://repo.continuum.io/miniconda/Miniconda3-4.2.12-Linux-x86_64.sh}
+    environment:
+      ODYSSEY_A2G2_CONDA_ENV_PATH: "/n/aagfs01/software/conda_envs/a2g2_env"
+    volumes:
+      - $MC_ROOT/mc:/a2g2_env-packages/mc
+      - $MC_ROOT/mc/a2g2/e2e_tests/confgen_flow/docker/odyssey/entrypoint.sh:/entrypoint.sh
+    command: "/entrypoint.sh tail -f /dev/null"
+
+  mission_control:
+    build:
+      context: .
+      dockerfile: mission_control/Dockerfile
+      args:
+        - COMPOSE_ROOT=.
+        - CTX_ROOT=mission_control
+        - CONDA_ENV_FILE=a2g2_mc_conda_env.yml
+        - MINICONDA_URL=${MINICONDA_URL-https://repo.continuum.io/miniconda/Miniconda3-4.2.12-Linux-x86_64.sh}
+    volumes:
+      - $MC_ROOT:/mc_root
+      - /storage
+    links:
+      - db
+    ports:
+      - "8000:80"
+    environment:
+      MC_DB_NAME: 'postgres'
+      MC_DB_USER: 'postgres'
+      MC_DB_PASSWORD: 'postgres'
+      MC_DB_HOST: 'db'
+      MC_STORAGE_DIR: '/storage'
+
+  db:
+    image: "postgres"
+
+networks:
+  default:
+    external:
+      name: $MC_NETWORK

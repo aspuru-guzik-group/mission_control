@@ -11,7 +11,7 @@ services:
       args:
         MINICONDA_URL: ${MINICONDA_URL-https://repo.continuum.io/miniconda/Miniconda3-4.1.11-Linux-x86_64.sh}
     environment:
-      DJANGO_SETTINGS_MODULE: 'mc.settings'
+      DJANGO_SETTINGS_MODULE: 'mc_dj.settings'
       MC_DB_NAME: postgres
       MC_DB_USER: postgres
       MC_DB_PASSWORD: postgres
@@ -21,7 +21,7 @@ services:
   mc_server:
     extends:
       service: mc_base
-    command: python manage.py runserver 0.0.0.0:8000
+    command: cd /mc && python manage.py runserver 0.0.0.0:8000
     ports:
       - "8000:8000"
     volumes:
@@ -33,11 +33,12 @@ services:
     extends:
       service: mc_base
     command: /bin/bash
+    volumes:
+      - ./:/mc_root
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - "MC_ROOT=$PWD"
-    volumes:
-      - ./mc:/mc
-      - /var/run/docker.sock:/var/run/docker.sock
+      - "PYTHONPATH=/mc_root"
     depends_on:
       - mc_pg
     privileged: true
