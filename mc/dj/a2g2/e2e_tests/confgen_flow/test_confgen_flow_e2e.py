@@ -161,7 +161,10 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
                 job_dir_meta = A2G2JobEngineDirBuilder.build_odyssey_dir(
                     job=job,
                     cfg={
-                        'a2g2_client': a2g2_client_cfg_json
+                        'A2G2_CLIENT': a2g2_client_cfg_json,
+                        'A2G2_JOB_ENGINE_CLASS': (
+                            'a2g2.e2e_tests.confgen_flow.test_confgen_flow_e2e.'
+                            'MockJobEngine')
                     }
                 )
                 submission_meta = job_dir_meta
@@ -265,3 +268,7 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
         actual_counts = self.a2g2_client.get_counts()
         self.assertEqual(actual_counts, expected_counts)
 
+
+class MockJobEngine(object):
+    def execute_job(self, job=None, cfg=None, output_dir=None):
+        print("fake execute_job!")

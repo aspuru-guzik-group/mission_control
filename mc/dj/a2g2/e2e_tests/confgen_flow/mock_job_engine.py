@@ -51,30 +51,26 @@ class ExecuteJobCommand(object):
             job=job,
             cfg=cfg,
             output_dir=output_dir,
-            job_engine=self.generate_job_engine(cfg=cfg),
+            a2g2_job_engine=self.generate_a2g2_job_engine(cfg=cfg),
         )
 
-    def generate_job_engine(self, cfg=None):
+    def generate_a2g2_job_engine(self, cfg=None):
         cfg = cfg or {}
-        class_spec = cfg.get('A2G2_JOB_ENGINE_CLASS', None)
-        if class_spec:
-            JobEngineClass = self.get_class_from_class_spec(class_spec)
+        job_engine_class_spec = cfg.get('A2G2_JOB_ENGINE_CLASS', None)
+        if job_engine_class_spec:
+            spec_parts = job_engine_class_spec.split('.')
+            job_engine_module = importlib.import_module(
+                '.'.join(name=spec_parts[:-1]))
+            job_engine_class = getattr(job_engine_module, spec_parts[-1])
+            job_engine = job_engine_class()
         else:
-            JobEngineClass = A2G2JobEngine
-        job_engine = JobEngineClass()
+            job_engine = A2G2JobEngine()
         return job_engine
 
-    def get_class_from_class_spec(self, class_spec=None):
-        class_spec_parts = class_spec.split('.')
-        module_name = '.'.join(class_spec_parts[:-1])
-        class_name = class_spec_parts[-1]
-        job_module = importlib.import_module(module_name)
-        Clazz = getattr(job_module, class_name)
-        return Clazz
-
     def execute_job(self, job=None, cfg=None, output_dir=None,
-                    job_engine=None):
-        return job_engine.execute_job(job=job, cfg=cfg, output_dir=output_dir)
+                    a2g2_job_engine=None):
+        return a2g2_job_engine.execute_job(job=job, cfg=cfg,
+                                           output_dir=output_dir)
 
 if __name__ == '__main__':
     cmd = ExecuteJobCommand()
