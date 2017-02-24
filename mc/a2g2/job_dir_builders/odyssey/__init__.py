@@ -106,12 +106,12 @@ class OdysseyJobDirBuilder(object):
                     touch {completed_checkpoint_file}
                 else
                     touch {failed_checkpoint_file}
-                    echo "{tail_stdout_cmd}:" > {failed_checkpoint_file}
-                    {tail_stdout_cmd} > {failed_checkpoint_file}
-                    echo "{tail_stderr_cmd}:" > {failed_checkpoint_file}
-                    {tail_stderr_cmd} > {failed_checkpoint_file}
-                    echo "{ls_cmd}:" > {failed_checkpoint_file}
-                    {tail_stderr_cmd} > {failed_checkpoint_file}
+                    echo "{tail_stdout_cmd}:" >> {failed_checkpoint_file}
+                    {tail_stdout_cmd} >> {failed_checkpoint_file}
+                    echo "{tail_stderr_cmd}:" >> {failed_checkpoint_file}
+                    {tail_stderr_cmd} >> {failed_checkpoint_file}
+                    echo "{ls_cmd}:" >> {failed_checkpoint_file}
+                    {ls_cmd} >> {failed_checkpoint_file}
                 fi
                 popd
             }}
