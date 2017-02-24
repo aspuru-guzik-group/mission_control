@@ -18,7 +18,7 @@ class Flow(object):
 
     def add_task(self, task=None, key=None, as_root=False, precursor_keys=None,
                  successor_keys=None):
-        self._ensure_task_key(task=task, key=key)
+        self._prepare_task(task=task, key=key)
         self.tasks[task['key']] = task
         if as_root: self.root_task_key = task['key']
         for precursor_key in (precursor_keys or []):
@@ -29,6 +29,10 @@ class Flow(object):
                                 'dest_key': successor_key})
         return task
 
+    def _prepare_task(self, task=None, key=None):
+        self._ensure_task_key(task=task, key=key)
+        self._ensure_task_status(task=task)
+
     def _ensure_task_key(self, task=None, key=None):
         if key is not None: task['key'] = key
         elif task.get('key', None) is None:
@@ -36,6 +40,9 @@ class Flow(object):
 
     def generate_task_key(self):
         return str(uuid4())
+
+    def _ensure_task_status(self, task=None):
+        if 'status' not in task: task['status'] = 'PENDING'
 
     def add_edge(self, edge=None):
         src_key, dest_key = (edge['src_key'], edge['dest_key'])

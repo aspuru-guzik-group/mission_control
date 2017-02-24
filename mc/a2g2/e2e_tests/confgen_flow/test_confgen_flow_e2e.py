@@ -65,7 +65,6 @@ class ConfgenFlowGenerator(object):
                         ]
                     }
                 },
-                'status': 'PENDING',
             }
         )
         flow.add_task(
@@ -117,7 +116,6 @@ class ConfgenFlowGenerator(object):
                         ]
                     }
                 },
-                'status': 'PENDING'
             }
         )
         return flow

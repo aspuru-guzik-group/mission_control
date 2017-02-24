@@ -33,7 +33,7 @@ class TestBuildOdysseyDir(BaseTestCase):
                     --job="./{job_file_name}" \\
                     --cfg="./{cfg_file_name}" \\
                     --output_dir="$SCRATCH_DIR" \\
-                    --ctx_dir="$(pwd)" \\
+                    --ctx_dir="$(pwd)"
                 cp -r $SCRATCH_DIR ./output
                 echo "finished, $(date)"
                 ''').format(

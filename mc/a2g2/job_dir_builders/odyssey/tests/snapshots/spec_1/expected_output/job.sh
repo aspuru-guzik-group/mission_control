@@ -16,7 +16,7 @@ output_status_file () {
         echo "tail -n 50 ODYSSEY_JOB.stderr:" >> ODYSSEY_JOB__FAILED
         tail -n 50 ODYSSEY_JOB.stderr >> ODYSSEY_JOB__FAILED
         echo "ls -1:" >> ODYSSEY_JOB__FAILED
-        tail -n 50 ODYSSEY_JOB.stderr >> ODYSSEY_JOB__FAILED
+        ls -1 >> ODYSSEY_JOB__FAILED
     fi
     popd
 }
