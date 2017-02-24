@@ -22,10 +22,15 @@ from .docker_utils import DockerEnv
 from . import storage_action_handlers
 
 
-TEST_SMILES = ['Cc1ccccc1']
-TEST_MOLS = [Chem.AddHs(Chem.MolFromSmiles(smiles)) for smiles in TEST_SMILES]
-for mol in TEST_MOLS:
-    AllChem.EmbedMultipleConfs(mol, numConfs=3)
+def generate_test_mols():
+    smiles_list = ['Cc1ccccc1']
+    mols = []
+    for smiles in smiles_list:
+        mol = Chem.AddHs(Chem.MolFromSmiles(smiles))
+        AllChem.EmbedMultipleConfs(mol, numConfs=3)
+        mol.smiles = smiles
+        mols.append(mol)
+    return mols
 
 class ConfgenFlowGenerator(object):
     flow_type = 'confgen'
@@ -228,20 +233,17 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
         self.assertTrue(len(self.mc_client.fetch_tickable_flows()) > 0)
         try:
             self.run_flows_to_completion()
-            err = None
         except Exception as error:
-            err = error
-        jobs = self.mc_client.fetch_jobs()
-        print("len: ", len(jobs))
-        print(json.dumps(jobs, indent=2))
-        if err: raise err
+            jobs = self.mc_client.fetch_jobs()
+            print(json.dumps(jobs, indent=2))
+            raise error
         self.assertTrue(self.mc_runner.tick_counter > 0)
         self.assert_domain_db_has_expected_state()
 
     def generate_molecule_library(self):
-        initial_smiles = TEST_SMILES
-        for smiles in initial_smiles:
-            self.a2g2_client.create_chemthing({'props': {'smiles': smiles}})
+        mols = generate_test_mols()
+        for mol in mols:
+            self.a2g2_client.create_chemthing({'props': {'smiles': mol.smiles}})
 
     def create_flows(self):
         for chemthing in self.a2g2_client.query(
@@ -287,8 +289,11 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
         return keyed_flows
 
     def assert_domain_db_has_expected_state(self):
-        #@TODO: sync this w/ TEST_MOLS/TEST_SMILES.
-        expected_counts = {'ChemThing': 10}
+        mols = generate_test_mols()
+        mol_count = len(mols)
+        conformer_count = 0
+        for mol in mols: conformer_count += len(mol.GetConformers())
+        expected_counts = {'ChemThing': mol_count + conformer_count }
         actual_counts = self.a2g2_client.get_counts()
         self.assertEqual(actual_counts, expected_counts)
 
@@ -304,7 +309,8 @@ class MockJobEngine(object):
                                     ctx_dir=ctx_dir)
 
     def generate_fake_confgen_output(self, output_dir=None):
-        for mol_counter, mol in enumerate(TEST_MOLS):
+        mols = generate_test_mols()
+        for mol_counter, mol in enumerate(mols):
             conformer_file_path = os.path.join(
                 output_dir, 'mol_%s_conformers.sdf' % mol_counter)
             with open(conformer_file_path, 'w') as conformer_file:
