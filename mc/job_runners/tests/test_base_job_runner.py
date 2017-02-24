@@ -136,7 +136,7 @@ class ProcessClaimableJobTestCase(BaseTestCase):
                 'error': 'Error starting job execution: %s' % exception
             }))
 
-class BuildJobDirTestCase(BaseTestCase):
+class BuildJobSubmissionTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.job = {
@@ -147,7 +147,13 @@ class BuildJobDirTestCase(BaseTestCase):
         }
 
     def decorate_runner_methods_to_patch(self):
-        self.runner_methods_to_patch.extend(['process_actions'])
+        self.runner_methods_to_patch.extend(['process_actions',
+                                             'generate_job_dir'])
+
+    def test_generates_job_dir(self):
+        self.runner.build_job_submission(job=self.job)
+        self.assertEqual(self.job['job_dir'],
+                         self.runner.generate_job_dir.return_value)
 
     def test_processes_pre_build_actions(self):
         self.runner.build_job_submission(job=self.job)
@@ -159,7 +165,8 @@ class BuildJobDirTestCase(BaseTestCase):
         self.runner.build_job_submission(job=self.job)
         self.assertEqual(
             self.runner.job_submission_factory.build_job_submission.call_args,
-            call(job=self.job))
+            call(job=self.job, output_dir=self.job['job_dir'])
+        )
 
 class ProcessActionsTestCase(BaseTestCase):
     def test_wraps_action_processor(self):

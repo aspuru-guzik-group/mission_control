@@ -1,4 +1,5 @@
 import logging
+import tempfile
 import time
 
 
@@ -96,11 +97,15 @@ class BaseJobRunner(object):
 
     def build_job_submission(self, job=None):
         self.logger.debug('build_job_submission')
+        job['job_dir'] = self.generate_job_dir(job=job)
         actions =  job.get('job_spec', {}).get('pre_build_actions', None)
         if actions: self.process_actions(actions=actions, job=job)
         job_submission_meta = self.job_submission_factory.build_job_submission(
-            job=job)
+            job=job, output_dir=job['job_dir'])
         return job_submission_meta
+
+    def generate_job_dir(self, job=None):
+        return tempfile.mkdtemp(prefix='job_dir.{}'.format(job['uuid']))
 
     def process_actions(self, actions=None, job=None):
         for action in actions:
