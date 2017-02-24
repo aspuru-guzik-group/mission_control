@@ -9,7 +9,7 @@ from .a2g2_job_engine_dir_builder import A2G2JobEngineDirBuilder
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.job = {'some_key': 'some_value'}
-        self.cfg = {'some_key': 'some_value'}
+        self.cfg = {'A2G2_JOB_ENGINE_MODULE': 'some_module'}
 
 class TestBuildOdysseyDir(BaseTestCase):
     def setUp(self):
@@ -32,12 +32,13 @@ class TestBuildOdysseyDir(BaseTestCase):
                 python -m {a2g2_job_engine_module} \\
                     --job="./{job_file_name}" \\
                     --cfg="./{cfg_file_name}" \\
-                    --output_dir="$SCRATCH_DIR"
+                    --output_dir="$SCRATCH_DIR" \\
+                    --ctx_dir="$(pwd)" \\
                 cp -r $SCRATCH_DIR ./output
                 echo "finished, $(date)"
                 ''').format(
                     conda_env_root='/n/aagfs01/software/conda_envs/a2g2_env',
-                    a2g2_job_engine_module='a2g2.job_engines.a2g2_job_engine',
+                    a2g2_job_engine_module=self.cfg['A2G2_JOB_ENGINE_MODULE'],
                     job_file_name=A2G2JobEngineDirBuilder.job_file_name,
                     cfg_file_name=A2G2JobEngineDirBuilder.cfg_file_name
                 ),

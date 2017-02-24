@@ -21,6 +21,7 @@ class A2G2JobEngineDirBuilder(object):
 
     @classmethod
     def generate_odyssey_dir_spec(cls, job=None, cfg=None):
+        cfg = cfg or {}
         dir_spec = {
             'job_script_body': textwrap.dedent(
                 '''
@@ -32,12 +33,16 @@ class A2G2JobEngineDirBuilder(object):
                 python -m {a2g2_job_engine_module} \\
                     --job="./{job_file_name}" \\
                     --cfg="./{cfg_file_name}" \\
-                    --output_dir="$SCRATCH_DIR"
+                    --output_dir="$SCRATCH_DIR" \\
+                    --ctx_dir="$(pwd)"
                 cp -r $SCRATCH_DIR ./output
                 echo "finished, $(date)"
                 ''').format(
                     conda_env_root='/n/aagfs01/software/conda_envs/a2g2_env',
-                    a2g2_job_engine_module='a2g2.job_engines.a2g2_job_engine',
+                    a2g2_job_engine_module=cfg.get(
+                        'A2G2_JOB_ENGINE_MODULE',
+                        'mc.a2g2.job_engines.a2g2_job_engine'
+                    ),
                     job_file_name=cls.job_file_name,
                     cfg_file_name=cls.cfg_file_name
                 ),

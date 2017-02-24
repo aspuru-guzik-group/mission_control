@@ -1,8 +1,11 @@
 import json
 import os
+import time
 import unittest
 
 import pexpect
+from rdkit import Chem
+from rdkit.Chem import AllChem
 
 from mc.flow_engines.flow import Flow
 from mc.a2g2.a2g2_client.a2g2_client import A2G2_Client
@@ -11,13 +14,18 @@ from mc.a2g2.runners.odyssey_push_runner.odyssey_push_runner import (
 from mc.storage_client.storage_client import MissionControlStorageClient
 from mc.a2g2.task_engines.job_task_engine import JobTaskEngine
 from mc.job_runners.action_processor import ActionProcessor
-
-from .docker_utils import DockerEnv
-from . import storage_action_handlers
 from mc.job_runners.ssh_control_socket_client import SSHControlSocketClient
 from mc.a2g2.job_dir_builders.a2g2_job_engine.a2g2_job_engine_dir_builder import (
     A2G2JobEngineDirBuilder)
+from mc.a2g2.job_engines import a2g2_job_engine
+from .docker_utils import DockerEnv
+from . import storage_action_handlers
 
+
+TEST_SMILES = ['Cc1ccccc1']
+TEST_MOLS = [Chem.AddHs(Chem.MolFromSmiles(smiles)) for smiles in TEST_SMILES]
+for mol in TEST_MOLS:
+    AllChem.EmbedMultipleConfs(mol, numConfs=3)
 
 class ConfgenFlowGenerator(object):
     flow_type = 'confgen'
@@ -77,7 +85,7 @@ class ConfgenFlowGenerator(object):
                 'task_engine': JobTaskEngine.__name__,
                 'input': {
                     'job_spec': {
-                        'job_type': 'confgen:load',
+                        'job_type': 'confgen_load',
                         'pre_build_actions': [
                             {
                                 'action': 'storage:download',
@@ -88,11 +96,19 @@ class ConfgenFlowGenerator(object):
                                         ),
                                     },
                                     'dest': {
-                                        'template': '{{ctx.job_dir}}/raw_dir'
+                                        'template': (
+                                            '{{ctx.job_dir}}/dir_to_parse')
                                     }
                                 },
-                                'output_to_ctx_target': 'data.input.raw_dir'
-                            }
+                            },
+                            {
+                                'action': 'set_ctx_value',
+                                'description': 'set name of dir_to_parse',
+                                'params': {
+                                    'value': 'dir_to_parse',
+                                    'target': 'data.input.dir_to_parse',
+                                }
+                            },
                         ]
                     }
                 },
@@ -160,15 +176,17 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
         })
 
         class JobSubmissionFactory(object):
-            def build_job_submission(self, job=None):
+            def build_job_submission(self, job=None, output_dir=None):
                 job_dir_meta = A2G2JobEngineDirBuilder.build_odyssey_dir(
                     job=job,
                     cfg={
-                        'A2G2_CLIENT': a2g2_client_cfg_json,
+                        'A2G2_CLIENT_CFG_JSON': a2g2_client_cfg_json,
                         'A2G2_JOB_ENGINE_CLASS': (
-                            'a2g2.e2e_tests.confgen_flow.test_confgen_flow_e2e.'
-                            'MockJobEngine')
-                    }
+                            'mc.a2g2.e2e_tests.confgen_flow'
+                            '.test_confgen_flow_e2e.MockJobEngine'
+                        )
+                    },
+                    output_dir=output_dir
                 )
                 submission_meta = job_dir_meta
                 return submission_meta
@@ -221,7 +239,7 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
         self.assert_domain_db_has_expected_state()
 
     def generate_molecule_library(self):
-        initial_smiles = ['CC' for i in range(1)]
+        initial_smiles = TEST_SMILES
         for smiles in initial_smiles:
             self.a2g2_client.create_chemthing({'props': {'smiles': smiles}})
 
@@ -243,13 +261,15 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
         self.mc_client.create_flow(flow=flow)
 
     def run_flows_to_completion(self):
-        max_ticks = 20
+        max_ticks = 10
+        tick_interval = 1
         incomplete_flows = self.get_incomplete_flows()
         while len(incomplete_flows) > 0:
             self.mc_runner.tick()
             if self.mc_runner.tick_counter > max_ticks:
                 raise Exception("Exceeded max_ticks of '%s'" % max_ticks)
             incomplete_flows = self.get_incomplete_flows()
+            time.sleep(tick_interval)
 
     def get_incomplete_flows(self):
         complete_flows = self.fetch_and_key_flows(
@@ -267,11 +287,28 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
         return keyed_flows
 
     def assert_domain_db_has_expected_state(self):
+        #@TODO: sync this w/ TEST_MOLS/TEST_SMILES.
         expected_counts = {'ChemThing': 10}
         actual_counts = self.a2g2_client.get_counts()
         self.assertEqual(actual_counts, expected_counts)
 
 
 class MockJobEngine(object):
-    def execute_job(self, job=None, cfg=None, output_dir=None):
-        print("fake execute_job!")
+    def execute_job(self, job=None, cfg=None, output_dir=None, ctx_dir=None):
+        job_type = job['job_spec']['job_type']
+        if job_type == 'confgen':
+            self.generate_fake_confgen_output(output_dir=output_dir)
+        else:
+            real_engine = a2g2_job_engine.A2G2JobEngine()
+            real_engine.execute_job(job=job, cfg=cfg, output_dir=output_dir,
+                                    ctx_dir=ctx_dir)
+
+    def generate_fake_confgen_output(self, output_dir=None):
+        for mol_counter, mol in enumerate(TEST_MOLS):
+            conformer_file_path = os.path.join(
+                output_dir, 'mol_%s_conformers.sdf' % mol_counter)
+            with open(conformer_file_path, 'w') as conformer_file:
+                writer = Chem.SDWriter(conformer_file)
+                for conformer in mol.GetConformers():
+                    writer.write(mol, confId=conformer.GetId())
+                writer.close()

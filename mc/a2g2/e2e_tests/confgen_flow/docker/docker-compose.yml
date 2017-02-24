@@ -37,6 +37,7 @@ services:
     ports:
       - "8000:80"
     environment:
+      MC_ROOT: '/mc_root'
       MC_DB_NAME: 'postgres'
       MC_DB_USER: 'postgres'
       MC_DB_PASSWORD: 'postgres'

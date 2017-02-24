@@ -2,12 +2,12 @@ import time
 
 import requests
 
-from flow_engines.flow_engine import FlowEngine
-from mc_client.mission_control_client import MissionControlClient
-from .odyssey_push_job_runner import OdysseyPushJobRunner
-from flow_runners.base_flow_runner import BaseFlowRunner as FlowRunner
+from mc.mc_client.mission_control_client import MissionControlClient
+from mc.flow_engines.flow_engine import FlowEngine
+from mc.flow_runners.base_flow_runner import BaseFlowRunner as FlowRunner
 from .odyssey_job_submission_factory import OdysseyJobSubmissionFactory as \
         JobSubmissionFactory
+from .odyssey_push_job_runner import OdysseyPushJobRunner
 
 
 class OdysseyPushRunner(object):

@@ -5,16 +5,18 @@ import sys
 
 
 class A2G2JobEngine(object):
-    def execute_job(self, job=None, cfg=None, output_dir=None):
+    def execute_job(self, *args, job=None, cfg=None, output_dir=None,
+                    ctx_dir=None, **kwargs):
         job_module = self.get_job_module(job=job, cfg=cfg)
-        return job_module.execute_job(job=job, cfg=cfg, output_dir=output_dir)
+        return job_module.execute_job(job=job, cfg=cfg, output_dir=output_dir,
+                                      ctx_dir=ctx_dir)
 
     def get_job_module(self, job=None, cfg=None):
         try:
             module_name = '{job_type}_job_module'.format(
                 job_type=job['job_spec']['job_type'])
             job_module = importlib.import_module(
-                module_name, package=sys.modules[__name__].__package__)
+                sys.modules[__name__].__package__ + '.' + module_name)
         except Exception as error:
             raise Exception("Could not load job_module for job: %s" % error)
         return job_module
@@ -45,12 +47,15 @@ class ExecuteJobCommand(object):
         parser.add_argument('--job', type=json_file_type)
         parser.add_argument('--cfg', type=json_file_type, default={})
         parser.add_argument('--output_dir', type=str)
+        parser.add_argument('--ctx_dir', type=str)
 
-    def handle(self, *args, job=None, cfg=None, output_dir=None, **kwargs):
+    def handle(self, *args, job=None, cfg=None, output_dir=None, ctx_dir=None,
+               **kwargs):
         self.execute_job(
             job=job,
             cfg=cfg,
             output_dir=output_dir,
+            ctx_dir=ctx_dir,
             job_engine=self.generate_job_engine(cfg=cfg),
         )
 
@@ -72,9 +77,10 @@ class ExecuteJobCommand(object):
         Clazz = getattr(job_module, class_name)
         return Clazz
 
-    def execute_job(self, job=None, cfg=None, output_dir=None,
+    def execute_job(self, job=None, cfg=None, output_dir=None, ctx_dir=None,
                     job_engine=None):
-        return job_engine.execute_job(job=job, cfg=cfg, output_dir=output_dir)
+        return job_engine.execute_job(job=job, cfg=cfg, output_dir=output_dir,
+                                      ctx_dir=ctx_dir)
 
 if __name__ == '__main__':
     cmd = ExecuteJobCommand()

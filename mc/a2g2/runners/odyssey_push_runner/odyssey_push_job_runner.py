@@ -1,7 +1,7 @@
 import os
 
-from job_runners.base_job_runner import BaseJobRunner
-from job_runners.remote_slurm_execution_client \
+from mc.job_runners.base_job_runner import BaseJobRunner
+from mc.job_runners.remote_slurm_execution_client \
         import RemoteSlurmExecutionClient as ExecutionClient
 
 class OdysseyPushJobRunner:

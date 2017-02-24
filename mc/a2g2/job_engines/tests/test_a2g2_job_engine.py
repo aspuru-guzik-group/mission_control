@@ -18,6 +18,7 @@ class BaseTestCase(unittest.TestCase):
         }
         self.cfg = defaultdict(MagicMock)
         self.output_dir = 'some_output_dir'
+        self.ctx_dir = 'some_ctx_dir'
 
 class ExecuteJobTestCase(BaseTestCase):
     def setUp(self):
@@ -26,13 +27,18 @@ class ExecuteJobTestCase(BaseTestCase):
 
     def test_dispatches_to_get_job_module_result(self):
         result = self.a2g2_job_engine.execute_job(
-            job=self.job, cfg=self.cfg, output_dir=self.output_dir)
+            job=self.job,
+            cfg=self.cfg,
+            output_dir=self.output_dir,
+            ctx_dir=self.ctx_dir
+        )
         self.assertEqual(self.a2g2_job_engine.get_job_module.call_args,
                          call(job=self.job, cfg=self.cfg))
         expected_module = self.a2g2_job_engine.get_job_module.return_value
         self.assertEqual(
             expected_module.execute_job.call_args,
-            call(job=self.job, cfg=self.cfg, output_dir=self.output_dir)
+            call(job=self.job, cfg=self.cfg, output_dir=self.output_dir,
+                 ctx_dir=self.ctx_dir)
         )
         self.assertEqual(result, expected_module.execute_job.return_value)
 
@@ -40,11 +46,12 @@ class GetJobModuleCase(BaseTestCase):
     @patch.object(a2g2_job_engine, 'importlib')
     def test_imports_expected_module(self, patched_importlib):
         result = self.a2g2_job_engine.get_job_module(job=self.job, cfg=self.cfg)
-        expected_module_name = '{job_type}_job_module'.format(
-            job_type=self.job['job_spec']['job_type'])
-        self.assertEqual(
-            patched_importlib.import_module.call_args,
-            call(expected_module_name, package=a2g2_job_engine.__package__))
+        expected_module_name = '{package}.{job_type}_job_module'.format(
+            package=a2g2_job_engine.__package__,
+            job_type=self.job['job_spec']['job_type']
+        )
+        self.assertEqual(patched_importlib.import_module.call_args,
+                         call(expected_module_name))
         self.assertEqual(result, patched_importlib.import_module.return_value)
 
 class ExecuteJobCommandTestCase(BaseTestCase):
@@ -54,7 +61,8 @@ class ExecuteJobCommandTestCase(BaseTestCase):
         self.arg_files = self.generate_arg_files()
         self.arg_tuples = [
             *self.arg_files.items(),
-            ('output_dir', self.output_dir)
+            ('output_dir', self.output_dir),
+            ('ctx_dir', self.ctx_dir)
         ]
         self.argv = self.generate_argv(arg_tuples=self.arg_tuples)
 
@@ -87,7 +95,8 @@ class ExecuteJobCommandTestCase(BaseTestCase):
                         arg_name: json.load(open(arg_file_path))
                         for arg_name, arg_file_path in self.arg_files.items()
                     },
-                    'output_dir': self.output_dir
+                    'output_dir': self.output_dir,
+                    'ctx_dir': self.ctx_dir
                 }
             )
         )

@@ -13,6 +13,7 @@ from .. import confgen_load_job_module
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
+        self.ctx_dir = 'some_ctx_dir'
         self.engine = confgen_load_job_module.ConfgenLoadJobEngine()
 
 class ExecuteJobTestCase(BaseTestCase):
@@ -20,17 +21,30 @@ class ExecuteJobTestCase(BaseTestCase):
         super().setUp()
         self.engine.parse_job_dir = Mock()
         self.engine.upload_chemthings = Mock()
-        self.job = {'input': {'dir_to_parse': Mock()}}
-        self.engine.execute_job(job=self.job)
+        self.job = {
+            'data': {
+                'input': {
+                    'dir_to_parse': 'dir_to_parse'
+                }
+            }
+        }
+        self.engine.execute_job(job=self.job, ctx_dir=self.ctx_dir)
+
+
+    def test_calls_parse_on_dir_to_parse(self):
+        expected_dir_to_parse = os.path.join(
+            self.ctx_dir, self.job['data']['input']['dir_to_parse'])
+        self.assertEqual(
+            self.engine.parse_job_dir.call_args,
+            call(dir_to_parse=expected_dir_to_parse)
+        )
 
     def test_uploads_parse_results(self):
-        self.assertEqual(self.engine.parse_job_dir.call_args,
-                         call(job_dir=self.job['input']['dir_to_parse']))
         self.assertEqual(self.engine.upload_chemthings.call_args,
                          call(self.engine.parse_job_dir.return_value))
 
     def test_sets_job_output_to_upload_results(self):
-        self.assertEqual(self.job['output'],
+        self.assertEqual(self.job['data']['output'],
                          self.engine.upload_chemthings.return_value)
 
 class ParseJobDirTestCase(BaseTestCase):
@@ -112,28 +126,41 @@ class UploadChemthingsTestCase(BaseTestCase):
 
 class CmdTestCase(BaseTestCase):
     def setUp(self):
-        self.setup_inputs()
-        self.setup_argv()
+        super().setUp()
+        self.file_args = self.generate_file_args()
+        self.argv = self.generate_argv(arg_tuples=[
+            *[(file_arg_name, file_arg['path']) 
+              for file_arg_name, file_arg in self.file_args.items()
+             ],
+            ('ctx_dir', self.ctx_dir)
+        ])
         self.command = confgen_load_job_module.Command()
 
-    def setup_inputs(self):
-        self.inputs = {
-            'job': {},
+    def generate_file_args(self):
+        file_args = {
+            'job': {
+                'value': {}
+            },
             'cfg': {
-                'A2G2_CLIENT_CFG_JSON': json.dumps({'base_url': 'mock_url'})
+                'value': {
+                    'A2G2_CLIENT_CFG_JSON': json.dumps({'base_url': 'mock_url'})
+                }
             }
         }
         self.tmpdir = tempfile.mkdtemp()
         self.input_paths = {}
-        for input_name, input_value in self.inputs.items():
-            input_path = os.path.join(self.tmpdir, input_name) +  '.json'
-            with open(input_path, 'w') as f: json.dump(input_value, f)
-            self.input_paths[input_name] = input_path
+        for file_arg_name, file_arg in file_args.items():
+            file_path = os.path.join(self.tmpdir, file_arg_name) +  '.json'
+            with open(file_path, 'w') as f: json.dump(file_arg['value'], f)
+            file_arg['path'] = file_path
+        return file_args
 
-    def setup_argv(self):
-        self.argv = []
-        for input_name, input_path in self.input_paths.items():
-            self.argv.append('--%s=%s' % (input_name, input_path))
+    def generate_argv(self, arg_tuples=None):
+        argv = []
+        for arg_name, arg_value in arg_tuples:
+            argv.append('--%s' % arg_name)
+            argv.append(arg_value)
+        return argv
 
     def _execute_command(self):
         self.command.execute(argv=self.argv)
@@ -157,7 +184,7 @@ class CmdTestCase(BaseTestCase):
                 self.assertEqual(
                     MockClient.call_args,
                     call(**json.loads(
-                        self.inputs['cfg']['A2G2_CLIENT_CFG_JSON']))
+                        self.file_args['cfg']['value']['A2G2_CLIENT_CFG_JSON']))
                 )
 
     def test_calls_execute_job(self):
@@ -172,6 +199,7 @@ class CmdTestCase(BaseTestCase):
                 )
                 self.assertEqual(
                     MockEngine.return_value.execute_job.call_args,
-                    call(job=self.inputs['job'])
+                    call(job=self.file_args['job']['value'],
+                         ctx_dir=self.ctx_dir)
                 )
 

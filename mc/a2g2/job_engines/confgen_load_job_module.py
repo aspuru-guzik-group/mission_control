@@ -8,30 +8,34 @@ import pybel
 
 from mc.a2g2.a2g2_client.a2g2_client import A2G2_Client
 
-def execute_job(*args, job=None, cfg=None, output_dir=None):
-    Command().handle(job=job, cfg=cfg)
+def execute_job(*args, job=None, cfg=None, output_dir=None, ctx_dir=None,
+                **kwargs):
+    Command().handle(job=job, cfg=cfg, ctx_dir=ctx_dir)
 
 class ConfgenLoadJobEngine(object):
     def __init__(self, a2g2_client=None):
         self.a2g2_client = a2g2_client
 
-    def execute_job(self, job=None):
-        chemthings = self.parse_job_dir(job_dir=job['input']['dir_to_parse'])
-        job['output'] = self.upload_chemthings(chemthings)
+    def execute_job(self, job=None, ctx_dir=None):
+        dir_to_parse = os.path.join(
+            ctx_dir, job['data']['input']['dir_to_parse'])
+        chemthings = self.parse_job_dir(dir_to_parse=dir_to_parse)
+        job['data']['output'] = self.upload_chemthings(chemthings)
 
-    def parse_job_dir(self, job_dir=None, includes=None, excludes=None):
-        paths_to_parse = self.get_paths_to_parse(job_dir=job_dir,
+    def parse_job_dir(self, dir_to_parse=None, includes=None, excludes=None):
+        paths_to_parse = self.get_paths_to_parse(dir_to_parse=dir_to_parse,
                                                  includes=includes,
                                                  excludes=excludes)
         chemthings = []
         for path in paths_to_parse: chemthings.extend(self.parse_path(path))
         return chemthings
 
-    def get_paths_to_parse(self, job_dir=None, includes=None, excludes=None):
-        if not includes: includes = ['raw_data/**']
-        paths_to_include = self.get_paths_for_globs(root_dir=job_dir,
+    def get_paths_to_parse(self, dir_to_parse=None, includes=None,
+                           excludes=None):
+        if not includes: includes = ['output/**']
+        paths_to_include = self.get_paths_for_globs(root_dir=dir_to_parse,
                                                     globs=includes)
-        paths_to_exclude = self.get_paths_for_globs(root_dir=job_dir,
+        paths_to_exclude = self.get_paths_for_globs(root_dir=dir_to_parse,
                                                     globs=excludes)
         paths_to_parse = set(paths_to_include).difference(set(paths_to_exclude))
         return paths_to_parse
@@ -48,19 +52,19 @@ class ConfgenLoadJobEngine(object):
 
     def parse_path(self, path=None):
         chemthings = []
-        pb_mols = self.file_to_pb_mols(path=path)
-        for i, pb_mol in enumerate(pb_mols):
-            chemthing = self.pb_mol_to_chemthing(pb_mol)
+        pybel_mols = self.file_to_pybel_mols(path=path)
+        for i, pybel_mol in enumerate(pybel_mols):
+            chemthing = self.pybel_mol_to_chemthing(pybel_mol)
             chemthing['props']['mol_idx'] = i
             chemthings.append(chemthing)
         return chemthings
 
-    def file_to_pb_mols(self, path=None):
+    def file_to_pybel_mols(self, path=None):
         ext = os.path.splitext(path)[1].lstrip('.')
         return pybel.readfile(ext, path)
 
-    def pb_mol_to_chemthing(self, pb_mol=None):
-        chemthing = {'cml': pb_mol.write('cml'), 'props': {}}
+    def pybel_mol_to_chemthing(self, pybel_mol=None):
+        chemthing = {'cml': pybel_mol.write('cml'), 'props': {}}
         return chemthing
 
     def upload_chemthings(self, chemthings=None):
@@ -96,10 +100,11 @@ class Command(object):
             return json.load(open(file_path))
         parser.add_argument('--job', type=json_file_type)
         parser.add_argument('--cfg', type=json_file_type, default={})
+        parser.add_argument('--ctx_dir', type=str)
 
-    def handle(self, *args, job=None, cfg=None, **kwargs):
+    def handle(self, *args, job=None, cfg=None, ctx_dir=None, **kwargs):
         a2g2_client = self.generate_a2g2_client(cfg=cfg)
-        self.execute_job(job=job, a2g2_client=a2g2_client)
+        self.execute_job(job=job, a2g2_client=a2g2_client, ctx_dir=ctx_dir)
 
     def generate_a2g2_client(self, cfg=None):
         a2g2_client_cfg_json = self.get_cfg_value(
@@ -113,9 +118,9 @@ class Command(object):
         else: cfg_value = (cfg or {}).get(key, default)
         return cfg_value
 
-    def execute_job(self, job=None, a2g2_client=None):
+    def execute_job(self, job=None, a2g2_client=None, ctx_dir=None):
         engine = ConfgenLoadJobEngine(a2g2_client=a2g2_client)
-        engine.execute_job(job=job)
+        engine.execute_job(job=job, ctx_dir=ctx_dir)
 
 if __name__ == '__main__':
     command = Command()
