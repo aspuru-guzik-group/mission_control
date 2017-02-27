@@ -1,4 +1,3 @@
-import argparse
 import glob
 import json
 import os
@@ -7,6 +6,7 @@ import sys
 import pybel
 
 from mc.a2g2.a2g2_client.a2g2_client import A2G2_Client
+from .base_command import BaseCommand
 
 def execute_job(*args, job=None, cfg=None, output_dir=None, ctx_dir=None,
                 **kwargs):
@@ -74,37 +74,8 @@ class ConfgenLoadJobEngine(object):
             results.append(result)
         return results
 
-class Command(object):
+class Command(BaseCommand):
     help = 'confgen_load_job'
-
-    def __init__(self, streams=None):
-        self.setup_streams(streams=streams)
-
-    def execute(self, argv=None):
-        parser = argparse.ArgumentParser()
-        self.add_arguments(parser)
-        parsed_args = parser.parse_args(argv)
-        self.handle(**vars(parsed_args))
-
-    def setup_streams(self, streams=None):
-        streams = streams or {}
-        for stream_id in ['stdout', 'stderr', 'stdin']:
-            if stream_id in streams:
-                stream = streams[stream_id]
-            else:
-                stream = getattr(sys, stream_id)
-            setattr(self, stream_id, stream)
-
-    def add_arguments(self, parser):
-        def json_file_type(file_path):
-            return json.load(open(file_path))
-        parser.add_argument('--job', type=json_file_type)
-        parser.add_argument('--cfg', type=json_file_type, default={})
-        parser.add_argument('--ctx_dir', type=str)
-
-    def handle(self, *args, job=None, cfg=None, ctx_dir=None, **kwargs):
-        a2g2_client = self.generate_a2g2_client(cfg=cfg)
-        self.execute_job(job=job, a2g2_client=a2g2_client, ctx_dir=ctx_dir)
 
     def generate_a2g2_client(self, cfg=None):
         a2g2_client_cfg_json = self.get_cfg_value(
@@ -113,15 +84,11 @@ class Command(object):
         a2g2_client = A2G2_Client(**a2g2_client_cfg)
         return a2g2_client
 
-    def get_cfg_value(self, cfg=None, key=None, default=None):
-        if key in os.environ: cfg_value = os.environ[key]
-        else: cfg_value = (cfg or {}).get(key, default)
-        return cfg_value
-
-    def execute_job(self, job=None, a2g2_client=None, ctx_dir=None):
+    def execute_job(self, *args, job=None, cfg=None, ctx_dir=None,
+                    output_dir=None, **kwargs):
+        a2g2_client = self.generate_a2g2_client(cfg=cfg)
         engine = ConfgenLoadJobEngine(a2g2_client=a2g2_client)
         engine.execute_job(job=job, ctx_dir=ctx_dir)
 
 if __name__ == '__main__':
-    command = Command()
-    command.run(args=sys.argv[1:])
+    Command().execute(args=sys.argv[1:])
