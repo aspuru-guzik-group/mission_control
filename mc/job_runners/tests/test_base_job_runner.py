@@ -308,7 +308,7 @@ class CompleteJobTestCase(BaseTestCase):
     def decorate_runner_methods_to_patch(self):
         self.runner_methods_to_patch.extend(['update_job', 'unregister_job'])
 
-    def test_updates_successful_job(self):
+    def test_updates_successful_job_and_unregisters(self):
         self.job['execution']['result'] = {'result': 'COMPLETED'}
         self.job['data'] = 'some data'
         self.runner.complete_job(job=self.job)
@@ -319,6 +319,8 @@ class CompleteJobTestCase(BaseTestCase):
                      'status': 'COMPLETED',
                      'data': self.job['data']
                  }))
+        self.assertEqual(self.runner.unregister_job.call_args,
+                         call(job=self.job))
 
     def test_fails_failed_job(self):
         error = 'some error'
@@ -327,11 +329,6 @@ class CompleteJobTestCase(BaseTestCase):
         self.runner.complete_job(job=self.job)
         self.assertEqual(self.runner.fail_job.call_args,
                          call(job=self.job, error=error))
-
-    def test_unregisters_job(self):
-        self.runner.complete_job(job=self.job)
-        self.assertEqual(self.runner.unregister_job.call_args,
-                         call(job=self.job))
 
 class UpdateJobTestCase(BaseTestCase):
     def test_update_job(self):
