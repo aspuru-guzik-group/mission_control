@@ -17,8 +17,8 @@ services:
       ODYSSEY_A2G2_CONDA_ENV_PATH: "/n/aagfs01/software/conda_envs/a2g2_env"
     volumes:
       - $MC_ROOT/mc:/a2g2_env-packages/mc
-      - $MC_ROOT/mc/a2g2/e2e_tests/confgen_flow/docker/odyssey/entrypoint.sh:/entrypoint.sh
-    command: "/entrypoint.sh tail -f /dev/null"
+      - $MC_ROOT/mc/a2g2/e2e_tests/docker/odyssey/entrypoint:/entrypoint/
+    command: "/entrypoint/entrypoint.sh tail -f /dev/null"
 
   mission_control:
     build:
@@ -31,6 +31,7 @@ services:
         - MINICONDA_URL=${MINICONDA_URL-https://repo.continuum.io/miniconda/Miniconda3-4.2.12-Linux-x86_64.sh}
     volumes:
       - $MC_ROOT:/mc_root
+      - $MC_ROOT/mc/a2g2/e2e_tests/docker/mission_control/entrypoint:/entrypoint/
       - /storage
     links:
       - db

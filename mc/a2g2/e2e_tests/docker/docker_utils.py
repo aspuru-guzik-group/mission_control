@@ -11,7 +11,7 @@ import mc
 class DockerEnv(object):
     def __init__(self, logger=None):
         this_dir = os.path.dirname(__file__)
-        self.docker_dir = os.path.join(this_dir, 'docker')
+        self.docker_dir = os.path.join(this_dir)
         self.logger = logger or logging
 
     def setup(self):
@@ -95,7 +95,7 @@ class DockerEnv(object):
                 [network]['IPAddress']
 
     def await_containers(self):
-        self.logger.debug('awaiting containers')
+        self.logger.info('awaiting containers')
         timeout = 10
         start_time = time.time()
         services_are_ready = False

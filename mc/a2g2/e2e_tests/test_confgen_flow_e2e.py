@@ -18,8 +18,8 @@ from mc.job_runners.ssh_control_socket_client import SSHControlSocketClient
 from mc.a2g2.job_dir_builders.a2g2_job_engine.a2g2_job_engine_dir_builder import (
     A2G2JobEngineDirBuilder)
 from mc.a2g2.job_engines import a2g2_job_engine
-from .docker_utils import DockerEnv
-from . import storage_action_handlers
+from mc.a2g2.action_handlers import storage_action_handlers
+from .docker.docker_utils import DockerEnv
 
 
 def generate_test_mols():
@@ -185,8 +185,8 @@ class ConfgenFlow_E2E_TestCase(unittest.TestCase):
                     cfg={
                         'A2G2_CLIENT_CFG_JSON': a2g2_client_cfg_json,
                         'A2G2_JOB_ENGINE_CLASS': (
-                            'mc.a2g2.e2e_tests.confgen_flow'
-                            '.test_confgen_flow_e2e.MockJobEngine'
+                            'mc.a2g2.e2e_tests.'
+                            'test_confgen_flow_e2e.MockJobEngine'
                         )
                     },
                     output_dir=output_dir

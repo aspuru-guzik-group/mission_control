@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from unittest.mock import call, Mock
 
-from . import storage_action_handlers
+from .. import storage_action_handlers
 
 class StorageActionHandlerTestCase(unittest.TestCase):
     def setUp(self):
