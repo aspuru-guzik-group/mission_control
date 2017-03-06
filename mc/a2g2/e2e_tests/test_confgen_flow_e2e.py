@@ -7,8 +7,7 @@ from rdkit.Chem import AllChem
 
 from . import e2e_flow_test_utils
 
-from mc.flow_engines.flow import Flow
-from mc.a2g2.task_engines.job_task_engine import JobTaskEngine
+from mc.a2g2.flow_generators.confgen_flow_generator import ConfgenFlowGenerator
 from mc.a2g2.job_engines import a2g2_job_engine
 
 
@@ -21,100 +20,6 @@ def generate_test_mols():
         mol.smiles = smiles
         mols.append(mol)
     return mols
-
-class ConfgenFlowGenerator():
-    flow_type = 'confgen'
-
-    @classmethod
-    def generate_flow(cls, *args, flow_spec=None, **kwargs):
-        flow = Flow()
-        flow.data['flow_spec'] = flow_spec
-        flow.add_task(
-            key='confgen_run', 
-            as_root=True,
-            task={
-                'task_engine': JobTaskEngine.__name__,
-                'input': {
-                    'job_spec': {
-                        'job_type': 'confgen',
-                        'confgen': {
-                            'smiles': flow_spec['input']['smiles'],
-                            'params': flow_spec['input']['confgen_params'],
-                        },
-                        'post_exec_actions': [
-                            {
-                                'action': 'storage:upload',
-                                'params': {
-                                    'src': {
-                                        'template': '{{ctx.completed_dir}}'
-                                    }
-                                },
-                                'output_to_ctx_target': (
-                                    'data.output.storage_meta')
-                            }
-                        ]
-                    }
-                },
-            }
-        )
-        flow.add_task(
-            key='confgen_load',
-            precursor_keys=['confgen_run'],
-            task={
-                'pre_start_actions': [
-                    {
-                        'action': 'set_ctx_value',
-                        'description': 'wire output from job task to job input',
-                        'params': {
-                            'value': {
-                                'template': (
-                                    '{{ctx.flow.tasks.confgen_run.output'
-                                    '.storage_meta}}'
-                                ),
-                            },
-                            'target': 'task.input.job_spec.input.storage_meta',
-                        }
-                    }
-                ],
-                'task_engine': JobTaskEngine.__name__,
-                'input': {
-                    'job_spec': {
-                        'job_type': 'confgen_load',
-                        'pre_build_actions': [
-                            {
-                                'action': 'storage:download',
-                                'params': {
-                                    'storage_meta': {
-                                        'template': (
-                                            '{{ctx.job_spec.input.storage_meta}}'
-                                        ),
-                                    },
-                                    'dest': {
-                                        'template': (
-                                            '{{ctx.job_dir}}/dir_to_parse')
-                                    }
-                                },
-                            },
-                            {
-                                'action': 'set_ctx_value',
-                                'description': 'set name of dir_to_parse',
-                                'params': {
-                                    'value': 'dir_to_parse',
-                                    'target': 'data.input.dir_to_parse',
-                                }
-                            },
-                        ]
-                    }
-                },
-            }
-        )
-        return flow
-
-    @classmethod
-    def get_dependencies(cls):
-        return {
-            'task_engines': set([JobTaskEngine()]),
-        }
 
 @unittest.skipUnless(*e2e_flow_test_utils.get_skip_args())
 class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):

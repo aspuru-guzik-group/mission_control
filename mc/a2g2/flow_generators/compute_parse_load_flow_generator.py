@@ -8,6 +8,13 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
     flow_type = 'ComputeParseLoadFlow'
     job_task_engine = JobTaskEngine()
     job_task_engine_name = job_task_engine.__class__.__name__
+    task_keys = {
+        task_name: task_name for task_name in [
+            'compute_job_task',
+            'parse_job_task',
+            'load_job_task'
+        ]
+    }
 
     @classmethod
     def get_dependencies(cls):
@@ -21,17 +28,17 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
         flow.data['flow_spec'] = flow_spec
         flow.add_task(
             as_root=True,
-            key='compute_job_task',
+            key=cls.task_keys['compute_job_task'],
             task=cls.generate_compute_job_task(flow=flow)
         )
         flow.add_task(
-            key='parse_job_task',
-            precursor_keys=['compute_job_task'],
+            key=cls.task_keys['parse_job_task'],
+            precursor_keys=[cls.task_keys['compute_job_task']],
             task=cls.generate_parse_job_task(flow=flow)
         )
         flow.add_task(
-            key='load_job_task',
-            precursor_keys=['parse_job_task'],
+            key=cls.task_keys['load_job_task'],
+            precursor_keys=[cls.task_keys['parse_job_task']],
             task=cls.generate_load_job_task(flow=flow)
         )
         return flow
@@ -61,19 +68,22 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
 
     @classmethod
     def generate_parse_job_task(cls, flow=None):
-        job_spec = flow.data['flow_spec']['parse_job_spec']
+        job_spec = flow.data['flow_spec'].get('parse_job_spec', {})
         task = {
             'task_engine': cls.job_task_engine_name,
             'pre_start_actions': [
                 {
                     'action': 'set_ctx_value',
-                    'description': 'wire output from job task to job input',
+                    'description': (
+                        'wire output from compute job task to job input for'
+                        ' this task'
+                    ),
                     'params': {
                         'value': {
                             'template': (
-                                '{{ctx.flow.tasks.confgen_run.output'
+                                '{{ctx.flow.tasks.{task_key}.output'
                                 '.storage_meta}}'
-                            ),
+                            ).format(task_key=cls.task_keys['compute_job_task'])
                         },
                         'target': 'task.input.job_spec.input.storage_meta',
                     }
@@ -115,19 +125,22 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
 
     @classmethod
     def generate_load_job_task(cls, flow=None):
-        job_spec = flow.data['flow_spec']['load_job_spec']
+        job_spec = flow.data['flow_spec'].get('load_job_spec', {})
         task = {
             'task_engine': cls.job_task_engine_name,
             'pre_start_actions': [
                 {
                     'action': 'set_ctx_value',
-                    'description': 'wire output from job task to job input',
+                    'description': (
+                        'wire output from parse job task to job input for'
+                        ' this task'
+                    ),
                     'params': {
                         'value': {
                             'template': (
-                                '{{ctx.flow.tasks.confgen_run.output'
+                                '{{ctx.flow.tasks.{task_key}.output'
                                 '.storage_meta}}'
-                            ),
+                            ).format(task_key=cls.task_keys['parse_job_task']),
                         },
                         'target': 'task.input.job_spec.input.storage_meta',
                     }

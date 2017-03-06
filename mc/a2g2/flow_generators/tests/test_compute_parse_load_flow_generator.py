@@ -80,18 +80,22 @@ class GenerateComputeJobTaskTestCase(BaseTestCase):
 class GenerateParseJobTask(BaseTestCase):
     def test_generates_expected_parse_job_task(self):
         flow = MagicMock()
-        job_spec = flow.data['flow_spec']['parse_job_spec']
+        job_spec = flow.data['flow_spec'].get('parse_job_spec', {})
         expected_task = {
             'task_engine': JobTaskEngine.__name__,
             'pre_start_actions': [
                 {
                     'action': 'set_ctx_value',
-                    'description': 'wire output from job task to job input',
+                    'description': ('wire output from compute job task to job'
+                                    ' input for this task'),
                     'params': {
                         'value': {
                             'template': (
-                                '{{ctx.flow.tasks.confgen_run.output'
+                                '{{ctx.flow.tasks.{task_key}.output'
                                 '.storage_meta}}'
+                            ).format(
+                                task_key=self.flow_generator.task_keys.get(
+                                    'compute_job_task')
                             ),
                         },
                         'target': 'task.input.job_spec.input.storage_meta',
@@ -138,18 +142,22 @@ class GenerateParseJobTask(BaseTestCase):
 class GenerateLoadJobTaskTestCase(BaseTestCase):
     def test_generates_expected_load_job_task(self):
         flow = MagicMock()
-        job_spec = flow.data['flow_spec']['load_job_spec']
+        job_spec = flow.data['flow_spec'].get('load_job_spec', {})
         expected_task = {
             'task_engine': JobTaskEngine.__name__,
             'pre_start_actions': [
                 {
                     'action': 'set_ctx_value',
-                    'description': 'wire output from job task to job input',
+                    'description': ('wire output from parse job task to job'
+                                    ' input for this task'),
                     'params': {
                         'value': {
                             'template': (
-                                '{{ctx.flow.tasks.confgen_run.output'
+                                '{{ctx.flow.tasks.{task_key}.output'
                                 '.storage_meta}}'
+                            ).format(
+                                task_key=self.flow_generator.task_keys.get(
+                                    'parse_job_task')
                             ),
                         },
                         'target': 'task.input.job_spec.input.storage_meta',
