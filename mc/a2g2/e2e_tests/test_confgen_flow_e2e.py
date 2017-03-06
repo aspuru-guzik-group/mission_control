@@ -38,7 +38,7 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
         self.generate_molecule_library()
         self.create_flows()
         self.assertTrue(len(self.mc_client.fetch_tickable_flows()) > 0)
-        self.run_flows_to_completion()
+        self.run_flows_to_completion(max_ticks=15)
         self.assertTrue(self.mc_runner.tick_counter > 0)
         self.assert_domain_db_has_expected_state()
 
@@ -76,10 +76,12 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
 
 class MockJobEngine(object):
     def execute_job(self, job=None, cfg=None, output_dir=None, ctx_dir=None):
-        job_type = job['job_spec']['job_type']
-        if job_type == 'confgen':
-            self.generate_fake_confgen_output(output_dir=output_dir)
-        else:
+        use_real_engine = True
+        if job['job_spec']['module'] == 'confgen':
+            if job['job_spec']['command'] == 'confgen':
+                use_real_engine = False
+                self.generate_fake_confgen_output(output_dir=output_dir)
+        if use_real_engine:
             real_engine = a2g2_job_engine.A2G2JobEngine()
             real_engine.execute_job(job=job, cfg=cfg, output_dir=output_dir,
                                     ctx_dir=ctx_dir)

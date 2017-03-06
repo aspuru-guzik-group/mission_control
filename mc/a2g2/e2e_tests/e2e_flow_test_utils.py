@@ -120,9 +120,7 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
         ssh_client.connect()
         return ssh_client
 
-    def run_flows_to_completion(self):
-        max_ticks = 10
-        tick_interval = 1
+    def run_flows_to_completion(self, max_ticks=10, tick_interval=1):
         incomplete_flows = self.get_incomplete_flows()
         while len(incomplete_flows) > 0:
             self.mc_runner.tick()

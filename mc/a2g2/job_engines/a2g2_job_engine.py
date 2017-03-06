@@ -13,12 +13,12 @@ class A2G2JobEngine(object):
 
     def get_job_module(self, job=None, cfg=None):
         try:
-            module_name = '{job_type}_job_module'.format(
-                job_type=job['job_spec']['job_type'])
+            module_name = '{module}_job_module'.format(
+                module=job['job_spec']['module'])
             job_module = importlib.import_module(
                 sys.modules[__name__].__package__ + '.' + module_name)
         except Exception as error:
-            raise Exception("Could not load job_module for job: %s" % error)
+            raise Exception("Could not load module for job: %s" % error)
         return job_module
 
 class ExecuteJobCommand(object):
