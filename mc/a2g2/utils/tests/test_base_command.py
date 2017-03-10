@@ -2,53 +2,49 @@ import json
 import os
 import tempfile
 import unittest
-from unittest.mock import call, Mock, patch
+from unittest.mock import patch
 
 from ..base_command import BaseCommand
 
 
 class BaseCommandBaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.job = self.generate_job()
         self.cfg = self.generate_cfg()
-        self.ctx_dir = 'some_ctx_dir'
-        self.output_dir = 'some_output_dir'
-        self.file_args = self.generate_file_args()
+        self.tmpdir = tempfile.mkdtemp()
+        self.file_args = self.generate_file_args(target_dir=self.tmpdir)
         self.argv = self.generate_argv(arg_tuples=[
             *[(file_arg_name, file_arg['path']) 
               for file_arg_name, file_arg in self.file_args.items()
              ],
-            ('ctx_dir', self.ctx_dir),
-            ('output_dir', self.output_dir),
         ])
         self.command = self.generate_command()
-
-    def generate_job(self): return {}
 
     def generate_cfg(self): return {}
 
     def generate_command(self):
-        class BasicCommand(BaseCommand):
-            def execute_job(self):
-                pass
+        class BasicCommand(BaseCommand): pass
         return BasicCommand()
 
-    def generate_file_args(self):
+    def generate_file_args(self, target_dir=None):
         file_args = {
-            'job': {
-                'value': self.job,
-            },
             'cfg': {
                 'value': self.cfg
             }
         }
-        self.tmpdir = tempfile.mkdtemp()
         self.input_paths = {}
         for file_arg_name, file_arg in file_args.items():
-            file_path = os.path.join(self.tmpdir, file_arg_name) +  '.json'
-            with open(file_path, 'w') as f: json.dump(file_arg['value'], f)
-            file_arg['path'] = file_path
+            file_arg['path'] = self.generate_json_file_for_arg(
+                target_dir=target_dir,
+                arg_name=file_arg_name,
+                arg_value=file_arg['value']
+            )
         return file_args
+
+    def generate_json_file_for_arg(self, target_dir=None, arg_name=None,
+                                   arg_value=None):
+        file_path = os.path.join(target_dir, arg_name) +  '.json'
+        with open(file_path, 'w') as f: json.dump(arg_value, f)
+        return file_path
 
     def generate_argv(self, arg_tuples=None):
         argv = []
@@ -72,13 +68,3 @@ class BaseCommandBaseTestCase(unittest.TestCase):
         with patch.object(os, 'environ', new=mock_environ):
             cfg_value = self.command.get_cfg_value(cfg=cfg, key='key1')
             self.assertEqual(cfg_value, mock_environ['key1'])
-
-    def test_calls_execute_job(self):
-        self.command.execute_job = Mock()
-        self._execute_command()
-        self.assertEqual(self.command.execute_job.call_args,
-                         self.get_expected_execute_job_call())
-
-    def get_expected_execute_job_call(self):
-        return call(job=self.job, cfg=self.cfg,
-                    ctx_dir=self.ctx_dir, output_dir=self.output_dir)

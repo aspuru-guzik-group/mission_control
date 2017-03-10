@@ -25,20 +25,15 @@ class BaseCommand(object):
                 stream = getattr(sys, stream_id)
             setattr(self, stream_id, stream)
 
-    def add_arguments(self, parser):
-        def json_file_type(file_path): return json.load(open(file_path))
-        parser.add_argument('--job', type=json_file_type)
-        parser.add_argument('--cfg', type=json_file_type, default={})
-        parser.add_argument('--ctx_dir', type=str)
-        parser.add_argument('--output_dir', type=str)
+    def add_arguments(self, parser=None):
+        parser.add_argument('--cfg', type=self.json_file_type, default={})
+
+    def json_file_type(self, file_path):
+        return json.load(open(file_path))
 
     def get_cfg_value(self, cfg=None, key=None, default=None):
         if key in os.environ: cfg_value = os.environ[key]
         else: cfg_value = (cfg or {}).get(key, default)
         return cfg_value
 
-    def handle(self, *args, **kwargs):
-        self.execute_job(*args, **kwargs)
-
-    def execute_job(self, *args, job=None, cfg=None, ctx_dir=None, 
-                    output_dir=None, **kwargs): pass
+    def handle(self, *args, **kwargs): raise NotImplementedError

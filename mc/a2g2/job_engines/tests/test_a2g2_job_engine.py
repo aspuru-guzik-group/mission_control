@@ -23,31 +23,32 @@ class BaseTestCase(unittest.TestCase):
 class ExecuteJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.a2g2_job_engine.get_job_module = MagicMock()
+        self.a2g2_job_engine.get_job_engine = MagicMock()
 
-    def test_dispatches_to_get_job_module_result(self):
+    def test_dispatches_to_get_job_engine_result(self):
         result = self.a2g2_job_engine.execute_job(
             job=self.job,
             cfg=self.cfg,
             output_dir=self.output_dir,
             ctx_dir=self.ctx_dir
         )
-        self.assertEqual(self.a2g2_job_engine.get_job_module.call_args,
+        self.assertEqual(self.a2g2_job_engine.get_job_engine.call_args,
                          call(job=self.job, cfg=self.cfg))
-        expected_module = self.a2g2_job_engine.get_job_module.return_value
+        expected_engine = self.a2g2_job_engine.get_job_engine.return_value
         self.assertEqual(
-            expected_module.execute_job.call_args,
+            expected_engine.execute_job.call_args,
             call(job=self.job, cfg=self.cfg, output_dir=self.output_dir,
                  ctx_dir=self.ctx_dir)
         )
-        self.assertEqual(result, expected_module.execute_job.return_value)
+        self.assertEqual(result, expected_engine.execute_job.return_value)
 
 class GetJobModuleCase(BaseTestCase):
     @patch.object(a2g2_job_engine, 'importlib')
     def test_imports_expected_module(self, patched_importlib):
         result = self.a2g2_job_engine.get_job_module(job=self.job, cfg=self.cfg)
-        expected_module_name = '{package}.{module}_job_module'.format(
-            package=a2g2_job_engine.__package__,
+        # @TODO: brittle test, because of packages, make more robust later.
+        expected_module_name = '{package}.{module}'.format(
+            package=a2g2_job_engine.DEFAULT_JOB_MODULE_PKGS[0],
             module=self.job['job_spec']['module']
         )
         self.assertEqual(patched_importlib.import_module.call_args,

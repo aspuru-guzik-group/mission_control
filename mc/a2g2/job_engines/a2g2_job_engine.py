@@ -3,23 +3,38 @@ import importlib
 import json
 import sys
 
+DEFAULT_JOB_MODULE_PKGS = ['mc.a2g2.job_modules']
 
 class A2G2JobEngine(object):
+    """Dispatches to job_module engines."""
+
     def execute_job(self, *args, job=None, cfg=None, output_dir=None,
                     ctx_dir=None, **kwargs):
-        job_module = self.get_job_module(job=job, cfg=cfg)
-        return job_module.execute_job(job=job, cfg=cfg, output_dir=output_dir,
+        job_engine = self.get_job_engine(job=job, cfg=cfg)
+        return job_engine.execute_job(job=job, cfg=cfg, output_dir=output_dir,
                                       ctx_dir=ctx_dir)
 
+    def get_job_engine(self, *args, job=None, cfg=None, **kwargs):
+        job_module = self.get_job_module(job=job, cfg=cfg)
+        try: return getattr(job_module, 'job_engine')
+        except AttributeError:
+            raise Exception(("job_module '{job_module}' does not have "
+                             " 'job_engine' attribute".format(job_module)))
+
     def get_job_module(self, job=None, cfg=None):
+        job_module_pkgs = DEFAULT_JOB_MODULE_PKGS
+        job_module_name = job['job_spec']['module']
         try:
-            module_name = '{module}_job_module'.format(
-                module=job['job_spec']['module'])
-            job_module = importlib.import_module(
-                sys.modules[__name__].__package__ + '.' + module_name)
+            for job_module_pkg in job_module_pkgs:
+                full_module_name = '.'.join([job_module_pkg, job_module_name])
+                try: return importlib.import_module(full_module_name)
+                except ImportError: pass
+            no_module_found_msg = ("No job module found for module"
+                                   " '{job_module_name}'").format(
+                                       job_module_name=job_module_name)
+            raise Exception(no_module_found_msg)
         except Exception as error:
             raise Exception("Could not load module for job: %s" % error)
-        return job_module
 
 class ExecuteJobCommand(object):
     help = 'Execute Job'
