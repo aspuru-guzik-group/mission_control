@@ -2,16 +2,16 @@ from unittest.mock import call, Mock
 
 from mc.a2g2.utils.tests.test_base_command import BaseCommandBaseTestCase
 
-from ..job_module_base_command import BaseCommand
+from ..job_module_base_command import JobModuleBaseCommand
 
 
 class JobModuleBaseCommandBaseTestCase(BaseCommandBaseTestCase):
     def setUp(self):
-        super().setUp()
         self.job = self.generate_job()
         self.ctx_dir = 'some_ctx_dir'
         self.output_dir = 'some_output_dir'
-        self.file_args = self.generate_file_args()
+        super().setUp()
+        self.file_args = self.generate_file_args(target_dir=self.tmpdir)
         self.argv = self.generate_argv(arg_tuples=[
             *[(file_arg_name, file_arg['path']) 
               for file_arg_name, file_arg in self.file_args.items()
@@ -24,9 +24,9 @@ class JobModuleBaseCommandBaseTestCase(BaseCommandBaseTestCase):
     def generate_job(self): return {}
 
     def generate_command(self):
-        class BasicCommand(BaseCommand):
+        class BasicJobModuleCommand(JobModuleBaseCommand):
             def execute_job(self): pass
-        return BasicCommand()
+        return BasicJobModuleCommand()
 
     def generate_file_args(self, target_dir=None):
         file_args = super().generate_file_args(target_dir=target_dir)
@@ -41,11 +41,12 @@ class JobModuleBaseCommandBaseTestCase(BaseCommandBaseTestCase):
                 arg_name=file_arg_name,
                 arg_value=file_arg['value']
             )
+            file_args[file_arg_name] = file_arg
         return file_args
 
     def test_calls_execute_job(self):
         self.command.execute_job = Mock()
-        self._execute_command()
+        self.execute_command()
         self.assertEqual(self.command.execute_job.call_args,
                          self.get_expected_execute_job_call())
 

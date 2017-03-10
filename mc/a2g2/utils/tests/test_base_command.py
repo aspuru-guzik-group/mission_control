@@ -53,7 +53,7 @@ class BaseCommandBaseTestCase(unittest.TestCase):
             argv.append(arg_value)
         return argv
 
-    def _execute_command(self, command=None):
+    def execute_command(self, command=None):
         command = command or self.command
         command.execute(argv=self.argv)
 

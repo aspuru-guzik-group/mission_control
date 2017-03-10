@@ -2,7 +2,7 @@ import collections
 import unittest
 from unittest.mock import call, patch, MagicMock
 
-from .. import job_engine as confgen_job_engine
+from .. import confgen_job_engine
 
 
 class BaseTestCase(unittest.TestCase):
@@ -16,6 +16,7 @@ class BaseTestCase(unittest.TestCase):
     def generate_job(self):
         job = collections.defaultdict(MagicMock)
         job['job_spec'] = collections.defaultdict(MagicMock)
+        return job
 
     def decorate_patchers(self): pass
 
@@ -35,7 +36,7 @@ class BaseTestCase(unittest.TestCase):
 class GenerateConformersTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.job['command'] = 'generate_conformers'
+        self.job['job_spec']['command'] = 'generate_conformers'
         self.output_dir = 'some_output_dir'
 
     def decorate_patchers(self):
@@ -49,7 +50,3 @@ class GenerateConformersTestCase(BaseTestCase):
             call(**{**self.job['job_spec']['kwargs'],
                     'output_dir': self.output_dir})
         )
-
-
-
-
