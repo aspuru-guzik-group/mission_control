@@ -93,7 +93,7 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
                 'job_spec': {
                     **job_spec,
                     'pre_build_actions': job_spec.get(
-                        'pre_build_actions', []).extend([
+                        'pre_build_actions', []) + [
                             {
                                 'description': 'download dir to parse',
                                 'action': 'storage:download',
@@ -117,7 +117,7 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
                                     'target': 'data.input.dir_to_parse',
                                 }
                             },
-                        ])
+                        ]
                 }
             }
         }
@@ -150,7 +150,7 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
                 'job_spec': {
                     **job_spec,
                     'pre_build_actions': job_spec.get(
-                        'pre_build_actions', []).extend([
+                        'pre_build_actions', []) + [
                             {
                                 'action': 'storage:download',
                                 'params': {
@@ -173,7 +173,7 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
                                     'target': 'data.input.dir_to_parse',
                                 }
                             },
-                        ])
+                        ]
                 }
             },
         }

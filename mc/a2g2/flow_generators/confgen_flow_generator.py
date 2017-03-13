@@ -10,7 +10,7 @@ class ConfgenFlowGenerator():
         compute_parse_load_flow_spec = {
             'compute_job_spec': {
                 'module': job_module,
-                'command': 'confgen',
+                'command': 'generate_conformers',
                 'kwargs': {
                     'smiles': confgen_flow_spec['input']['smiles'],
                     'params': confgen_flow_spec['input']['confgen_params'],
@@ -18,7 +18,7 @@ class ConfgenFlowGenerator():
             },
             'parse_job_spec': {
                 'module': job_module,
-                'command': 'parse',
+                'command': 'parse_completed_confgen_dir',
             },
             'load_job_spec': {
                 'module': job_module,

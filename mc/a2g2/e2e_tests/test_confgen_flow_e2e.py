@@ -78,7 +78,7 @@ class MockJobEngine(object):
     def execute_job(self, job=None, cfg=None, output_dir=None, ctx_dir=None):
         use_real_engine = True
         if job['job_spec']['module'] == 'confgen':
-            if job['job_spec']['command'] == 'confgen':
+            if job['job_spec']['command'] == 'generate_conformers':
                 use_real_engine = False
                 self.generate_fake_confgen_output(output_dir=output_dir)
         if use_real_engine:
