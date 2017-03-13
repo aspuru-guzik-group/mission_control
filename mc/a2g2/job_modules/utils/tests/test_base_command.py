@@ -2,10 +2,10 @@ from unittest.mock import call, Mock
 
 from mc.a2g2.utils.tests.test_base_command import BaseCommandBaseTestCase
 
-from ..job_module_base_command import JobModuleBaseCommand
+from ..base_command import BaseCommand
 
 
-class JobModuleBaseCommandBaseTestCase(BaseCommandBaseTestCase):
+class BaseTestCase(BaseCommandBaseTestCase):
     def setUp(self):
         self.job = self.generate_job()
         self.ctx_dir = 'some_ctx_dir'
@@ -24,9 +24,9 @@ class JobModuleBaseCommandBaseTestCase(BaseCommandBaseTestCase):
     def generate_job(self): return {}
 
     def generate_command(self):
-        class BasicJobModuleCommand(JobModuleBaseCommand):
+        class BasicCommand(BaseCommand):
             def execute_job(self): pass
-        return BasicJobModuleCommand()
+        return BasicCommand()
 
     def generate_file_args(self, target_dir=None):
         file_args = super().generate_file_args(target_dir=target_dir)

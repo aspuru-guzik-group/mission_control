@@ -1,8 +1,8 @@
-from mc.a2g2.utils.base_command import BaseCommand
+from mc.a2g2.utils import base_command as a2g2_base_command
 
 
-class JobModuleBaseCommand(BaseCommand):
-    help = 'job_module_base_command'
+class BaseCommand(a2g2_base_command.BaseCommand):
+    help = 'base_command'
 
     def add_arguments(self, parser=None):
         super().add_arguments(parser=parser)

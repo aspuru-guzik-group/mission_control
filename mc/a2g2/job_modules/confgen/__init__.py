@@ -1,1 +1,4 @@
-from .confgen_job_engine import default_job_engine as job_engine
+from . import confgen_job_engine 
+
+
+job_engine = confgen_job_engine.generate_job_engine()

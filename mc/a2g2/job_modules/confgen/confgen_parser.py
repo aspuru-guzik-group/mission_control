@@ -55,3 +55,7 @@ class ConfgenParser(object):
         with open(target_path, 'w') as bulk_file:
             for chemthing in chemthings:
                 bulk_file.write(json.dumps(chemthing))
+
+
+def parse_completed_confgen_dir(*args, **kwargs):
+    ConfgenParser().parse_completed_confgen_dir(*args, **kwargs)
