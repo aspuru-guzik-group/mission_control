@@ -3,13 +3,13 @@ import unittest
 from unittest.mock import call, MagicMock
 from uuid import uuid4
 
-from ..flow_task_engine import FlowTaskEngine
+from ..flow_node_engine import FlowNodeEngine
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
-        self.engine = FlowTaskEngine()
+        self.engine = FlowNodeEngine()
         self.ctx = {
             'create_flow': MagicMock(),
             'get_flow': MagicMock()
@@ -22,12 +22,12 @@ class BaseTestCase(unittest.TestCase):
 class InitialTickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.task = {'input': {'flow_spec': 'some flow_spec'}}
-        self.engine.tick_task(task=self.task, ctx=self.ctx)
+        self.node = {'input': {'flow_spec': 'some flow_spec'}}
+        self.engine.tick_node(node=self.node, ctx=self.ctx)
 
     def test_initial_tick_creates_flow(self):
         expected_call_args = call(flow={
-            'spec': json.dumps(self.task['input']['flow_spec']),
+            'spec': json.dumps(self.node['input']['flow_spec']),
         })
         self.assertEqual(self.ctx['create_flow'].call_args, expected_call_args)
 
@@ -36,10 +36,10 @@ class InitialTickTestCase(BaseTestCase):
             'flow_uuid': self.ctx['create_flow'].return_value['uuid'],
             'ticks': 1
         }
-        self.assertEqual(self.task['data'], expected_data)
+        self.assertEqual(self.node['data'], expected_data)
 
     def test_has_expected_status(self):
-        self.assertEqual(self.task['status'], 'RUNNING')
+        self.assertEqual(self.node['status'], 'RUNNING')
 
 class IntermediateTickMixin(object):
     def setup_for_intermediate_tick(self, flow_state=None):
@@ -47,7 +47,7 @@ class IntermediateTickMixin(object):
         self.flow = self.generate_flow(**flow_state)
         self.ctx['get_flow'].return_value = self.flow
         self.initial_ticks = 1
-        self.initial_task = {
+        self.initial_node = {
             'data': {
                 'ticks': self.initial_ticks,
                 'flow_uuid': self.flow['uuid']
@@ -57,8 +57,8 @@ class IntermediateTickMixin(object):
             },
             'status': 'RUNNING'
         }
-        self.task = {**self.initial_task}
-        self.engine.tick_task(task=self.task, ctx=self.ctx)
+        self.node = {**self.initial_node}
+        self.engine.tick_node(node=self.node, ctx=self.ctx)
 
 class IncompleteFlowTestCase(BaseTestCase, IntermediateTickMixin):
     def setUp(self):
@@ -66,8 +66,8 @@ class IncompleteFlowTestCase(BaseTestCase, IntermediateTickMixin):
         self.setup_for_intermediate_tick(flow_state={'status': 'PENDING'})
 
     def test_has_expected_state(self):
-        self.assertEqual(self.task['status'], self.initial_task['status'])
-        self.assertEqual(self.task['data'], {**self.initial_task['data'],
+        self.assertEqual(self.node['status'], self.initial_node['status'])
+        self.assertEqual(self.node['data'], {**self.initial_node['data'],
                                              'ticks': self.initial_ticks + 1})
 
 class CompletedFlowTestCase(BaseTestCase, IntermediateTickMixin):
@@ -80,10 +80,10 @@ class CompletedFlowTestCase(BaseTestCase, IntermediateTickMixin):
         })
 
     def test_has_expected_state(self):
-        self.assertEqual(self.task['status'], 'COMPLETED')
-        self.assertEqual(self.task['data'], {**self.initial_task['data'],
+        self.assertEqual(self.node['status'], 'COMPLETED')
+        self.assertEqual(self.node['data'], {**self.initial_node['data'],
                                              'ticks': self.initial_ticks + 1})
-        self.assertEqual(self.task['output'], self.flow['output'])
+        self.assertEqual(self.node['output'], self.flow['output'])
 
 class FailedFlowTestCase(BaseTestCase, IntermediateTickMixin):
     def setUp(self):
@@ -94,10 +94,10 @@ class FailedFlowTestCase(BaseTestCase, IntermediateTickMixin):
         })
 
     def test_has_expected_state(self):
-        self.assertEqual(self.task['status'], 'FAILED')
-        self.assertEqual(self.task['data'], {**self.initial_task['data'],
+        self.assertEqual(self.node['status'], 'FAILED')
+        self.assertEqual(self.node['data'], {**self.initial_node['data'],
                                              'ticks': self.initial_ticks + 1})
-        self.assertEqual(self.task['error'], self.flow['error'])
+        self.assertEqual(self.node['error'], self.flow['error'])
 
 if __name__ == '__main__':
     unittest.main()
