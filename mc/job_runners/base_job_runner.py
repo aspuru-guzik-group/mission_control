@@ -5,22 +5,22 @@ import time
 
 class BaseJobRunner(object):
     def __init__(self, job_client=None, job_submission_factory=None,
-                 execution_client=None, action_processor=None,
-                 tick_interval=120, max_executing_jobs=3, 
-                 get_job_execution_result=None, logger=None):
+                 execution_client=None, task_engines=None, tick_interval=120,
+                 max_running_jobs=3, logger=None):
         self.job_client = job_client
         self.job_submission_factory = job_submission_factory
         self.execution_client = execution_client
-        self.action_processor = action_processor
+        self.task_engines = task_engines
         self.tick_interval = tick_interval
-        self.max_executing_jobs = max_executing_jobs
-        self._get_job_execution_result = get_job_execution_result
+        self.max_running_jobs = max_running_jobs
         self.logger = logger or logging
+
+        self.default_tasks = []
 
         self._ticking = False
         self.tick_counter = 0
         self.jobs = {}
-        self.executing_jobs = {}
+        self.running_jobs = {}
 
     def start(self):
         self._ticking = True
@@ -46,41 +46,47 @@ class BaseJobRunner(object):
     def tick(self):
         self.tick_counter += 1
         self.logger.debug('%s, tick #%s' % (self, self.tick_counter))
-        self.process_executing_jobs()
-        num_job_slots = self.max_executing_jobs - len(self.executing_jobs)
+        self.process_running_jobs()
+        num_job_slots = self.max_running_jobs - len(self.running_jobs)
         if num_job_slots <= 0: return
         claimable_jobs = self.fetch_claimable_jobs()
         for claimable_job in claimable_jobs[:num_job_slots]:
             self.process_claimable_job(job=claimable_job)
 
+    def process_running_jobs(self):
+        completed_jobs = {}
+        for key, job in list(self.running_jobs.items()):
+            if self.job_is_running(job=job):
+                try: self.tick_job_tasks(job=job)
+                except Exception as error: self.fail_job(job=job, error=error)
+            else:
+                completed_jobs[key] = job
+        for key, job in completed_jobs.items(): self.complete_job(job=job)
+
+    def job_is_running(self, job=None):
+        incomplete_task = self.get_first_incomplete_task_for_job(job=job)
+        if incomplete_task: return True
+        return False
+
     def fetch_claimable_jobs(self):
-        self.logger.debug('fetch_claimable_jobs')
         return self.job_client.fetch_claimable_jobs()
 
     def process_claimable_job(self, job=None):
-        self.logger.debug('process_claimable_job')
         claimed_job = self.claim_job(job)
         if not claimed_job: return
-        self.register_job(job=claimed_job)
+        job = claimed_job
+        self.register_job(job=job)
         try:
-            try:
-                claimed_job['submission'] = self.build_job_submission(
-                    job=claimed_job)
-            except Exception as error:
-                raise Exception("Error building job directory: %s" % error)
-            try:
-                claimed_job['execution'] = self.start_job_execution(
-                    job=claimed_job)
-            except Exception as error:
-                raise Exception("Error starting job execution: %s" % error)
+            job['submission'] = self.build_job_submission(job=job)
+            self.start_job(job=job)
         except Exception as error:
-            self.fail_job(job=claimed_job, error=error)
+            self.fail_job(job=job, error=error)
 
     def register_job(self, job=None):
         self.jobs[job['uuid']] = job
 
     def unregister_job(self, job=None):
-        for registry in [self.jobs, self.executing_jobs]:
+        for registry in [self.jobs, self.running_jobs]:
             if job['uuid'] in registry: del registry[job['uuid']]
 
     def fail_job(self, job=None, error=None):
@@ -90,79 +96,65 @@ class BaseJobRunner(object):
         self.unregister_job(job=job)
 
     def claim_job(self, job=None):
-        self.logger.debug('claim_job')
         claimed_jobs = self.job_client.claim_jobs(
             uuids=[job['uuid']])
         return claimed_jobs.get(job['uuid'], False)
 
     def build_job_submission(self, job=None):
-        self.logger.debug('build_job_submission')
-        job['job_dir'] = self.generate_job_dir(job=job)
-        actions =  job.get('job_spec', {}).get('pre_build_actions', None)
-        if actions: self.process_actions(actions=actions, job=job)
-        job_submission_meta = self.job_submission_factory.build_job_submission(
-            job=job, output_dir=job['job_dir'])
-        return job_submission_meta
+        try:
+            job['job_dir'] = self.generate_job_dir(job=job)
+            job_submission_meta = self.job_submission_factory\
+                    .build_job_submission(job=job, output_dir=job['job_dir'])
+            return job_submission_meta
+        except Exception as error:
+            raise Exception("Error building job submission: %s" % error)
 
     def generate_job_dir(self, job=None):
         return tempfile.mkdtemp(prefix='job_dir.{}'.format(job['uuid']))
 
-    def process_actions(self, actions=None, job=None):
-        for action in actions:
-            self.action_processor.process_action(action=action, ctx=job)
+    def start_job(self, job=None):
+        if 'tasks' not in job: job['tasks'] = self.default_tasks
+        self.tick_job_tasks(job=job)
 
-    def start_job_execution(self, job=None):
-        self.logger.debug('start_job_execution, %s' % job)
-        self.executing_jobs[job['uuid']] = job
-        execution_meta = self.execution_client.start_execution(job=job)
-        return execution_meta
+    def tick_job_tasks(self, job=None):
+        try:
+            current_task = self.get_first_incomplete_task_for_job(job=job)
+            while current_task:
+                self.tick_task(task=current_task, job=job)
+                if current_task['status'] == 'COMPLETED':
+                    next_task = self.get_first_incomplete_task_for_job(job=job)
+                    if next_task is current_task: next_task = None
+                else: next_task = None
+                current_task = next_task
+        except Exception as error:
+            raise Exception("Error ticking job tasks: {}".format(error))
 
-    def process_executing_jobs(self):
-        self.logger.debug('process_executing_jobs')
-        job_execution_states = self.get_job_execution_states()
-        executed_jobs = [
-            job for job in self.executing_jobs.values()
-            if not self.job_is_executing(
-                job=job, job_execution_states=job_execution_states)
-        ]
-        for executed_job in executed_jobs:
-            del self.executing_jobs[executed_job['uuid']]
-            self.process_executed_job(job=executed_job)
+    def get_first_incomplete_task_for_job(self, job=None):
+        for task in job.get('tasks', []):
+            if task.get('status', None) != 'COMPLETED': return task
+        return None
 
-    def get_job_execution_states(self):
-        job_execution_states = {}
-        for job_key, job in self.executing_jobs.items():
-            job_execution_state = self.execution_client.get_execution_state(
-                job=job)
-            job_execution_states[job_key] = job_execution_state
-        return job_execution_states
+    def tick_task(self, task=None, job=None):
+        try:
+            task_engine = self.get_engine_for_task(task=task, job=job)
+            task_engine.tick_task(task=task, job=job)
+            if task['status'] == 'FAILED':
+                error = "Task '{task}' failed: {task_error}".format(
+                    task=task,
+                    task_error=task['state'].get('error', 'unknown error'))
+                raise Exception(error)
+        except Exception as error:
+            error = "Failed to tick task '{task}': {error}".format(
+                task=task,
+                error=error)
+            raise Exception(error)
 
-    def job_is_executing(self, job=None, job_execution_states=None):
-        if not job_execution_states.get(job['uuid']):
-            is_executing = False
-        else:
-            is_executing = job_execution_states[job['uuid']]['executing']
-        return is_executing
-
-    def process_executed_job(self, job=None):
-        self.logger.debug('process_executed_job')
-        job['completed_dir'] = job['execution']['completed_dir']
-        job['execution']['result'] = self.get_job_execution_result(job=job)
-        actions = job.get('job_spec', {}).get('post_exec_actions', None)
-        if actions: self.process_actions(actions=actions, job=job)
-        self.complete_job(job=job)
-
-    def get_job_execution_result(self, job=None):
-        _get_job_execution_result = getattr(self, '_get_job_execution_result',
-                                            None)
-        if _get_job_execution_result:
-            result = _get_job_execution_result(job_state=job)
-        else:
-            result = 'COMPLETED'
-        return result
+    def get_engine_for_task(self, task=None, job=None):
+        try: return self.task_engines[task['type']]
+        except:
+            raise Exception("Unable to get engine for task '{}'".format(task))
 
     def complete_job(self, job=None):
-        self.logger.debug('complete_job')
         execution_result = job['execution']['result']
         if execution_result['result'] == 'COMPLETED':
             self.update_job(job=job, updates={
