@@ -10,108 +10,108 @@ class Flow(object):
         self.data = data or {}
         self.status = status or 'PENDING'
 
-        self.tasks = {}
+        self.nodes = {}
         self.edges = {}
-        self.edges_by_task_key = collections.defaultdict(
+        self.edges_by_node_key = collections.defaultdict(
             lambda: collections.defaultdict(dict))
-        self.root_task_key = None
+        self.root_node_key = None
 
-    def add_task(self, task=None, key=None, as_root=False, precursor_keys=None,
-                 successor_keys=None):
-        self._prepare_task(task=task, key=key)
-        self.tasks[task['key']] = task
-        if as_root: self.root_task_key = task['key']
+    def add_node(self, node=None, key=None, as_root=False,
+                 precursor_keys=None, successor_keys=None):
+        self._prepare_node(node=node, key=key)
+        self.nodes[node['key']] = node
+        if as_root: self.root_node_key = node['key']
         for precursor_key in (precursor_keys or []):
             self.add_edge(edge={'src_key': precursor_key,
-                                'dest_key': task['key']})
+                                'dest_key': node['key']})
         for successor_key in (successor_keys or []):
-            self.add_edge(edge={'src_key': task['key'],
+            self.add_edge(edge={'src_key': node['key'],
                                 'dest_key': successor_key})
-        return task
+        return node
 
-    def _prepare_task(self, task=None, key=None):
-        self._ensure_task_key(task=task, key=key)
-        self._ensure_task_status(task=task)
+    def _prepare_node(self, node=None, key=None):
+        self._ensure_node_key(node=node, key=key)
+        self._ensure_node_status(node=node)
 
-    def _ensure_task_key(self, task=None, key=None):
-        if key is not None: task['key'] = key
-        elif task.get('key', None) is None:
-            task['key'] = self.generate_task_key()
+    def _ensure_node_key(self, node=None, key=None):
+        if key is not None: node['key'] = key
+        elif node.get('key', None) is None:
+            node['key'] = self.generate_node_key()
 
-    def generate_task_key(self):
+    def generate_node_key(self):
         return str(uuid4())
 
-    def _ensure_task_status(self, task=None):
-        if 'status' not in task: task['status'] = 'PENDING'
+    def _ensure_node_status(self, node=None):
+        if 'status' not in node: node['status'] = 'PENDING'
 
     def add_edge(self, edge=None):
         src_key, dest_key = (edge['src_key'], edge['dest_key'])
-        if dest_key is self.root_task_key:
-            raise Exception("Root task can not be an edge dest")
+        if dest_key is self.root_node_key:
+            raise Exception("Root node can not be an edge dest")
         edge_key = (src_key, dest_key)
         self.edges[edge_key] = edge
-        self.edges_by_task_key[src_key]['outgoing'][edge_key] = edge
-        self.edges_by_task_key[dest_key]['incoming'][edge_key] = edge
+        self.edges_by_node_key[src_key]['outgoing'][edge_key] = edge
+        self.edges_by_node_key[dest_key]['incoming'][edge_key] = edge
 
     def has_edge(self, src_key=None, dest_key=None):
         return (src_key, dest_key) in self.edges
 
-    def get_precursors(self, task=None):
-        task_edges = self.edges_by_task_key[task['key']]
-        precursors = [self.tasks[edge['src_key']]
-                      for edge in task_edges['incoming'].values()]
+    def get_precursors(self, node=None):
+        node_edges = self.edges_by_node_key[node['key']]
+        precursors = [self.nodes[edge['src_key']]
+                      for edge in node_edges['incoming'].values()]
         return precursors
 
-    def get_successors(self, task=None):
-        task_edges = self.edges_by_task_key[task['key']]
-        successors = [self.tasks[edge['dest_key']] 
-                      for edge in task_edges['outgoing'].values()]
+    def get_successors(self, node=None):
+        node_edges = self.edges_by_node_key[node['key']]
+        successors = [self.nodes[edge['dest_key']] 
+                      for edge in node_edges['outgoing'].values()]
         return successors
 
-    def get_nearest_pending_tasks(self):
-        if not self.root_task_key: return []
-        nearest_pending_tasks = []
-        cursors = [self.tasks[self.root_task_key]]
+    def get_nearest_pending_nodes(self):
+        if not self.root_node_key: return []
+        nearest_pending_nodes = []
+        cursors = [self.nodes[self.root_node_key]]
         while len(cursors) > 0:
             next_cursors = []
             for cursor in cursors:
                 if cursor['status'] == 'PENDING':
-                    nearest_pending_tasks.append(cursor)
+                    nearest_pending_nodes.append(cursor)
                 elif cursor['status'] == 'COMPLETED':
-                    successors = self.get_successors(task=cursor)
+                    successors = self.get_successors(node=cursor)
                     next_cursors.extend(successors)
             cursors = next_cursors
-        return nearest_pending_tasks
+        return nearest_pending_nodes
 
-    def filter_tasks(self, filters=None):
+    def filter_nodes(self, filters=None):
         result = []
-        for task in self.tasks.values():
+        for node in self.nodes.values():
             passes_filters = True
             for _filter in filters:
-                if not _filter(task):
+                if not _filter(node):
                     passes_filters = False
                     break
             if passes_filters:
-                result.append(task)
+                result.append(node)
         return result
 
-    def get_tasks_by_status(self, status=None):
-        status_filter = lambda task: task['status'] == status
-        return self.filter_tasks(filters=[status_filter])
+    def get_nodes_by_status(self, status=None):
+        status_filter = lambda node: node['status'] == status
+        return self.filter_nodes(filters=[status_filter])
 
-    def has_incomplete_tasks(self):
+    def has_incomplete_nodes(self):
         dead_statuses = ['COMPLETED', 'FAILED']
-        filter_fn = lambda task: task['status'] not in dead_statuses
-        incomplete_tasks = self.filter_tasks(filters=[filter_fn])
-        return len(incomplete_tasks) > 0
+        filter_fn = lambda node: node['status'] not in dead_statuses
+        incomplete_nodes = self.filter_nodes(filters=[filter_fn])
+        return len(incomplete_nodes) > 0
 
-    def get_tail_tasks(self):
-        if len(self.tasks) == 1 and self.root_task_key in self.tasks:
-            tail_tasks = [self.tasks[self.root_task_key]]
+    def get_tail_nodes(self):
+        if len(self.nodes) == 1 and self.root_node_key in self.nodes:
+            tail_nodes = [self.nodes[self.root_node_key]]
         else:
-            tail_tasks = [
-                self.tasks[task_key]
-                for task_key, task_edges in self.edges_by_task_key.items()
-                if len(task_edges['outgoing']) == 0
+            tail_nodes = [
+                self.nodes[node_key]
+                for node_key, node_edges in self.edges_by_node_key.items()
+                if len(node_edges['outgoing']) == 0
             ]
-        return tail_tasks
+        return tail_nodes

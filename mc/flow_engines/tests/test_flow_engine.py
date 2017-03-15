@@ -24,29 +24,29 @@ class BaseTestCase(unittest.TestCase):
 class DeserializationTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.setup_task_engines()
+        self.setup_node_engines()
 
-    def setup_task_engines(self):
-        class MockTaskEngine(object):
+    def setup_node_engines(self):
+        class MockNodeEngine(object):
             def __init__(self, *args, **kwargs):
                 self.__dict__.update(kwargs)
 
-        self.task_engines = {name: type(name, (MockTaskEngine,), {})
+        self.node_engines = {name: type(name, (MockNodeEngine,), {})
                              for name in ['Engine1', 'Engine2', 'Engine3']}
-        for name, task_engine in self.task_engines.items():
-            self.engine.register_task_engine(task_engine=task_engine)
+        for name, node_engine in self.node_engines.items():
+            self.engine.register_node_engine(node_engine=node_engine)
 
         self.serialized_flow = {
             'data': 'some data',
             'input': 'some input',
             'output': 'some output',
-            'tasks': [
-                {'key': 'a', 'task_engine': 'Engine1', 'status': 'COMPLETED'},
-                {'key': 'b', 'task_engine': 'Engine2', 'status': 'COMPLETED'},
-                {'key': 'c', 'task_engine': 'Engine1', 'status': 'RUNNING'},
-                {'key': 'd', 'task_engine': 'Engine2', 'status': 'RUNNING'},
+            'nodes': [
+                {'key': 'a', 'node_engine': 'Engine1', 'status': 'COMPLETED'},
+                {'key': 'b', 'node_engine': 'Engine2', 'status': 'COMPLETED'},
+                {'key': 'c', 'node_engine': 'Engine1', 'status': 'RUNNING'},
+                {'key': 'd', 'node_engine': 'Engine2', 'status': 'RUNNING'},
             ],
-            'root_task_key': 'a',
+            'root_node_key': 'a',
             'edges': [
                 {'src_key': 'a', 'dest_key': 'b'},
                 {'src_key': 'b', 'dest_key': 'c'},
@@ -66,14 +66,14 @@ class DeserializationTestCase(BaseTestCase):
     def test_has_expected_output(self):
         self.assertEqual(self.flow.output, self.serialized_flow['output'])
 
-    def test_has_expected_tasks(self):
+    def test_has_expected_nodes(self):
         self.assertEqual(
-            self.flow.tasks,
-            {task['key']: task for task in self.serialized_flow['tasks']}
+            self.flow.nodes,
+            {node['key']: node for node in self.serialized_flow['nodes']}
         )
 
-    def test_has_expected_root_task_key(self):
-        self.assertEqual(self.flow.root_task_key, self.flow.tasks['a']['key'])
+    def test_has_expected_root_node_key(self):
+        self.assertEqual(self.flow.root_node_key, self.flow.nodes['a']['key'])
 
     def test_has_expected_edges(self):
         expected_edges = {}
@@ -99,24 +99,24 @@ class SerializationTestCase(BaseTestCase):
         flow.output = 'some output'
         flow.data = 'some data'
 
-        tasks = [{'key': i, 'status': 's_%s' % i} for i in range(3)]
-        for task in tasks: flow.add_task(task=task)
-        flow.root_task_key = tasks[0]['key']
-        edges = [{'src_key': tasks[0]['key'], 'dest_key': tasks[1]['key']},
-                 {'src_key': tasks[1]['key'], 'dest_key': tasks[2]['key']}]
+        nodes = [{'key': i, 'status': 's_%s' % i} for i in range(3)]
+        for node in nodes: flow.add_node(node=node)
+        flow.root_node_key = nodes[0]['key']
+        edges = [{'src_key': nodes[0]['key'], 'dest_key': nodes[1]['key']},
+                 {'src_key': nodes[1]['key'], 'dest_key': nodes[2]['key']}]
         for edge in edges: flow.add_edge(edge=edge)
         flow.status = 'flow_status'
         return flow
 
     def test_serializes_basic_attrs(self):
-        for attr in ['data', 'input', 'output', 'root_task_key', 'status']:
+        for attr in ['data', 'input', 'output', 'root_node_key', 'status']:
             self.assertEqual(self.serialization[attr], getattr(self.flow, attr))
 
-    def test_serializes_tasks(self):
-        def sorted_task_list(task_list):
-            return sorted(task_list, key=lambda task: task['key'])
-        self.assertEqual(sorted_task_list(self.serialization['tasks']),
-                         sorted_task_list(self.flow.tasks.values()))
+    def test_serializes_nodes(self):
+        def sorted_node_list(node_list):
+            return sorted(node_list, key=lambda node: node['key'])
+        self.assertEqual(sorted_node_list(self.serialization['nodes']),
+                         sorted_node_list(self.flow.nodes.values()))
 
     def test_serializes_edges(self):
         def sorted_edge_list(edge_list):
@@ -130,137 +130,137 @@ class TickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.patchers = {'engine': patch.multiple(
-            self.engine, start_task=DEFAULT, complete_flow=DEFAULT)}
+            self.engine, start_node=DEFAULT, complete_flow=DEFAULT)}
         self.mocks = self.start_patchers(patchers=self.patchers)
-        def mock_tick_task(*args, flow=None, task=None, ctx=None):
-            task.setdefault('tick_count', 0)
-            task['tick_count'] += 1
-        self.engine.tick_task = mock_tick_task
+        def mock_tick_node(*args, flow=None, node=None, ctx=None):
+            node.setdefault('tick_count', 0)
+            node['tick_count'] += 1
+        self.engine.tick_node = mock_tick_node
 
     def test_starts_pending_flow(self):
         flow = Flow(status='PENDING')
         self.engine.tick_flow(flow=flow)
         self.assertEqual(flow.status, 'RUNNING')
 
-    def test_starts_nearest_pending_tasks(self):
+    def test_starts_nearest_pending_nodes(self):
         flow = self._generate_flow_with_pending_successors()
-        successors = flow.get_tasks_by_status(status='PENDING')
+        successors = flow.get_nodes_by_status(status='PENDING')
         self.assertTrue(len(successors) > 0)
         self.engine.tick_flow(flow)
-        expected_call_args_list = [call(flow=flow, task=successor)
+        expected_call_args_list = [call(flow=flow, node=successor)
                                    for successor in successors]
         self.assertEqual(
-            sorted(self.mocks['engine']['start_task'].call_args_list,
-                   key=lambda c: id(c[1]['task'])),
+            sorted(self.mocks['engine']['start_node'].call_args_list,
+                   key=lambda c: id(c[1]['node'])),
             sorted(expected_call_args_list,
-                   key=lambda c: id(c[2]['task'])))
+                   key=lambda c: id(c[2]['node'])))
 
     def _generate_flow_with_pending_successors(self):
         flow = Flow()
-        flow.add_task(key='ROOT', task={'status': 'COMPLETED'},
+        flow.add_node(key='ROOT', node={'status': 'COMPLETED'},
                       as_root=True)
         self._add_branch_with_pending_leaf_to_flow(flow, depth=3)
         self._add_branch_with_pending_leaf_to_flow(flow, depth=2)
         return flow
 
     def _add_branch_with_pending_leaf_to_flow(self, flow, depth=3):
-        branch_root = flow.add_task(task={'status': 'COMPLETED'},
-                                    precursor_keys=[flow.root_task_key])
+        branch_root = flow.add_node(node={'status': 'COMPLETED'},
+                                    precursor_keys=[flow.root_node_key])
         for i in range(depth):
-            child_task = flow.add_task(
+            child_node = flow.add_node(
                 key=str(uuid4()),
-                task={'status': 'COMPLETED', 'depth': depth},
+                node={'status': 'COMPLETED', 'depth': depth},
                 precursor_keys=[branch_root['key']]
             )
-            branch_root = child_task
-        flow.add_task(task={'status': 'PENDING'},
+            branch_root = child_node
+        flow.add_node(node={'status': 'PENDING'},
                       precursor_keys=[branch_root['key']])
 
-    def test_ticks_running_tasks(self):
+    def test_ticks_running_nodes(self):
         self.maxDiff = None
-        flow = self._generate_flow_with_running_tasks()
-        running_tasks = flow.get_tasks_by_status(status='RUNNING')
-        expected_task_summaries_before_tick = {
-            task['key']: self.summarize_task(
-                task, overrides={'tick_count': None, 'status': 'RUNNING'})
-            for task in running_tasks
+        flow = self._generate_flow_with_running_nodes()
+        running_nodes = flow.get_nodes_by_status(status='RUNNING')
+        expected_node_summaries_before_tick = {
+            node['key']: self.summarize_node(
+                node, overrides={'tick_count': None, 'status': 'RUNNING'})
+            for node in running_nodes
         }
-        self.assertEqual(self.summarize_tasks(running_tasks),
-                         expected_task_summaries_before_tick)
+        self.assertEqual(self.summarize_nodes(running_nodes),
+                         expected_node_summaries_before_tick)
         self.engine.tick_flow(flow)
-        expected_task_summaries_after_tick = {
-            task['key']: self.summarize_task(task, overrides={'tick_count': 1,
+        expected_node_summaries_after_tick = {
+            node['key']: self.summarize_node(node, overrides={'tick_count': 1,
                                                            'status': 'RUNNING'})
-            for task in running_tasks
+            for node in running_nodes
         }
-        self.assertEqual(self.summarize_tasks(running_tasks),
-                         expected_task_summaries_after_tick)
+        self.assertEqual(self.summarize_nodes(running_nodes),
+                         expected_node_summaries_after_tick)
 
-    def _generate_flow_with_running_tasks(self):
+    def _generate_flow_with_running_nodes(self):
         flow = Flow()
-        flow.add_task(task={'status': 'COMPLETED'}, as_root=True)
+        flow.add_node(node={'status': 'COMPLETED'}, as_root=True)
         for i in range(3):
-            flow.add_task(key=i, task={'status': 'RUNNING'},
-                          precursor_keys=[flow.root_task_key])
+            flow.add_node(key=i, node={'status': 'RUNNING'},
+                          precursor_keys=[flow.root_node_key])
         return flow
 
-    def summarize_tasks(self, tasks):
-        return {task['key']: self.summarize_task(task) for task in tasks}
+    def summarize_nodes(self, nodes):
+        return {node['key']: self.summarize_node(node) for node in nodes}
 
-    def summarize_task(self, task, overrides=None):
+    def summarize_node(self, node, overrides=None):
         if not overrides: overrides = {}
         return {
-            **{attr: task.get(attr, None)
+            **{attr: node.get(attr, None)
                for attr in ['key', 'tick_count', 'status']},
             **overrides
         }
 
-    def test_calls_complete_flow_if_no_incomplete_tasks(self):
+    def test_calls_complete_flow_if_no_incomplete_nodes(self):
         flow = Flow()
-        flow.add_task(task={'status': 'COMPLETED'}, as_root=True)
+        flow.add_node(node={'status': 'COMPLETED'}, as_root=True)
         self.assertEqual(self.mocks['engine']['complete_flow'].call_count, 0)
         self.engine.tick_flow(flow)
         self.assertEqual(self.mocks['engine']['complete_flow'].call_count, 1)
 
-class TickTaskTestCase(BaseTestCase):
+class TickNodeTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.flow = Flow()
-        self.task = self.flow.add_task(task={})
+        self.node = self.flow.add_node(node={})
         self.engine.process_actions = Mock()
-        self.engine.get_engine_for_task = Mock()
-        self.mock_engine = self.engine.get_engine_for_task.return_value
+        self.engine.get_engine_for_node = Mock()
+        self.mock_engine = self.engine.get_engine_for_node.return_value
         self.ctx = MagicMock()
-        self.engine.complete_task = Mock()
+        self.engine.complete_node = Mock()
 
-    def test_calls_task_engine_tick_task(self):
-        self.engine.tick_task(flow=self.flow, task=self.task, ctx=self.ctx)
+    def test_calls_node_engine_tick_node(self):
+        self.engine.tick_node(flow=self.flow, node=self.node, ctx=self.ctx)
         self.assertEqual(
-            self.mock_engine.tick_task.call_args,
-            call(task=self.task, ctx={**self.ctx, 'flow': self.flow}))
+            self.mock_engine.tick_node.call_args,
+            call(node=self.node, ctx={**self.ctx, 'flow': self.flow}))
 
-    def test_calls_complete_task_if_task_completes(self):
-        def mock_task_completion(*args, **kwargs):
-            self.task['status'] = 'COMPLETED'
-        self.mock_engine.tick_task.side_effect = mock_task_completion
-        self.engine.tick_task(flow=self.flow, task=self.task, ctx=self.ctx)
-        self.assertEqual(self.engine.complete_task.call_args,
-                         call(flow=self.flow, task=self.task))
+    def test_calls_complete_node_if_node_completes(self):
+        def mock_node_completion(*args, **kwargs):
+            self.node['status'] = 'COMPLETED'
+        self.mock_engine.tick_node.side_effect = mock_node_completion
+        self.engine.tick_node(flow=self.flow, node=self.node, ctx=self.ctx)
+        self.assertEqual(self.engine.complete_node.call_args,
+                         call(flow=self.flow, node=self.node))
 
-class CompleteTaskTestCase(BaseTestCase):
+class CompleteNodeTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.flow = Flow()
-        self.task = self.flow.add_task(task={
+        self.node = self.flow.add_node(node={
             'post_complete_actions': ['action_%s' % i for i in range(3)]
         })
         self.engine.process_actions = Mock()
 
     def test_processes_post_complete_actions(self):
-        self.engine.complete_task(flow=self.flow, task=self.task)
+        self.engine.complete_node(flow=self.flow, node=self.node)
         self.assertEqual(self.engine.process_actions.call_args,
-                         call(actions=self.task['post_complete_actions'],
-                              ctx={'task': self.task, 'flow': self.flow}))
+                         call(actions=self.node['post_complete_actions'],
+                              ctx={'node': self.node, 'flow': self.flow}))
 
 class CompleteFlowTestCase(BaseTestCase):
     def test_sets_status_to_completed(self):
@@ -269,47 +269,47 @@ class CompleteFlowTestCase(BaseTestCase):
         self.engine.complete_flow(flow=flow)
         self.assertTrue(flow.status == 'COMPLETED')
 
-    def test_sets_output_for_single_tail_task(self):
+    def test_sets_output_for_single_tail_node(self):
         flow = Flow()
-        tail_task = flow.add_task(task={'status': 'COMPLETED'},
+        tail_node = flow.add_node(node={'status': 'COMPLETED'},
                                   as_root=True)
-        tail_task['output'] = 'some output'
+        tail_node['output'] = 'some output'
         self.engine.complete_flow(flow=flow)
-        self.assertEqual(flow.output, tail_task['output'])
+        self.assertEqual(flow.output, tail_node['output'])
 
-    def test_sets_output_for_multiple_tail_tasks(self):
+    def test_sets_output_for_multiple_tail_nodes(self):
         flow = Flow()
-        root_task = flow.add_task(task={'status': 'COMPLETED'},
+        root_node = flow.add_node(node={'status': 'COMPLETED'},
                                   as_root=True)
-        tail_tasks = []
+        tail_nodes = []
         for i in range(3):
-            tail_task = flow.add_task(task={'status': 'COMPLETED'},
-                                      precursor_keys=[root_task['key']])
-            tail_task['output'] = 'output_%s' % i
-            tail_tasks.append(tail_task)
+            tail_node = flow.add_node(node={'status': 'COMPLETED'},
+                                      precursor_keys=[root_node['key']])
+            tail_node['output'] = 'output_%s' % i
+            tail_nodes.append(tail_node)
         self.engine.complete_flow(flow=flow)
-        expected_output = {tail_task['key']: tail_task['output']
-                           for tail_task in tail_tasks}
+        expected_output = {tail_node['key']: tail_node['output']
+                           for tail_node in tail_nodes}
         self.assertEqual(flow.output, expected_output)
 
-class StartTaskTestCase(BaseTestCase):
+class StartNodeTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.flow = Flow()
-        self.task = self.flow.add_task(task={
+        self.node = self.flow.add_node(node={
             'pre_start_actions': ['action_%s' % i for i in range(3)]
         })
         self.engine.process_actions = Mock()
 
     def test_processes_pre_start_actions(self):
-        self.engine.start_task(flow=self.flow, task=self.task)
+        self.engine.start_node(flow=self.flow, node=self.node)
         self.assertEqual(self.engine.process_actions.call_args,
-                         call(actions=self.task['pre_start_actions'],
-                              ctx={'task': self.task, 'flow': self.flow}))
+                         call(actions=self.node['pre_start_actions'],
+                              ctx={'node': self.node, 'flow': self.flow}))
 
     def test_sets_status_to_running(self):
-        self.engine.start_task(flow=self.flow, task=self.task)
-        self.assertEqual(self.task['status'], 'RUNNING')
+        self.engine.start_node(flow=self.flow, node=self.node)
+        self.assertEqual(self.node['status'], 'RUNNING')
 
 class ProcessActionsTestCase(BaseTestCase):
     def setUp(self):
