@@ -8,6 +8,7 @@ from ..base_job_runner import BaseJobRunner
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.job = defaultdict(MagicMock)
+        self.action_processor = MagicMock()
         self.task_engines = MagicMock()
         self.execution_client = MagicMock()
         self.job_client = MagicMock()
@@ -30,6 +31,7 @@ class BaseTestCase(unittest.TestCase):
     def generate_base_job_runner(self, runner_kwargs=None):
         runner_kwargs = runner_kwargs or {}
         default_kwargs = {
+            'action_processor': self.action_processor,
             'task_engines': self.task_engines,
             'execution_client': self.execution_client,
             'job_client': self.job_client,
@@ -215,29 +217,27 @@ class StartJobTestCase(BaseTestCase):
         self.assertEqual(self.job['tasks'], self.runner.default_tasks)
 
 class TickJobTasksTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.completing_tasks = [{'key': i} for i in range(3)]
-        self.noncompleting_tasks = [{'key': i} for i in range(3)]
-        tasks = self.completing_tasks + self.noncompleting_tasks
+    def test_continues_until_first_noncompleting_task(self):
+        completing_tasks = [{'key': i} for i in range(3)]
+        noncompleting_tasks = [{'key': i} for i in range(3)]
+        tasks = completing_tasks + noncompleting_tasks
         self.job['tasks'] = tasks
         def mock_tick_task(task=None, job=None):
-            if task in self.completing_tasks: task['status'] = 'COMPLETED'
+            if task in completing_tasks: task['status'] = 'COMPLETED'
             else: task['status'] = 'RUNNING'
         self.runner.tick_task = MagicMock(side_effect=mock_tick_task)
-
-    def test_continues_until_first_noncompleting_task(self):
         self.runner.tick_job_tasks(job=self.job)
         expected_tick_task_call_args_list = (
-            [call(task=task, job=self.job) for task in self.completing_tasks] +
-            [call(task=self.noncompleting_tasks[0], job=self.job)]
+            [call(task=task, job=self.job) for task in completing_tasks] +
+            [call(task=noncompleting_tasks[0], job=self.job)]
         )
         self.assertEqual(self.runner.tick_task.call_args_list,
                          expected_tick_task_call_args_list)
 
 class TickTaskTestCase(BaseTestCase):
     def decorate_runner_methods_to_patch(self):
-        self.runner_methods_to_patch.extend(['get_engine_for_task'])
+        self.runner_methods_to_patch.extend(['get_engine_for_task',
+                                             'complete_task'])
 
     def test_dispatches_to_task_engine_tick_task(self):
         task = MagicMock()
@@ -248,6 +248,25 @@ class TickTaskTestCase(BaseTestCase):
         self.assertEqual(expected_engine.tick_task.call_args,
                          call(task=task, job=self.job))
 
+    def test_calls_complete_task_for_completed_task(self):
+        expected_engine = self.mocks['get_engine_for_task'].return_value
+        def mock_tick_task(task=None, job=None):
+            task['status'] = 'COMPLETED'
+        expected_engine.tick_task.side_effect = mock_tick_task
+        task = {}
+        self.runner.tick_task(task=task, job=self.job)
+        self.assertEqual(self.runner.complete_task.call_args,
+                         call(task=task, job=self.job))
+
+class CompleteTaskTestCase(BaseTestCase):
+    def test_processes_actions_on_completion(self):
+        task = {'completion_actions': [MagicMock() for i in range(3)]}
+        self.runner.complete_task(task=task, job=self.job)
+        self.assertEqual(
+            self.runner.action_processor.process_action.call_args_list,
+            [call(action=action, ctx={'task': task, 'job': self.job})
+             for action in task['completion_actions']]
+        )
 
 class GetEngineForTaskTestCase(BaseTestCase):
     def test_gets_engine_for_task_type(self, task=None):

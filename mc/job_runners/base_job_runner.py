@@ -5,11 +5,13 @@ import time
 
 class BaseJobRunner(object):
     def __init__(self, job_client=None, job_submission_factory=None,
-                 execution_client=None, task_engines=None, tick_interval=120,
+                 execution_client=None, action_processor=None,
+                 task_engines=None, tick_interval=120,
                  max_running_jobs=3, logger=None):
         self.job_client = job_client
         self.job_submission_factory = job_submission_factory
         self.execution_client = execution_client
+        self.action_processor = action_processor
         self.task_engines = task_engines
         self.tick_interval = tick_interval
         self.max_running_jobs = max_running_jobs
@@ -143,11 +145,18 @@ class BaseJobRunner(object):
                     task=task,
                     task_error=task['state'].get('error', 'unknown error'))
                 raise Exception(error)
+            elif task['status'] == 'COMPLETED':
+                self.complete_task(task=task, job=job)
         except Exception as error:
             error = "Failed to tick task '{task}': {error}".format(
                 task=task,
                 error=error)
             raise Exception(error)
+
+    def complete_task(self, task=None, job=None):
+        for action in task.get('completion_actions', []):
+            self.action_processor.process_action(
+                action=action, ctx={'task': task, 'job': job})
 
     def get_engine_for_task(self, task=None, job=None):
         try: return self.task_engines[task['type']]
