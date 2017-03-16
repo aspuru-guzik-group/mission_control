@@ -1,9 +1,9 @@
+from collections import defaultdict
 import textwrap
 import unittest
 from unittest.mock import call, MagicMock
 
-from ..slurm_execution_client import (SlurmExecutionClient,
-                                      SLURM_JOB_STATES_TO_RUN_STATES)
+from ..slurm_execution_client import SlurmExecutionClient
 
 
 class SlurmExecutionClientBaseTestCase(unittest.TestCase):
@@ -12,7 +12,8 @@ class SlurmExecutionClientBaseTestCase(unittest.TestCase):
         self.slurm_client = SlurmExecutionClient(
             process_runner=self.process_runner
         )
-        self.job = MagicMock()
+        self.submission = defaultdict(MagicMock)
+        self.execution_meta = defaultdict(MagicMock)
 
     def generate_failed_proc(self):
         proc = MagicMock()
@@ -24,9 +25,9 @@ class StartExecutionTestCase(SlurmExecutionClientBaseTestCase):
     def test_calls_sbatch(self):
         self.process_runner.run_process.return_value = \
                 self.generate_successful_sbatch_proc()
-        self.slurm_client.start_execution(job=self.job)
-        workdir = self.job['submission']['dir']
-        entrypoint = workdir + '/' + self.job['submission']['entrypoint']
+        self.slurm_client.start_execution(submission=self.submission)
+        workdir = self.submission['dir']
+        entrypoint = workdir + '/' + self.submission['entrypoint']
         expected_cmd = ['sbatch', '--workdir=%s' % workdir, entrypoint]
         self.assertEqual(self.process_runner.run_process.call_args,
                          call(cmd=expected_cmd, check=True))
@@ -37,14 +38,19 @@ class StartExecutionTestCase(SlurmExecutionClientBaseTestCase):
         proc.stdout = 'Submitted batch job %s' % job_id
         return proc
 
-    def test_successful_submission(self):
+    def test_returns_expected_execution_meta_for_successful_submission(self):
         job_id = '12345'
         self.process_runner.run_process.return_value = \
                 self.generate_successful_sbatch_proc(job_id=job_id)
-        execution_meta = self.slurm_client.start_execution(job=self.job)
-        self.assertEqual(execution_meta, {'job_id': job_id})
+        execution_meta = self.slurm_client.start_execution(
+            submission=self.submission)
+        expected_execution_meta = {
+            'job_id': job_id,
+            'submission': self.submission,
+        }
+        self.assertEqual(execution_meta, expected_execution_meta)
 
-    def test_failed_submission(self):
+    def test_handles_failed_submission(self):
         failed_proc = self.generate_failed_proc()
         self.process_runner.run_cmd.return_value = failed_proc
         with self.assertRaises(Exception) as context:
@@ -54,14 +60,15 @@ class StartExecutionTestCase(SlurmExecutionClientBaseTestCase):
 class GetExecutionStateTestCase(SlurmExecutionClientBaseTestCase):
     def test_calls_scontrol(self):
         self.process_runner.run_process.return_value = \
-                self.generate_successful_scontrol_proc()
-        self.slurm_client.get_execution_state(job=self.job)
+                self.generate_completed_scontrol_proc()
+        self.slurm_client.get_execution_state(
+            execution_meta=self.execution_meta)
         expected_cmd = ['scontrol', 'show', '--details', '--oneliner',
-                       'job', self.job['execution']['job_id']]
+                       'job', self.execution_meta['job_id']]
         self.assertEqual(self.process_runner.run_process.call_args,
                          call(cmd=expected_cmd, check=True))
 
-    def generate_successful_scontrol_proc(self, job_state='RUNNING'):
+    def generate_completed_scontrol_proc(self, job_state='RUNNING'):
         proc = MagicMock()
         proc.returncode = 0
         proc.stdout = textwrap.dedent(
@@ -91,13 +98,15 @@ class GetExecutionStateTestCase(SlurmExecutionClientBaseTestCase):
             """)
         return proc
 
-    def test_successful_proc(self):
+    def test_completed_proc(self):
         self.process_runner.run_process.return_value = \
-                self.generate_successful_scontrol_proc()
-        execution_state = self.slurm_client.get_execution_state(job=self.job)
-        expected_state_keys = ['executing', 'slurm_job_meta']
-        self.assertTrue(sorted(execution_state.keys()),
-                        sorted(expected_state_keys))
+                self.generate_completed_scontrol_proc()
+        execution_state = self.slurm_client.get_execution_state(
+            execution_meta=self.execution_meta)
+        self.assertEqual(execution_state['run_status'], 'COMPLETED')
+        self.assertEqual(execution_state['completed_dir'],
+                        self.execution_meta['submission']['dir'])
+        self.assertTrue('slurm_job_meta' in execution_state)
 
     def test_failed_proc(self):
         failed_proc = self.generate_failed_proc()
@@ -105,24 +114,6 @@ class GetExecutionStateTestCase(SlurmExecutionClientBaseTestCase):
         with self.assertRaises(Exception) as context:
             self.slurm_client.get_execution_sate(job=self.job)
             self.assertEqual(str(context.exception), failed_proc.stderr)
-
-class MapSlurmJobStateTestCase(SlurmExecutionClientBaseTestCase):
-    def test_maps_running_job(self):
-        ex_states = {}
-        expected_ex_states = {}
-        for job_state in SLURM_JOB_STATES_TO_RUN_STATES['running']:
-            slurm_job_meta = {'JobState': job_state}
-            ex_state = self.slurm_client.get_execution_state_for_slurm_job_meta(
-                slurm_job_meta)
-            ex_states[job_state] = ex_state
-            expected_ex_states[job_state] = 'running'
-        self.assertEqual(ex_states, expected_ex_states)
-
-    def test_maps_nonrunning_job(self):
-        slurm_job_meta = {'JobState': 'some nonrunning job state'}
-        run_state = self.slurm_client.get_execution_state_for_slurm_job_meta(
-            slurm_job_meta)
-        self.assertEqual(run_state, 'completed')
 
 if __name__ == '__main__':
     unittest.main()

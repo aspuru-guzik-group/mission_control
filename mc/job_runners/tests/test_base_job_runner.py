@@ -8,8 +8,7 @@ from ..base_job_runner import BaseJobRunner
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.job = defaultdict(MagicMock)
-        self.action_processor = MagicMock()
-        self.task_engines = MagicMock()
+        self.task_runner = MagicMock()
         self.execution_client = MagicMock()
         self.job_client = MagicMock()
         self.job_submission_factory = MagicMock()
@@ -31,21 +30,12 @@ class BaseTestCase(unittest.TestCase):
     def generate_base_job_runner(self, runner_kwargs=None):
         runner_kwargs = runner_kwargs or {}
         default_kwargs = {
-            'action_processor': self.action_processor,
-            'task_engines': self.task_engines,
+            'task_runner': self.task_runner,
             'execution_client': self.execution_client,
             'job_client': self.job_client,
             'job_submission_factory': self.job_submission_factory,
         }
         return BaseJobRunner(**{**default_kwargs, **runner_kwargs})
-
-class InitTestCase(BaseTestCase):
-    def test_sets_task_engines(self):
-        mock = MagicMock()
-        runner = self.generate_base_job_runner(runner_kwargs={
-            'task_engines': mock
-        })
-        self.assertEqual(runner.task_engines, mock)
 
 class RunTestCase(BaseTestCase):
     def test_run(self):
@@ -235,45 +225,11 @@ class TickJobTasksTestCase(BaseTestCase):
                          expected_tick_task_call_args_list)
 
 class TickTaskTestCase(BaseTestCase):
-    def decorate_runner_methods_to_patch(self):
-        self.runner_methods_to_patch.extend(['get_engine_for_task',
-                                             'complete_task'])
-
-    def test_dispatches_to_task_engine_tick_task(self):
+    def test_dispatches_to_task_runner(self):
         task = MagicMock()
         self.runner.tick_task(task=task, job=self.job)
-        self.assertEqual(self.mocks['get_engine_for_task'].call_args,
+        self.assertEqual(self.task_runner.tick_task.call_args,
                          call(task=task, job=self.job))
-        expected_engine = self.mocks['get_engine_for_task'].return_value
-        self.assertEqual(expected_engine.tick_task.call_args,
-                         call(task=task, job=self.job))
-
-    def test_calls_complete_task_for_completed_task(self):
-        expected_engine = self.mocks['get_engine_for_task'].return_value
-        def mock_tick_task(task=None, job=None):
-            task['status'] = 'COMPLETED'
-        expected_engine.tick_task.side_effect = mock_tick_task
-        task = {}
-        self.runner.tick_task(task=task, job=self.job)
-        self.assertEqual(self.runner.complete_task.call_args,
-                         call(task=task, job=self.job))
-
-class CompleteTaskTestCase(BaseTestCase):
-    def test_processes_actions_on_completion(self):
-        task = {'completion_actions': [MagicMock() for i in range(3)]}
-        self.runner.complete_task(task=task, job=self.job)
-        self.assertEqual(
-            self.runner.action_processor.process_action.call_args_list,
-            [call(action=action, ctx={'task': task, 'job': self.job})
-             for action in task['completion_actions']]
-        )
-
-class GetEngineForTaskTestCase(BaseTestCase):
-    def test_gets_engine_for_task_type(self, task=None):
-        task = {'type': 'some_type'}
-        self.runner.task_engines[task['type']] = MagicMock()
-        engine = self.runner.get_engine_for_task(task=task, job=self.job)
-        self.assertEqual(engine, self.runner.task_engines[task['type']])
 
 if __name__ == '__main__':
     unittest.main()

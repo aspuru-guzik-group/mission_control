@@ -3,7 +3,10 @@ import re
 
 
 SLURM_JOB_STATES_TO_RUN_STATES = {
-    'running': ['CONFIGURING', 'COMPLETING', 'PENDING', 'RUNNING']
+    'RUNNING': set(['CONFIGURING', 'COMPLETING', 'PENDING', 'RUNNING']),
+    'COMPLETED': set(['COMPLETED']),
+    'FAILED': set(['BOOT_FAIL', 'CANCELLED', 'FAILED', 'NODE_FAIL', 'PREEMPTED',
+                   'TIMEOUT'])
 }
 
 class SlurmExecutionClient(object):
@@ -11,9 +14,9 @@ class SlurmExecutionClient(object):
         self.process_runner = process_runner
         self.logger = logger or logging
 
-    def start_execution(self, job=None):
-        workdir = job['submission']['dir']
-        entrypoint = workdir + '/' + job['submission']['entrypoint']
+    def start_execution(self, submission=None):
+        workdir = submission['dir']
+        entrypoint = workdir + '/' + submission['entrypoint']
         cmd = ['sbatch', '--workdir=%s' % workdir, entrypoint]
         try:
             completed_proc = self.process_runner.run_process(cmd=cmd, check=True)
@@ -26,7 +29,11 @@ class SlurmExecutionClient(object):
                          )
             raise Exception(error_msg)
         slurm_job_id = self.parse_sbatch_output(completed_proc.stdout)
-        return {'job_id': slurm_job_id}
+        execution_meta = {
+            'job_id': slurm_job_id,
+            'submission': submission,
+        }
+        return execution_meta
 
     def parse_sbatch_output(self, sbatch_output=None):
         match = re.match(r'Submitted batch job (\d+)', sbatch_output)
@@ -36,25 +43,26 @@ class SlurmExecutionClient(object):
         slurm_job_id = match.group(1)
         return slurm_job_id
 
-    def get_execution_state(self, job=None):
-        job_id = job['execution']['job_id']
+    def get_execution_state(self, execution_meta=None):
+        job_id = execution_meta['job_id']
         cmd = ['scontrol', 'show', '--details', '--oneliner', 'job', job_id]
         completed_proc = self.process_runner.run_process(cmd=cmd, check=True)
         slurm_job_meta = self.parse_scontrol_output(completed_proc.stdout)
-        run_state = self.get_execution_state_for_slurm_job_meta(slurm_job_meta)
+        run_status = self.get_run_status_from_slurm_job_meta(slurm_job_meta)
         execution_state = {
-            'executing': (run_state == 'running'),
+            'run_status': run_status,
             'slurm_job_meta': slurm_job_meta,
         }
+        if run_status == 'COMPLETED':
+            execution_state['completed_dir'] = \
+                    execution_meta['submission']['dir']
         return execution_state
 
-    def get_execution_state_for_slurm_job_meta(self, slurm_job_meta=None):
-        slurm_job_state = slurm_job_meta['JobState']
-        if slurm_job_state in SLURM_JOB_STATES_TO_RUN_STATES['running']:
-            run_state = 'running'
-        else:
-            run_state = 'completed'
-        return run_state
+    def get_run_status_from_slurm_job_meta(self, slurm_job_meta=None):
+        job_state = slurm_job_meta['JobState']
+        for run_status, job_states in SLURM_JOB_STATES_TO_RUN_STATES.items():
+            if job_state in job_states: return run_status
+        return 'UNKNOWN'
 
     def parse_scontrol_output(self, scontrol_output=None):
         parsed = {}
