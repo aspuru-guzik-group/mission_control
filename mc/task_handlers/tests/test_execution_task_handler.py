@@ -23,16 +23,17 @@ class InitialTickTestCase(BaseTestCase):
     def _do_initial_tick(self):
         self.task_handler.initial_tick(task=self.task, job=self.job)
 
-    def test_submits_job(self):
+    def test_starts_execution(self):
         self._do_initial_tick()
-        self.assertEqual(self.task_handler.execution_client.submit_job.call_args,
-                         call(job=self.job))
+        self.assertEqual(
+            self.task_handler.execution_client.start_execution.call_args,
+            call(submission=self.task['params']['submission']))
 
     def test_stores_execution_meta(self):
         self._do_initial_tick()
         self.assertEqual(
             self.task['data']['execution_meta'],
-            self.task_handler.execution_client.submit_job.return_value
+            self.task_handler.execution_client.start_execution.return_value
         )
 
 class IntermediateTickTestCase(BaseTestCase):

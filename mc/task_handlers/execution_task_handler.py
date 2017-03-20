@@ -7,7 +7,8 @@ class ExecutionTaskHandler(BaseTaskHandler):
         self.execution_client = execution_client
 
     def initial_tick(self, task=None, job=None):
-        execution_meta = self.execution_client.start_execution(submission=job)
+        execution_meta = self.execution_client.start_execution(
+            submission=task['params']['submission'])
         task['data']['execution_meta'] = execution_meta
 
     def intermediate_tick(self, task=None, job=None):
