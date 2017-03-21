@@ -1,7 +1,7 @@
 import collections
 import json
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import DEFAULT, MagicMock
 
 from django.test import override_settings
 
@@ -9,8 +9,8 @@ from missions.models import Flow as FlowModel, Job as JobModel
 from ..odyssey_push_runner import OdysseyPushRunner
 from . import e2e_utils
 from mc.flow_engines.flow import Flow
-from mc.a2g2.task_engines.job_task_engine import JobTaskEngine
-from mc.a2g2.task_engines.flow_task_engine import FlowTaskEngine
+from mc.a2g2.node_engines.job_node_engine import JobNodeEngine
+from mc.a2g2.node_engines.flow_node_engine import FlowNodeEngine
 
 
 urlpatterns = e2e_utils.urlpatterns
@@ -21,6 +21,7 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
     def setUp(self):
         super().setUp()
         self.execution_client = self.generate_execution_client()
+        self.task_runner = self.generate_task_runner()
         self.job_submission_factory = MagicMock()
         self.flow_generator_classes = self.generate_flow_generator_classes()
         self.runner = self.generate_runner()
@@ -33,6 +34,10 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
                 collections.defaultdict(MagicMock)
         return execution_client
 
+    def generate_task_runner(self):
+        task_runner = MagicMock()
+        return task_runner
+
     def generate_flow_generator_classes(self):
         flow_generator_classes = {}
         class FlowGeneratorA:
@@ -41,13 +46,13 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
             @classmethod
             def generate_flow(cls, *args, flow_spec=None, **kwargs):
                 flow = Flow()
-                flow.add_task(
+                flow.add_node(
                     key='a.1',
-                    task={
-                        'task_engine': JobTaskEngine.__name__,
+                    node={
+                        'node_engine': JobNodeEngine.__name__,
                         'input': {
                             'job_spec': {
-                                'type': 'Job_A'
+                                'type': 'Job_A',
                             }
                         },
                         'status': 'PENDING',
@@ -59,7 +64,7 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
             @classmethod
             def get_dependencies(cls):
                 return {
-                    'task_engines': set([JobTaskEngine()])
+                    'node_engines': set([JobNodeEngine()])
                 }
         flow_generator_classes['A'] = FlowGeneratorA
 
@@ -69,11 +74,11 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
             @classmethod
             def generate_flow(cls, *args, flow_spec=None, **kwargs):
                 flow = Flow()
-                flow.add_task(
+                flow.add_node(
                     key='b.1',
                     as_root=True,
-                    task={
-                        'task_engine': FlowTaskEngine.__name__,
+                    node={
+                        'node_engine': FlowNodeEngine.__name__,
                         'input': {
                             'flow_spec': {
                                 'flow_type': FlowGeneratorA.flow_type
@@ -87,7 +92,7 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
             @classmethod
             def get_dependencies(cls):
                 return {
-                    'task_engines': set([FlowTaskEngine()]),
+                    'node_engines': set([FlowNodeEngine()]),
                     'flow_generator_classes': set([FlowGeneratorA])
                 }
         flow_generator_classes['B'] = FlowGeneratorB
@@ -96,6 +101,7 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
     def generate_runner(self):
         mc_server_url = '/%s/' % e2e_utils.BASE_PATH
         runner = OdysseyPushRunner(
+            task_runner=self.task_runner,
             request_client=self.client,
             run_setup=True,
             mc_server_url=mc_server_url,
@@ -103,8 +109,6 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
             job_submission_factory=self.job_submission_factory,
             job_runner_kwargs={'execution_client': self.execution_client}
         )
-        runner.job_runner.get_job_execution_result = MagicMock(
-            return_value={'result': 'COMPLETED'})
         return runner
 
     def generate_flow_spec(self):
@@ -142,6 +146,7 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
 
         self.runner.tick()
         self.assert_child_flow_model_attr('status', 'COMPLETED')
+        self.runner.tick()
         self.assert_parent_flow_model_attr('status', 'COMPLETED')
 
     def get_parent_flow_model(self):
@@ -169,10 +174,12 @@ class OdysseyPushRunnerE2ETestCase(e2e_utils.BaseTestCase):
         self.assertEqual(getattr(job_model, attr), expected)
 
     def mock_job_execution(self):
-        mock_execution_state = collections.defaultdict(MagicMock)
-        mock_execution_state['executing'] = False
-        self.execution_client.get_execution_state.return_value = \
-                mock_execution_state
+        def mock_tick_task(task=None, job=None, **kwargs):
+            if task['type'] == 'job:execute':
+                task['status'] = 'COMPLETED'
+                job['execution'] = {'result': {'result': 'COMPLETED'}}
+            return DEFAULT
+        self.runner.task_runner.tick_task.side_effect = mock_tick_task
 
 if __name__ == '__main__':
     unittest.main()

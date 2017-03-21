@@ -15,7 +15,7 @@ class BaseJobRunner(object):
         self.max_running_jobs = max_running_jobs
         self.logger = logger or logging
 
-        self.default_tasks = []
+        self.default_tasks = [{'type': 'job:execute'}]
 
         self._ticking = False
         self.tick_counter = 0
@@ -114,6 +114,7 @@ class BaseJobRunner(object):
 
     def start_job(self, job=None):
         if 'tasks' not in job: job['tasks'] = self.default_tasks
+        self.running_jobs[job['uuid']] = job
         self.tick_job_tasks(job=job)
 
     def tick_job_tasks(self, job=None):
@@ -121,7 +122,7 @@ class BaseJobRunner(object):
             current_task = self.get_first_incomplete_task_for_job(job=job)
             while current_task:
                 self.tick_task(task=current_task, job=job)
-                if current_task['status'] == 'COMPLETED':
+                if current_task.get('status', None) == 'COMPLETED':
                     next_task = self.get_first_incomplete_task_for_job(job=job)
                     if next_task is current_task: next_task = None
                 else: next_task = None
@@ -137,7 +138,7 @@ class BaseJobRunner(object):
     def tick_task(self, task=None, job=None):
         try:
             self.task_runner.tick_task(task=task, job=job)
-            if task['status'] == 'FAILED':
+            if task.get('status', None) == 'FAILED':
                 error = "Task '{task}' failed: {task_error}".format(
                     task=task,
                     task_error=task['state'].get('error', 'unknown error'))

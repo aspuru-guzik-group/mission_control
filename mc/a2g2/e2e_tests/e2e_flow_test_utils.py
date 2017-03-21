@@ -9,11 +9,10 @@ from mc.a2g2.a2g2_client.a2g2_client import A2G2_Client
 from mc.a2g2.runners.odyssey_push_runner.odyssey_push_runner import (
     OdysseyPushRunner)
 from mc.storage_client.storage_client import MissionControlStorageClient
-from mc.job_runners.action_processor import ActionProcessor
-from mc.job_runners.ssh_control_socket_client import SSHControlSocketClient
+from mc.execution_clients.ssh_control_socket_client import (
+    SSHControlSocketClient)
 from mc.a2g2.job_dir_builders.a2g2_job_engine.a2g2_job_engine_dir_builder import (
     A2G2JobEngineDirBuilder)
-from mc.a2g2.action_handlers import storage_action_handlers
 from .docker.docker_utils import DockerEnv
 
 def get_skip_args():
@@ -26,8 +25,8 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
         self.docker_env = self.setup_docker_env()
         self.a2g2_client = self.generate_a2g2_client()
         self.storage_client = self.generate_storage_client()
-        self.action_processor = self.generate_action_processor()
         self.job_submission_factory = self.generate_job_submission_factory()
+        self.task_runner = self.generate_task_runner()
         self.mc_runner = self.generate_mc_runner()
         self.mc_client = self.mc_runner.mc_client
 
@@ -51,21 +50,13 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
             base_url='http://' + self.docker_env.mc_ip_addr + '/storage/')
         return storage_client
 
-    def generate_action_processor(self):
-        action_processor = ActionProcessor()
-        action_processor.register_handler(key='storage:upload',
-                                          handler=self._upload_wrapper)
-        action_processor.register_handler(key='storage:download',
-                                          handler=self._download_wrapper)
-        return action_processor
+    def generate_task_runner(self): pass
 
     def _upload_wrapper(self, *args, params=None, ctx=None, **kwargs):
-        return storage_action_handlers.upload_action_handler(
-            self.storage_client, *args, params=params, ctx=ctx)
+        pass
 
     def _download_wrapper(self, *args, params=None, ctx=None, **kwargs):
-        return storage_action_handlers.download_action_handler(
-            self.storage_client, *args, params=params, ctx=ctx)
+        pass
 
     def generate_job_submission_factory(self):
         a2g2_client_cfg_json = json.dumps({
@@ -93,7 +84,7 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
     def generate_mc_runner(self):
         return OdysseyPushRunner(
             ssh_client=self.generate_connected_ssh_client(),
-            action_processor=self.action_processor,
+            task_runner=self.task_runner,
             flow_generator_classes=self.get_flow_generator_classes(),
             mc_server_url='http://' + self.docker_env.mc_ip_addr + '/missions/',
             job_submission_factory=self.job_submission_factory,
