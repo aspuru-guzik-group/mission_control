@@ -2,8 +2,6 @@ from collections import defaultdict
 import unittest
 from unittest.mock import patch, MagicMock
 
-from mc.a2g2.task_engines.job_task_engine import JobTaskEngine
-
 from .. import compute_parse_load_flow_generator
 
 class BaseTestCase(unittest.TestCase):
@@ -14,7 +12,7 @@ class BaseTestCase(unittest.TestCase):
 class GetDependenciesTestCase(BaseTestCase):
     def test_returns_expected_dependencies(self):
         expected_dependencies = {
-            'task_engines': set([self.flow_generator.job_task_engine])
+            'node_engines': set([self.flow_generator.job_node_engine])
         }
         self.assertEqual(self.flow_generator.get_dependencies(),
                          expected_dependencies)
@@ -32,170 +30,151 @@ class GenerateFlowTestCase(BaseTestCase):
     def setup_patchers(self):
         flow_generator_patches = {}
         for job_name in ['compute', 'parse', 'load']:
-            attr_name = 'generate_{job_name}_job_task'.format(job_name=job_name)
+            attr_name = 'generate_{job_name}_node'.format(job_name=job_name)
             flow_generator_patches[attr_name] = MagicMock(
                 return_value=defaultdict(MagicMock))
         patchers = {'flow_generator': patch.multiple(self.flow_generator,
                                                      **flow_generator_patches)}
         return patchers
 
-    def test_flow_has_expected_tasks(self):
+    def test_flow_has_expected_nodes(self):
         flow = self.flow_generator.generate_flow()
         for job_name in ['compute', 'parse', 'load']:
-            task_name = '{job_name}_job_task'.format(job_name=job_name)
+            node_name = '{job_name}_node'.format(job_name=job_name)
             self.assertEqual(
-                flow.tasks[task_name],
+                flow.nodes[node_name],
                 getattr(self.flow_generator,
-                        'generate_%s' % task_name).return_value
+                        'generate_%s' % node_name).return_value
             )
-        self.assertEqual(flow.root_task_key, 'compute_job_task')
+        self.assertEqual(flow.root_node_key, 'compute_node')
 
-class GenerateComputeJobTaskTestCase(BaseTestCase):
-    def test_generates_expected_compute_task(self):
+class GenerateComputeNodeTestCase(BaseTestCase):
+    def test_generates_expected_compute_node(self):
         flow = MagicMock()
-        job_spec = flow.data['flow_spec']['compute_job_spec']
-        expected_task = {
-            'task_engine': JobTaskEngine.__name__,
-            'input': {
-                'job_spec': {
-                    **job_spec,
-                    'post_exec_actions': job_spec.get(
-                        'post_exec_actions', []).append({
-                            'description': ('upload completed computation'
-                                            ' dir to storage'),
-                            'action': 'storage:upload',
-                            'params': {
-                                'src': {'template': '{{ctx.completed_dir}}'}
-                            },
-                            'output_to_ctx_target': 'data.output.storage_meta'
-                        })
-                }
-            }
-        }
-        self.assertEqual(
-            self.flow_generator.generate_compute_job_task(flow=flow),
-            expected_task
-        )
-
-class GenerateParseJobTask(BaseTestCase):
-    def test_generates_expected_parse_job_task(self):
-        flow = MagicMock()
-        job_spec = flow.data['flow_spec'].get('parse_job_spec', {})
-        expected_task = {
-            'task_engine': JobTaskEngine.__name__,
-            'pre_start_actions': [
+        expected_node = {
+            'node_tasks': [
                 {
-                    'action': 'set_ctx_value',
-                    'description': ('wire output from compute job task to job'
-                                    ' input for this task'),
-                    'params': {
-                        'value': {
-                            'template': (
-                                '{{ctx.flow.tasks.{task_key}.output'
-                                '.storage_meta}}'
-                            ).format(
-                                task_key=self.flow_generator.task_keys.get(
-                                    'compute_job_task')
-                            ),
-                        },
-                        'target': 'task.input.job_spec.input.storage_meta',
-                    }
-                }
-            ],
-            'input': {
-                'job_spec': {
-                    **job_spec,
-                    'pre_build_actions': job_spec.get(
-                        'pre_build_actions', []).extend([
-                            {
-                                'description': 'download dir to parse',
-                                'action': 'storage:download',
-                                'params': {
-                                    'storage_meta': {
-                                        'template': (
-                                            '{{ctx.job_spec.input.storage_meta}}'
-                                        ),
-                                    },
-                                    'dest': {
-                                        'template': (
-                                            '{{ctx.job_dir}}/dir_to_parse')
+                    'task_type': 'run_job',
+                    'task_params': {
+                        'job_spec': {
+                            'job_params': flow.data['flow_spec'].get(
+                                'compute_job_params', {}),
+                            'job_tasks': [
+                                {'type': 'job:execute'},
+                                {
+                                    'type': 'a2g2:storage:upload',
+                                    'description': 'upload completed dir',
+                                    'params': {
+                                        'src': '{{job.completed_dir}}'
                                     }
                                 },
-                            },
-                            {
-                                'description': 'set name of dir_to_parse',
-                                'action': 'set_ctx_value',
-                                'params': {
-                                    'value': 'dir_to_parse',
-                                    'target': 'data.input.dir_to_parse',
-                                }
-                            },
-                        ])
-                }
-            }
-        }
-        self.assertEqual(
-            self.flow_generator.generate_parse_job_task(flow=flow),
-            expected_task
-        )
-
-class GenerateLoadJobTaskTestCase(BaseTestCase):
-    def test_generates_expected_load_job_task(self):
-        flow = MagicMock()
-        job_spec = flow.data['flow_spec'].get('load_job_spec', {})
-        expected_task = {
-            'task_engine': JobTaskEngine.__name__,
-            'pre_start_actions': [
-                {
-                    'action': 'set_ctx_value',
-                    'description': ('wire output from parse job task to job'
-                                    ' input for this task'),
-                    'params': {
-                        'value': {
-                            'template': (
-                                '{{ctx.flow.tasks.{task_key}.output'
-                                '.storage_meta}}'
-                            ).format(
-                                task_key=self.flow_generator.task_keys.get(
-                                    'parse_job_task')
-                            ),
-                        },
-                        'target': 'task.input.job_spec.input.storage_meta',
+                            ],
+                        }
                     }
                 }
-            ],
-            'input': {
-                'job_spec': {
-                    **job_spec,
-                    'pre_build_actions': job_spec.get(
-                        'pre_build_actions', []).extend([
-                            {
-                                'action': 'storage:download',
-                                'params': {
-                                    'storage_meta': {
-                                        'template': (
-                                            '{{ctx.job_spec.input.storage_meta}}'
-                                        ),
-                                    },
-                                    'dest': {
-                                        'template': (
-                                            '{{ctx.job_dir}}/dir_to_parse')
-                                    }
-                                },
-                            },
-                            {
-                                'action': 'set_ctx_value',
-                                'description': 'set name of dir_to_parse',
-                                'params': {
-                                    'value': 'dir_to_parse',
-                                    'target': 'data.input.dir_to_parse',
-                                }
-                            },
-                        ])
-                }
-            },
+            ]
         }
         self.assertEqual(
-            self.flow_generator.generate_load_job_task(flow=flow),
-            expected_task
+            self.flow_generator.generate_compute_node(flow=flow),
+            expected_node
+        )
+
+class GenerateParseNode(BaseTestCase):
+    def test_generates_expected_parse_node(self):
+        flow = MagicMock()
+        expected_node = {
+            'node_tasks': [
+                {
+                    'task_type': 'mc:set_values',
+                    'description': 'storage_meta plumbing',
+                    'task_params': {
+                        'value_specs': [
+                            {
+                                'target': 'node.data.storage_meta_json',
+                                'src': (
+                                    '{{flow.nodes.%s.output.storage_meta}}' % (
+                                        'compute_node'
+                                    )
+                                )
+                            }
+                        ]
+                    },
+                },
+                {
+                    'task_type': 'run_job',
+                    'task_params': {
+                        'job_spec': {
+                            'job_params': flow.data['flow_spec'].get(
+                                'parse_job_params'),
+                            'job_tasks': [
+                                {
+                                    'task_type': 'a2g2:storage:download',
+                                    'task_params': {
+                                        'storage_meta_json': '<UNSET>',
+                                        'dest': '{{ctx.job_dir}}/dir_to_parse'
+                                    }
+                                },
+                                {'task_type': 'job:execute'},
+                                {
+                                    'task_type': 'a2g2:storage:upload',
+                                    'task_params': {
+                                        'src': '{{job.completed_dir}}'
+                                    }
+                                },
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+        self.assertEqual(
+            self.flow_generator.generate_parse_node(flow=flow),
+            expected_node
+        )
+
+class GenerateLoadNodeTestCase(BaseTestCase):
+    def test_generates_expected_load_node(self):
+        flow = MagicMock()
+        expected_node = {
+            'node_tasks': [
+                {
+                    'task_type': 'mc:set_values',
+                    'description': 'storage_meta plumbing',
+                    'task_params': {
+                        'value_specs': [
+                            {
+                                'target': 'node.data.storage_meta_json',
+                                'src': (
+                                    '{{flow.nodes.%s.output.storage_meta}}' % (
+                                        'parse_node'
+                                    )
+                                )
+                            }
+                        ]
+                    },
+                },
+                {
+                    'task_type': 'run_job',
+                    'task_params': {
+                        'job_spec': {
+                            'job_params': flow.data['flow_spec'].get(
+                                'load_job_params'),
+                            'job_tasks': [
+                                {
+                                    'task_type': 'a2g2:storage:download',
+                                    'task_params': {
+                                        'storage_meta_json': '<UNSET>',
+                                        'dest': '{{ctx.job_dir}}/dir_to_load'
+                                    }
+                                },
+                                {'task_type': 'job:execute'},
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+        self.assertEqual(
+            self.flow_generator.generate_load_node(flow=flow),
+            expected_node
         )
