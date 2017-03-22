@@ -20,7 +20,7 @@ class OdysseyPushRunner(object):
         self.tick_counter = 0
 
     def setup(self,
-              task_runner=None,
+              task_handler=None,
               flow_generator_classes=None, 
               flow_engine=None, 
               mc_client=None, 
@@ -32,7 +32,7 @@ class OdysseyPushRunner(object):
               flow_runner=None,
               **kwargs
              ):
-        self.task_runner = task_runner or self.generate_task_runner()
+        self.task_handler = task_handler or self.generate_task_handler()
         self.flow_generator_classes = flow_generator_classes or \
                 self.generate_flow_generator_classes()
         self.flow_engine = flow_engine or self.generate_flow_engine()
@@ -45,14 +45,14 @@ class OdysseyPushRunner(object):
         self.tick_ctx = self.decorate_tick_ctx(tick_ctx=tick_ctx)
         self.flow_runner = flow_runner or self.generate_flow_runner()
 
-    def generate_task_runner(self): pass
+    def generate_task_handler(self): pass
 
     def generate_flow_generator_classes(self):
         flow_generator_classes = set()
         return flow_generator_classes
 
     def generate_flow_engine(self):
-        flow_engine = FlowEngine(action_processor=None)
+        flow_engine = FlowEngine(task_handler=self.task_handler)
         for flow_generator_class in (self.flow_generator_classes or []):
             flow_engine.register_flow_generator_class(
                 flow_generator_class=flow_generator_class)
@@ -67,7 +67,7 @@ class OdysseyPushRunner(object):
 
     def generate_job_runner(self, job_runner_kwargs=None): 
         return OdysseyPushJobRunner(
-            task_runner=self.task_runner,
+            task_handler=self.task_handler,
             job_submission_factory=self.job_submission_factory,
             ssh_client=self.ssh_client,
             job_client=self.mc_client,

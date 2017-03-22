@@ -149,8 +149,8 @@ class RunnerSetupTestCase(BaseTestCase):
     def call_real_setup(self, *args, **kwargs):
         self.mock_runner.call_real_method('setup', *args, **kwargs)
 
-    def test_falls_back_to_generate_task_runner(self):
-        self.run_subcomponent_generator_fallback_test('task_runner')
+    def test_falls_back_to_generate_task_handler(self):
+        self.run_subcomponent_generator_fallback_test('task_handler')
 
     def test_falls_back_to_generate_flow_engine(self):
         self.run_subcomponent_generator_fallback_test('flow_engine')
@@ -182,7 +182,7 @@ class GenerateFlowGeneratorClassesTestCase(BaseTestCase):
 class GenerateFlowEngineTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.runner.task_runner = Mock()
+        self.runner.task_handler = Mock()
         self.runner.flow_generator_classes = [Mock() for i in range(3)]
 
     def decorate_patchers(self):
@@ -192,7 +192,7 @@ class GenerateFlowEngineTestCase(BaseTestCase):
     def test_generates_flow_engine(self):
         flow_engine = self.runner.generate_flow_engine()
         self.assertEqual(self.mocks['FlowEngine'].call_args,
-                         call(action_processor=None))
+                         call(task_handler=self.runner.task_handler))
         self.assertEqual(flow_engine, self.mocks['FlowEngine'].return_value)
 
     def test_registers_flow_generator_classes_with_engine(self):
@@ -242,7 +242,7 @@ class GenerateJobRunnerTestCase(BaseTestCase):
         self.assertEqual(
             self.mocks['JobRunner'].call_args,
             call(
-                task_runner=self.mock_runner.task_runner,
+                task_handler=self.mock_runner.task_handler,
                 job_client=self.mock_runner.mc_client,
                 job_submission_factory=self.mock_runner.job_submission_factory,
                 ssh_client=self.mock_runner.ssh_client,

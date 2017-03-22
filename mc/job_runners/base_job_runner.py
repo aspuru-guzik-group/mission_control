@@ -1,17 +1,18 @@
 import logging
 import tempfile
 import time
-from uuid import uuid4
+
+from mc.task_runners.base_task_runner import BaseTaskRunner
 
 
 class BaseJobRunner(object):
     def __init__(self, job_client=None, job_submission_factory=None,
-                 execution_client=None, task_runner=None,
+                 execution_client=None, task_handler=None,
                  tick_interval=120, max_running_jobs=3, logger=None):
         self.job_client = job_client
         self.job_submission_factory = job_submission_factory
         self.execution_client = execution_client
-        self.task_runner = task_runner
+        self.task_handler = task_handler
         self.tick_interval = tick_interval
         self.max_running_jobs = max_running_jobs
         self.logger = logger or logging
@@ -58,16 +59,14 @@ class BaseJobRunner(object):
         completed_jobs = {}
         for key, job in list(self.running_jobs.items()):
             if self.job_is_running(job=job):
-                try: self.tick_job_tasks(job=job)
+                try: self.tick_job(job=job)
                 except Exception as error: self.fail_job(job=job, error=error)
             else:
                 completed_jobs[key] = job
         for key, job in completed_jobs.items(): self.complete_job(job=job)
 
     def job_is_running(self, job=None):
-        incomplete_task = self.get_first_incomplete_task_for_job(job=job)
-        if incomplete_task: return True
-        return False
+        return self.job['status'] == 'RUNNING'
 
     def fetch_claimable_jobs(self):
         return self.job_client.fetch_claimable_jobs()
@@ -116,55 +115,23 @@ class BaseJobRunner(object):
     def start_job(self, job=None):
         if 'tasks' not in job: job['tasks'] = self.default_tasks
         self.running_jobs[job['uuid']] = job
-        self.tick_job_tasks(job=job)
+        self.tick_job(job=job)
 
-    def tick_job_tasks(self, job=None):
+    def tick_job(self, job=None):
+        task_runner = BaseTaskRunner(
+            get_tasks=lambda: job.get('tasks', []),
+            get_task_context=lambda : self.get_task_context(job=job),
+            task_handler=self.task_handler
+        )
         try:
-            current_task = self.get_first_incomplete_task_for_job(job=job)
-            while current_task:
-                self.tick_task(task=current_task, job=job)
-                if current_task.get('status', None) == 'COMPLETED':
-                    next_task = self.get_first_incomplete_task_for_job(job=job)
-                    if next_task is current_task: next_task = None
-                else: next_task = None
-                current_task = next_task
+            tasks_status = task_runner.tick_tasks()
+            job['status'] = tasks_status
         except Exception as error:
-            raise Exception("Error ticking job tasks: {}".format(error))
-
-    def get_first_incomplete_task_for_job(self, job=None):
-        for task in job.get('tasks', []):
-            if task.get('status', None) != 'COMPLETED': return task
-        return None
-
-    def tick_task(self, task=None, job=None):
-        try:
-            self.task_runner.tick_task(
-                task=task,
-                task_context=self.get_task_context(job=job)
-            )
-            if task.get('status', None) == 'FAILED':
-                error = "Task '{task}' failed: {task_error}".format(
-                    task=task,
-                    task_error=task['state'].get('error', 'unknown error'))
-                raise Exception(error)
-        except Exception as error:
-            error = "Failed to tick task '{task}': {error}".format(
-                task=task, error=error)
-            raise Exception(error)
+            self.fail_job(job=job, error=error)
 
     def get_task_context(self, job=None):
-        task_context = {
-            'job': job,
-            'keyed_tasks': self.get_keyed_job_tasks(job=job),
-        }
+        task_context = {'job': job}
         return task_context
-
-    def get_keyed_job_tasks(self, job=None):
-        keyed_tasks = {}
-        for task in job.get('tasks', []):
-            key = task.get('key', str(uuid4()))
-            keyed_tasks[key] = task
-        return keyed_tasks
 
     def complete_job(self, job=None):
         execution_result = job['execution']['result']

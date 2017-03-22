@@ -2,13 +2,14 @@ import unittest
 from unittest.mock import call, DEFAULT, patch, MagicMock, Mock
 from uuid import uuid4
 
-from ..flow_engine import FlowEngine
+from .. import flow_engine
 from ..flow import Flow
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.engine = FlowEngine()
+        self.task_handler = MagicMock
+        self.engine = flow_engine.FlowEngine(task_handler=self.task_handler)
 
     def tearDown(self):
         if hasattr(self, 'patchers'): self.stop_patchers(self.patchers)
@@ -27,24 +28,15 @@ class DeserializationTestCase(BaseTestCase):
         self.setup_node_engines()
 
     def setup_node_engines(self):
-        class MockNodeEngine(object):
-            def __init__(self, *args, **kwargs):
-                self.__dict__.update(kwargs)
-
-        self.node_engines = {name: type(name, (MockNodeEngine,), {})
-                             for name in ['Engine1', 'Engine2', 'Engine3']}
-        for name, node_engine in self.node_engines.items():
-            self.engine.register_node_engine(node_engine=node_engine)
-
         self.serialized_flow = {
             'data': 'some data',
             'input': 'some input',
             'output': 'some output',
             'nodes': [
-                {'key': 'a', 'node_engine': 'Engine1', 'status': 'COMPLETED'},
-                {'key': 'b', 'node_engine': 'Engine2', 'status': 'COMPLETED'},
-                {'key': 'c', 'node_engine': 'Engine1', 'status': 'RUNNING'},
-                {'key': 'd', 'node_engine': 'Engine2', 'status': 'RUNNING'},
+                {'key': 'a', 'status': 'COMPLETED'},
+                {'key': 'b', 'status': 'COMPLETED'},
+                {'key': 'c', 'status': 'RUNNING'},
+                {'key': 'd', 'status': 'RUNNING'},
             ],
             'root_node_key': 'a',
             'edges': [
@@ -227,22 +219,19 @@ class TickNodeTestCase(BaseTestCase):
         super().setUp()
         self.flow = Flow()
         self.node = self.flow.add_node(node={})
-        self.engine.process_actions = Mock()
-        self.engine.get_engine_for_node = Mock()
-        self.mock_engine = self.engine.get_engine_for_node.return_value
         self.ctx = MagicMock()
-        self.engine.complete_node = Mock()
+        self.engine.get_task_runner_for_node = MagicMock()
+        self.expected_task_runner = \
+                self.engine.get_task_runner_for_node.return_value
 
-    def test_calls_node_engine_tick_node(self):
+    def test_calls_task_runner(self):
         self.engine.tick_node(flow=self.flow, node=self.node, ctx=self.ctx)
         self.assertEqual(
-            self.mock_engine.tick_node.call_args,
-            call(node=self.node, ctx={**self.ctx, 'flow': self.flow}))
+            len(self.expected_task_runner.tick_tasks.call_args_list), 1)
 
     def test_calls_complete_node_if_node_completes(self):
-        def mock_node_completion(*args, **kwargs):
-            self.node['status'] = 'COMPLETED'
-        self.mock_engine.tick_node.side_effect = mock_node_completion
+        self.engine.complete_node = MagicMock()
+        self.expected_task_runner.tick_tasks.return_value = 'COMPLETED'
         self.engine.tick_node(flow=self.flow, node=self.node, ctx=self.ctx)
         self.assertEqual(self.engine.complete_node.call_args,
                          call(flow=self.flow, node=self.node))
@@ -251,16 +240,11 @@ class CompleteNodeTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.flow = Flow()
-        self.node = self.flow.add_node(node={
-            'post_complete_actions': ['action_%s' % i for i in range(3)]
-        })
-        self.engine.process_actions = Mock()
+        self.node = {}
 
-    def test_processes_post_complete_actions(self):
+    def test_sets_node_status_to_completed(self):
         self.engine.complete_node(flow=self.flow, node=self.node)
-        self.assertEqual(self.engine.process_actions.call_args,
-                         call(actions=self.node['post_complete_actions'],
-                              ctx={'node': self.node, 'flow': self.flow}))
+        self.assertEqual(self.node['status'], 'COMPLETED')
 
 class CompleteFlowTestCase(BaseTestCase):
     def test_sets_status_to_completed(self):
@@ -296,34 +280,11 @@ class StartNodeTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.flow = Flow()
-        self.node = self.flow.add_node(node={
-            'pre_start_actions': ['action_%s' % i for i in range(3)]
-        })
-        self.engine.process_actions = Mock()
-
-    def test_processes_pre_start_actions(self):
-        self.engine.start_node(flow=self.flow, node=self.node)
-        self.assertEqual(self.engine.process_actions.call_args,
-                         call(actions=self.node['pre_start_actions'],
-                              ctx={'node': self.node, 'flow': self.flow}))
+        self.node = {}
 
     def test_sets_status_to_running(self):
         self.engine.start_node(flow=self.flow, node=self.node)
         self.assertEqual(self.node['status'], 'RUNNING')
-
-class ProcessActionsTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.actions = ['action_%s' % i for i in range(3)]
-        self.engine.action_processor = Mock()
-        self.ctx = Mock()
-
-    def test_calls_action_processor_for_each_action(self):
-        self.engine.process_actions(actions=self.actions, ctx=self.ctx)
-        self.assertEqual(
-            self.engine.action_processor.process_action.call_args_list,
-            [call(action=action, ctx=self.ctx) for action in self.actions]
-        )
 
 class GenerateFlowTestCase(BaseTestCase):
     def test_generates_flow_from_spec(self):

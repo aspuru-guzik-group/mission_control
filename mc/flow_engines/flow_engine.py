@@ -1,21 +1,16 @@
 import collections
 import logging
 
+from mc.task_runners.base_task_runner import BaseTaskRunner
+
 from .flow import Flow
 
 
 class FlowEngine(object):
-    def __init__(self, action_processor=None, logger=None):
-        self.action_processor = action_processor
+    def __init__(self, task_handler=None, logger=None):
         self.logger = logger or logging
-        self.node_engine_registry = collections.OrderedDict()
+        self.task_handler = task_handler
         self.flow_generator_class_registry = collections.OrderedDict()
-
-    def register_node_engine(self, node_engine=None, key=None):
-        if not key:
-            key = getattr(node_engine, 'node_engine',
-                          node_engine.__class__.__name__)
-        self.node_engine_registry[key] = node_engine
 
     def register_flow_generator_class(self, flow_generator_class=None):
         key = getattr(flow_generator_class, 'flow_type',
@@ -28,8 +23,6 @@ class FlowEngine(object):
                                                    flow_generator_class=None):
         if not hasattr(flow_generator_class, 'get_dependencies'): return
         dependencies = flow_generator_class.get_dependencies()
-        for node_engine in dependencies.get('node_engines', []):
-            self.register_node_engine(node_engine)
         for generator_class in dependencies.get('flow_generator_classes', []):
             self.register_flow_generator_class(
                 flow_generator_class=generator_class)
@@ -69,39 +62,53 @@ class FlowEngine(object):
             self.start_node(flow=flow, node=node)
 
     def start_node(self, flow=None, node=None):
-        pre_start_actions = node.get('pre_start_actions', None)
-        if pre_start_actions: self.process_actions(
-            actions=pre_start_actions,
-            ctx={'flow': flow, 'node': node}
-        )
         node['status'] = 'RUNNING'
-
-    def process_actions(self, actions=None, ctx=None):
-        for action in actions:
-            self.action_processor.process_action(action=action, ctx=ctx)
 
     def tick_running_nodes(self, flow=None, ctx=None):
         for node in flow.get_nodes_by_status(status='RUNNING'):
-            self.tick_node(flow=flow, node=node, ctx=ctx)
+            if self.node_is_running(node=node):
+                try:
+                    self.tick_node(node=node, flow=flow, ctx=ctx)
+                except Exception as error:
+                    self.fail_node(node=node, error=error)
+            else:
+                self.complete_node(node=node)
 
-    def tick_node(self, flow=None, node=None, ctx=None):
-        ctx = ctx or {}
+    def node_is_running(self, node=None):
+        return node['status'] == 'RUNNING'
+
+    def tick_node(self, node=None, flow=None, ctx=None):
         try:
-            node_engine = self.get_engine_for_node(node=node)
-            node_engine.tick_node(node=node, ctx={**ctx, 'flow': flow})
-            if node.get('status', None) == 'COMPLETED':
+            task_runner = self.get_task_runner_for_node(
+                node=node, flow=flow, ctx=ctx)
+            tasks_status = task_runner.tick_tasks()
+            if tasks_status == 'COMPLETED':
                 self.complete_node(flow=flow, node=node)
-        except Exception as e:
-            msg = "tick failed for node with key '{key}': {e}".format(
-                key=node['key'], e=e)
-            self.logger.exception(msg)
+            else:
+                node['status'] = tasks_status
+        except Exception as error:
+            self.fail_node(node=node, error=error)
+
+    def get_task_runner_for_node(self, node=None, flow=None, ctx=None):
+        task_runner = BaseTaskRunner(
+            get_tasks=(lambda: node.get('tasks', [])),
+            get_task_context=(
+                lambda :self.get_task_context(node=node, flow=flow, ctx=ctx)
+            ),
+            task_handler=self.task_handler
+        )
+        return task_runner
+
+    def get_task_context(self, node=None, flow=None, ctx=None):
+        task_context = {'node': node, 'flow': flow}
+        return task_context
+
+    def fail_node(self, node=None, error=None):
+        node['error'] = error
+        node['status'] = 'FAILED'
 
     def complete_node(self, flow=None, node=None):
-        actions = node.get('post_complete_actions', None)
-        if actions: self.process_actions(
-            actions=actions,
-            ctx={'flow': flow, 'node': node}
-        )
+        node['status'] = 'COMPLETED'
 
     def get_engine_for_node(self, node=None):
         node_engine = self.node_engine_registry.get(node['node_engine'], None)
