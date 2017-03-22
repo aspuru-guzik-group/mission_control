@@ -6,17 +6,17 @@ class ExecutionTaskHandler(BaseTaskHandler):
         super().__init__(self, *args, **kwargs)
         self.execution_client = execution_client
 
-    def initial_tick(self, task=None, job=None):
+    def initial_tick(self, task=None, task_context=None):
         execution_meta = self.execution_client.start_execution(
             submission=task['params']['submission'])
         task['data']['execution_meta'] = execution_meta
 
-    def intermediate_tick(self, task=None, job=None):
+    def intermediate_tick(self, task=None, task_context=None):
         execution_state = self.execution_client.get_execution_state(
             execution_meta=task['data']['execution_meta'])
         task['data']['execution_state'] = execution_state
         self.handle_execution_state(execution_state=execution_state, task=task,
-                                    job=job)
+                                    job=task_context['job'])
 
     def handle_execution_state(self, execution_state=None, task=None, job=None):
         run_status = execution_state['run_state']

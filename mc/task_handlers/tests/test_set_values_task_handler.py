@@ -8,7 +8,7 @@ from ..set_values_task_handler import SetValuesTaskHandler
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.task = defaultdict(MagicMock)
-        self.job = defaultdict(MagicMock)
+        self.task_context = defaultdict(MagicMock)
         self.task_handler = SetValuesTaskHandler()
 
 class InitialTickTestCase(BaseTestCase):
@@ -17,14 +17,15 @@ class InitialTickTestCase(BaseTestCase):
         self.task_handler.set_values = MagicMock()
 
     def _do_initial_tick(self):
-        self.task_handler.initial_tick(task=self.task, job=self.job)
+        self.task_handler.initial_tick(task=self.task,
+                                       task_context=self.task_context)
 
     def test_calls_set_values(self):
         self._do_initial_tick()
         self.assertEqual(
             self.task_handler.set_values.call_args,
             call(value_specs=self.task['params']['value_specs'],
-                 job=self.job))
+                 task_context=self.task_context))
 
     def test_sets_task_status_to_completed(self):
         self._do_initial_tick()
@@ -34,29 +35,16 @@ class SetValuesTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.task_handler.set_context_value = MagicMock()
-        self.task_handler.get_context = MagicMock()
-        self.expected_context = self.task_handler.get_context.return_value
         self.value_specs = [MagicMock() for i in range(3)]
 
     def test_calls_set_context_value_for_value_specs(self):
-        self.task_handler.set_values(value_specs=self.value_specs, job=self.job)
+        self.task_handler.set_values(value_specs=self.value_specs,
+                                     task_context=self.task_context)
         self.assertEqual(
             self.task_handler.set_context_value.call_args_list,
-            [call(value_spec=value_spec, context=self.expected_context)
+            [call(value_spec=value_spec, context=self.task_context)
              for value_spec in self.value_specs]
         )
-
-class GetContext(BaseTestCase):
-    def test_context_has_keyed_tasks(self):
-        self.job['tasks'] = [MagicMock() for i in range(3)]
-        context = self.task_handler.get_context(job=self.job)
-        expected_keyed_tasks = {task.get('key'): task
-                                for task in self.job['tasks']}
-        self.assertEqual(context['keyed_tasks'], expected_keyed_tasks)
-
-    def test_context_has_job(self):
-        context = self.task_handler.get_context(job=self.job)
-        self.assertEqual(context['job'], self.job)
 
 class SetContextValueTestCase(BaseTestCase):
     def setUp(self):

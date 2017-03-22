@@ -9,6 +9,8 @@ class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.task = self.generate_task()
         self.job = defaultdict(MagicMock)
+        self.task_context = defaultdict(MagicMock)
+        self.task_context['job'] = self.job
         self.execution_client = MagicMock()
         self.task_handler = ExecutionTaskHandler(
             execution_client=self.execution_client
@@ -21,7 +23,8 @@ class BaseTestCase(unittest.TestCase):
 
 class InitialTickTestCase(BaseTestCase):
     def _do_initial_tick(self):
-        self.task_handler.initial_tick(task=self.task, job=self.job)
+        self.task_handler.initial_tick(task=self.task,
+                                       task_context=self.task_context)
 
     def test_starts_execution(self):
         self._do_initial_tick()
@@ -42,7 +45,8 @@ class IntermediateTickTestCase(BaseTestCase):
         self.task_handler.handle_execution_state = MagicMock()
 
     def _do_intermediate_tick(self):
-        self.task_handler.intermediate_tick(task=self.task, job=self.job)
+        self.task_handler.intermediate_tick(task=self.task,
+                                            task_context=self.task_context)
 
     def test_calls_get_execution_state_with_execution_meta(self):
         self._do_intermediate_tick()
@@ -63,7 +67,7 @@ class IntermediateTickTestCase(BaseTestCase):
             call(execution_state=self.task_handler.execution_client\
                  .get_execution_state.return_value,
                  task=self.task,
-                 job=self.job)
+                 job=self.task_context['job'])
         )
 
 class HandleExecutionStateTestCase(BaseTestCase):

@@ -1,34 +1,17 @@
-from uuid import uuid4
-
 import jinja2
 
 from .base_task_handler import BaseTaskHandler
 
 
 class SetValuesTaskHandler(BaseTaskHandler):
-    def initial_tick(self, task=None, job=None):
+    def initial_tick(self, task=None, task_context=None):
         self.set_values(value_specs=task['params']['value_specs'],
-                        job=job)
+                        task_context=task_context)
         task['status'] = 'COMPLETED'
 
-    def set_values(self, value_specs=None, job=None):
-        context = self.get_context(job=job)
+    def set_values(self, value_specs=None, task_context=None):
         for value_spec in value_specs:
-            self.set_context_value(value_spec=value_spec, context=context)
-
-    def get_context(self, job=None):
-        context = {
-            'job': job,
-            'keyed_tasks': self.get_keyed_tasks(job=job),
-        }
-        return context
-
-    def get_keyed_tasks(self, job=None):
-        keyed_tasks = {}
-        for task in job.get('tasks', []):
-            key = task.get('key', str(uuid4()))
-            keyed_tasks[key] = task
-        return keyed_tasks
+            self.set_context_value(value_spec=value_spec, context=task_context)
 
     def set_context_value(self, value_spec=None, context=None):
         self.set_context_target_value(
