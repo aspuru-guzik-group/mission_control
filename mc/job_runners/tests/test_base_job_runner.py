@@ -225,11 +225,42 @@ class TickJobTasksTestCase(BaseTestCase):
                          expected_tick_task_call_args_list)
 
 class TickTaskTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.task = MagicMock()
+        self.runner.get_task_context = MagicMock()
+
+    def _do_tick_task(self):
+        self.runner.tick_task(task=self.task, job=self.job)
+
+    def test_gets_task_context(self):
+        self._do_tick_task()
+        self.assertEqual(
+            self.runner.get_task_context.call_args,
+            call(job=self.job)
+        )
+
     def test_dispatches_to_task_runner(self):
-        task = MagicMock()
-        self.runner.tick_task(task=task, job=self.job)
-        self.assertEqual(self.task_runner.tick_task.call_args,
-                         call(task=task, job=self.job))
+        self._do_tick_task()
+        expected_task_context = self.runner.get_task_context.return_value
+        self.assertEqual(
+            self.task_runner.tick_task.call_args,
+            call(task=self.task, task_context=expected_task_context)
+        )
+
+class GetTaskContextTestCase(BaseTestCase):
+    def _do_get_task_context(self):
+        return self.runner.get_task_context(job=self.job)
+
+    def test_task_context_has_keyed_tasks(self):
+        self.job['tasks'] = [{'key': i} for i in range(3)]
+        expected_keyed_tasks = {task['key']: task for task in self.job['tasks']}
+        task_context = self._do_get_task_context()
+        self.assertEqual(task_context['keyed_tasks'], expected_keyed_tasks)
+
+    def test_context_has_job(self):
+        task_context = self._do_get_task_context()
+        self.assertEqual(task_context['job'], self.job)
 
 if __name__ == '__main__':
     unittest.main()

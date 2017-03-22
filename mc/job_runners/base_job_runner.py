@@ -1,6 +1,7 @@
 import logging
 import tempfile
 import time
+from uuid import uuid4
 
 
 class BaseJobRunner(object):
@@ -137,7 +138,10 @@ class BaseJobRunner(object):
 
     def tick_task(self, task=None, job=None):
         try:
-            self.task_runner.tick_task(task=task, job=job)
+            self.task_runner.tick_task(
+                task=task,
+                task_context=self.get_task_context(job=job)
+            )
             if task.get('status', None) == 'FAILED':
                 error = "Task '{task}' failed: {task_error}".format(
                     task=task,
@@ -147,6 +151,20 @@ class BaseJobRunner(object):
             error = "Failed to tick task '{task}': {error}".format(
                 task=task, error=error)
             raise Exception(error)
+
+    def get_task_context(self, job=None):
+        task_context = {
+            'job': job,
+            'keyed_tasks': self.get_keyed_job_tasks(job=job),
+        }
+        return task_context
+
+    def get_keyed_job_tasks(self, job=None):
+        keyed_tasks = {}
+        for task in job.get('tasks', []):
+            key = task.get('key', str(uuid4()))
+            keyed_tasks[key] = task
+        return keyed_tasks
 
     def complete_job(self, job=None):
         execution_result = job['execution']['result']
