@@ -49,12 +49,12 @@ class SetValuesTestCase(BaseTestCase):
 class SetContextValueTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.target_dot_spec = 'foo.bar'
+        self.dest_dot_spec = 'foo.bar'
         self.context = {}
         self.src_key = 'some_key'
         self.context[self.src_key] = 'src_value'
         self.value_spec = {
-            'target': self.target_dot_spec,
+            'dest': self.dest_dot_spec,
             'value': '{{%s}}' % self.src_key
         }
 

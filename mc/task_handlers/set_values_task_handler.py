@@ -14,9 +14,9 @@ class SetValuesTaskHandler(BaseTaskHandler):
             self.set_context_value(value_spec=value_spec, context=task_context)
 
     def set_context_value(self, value_spec=None, context=None):
-        self.set_context_target_value(
+        self.set_context_dest_value(
             context=context,
-            target=value_spec['target'],
+            dest=value_spec['dest'],
             value=self.get_value_for_value_spec(
                 value_spec=value_spec,
                 context=context
@@ -32,8 +32,8 @@ class SetValuesTaskHandler(BaseTaskHandler):
     def render_template(self, template=None, context=None):
         return jinja2.Template(template).render(**context)
 
-    def set_context_target_value(self, context=None, target=None, value=None):
-        self.set_value_from_dot_spec(obj=context, dot_spec=target, value=value)
+    def set_context_dest_value(self, context=None, dest=None, value=None):
+        self.set_value_from_dot_spec(obj=context, dot_spec=dest, value=value)
 
     def get_attr_or_item(self, obj=None, key=None):
         if hasattr(obj, key): return getattr(obj, key)
