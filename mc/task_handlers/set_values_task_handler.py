@@ -30,10 +30,11 @@ class SetValuesTaskHandler(BaseTaskHandler):
         return value
 
     def render_template(self, template=None, context=None):
-        return jinja2.Template(template).render(**context)
+        return jinja2.Template(template).render(ctx=context)
 
     def set_context_dest_value(self, context=None, dest=None, value=None):
-        self.set_value_from_dot_spec(obj=context, dot_spec=dest, value=value)
+        self.set_value_from_dot_spec(obj={'ctx': context}, dot_spec=dest,
+                                     value=value)
 
     def get_attr_or_item(self, obj=None, key=None):
         if hasattr(obj, key): return getattr(obj, key)
