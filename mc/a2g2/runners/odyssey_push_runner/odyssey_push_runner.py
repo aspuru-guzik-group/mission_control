@@ -5,9 +5,9 @@ import requests
 from mc.mc_client.mission_control_client import MissionControlClient
 from mc.flow_engines.flow_engine import FlowEngine
 from mc.flow_runners.base_flow_runner import BaseFlowRunner as FlowRunner
+from mc.job_runners.base_job_runner import BaseJobRunner as JobRunner
 from .odyssey_job_submission_factory import OdysseyJobSubmissionFactory as \
         JobSubmissionFactory
-from .odyssey_push_job_runner import OdysseyPushJobRunner
 
 
 class OdysseyPushRunner(object):
@@ -66,10 +66,9 @@ class OdysseyPushRunner(object):
         return JobSubmissionFactory()
 
     def generate_job_runner(self, job_runner_kwargs=None): 
-        return OdysseyPushJobRunner(
+        return JobRunner(
             task_handler=self.task_handler,
             job_submission_factory=self.job_submission_factory,
-            ssh_client=self.ssh_client,
             job_client=self.mc_client,
             **(job_runner_kwargs or {})
         )

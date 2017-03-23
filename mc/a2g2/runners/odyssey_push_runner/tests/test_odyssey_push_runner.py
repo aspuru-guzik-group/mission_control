@@ -232,7 +232,7 @@ class GenerateJobSubmissionFactoryTestCase(BaseTestCase):
 class GenerateJobRunnerTestCase(BaseTestCase):
     def decorate_patchers(self):
         self.patchers['JobRunner'] = patch.object(odyssey_push_runner,
-                                                  'OdysseyPushJobRunner')
+                                                  'JobRunner')
 
     def test_generates_job_runner(self):
         job_runner_kwargs = {'mock': 'kwargs'}
@@ -245,7 +245,6 @@ class GenerateJobRunnerTestCase(BaseTestCase):
                 task_handler=self.mock_runner.task_handler,
                 job_client=self.mock_runner.mc_client,
                 job_submission_factory=self.mock_runner.job_submission_factory,
-                ssh_client=self.mock_runner.ssh_client,
                 **job_runner_kwargs
             )
         )
