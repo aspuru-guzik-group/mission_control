@@ -104,7 +104,7 @@ class HandleExecutionStateTestCase(BaseTestCase):
 class HandleCompletedExecutionTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.completed_execution_state = {'completed_dir': 'some_dir'}
+        self.completed_execution_state = {'artifact': 'some_artifact'}
 
     def _do_handle_completed_execution_state(self):
         self.task_handler.handle_completed_execution_state(
@@ -112,10 +112,10 @@ class HandleCompletedExecutionTestCase(BaseTestCase):
             task=self.task,
             job=self.job)
 
-    def test_saves_completed_dir_to_task(self):
+    def test_saves_artifact_to_task(self):
         self._do_handle_completed_execution_state()
-        self.assertEqual(self.task['data']['completed_dir'],
-                         self.completed_execution_state['completed_dir'])
+        self.assertEqual(self.task['data']['artifact'],
+                         self.completed_execution_state['artifact'])
 
     def test_sets_status(self):
         self._do_handle_completed_execution_state()

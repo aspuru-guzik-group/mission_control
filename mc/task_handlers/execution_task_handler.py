@@ -29,7 +29,7 @@ class ExecutionTaskHandler(BaseTaskHandler):
 
     def handle_completed_execution_state(self, execution_state=None, task=None,
                                          job=None):
-        task['data']['completed_dir'] = execution_state['completed_dir']
+        task['data']['artifact'] = execution_state['artifact']
         task['status'] = 'COMPLETED'
 
     def handle_failed_execution_state(self, execution_state=None, task=None,
