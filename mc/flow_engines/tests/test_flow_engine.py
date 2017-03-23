@@ -236,6 +236,21 @@ class TickNodeTestCase(BaseTestCase):
         self.assertEqual(self.engine.complete_node.call_args,
                          call(flow=self.flow, node=self.node))
 
+class GetTaskRunnerForNodeTestCase(BaseTestCase):
+    @patch.object(flow_engine, 'BaseTaskRunner')
+    def test_generates_task_runner_with_expected_kwargs(self, MockTaskRunner):
+        node = MagicMock()
+        flow = MagicMock()
+        ctx = MagicMock()
+        self.engine.get_task_runner_for_node(node=node, flow=flow, ctx=ctx)
+        call_kwargs = MockTaskRunner.call_args[1]
+        self.assertEqual(call_kwargs['get_tasks'](), node.get('node_tasks'))
+        self.assertEqual(
+            call_kwargs['get_task_context'](),
+            self.engine.get_task_context(node=node, flow=flow, ctx=ctx)
+        )
+        self.assertEqual(call_kwargs['task_handler'], self.engine.task_handler)
+
 class CompleteNodeTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()

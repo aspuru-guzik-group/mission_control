@@ -91,7 +91,7 @@ class FlowEngine(object):
 
     def get_task_runner_for_node(self, node=None, flow=None, ctx=None):
         task_runner = BaseTaskRunner(
-            get_tasks=(lambda: node.get('tasks', [])),
+            get_tasks=(lambda: node.get('node_tasks', [])),
             get_task_context=(
                 lambda :self.get_task_context(node=node, flow=flow, ctx=ctx)
             ),
