@@ -7,11 +7,10 @@ from mc.task_runners.base_task_runner import BaseTaskRunner
 
 class BaseJobRunner(object):
     def __init__(self, job_client=None, job_submission_factory=None,
-                 execution_client=None, task_handler=None,
-                 tick_interval=120, max_running_jobs=3, logger=None):
+                 task_handler=None, tick_interval=120, max_running_jobs=3,
+                 logger=None):
         self.job_client = job_client
         self.job_submission_factory = job_submission_factory
-        self.execution_client = execution_client
         self.task_handler = task_handler
         self.tick_interval = tick_interval
         self.max_running_jobs = max_running_jobs
