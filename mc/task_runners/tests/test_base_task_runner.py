@@ -76,7 +76,7 @@ class DecorateContextTestCase(BaseTestCase):
         expected_keyed_tasks = {task['key']: task
                                 for task in self.task_runner.get_tasks()}
         expected_decorated_task_context = {
-            'keyed_tasks': expected_keyed_tasks,
+            'tasks': expected_keyed_tasks,
             **self.task_context,
         }
         self.assertEqual(self.task_runner.get_decorated_task_context(),

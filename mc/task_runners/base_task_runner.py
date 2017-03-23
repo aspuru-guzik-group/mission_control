@@ -49,7 +49,7 @@ class BaseTaskRunner(object):
 
     def get_decorated_task_context(self):
         decorated_task_context = {
-            'keyed_tasks': self.get_keyed_tasks(tasks=self.get_tasks()),
+            'tasks': self.get_keyed_tasks(tasks=self.get_tasks()),
             **self.get_task_context()
         }
         return decorated_task_context
