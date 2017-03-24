@@ -19,15 +19,6 @@ class BaseTestCase(unittest.TestCase):
         return yaml.dump(obj, default_style='"', default_flow_style=True)\
                 .strip()
 
-class GetDependenciesTestCase(BaseTestCase):
-    def test_returns_expected_dependencies(self):
-        expected_dependencies = {
-            'node_engines': set([self.flow_generator.job_node_engine])
-        }
-        self.assertEqual(self.flow_generator.get_dependencies(),
-                         expected_dependencies)
-    
-
 class GenerateFlowTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()

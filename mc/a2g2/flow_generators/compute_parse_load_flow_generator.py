@@ -1,21 +1,12 @@
 import yaml
 
 from mc.flow_engines.flow import Flow
-from mc.a2g2.node_engines.job_node_engine import JobNodeEngine
 
 from . import base_flow_generator
 
 
 class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
     flow_type = 'ComputeParseLoadFlow'
-    job_node_engine = JobNodeEngine()
-    job_node_engine_name = job_node_engine.__class__.__name__
-
-    @classmethod
-    def get_dependencies(cls):
-        return {
-            'node_engines': set([cls.job_node_engine]),
-        }
 
     @classmethod
     def generate_flow(cls, *args, flow_spec=None, **kwargs):
