@@ -1,11 +1,14 @@
+import logging
 from uuid import uuid4
 
 
 class BaseTaskRunner(object):
-    def __init__(self, get_tasks=None, get_task_context=None, task_handler=None):
+    def __init__(self, get_tasks=None, get_task_context=None, task_handler=None,
+                 logger=None):
         self.get_tasks = get_tasks or (lambda: [])
         self.get_task_context = get_task_context or (lambda: {})
         self.task_handler = task_handler
+        self.logger = logger or logging
 
     def tick_tasks(self):
         try:
@@ -43,6 +46,7 @@ class BaseTaskRunner(object):
                     task_error=task['state'].get('error', 'unknown error'))
                 raise Exception(error)
         except Exception as error:
+            self.logger.exception(error)
             error = "Failed to tick task '{task}': {error}".format(
                 task=task, error=error)
             raise Exception(error)
