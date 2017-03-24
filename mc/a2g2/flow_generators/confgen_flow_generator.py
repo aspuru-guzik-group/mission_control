@@ -8,7 +8,7 @@ class ConfgenFlowGenerator():
         confgen_flow_spec = flow_spec
         job_module = 'confgen'
         compute_parse_load_flow_spec = {
-            'compute_job_spec': {
+            'compute_job_params': {
                 'module': job_module,
                 'command': 'generate_conformers',
                 'kwargs': {
@@ -16,11 +16,11 @@ class ConfgenFlowGenerator():
                     'params': confgen_flow_spec['input']['confgen_params'],
                 }
             },
-            'parse_job_spec': {
+            'parse_job_params': {
                 'module': job_module,
                 'command': 'parse_completed_confgen_dir',
             },
-            'load_job_spec': {
+            'load_job_params': {
                 'module': job_module,
                 'command': 'load',
             }
