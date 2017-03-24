@@ -26,7 +26,7 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
         self.a2g2_client = self.generate_a2g2_client()
         self.storage_client = self.generate_storage_client()
         self.job_submission_factory = self.generate_job_submission_factory()
-        self.task_runner = self.generate_task_runner()
+        self.task_handler = self.generate_task_handler()
         self.mc_runner = self.generate_mc_runner()
         self.mc_client = self.mc_runner.mc_client
 
@@ -50,7 +50,16 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
             base_url='http://' + self.docker_env.mc_ip_addr + '/storage/')
         return storage_client
 
-    def generate_task_runner(self): pass
+    def generate_task_handler(self):
+        class TaskHandler(object):
+            def __init__(self):
+                self.handlers = {}
+
+            def tick_task(self, *args, task=None, task_context=None, **kwargs):
+                handler = self.handlers[task['task_type']]
+                handler.tick_task(*args, task=None, task_context=None, **kwargs)
+
+        return TaskHandler()
 
     def _upload_wrapper(self, *args, params=None, ctx=None, **kwargs):
         pass
@@ -84,11 +93,10 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
     def generate_mc_runner(self):
         return OdysseyPushRunner(
             ssh_client=self.generate_connected_ssh_client(),
-            task_runner=self.task_runner,
+            task_handler=self.task_handler,
             flow_generator_classes=self.get_flow_generator_classes(),
             mc_server_url='http://' + self.docker_env.mc_ip_addr + '/missions/',
             job_submission_factory=self.job_submission_factory,
-            job_runner_kwargs={'action_processor': self.action_processor}
         )
 
     def get_flow_generator_classes(self): raise NotImplementedError

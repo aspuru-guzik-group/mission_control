@@ -27,7 +27,6 @@ class OdysseyPushRunner(object):
               job_submission_factory=None,
               job_runner=None,
               job_runner_kwargs=None,
-              ssh_client=None,
               tick_ctx=None,
               flow_runner=None,
               **kwargs
@@ -39,7 +38,6 @@ class OdysseyPushRunner(object):
         self.mc_client = mc_client or self.generate_mc_client()
         self.job_submission_factory = job_submission_factory or \
                 self.generate_job_submission_factory()
-        self.ssh_client = ssh_client
         self.job_runner = job_runner or self.generate_job_runner(
             job_runner_kwargs=job_runner_kwargs)
         self.tick_ctx = self.decorate_tick_ctx(tick_ctx=tick_ctx)
