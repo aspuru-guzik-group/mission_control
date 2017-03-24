@@ -1,14 +1,14 @@
-from .base_task_handler import BaseTaskHandler
+from ..base_task_handler import BaseTaskHandler
 
 
-class ExecutionTaskHandler(BaseTaskHandler):
+class ExecuteJobTaskHandler(BaseTaskHandler):
     def __init__(self, *args, execution_client=None, **kwargs):
         super().__init__(self, *args, **kwargs)
         self.execution_client = execution_client
 
     def initial_tick(self, task=None, task_context=None):
         execution_meta = self.execution_client.start_execution(
-            submission=task['params']['submission'])
+            submission=task['task_params']['submission'])
         task['data']['execution_meta'] = execution_meta
 
     def intermediate_tick(self, task=None, task_context=None):

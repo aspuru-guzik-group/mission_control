@@ -2,7 +2,7 @@ from collections import defaultdict
 import unittest
 from unittest.mock import call, MagicMock
 
-from ..execution_task_handler import ExecutionTaskHandler
+from ..execute_job_task_handler import ExecuteJobTaskHandler
 
 
 class BaseTestCase(unittest.TestCase):
@@ -12,7 +12,7 @@ class BaseTestCase(unittest.TestCase):
         self.task_context = defaultdict(MagicMock)
         self.task_context['job'] = self.job
         self.execution_client = MagicMock()
-        self.task_handler = ExecutionTaskHandler(
+        self.task_handler = ExecuteJobTaskHandler(
             execution_client=self.execution_client
         )
 
@@ -30,7 +30,7 @@ class InitialTickTestCase(BaseTestCase):
         self._do_initial_tick()
         self.assertEqual(
             self.task_handler.execution_client.start_execution.call_args,
-            call(submission=self.task['params']['submission']))
+            call(submission=self.task['task_params']['submission']))
 
     def test_stores_execution_meta(self):
         self._do_initial_tick()
