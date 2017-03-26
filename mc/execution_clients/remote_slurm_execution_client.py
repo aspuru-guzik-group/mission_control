@@ -19,6 +19,7 @@ class RemoteSlurmExecutionClient(object):
         execution_meta = self.slurm_execution_client.start_execution(
             submission=submission_w_remote_dir)
         execution_meta['remote_dir'] = remote_dir_meta
+        execution_meta['original_submission'] = submission
         return execution_meta
 
     def upload_submission(self, submission=None):
@@ -40,18 +41,5 @@ class RemoteSlurmExecutionClient(object):
                                     check=True)
 
     def get_execution_state(self, execution_meta=None):
-        execution_state = self.slurm_execution_client.get_execution_state(
+        return self.slurm_execution_client.get_execution_state(
             execution_meta=execution_meta)
-        if execution_state['run_status'] != 'RUNNING':
-            self.on_execution_completed(execution_meta=execution_meta)
-        return execution_state
-
-    def on_execution_completed(self, execution_meta=None):
-        self.download_completed_dir(execution_meta=execution_meta)
-
-    def download_completed_dir(self, execution_meta=None):
-        self.ssh_client.rsync_from_remote(
-            remote_src_path=execution_meta['remote_dir']['dir'] + '/',
-            local_dest_path=execution_meta['submission']['dir'],
-            flags=self.rsync_flags
-        )

@@ -1,4 +1,5 @@
 import logging
+import os
 import re
 
 
@@ -53,10 +54,63 @@ class SlurmExecutionClient(object):
             'run_status': run_status,
             'slurm_job_meta': slurm_job_meta,
         }
-        if run_status == 'COMPLETED':
-            execution_state['completed_dir'] = \
-                    execution_meta['submission']['dir']
+        if run_status != 'RUNNING':
+            execution_state = self.get_final_execution_state(
+                execution_meta=execution_meta,
+                completed_execution_state=execution_state
+            )
         return execution_state
+
+    def get_final_execution_state(self, execution_meta=None,
+                                  completed_execution_state=None):
+        final_execution_state = {**completed_execution_state}
+        submission = execution_meta['submission']
+        completed_dir = submission['dir']
+        final_execution_state['completed_dir'] = completed_dir
+        if 'checkpoint_files' in submission:
+            try:
+                self.validate_checkpoint_files(
+                    checkpoint_files=submission['checkpoint_files'],
+                    completed_dir=completed_dir
+                )
+            except Exception as error:
+                final_execution_state['run_status'] = 'FAILED'
+                final_execution_state['error'] = repr(error)
+        return final_execution_state
+
+    def validate_checkpoint_files(self, checkpoint_files=None,
+                                  completed_dir=None):
+        if 'completed' in checkpoint_files:
+            completed_checkpoint_path = os.path.join(
+                completed_dir, checkpoint_files['completed'])
+            if not self.file_exists(path=completed_checkpoint_path):
+                if 'failed' in checkpoint_files:
+                    failed_checkpoint_path = os.path.join(
+                        completed_dir, checkpoint_files['failed'])
+                    try:
+                        error = ("Contents of failure checkpoint file:\n"
+                                 + self.read_file(path=failed_checkpoint_path))
+                    except Exception as read_error:
+                        error = (
+                            "Error unknown, unable to read checkpoint file"
+                            " '{path}': {read_error}."
+                        ).format(
+                            path=failed_checkpoint_path,
+                            read_error=repr(read_error)
+                        )
+                    raise Exception(error)
+
+    def file_exists(self, path=None):
+        try:
+            self.process_runner.run_process(cmd=['ls', path], check=True)
+            return True
+        except:
+            return False
+
+    def read_file(self, path=None):
+        completed_proc = self.process_runner.run_process(
+            cmd=['cat', path], check=True)
+        return completed_proc.stdout
 
     def get_run_status_from_slurm_job_meta(self, slurm_job_meta=None):
         job_state = slurm_job_meta['JobState']
