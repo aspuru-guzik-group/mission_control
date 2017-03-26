@@ -15,4 +15,5 @@ dependencies:
     - django-filter
     - pexpect
     - jinja2
+    - pyyaml
 
