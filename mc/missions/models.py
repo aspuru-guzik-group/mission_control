@@ -30,6 +30,7 @@ class FlowStatuses(enum.Enum):
     PENDING = {'label': 'pending'}
     RUNNING = {'label': 'running'}
     COMPLETED = {'label': 'completed'}
+    FAILED = {'label': 'failed'}
 FlowStatuses.tickable_statuses = [getattr(FlowStatuses, status)
                                       for status in ['PENDING', 'RUNNING']]
 
@@ -60,7 +61,7 @@ class Job(TimeStampedModel):
                                        for status in JobStatuses],
                               default=JobStatuses.PENDING.name)
     claimed = models.NullBooleanField(null=True, default=False)
-    data = models.TextField(null=True)
+    data = models.TextField(null=True, default='{}')
     error = models.TextField(null=True, blank=True)
 
 missions_models.append(Job)
