@@ -73,10 +73,14 @@ class SlurmExecutionClient(object):
                     checkpoint_files=submission['checkpoint_files'],
                     completed_dir=completed_dir
                 )
-            except Exception as error:
+            except Exception as exception:
                 final_execution_state['run_status'] = 'FAILED'
-                final_execution_state['error'] = repr(error)
+                final_execution_state['error'] = \
+                        self.stringify_exception(exception)
         return final_execution_state
+
+    def stringify_exception(self, exception=None):
+        return '[%s] %s)' % (type(exception), exception)
 
     def validate_checkpoint_files(self, checkpoint_files=None,
                                   completed_dir=None):
@@ -90,13 +94,13 @@ class SlurmExecutionClient(object):
                     try:
                         error = ("Contents of failure checkpoint file:\n"
                                  + self.read_file(path=failed_checkpoint_path))
-                    except Exception as read_error:
+                    except Exception as read_exception:
                         error = (
                             "Error unknown, unable to read checkpoint file"
                             " '{path}': {read_error}."
                         ).format(
                             path=failed_checkpoint_path,
-                            read_error=repr(read_error)
+                            read_error=self.stringify_exception(read_exception)
                         )
                     raise Exception(error)
 

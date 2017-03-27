@@ -70,7 +70,8 @@ class MissionControlClient(object):
             formatted_job_kwargs = self.format_job_kwargs(job_kwargs)
             response = self.request_client.post(self.urls['jobs'],
                                                 json=formatted_job_kwargs)
-            return self.json_raise_for_status(response=response)
+            return self.format_fetched_job(
+                fetched_job=self.json_raise_for_status(response=response))
 
     def format_job_kwargs(self, job_kwargs=None):
         formatted_job_kwargs = {**job_kwargs}
@@ -93,10 +94,10 @@ class MissionControlClient(object):
         return jobs
 
     def format_fetched_job(self, fetched_job=None):
-        formatted_job = {**fetched_job}
-        if fetched_job.get('data', None):
-            formatted_job['data'] = self.deserialize_job_data(
-                fetched_job['data'])
+        formatted_job = {
+            **fetched_job,
+            'data': self.deserialize_job_data(fetched_job.get('data', '{}'))
+        }
         return formatted_job
 
     def deserialize_job_data(self, serialized_job_data=None):
@@ -113,7 +114,12 @@ class MissionControlClient(object):
     def claim_jobs(self, uuids=None):
         response = self.request_client.post(self.urls['claim_jobs'],
                                             json={'uuids': uuids})
-        return self.json_raise_for_status(response=response)
+        claim_results = self.json_raise_for_status(response=response)
+        formatted_claim_results = {}
+        for uuid, claimed_job in claim_results.items():
+            if claimed_job: claimed_job = self.format_fetched_job(claimed_job)
+            formatted_claim_results[uuid] = claimed_job
+        return formatted_claim_results
 
     def update_jobs(self, updates_by_uuid=None):
         results_by_uuid = {}

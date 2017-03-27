@@ -1,22 +1,18 @@
 import logging
-import tempfile
 import time
 
 from mc.task_runners.base_task_runner import BaseTaskRunner
 
 
 class BaseJobRunner(object):
-    def __init__(self, job_client=None, job_submission_factory=None,
-                 task_handler=None, tick_interval=120, max_running_jobs=3,
-                 logger=None):
+    def __init__(self, job_client=None, tick_interval=120, max_running_jobs=3, 
+                 task_handler=None, default_job_tasks=None, logger=None):
         self.job_client = job_client
-        self.job_submission_factory = job_submission_factory
-        self.task_handler = task_handler
         self.tick_interval = tick_interval
         self.max_running_jobs = max_running_jobs
+        self.task_handler = task_handler
+        self.default_job_tasks = default_job_tasks or None
         self.logger = logger or logging
-
-        self.default_tasks = [{'type': 'job:execute'}]
 
         self._ticking = False
         self.tick_counter = 0
@@ -65,7 +61,7 @@ class BaseJobRunner(object):
         for key, job in completed_jobs.items(): self.complete_job(job=job)
 
     def job_is_running(self, job=None):
-        return self.job['status'] == 'RUNNING'
+        return job['status'] == 'RUNNING'
 
     def fetch_claimable_jobs(self):
         return self.job_client.fetch_claimable_jobs()
@@ -75,11 +71,15 @@ class BaseJobRunner(object):
         if not claimed_job: return
         job = claimed_job
         self.register_job(job=job)
-        try:
-            job['submission'] = self.build_job_submission(job=job)
-            self.start_job(job=job)
+        try: self.start_job(job=job)
         except Exception as error:
+            self.logger.exception("Job failed")
             self.fail_job(job=job, error=error)
+
+    def claim_job(self, job=None):
+        claimed_jobs = self.job_client.claim_jobs(
+            uuids=[job['uuid']])
+        return claimed_jobs.get(job['uuid'], False)
 
     def register_job(self, job=None):
         self.jobs[job['uuid']] = job
@@ -89,30 +89,12 @@ class BaseJobRunner(object):
             if job['uuid'] in registry: del registry[job['uuid']]
 
     def fail_job(self, job=None, error=None):
-        self.logger.exception(error)
         self.update_job(job=job, updates={'status': 'FAILED',
-                                          'error': str(error)})
+                                          'error': error})
         self.unregister_job(job=job)
 
-    def claim_job(self, job=None):
-        claimed_jobs = self.job_client.claim_jobs(
-            uuids=[job['uuid']])
-        return claimed_jobs.get(job['uuid'], False)
-
-    def build_job_submission(self, job=None):
-        try:
-            job['job_dir'] = self.generate_job_dir(job=job)
-            job_submission_meta = self.job_submission_factory\
-                    .build_job_submission(job=job, output_dir=job['job_dir'])
-            return job_submission_meta
-        except Exception as error:
-            raise Exception("Error building job submission: %s" % error)
-
-    def generate_job_dir(self, job=None):
-        return tempfile.mkdtemp(prefix='job_dir.{}'.format(job['uuid']))
-
     def start_job(self, job=None):
-        if 'tasks' not in job: job['tasks'] = self.default_tasks
+        if 'tasks' not in job: job['tasks'] = self.default_job_tasks
         self.running_jobs[job['uuid']] = job
         self.tick_job(job=job)
 
@@ -125,27 +107,22 @@ class BaseJobRunner(object):
         try:
             tasks_status = task_runner.tick_tasks()
             job['status'] = tasks_status
-        except Exception as error:
-            self.fail_job(job=job, error=error)
+        except Exception as exception:
+            self.fail_job(job=job, error=self.stringify_exception(exception))
+
+    def stringify_exception(self, exception=None):
+        return '[%s] %s)' % (type(exception), exception)
 
     def get_task_context(self, job=None):
         task_context = {'job': job}
         return task_context
 
     def complete_job(self, job=None):
-        execution_result = job['execution']['result']
-        if execution_result['result'] == 'COMPLETED':
-            self.update_job(job=job, updates={
-                'status': 'COMPLETED',
-                'data': job.get('data', {})
-            })
-            self.unregister_job(job=job)
-        else:
-            self.fail_job(
-                job=job,
-                error=execution_result.get('error', 'error unknown')
-            )
+        self.update_job(job=job, updates={
+            'status': 'COMPLETED',
+            'data': job.get('data', {})
+        })
+        self.unregister_job(job=job)
 
     def update_job(self, job=None, updates=None):
-        self.job_client.update_jobs(updates_by_uuid={
-            job['uuid']: updates})
+        self.job_client.update_jobs(updates_by_uuid={job['uuid']: updates})

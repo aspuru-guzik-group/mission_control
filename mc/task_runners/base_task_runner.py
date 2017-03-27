@@ -41,14 +41,15 @@ class BaseTaskRunner(object):
                 task_context=self.get_decorated_task_context()
             )
             if task.get('status', None) == 'FAILED':
-                error = "Task '{task}' failed: {task_error}".format(
-                    task=task,
-                    task_error=task['state'].get('error', 'unknown error'))
+                error = "Task with key '{task_key}' failed: {task_error}".format(
+                    task_key=task.get('task_key', '<unknown>'),
+                    task_error=task['data'].get('error', 'unknown error'))
                 raise Exception(error)
         except Exception as error:
-            self.logger.exception(error)
-            error = "Failed to tick task '{task}': {error}".format(
-                task=task, error=error)
+            msg = "Failed to tick task with key '{key}'".format(
+                key=task.get('task_key', '<unknown>'))
+            self.logger.debug('task: {}'.format(task))
+            self.logger.exception(msg)
             raise Exception(error)
 
     def get_decorated_task_context(self):
@@ -61,6 +62,6 @@ class BaseTaskRunner(object):
     def get_keyed_tasks(self, tasks=None):
         keyed_tasks = {}
         for task in tasks:
-            key = task.get('key', str(uuid4()))
+            key = task.get('task_key', str(uuid4()))
             keyed_tasks[key] = task
         return keyed_tasks

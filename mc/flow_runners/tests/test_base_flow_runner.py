@@ -135,7 +135,7 @@ class TickFlowRecord(BaseTestCase):
         self.runner.tick_flow_record(self.flow_record)
         expected_flow = self.runner.get_flow_for_flow_record.return_value
         self.assertEqual(self.flow_engine.tick_flow.call_args,
-                         call(flow=expected_flow, ctx=self.runner.tick_ctx))
+                         call(flow=expected_flow, ctx=self.runner.flow_ctx))
 
     def test_includes_status_in_return(self):
         serialization = {'status': 'COMPLETED'}

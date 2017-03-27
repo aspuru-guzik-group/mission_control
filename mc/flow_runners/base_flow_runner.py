@@ -6,13 +6,13 @@ import time
 class BaseFlowRunner(object):
     def __init__(self, flow_client=None, flow_engine=None,
                  tick_interval=120, max_flows_per_tick=3, logger=None,
-                 tick_ctx=None):
+                 flow_ctx=None):
         self.flow_client = flow_client
         self.flow_engine = flow_engine
         self.tick_interval = tick_interval
         self.max_flows_per_tick = max_flows_per_tick
         self.logger = logger or logging
-        self.tick_ctx = tick_ctx
+        self.flow_ctx = flow_ctx
 
         self._ticking = False
         self.tick_counter = 0
@@ -56,8 +56,7 @@ class BaseFlowRunner(object):
         claimed_record = self.claim_flow_record(flow_record)
         if claimed_record:
             try:
-                updates = self.tick_flow_record(
-                    flow_record=claimed_record)
+                updates = self.tick_flow_record(flow_record=claimed_record)
                 self.update_flow_record(
                     flow_record=claimed_record,
                     updates={**updates, 'claimed': False})
@@ -65,7 +64,7 @@ class BaseFlowRunner(object):
             except Exception as exception:
                 self.logger.exception(exception)
                 self.update_flow_record(flow_record=claimed_record,
-                                            updates={'status': 'FAILED'})
+                                        updates={'status': 'FAILED'})
         return processed
 
     def claim_flow_record(self, flow_record=None):
@@ -77,7 +76,7 @@ class BaseFlowRunner(object):
     def tick_flow_record(self, flow_record=None):
         self.logger.debug('tick_flow_record')
         flow = self.get_flow_for_flow_record(flow_record=flow_record)
-        self.flow_engine.tick_flow(flow=flow, ctx=self.tick_ctx)
+        self.flow_engine.tick_flow(flow=flow, flow_ctx=self.flow_ctx)
         updated_serialization = self.flow_engine.serialize_flow(flow=flow)
         updates = {'serialization': json.dumps(updated_serialization)}
         updates['status'] = updated_serialization['status']
@@ -104,7 +103,6 @@ class BaseFlowRunner(object):
         return flow
 
     def update_flow_record(self, flow_record=None, updates=None):
-        self.logger.debug('update_flow_record')
         self.flow_client.update_flows(updates_by_uuid={
             flow_record['uuid']: updates})
 

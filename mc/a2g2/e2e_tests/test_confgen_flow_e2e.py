@@ -38,7 +38,14 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
         self.generate_molecule_library()
         self.create_flows()
         self.assertTrue(len(self.mc_client.fetch_tickable_flows()) > 0)
-        self.run_flows_to_completion(max_ticks=15)
+        try:
+            self.run_flows_to_completion(max_ticks=15)
+        except Exception as exception:
+            jobs = self.mc_client.fetch_jobs()
+            for job in jobs:
+                error = job.get('error', '')
+                print("job['error']:", error)
+            raise exception
         self.assertTrue(self.mc_runner.tick_counter > 0)
         self.assert_domain_db_has_expected_state()
 

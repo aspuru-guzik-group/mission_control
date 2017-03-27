@@ -124,7 +124,7 @@ class TickTestCase(BaseTestCase):
         self.patchers = {'engine': patch.multiple(
             self.engine, start_node=DEFAULT, complete_flow=DEFAULT)}
         self.mocks = self.start_patchers(patchers=self.patchers)
-        def mock_tick_node(*args, flow=None, node=None, ctx=None):
+        def mock_tick_node(*args, flow=None, node=None, flow_ctx=None):
             node.setdefault('tick_count', 0)
             node['tick_count'] += 1
         self.engine.tick_node = mock_tick_node
@@ -219,20 +219,21 @@ class TickNodeTestCase(BaseTestCase):
         super().setUp()
         self.flow = Flow()
         self.node = self.flow.add_node(node={})
-        self.ctx = MagicMock()
+        self.flow_ctx = MagicMock()
         self.engine.get_task_runner_for_node = MagicMock()
         self.expected_task_runner = \
                 self.engine.get_task_runner_for_node.return_value
 
     def test_calls_task_runner(self):
-        self.engine.tick_node(flow=self.flow, node=self.node, ctx=self.ctx)
+        self.engine.tick_node(flow=self.flow, node=self.node,
+                              flow_ctx=self.flow_ctx)
         self.assertEqual(
             len(self.expected_task_runner.tick_tasks.call_args_list), 1)
 
     def test_calls_complete_node_if_node_completes(self):
         self.engine.complete_node = MagicMock()
         self.expected_task_runner.tick_tasks.return_value = 'COMPLETED'
-        self.engine.tick_node(flow=self.flow, node=self.node, ctx=self.ctx)
+        self.engine.tick_node(flow=self.flow, node=self.node, flow_ctx=self.flow_ctx)
         self.assertEqual(self.engine.complete_node.call_args,
                          call(flow=self.flow, node=self.node))
 
@@ -241,13 +242,15 @@ class GetTaskRunnerForNodeTestCase(BaseTestCase):
     def test_generates_task_runner_with_expected_kwargs(self, MockTaskRunner):
         node = MagicMock()
         flow = MagicMock()
-        ctx = MagicMock()
-        self.engine.get_task_runner_for_node(node=node, flow=flow, ctx=ctx)
+        flow_ctx = MagicMock()
+        self.engine.get_task_runner_for_node(node=node, flow=flow,
+                                             flow_ctx=flow_ctx)
         call_kwargs = MockTaskRunner.call_args[1]
         self.assertEqual(call_kwargs['get_tasks'](), node.get('node_tasks'))
         self.assertEqual(
             call_kwargs['get_task_context'](),
-            self.engine.get_task_context(node=node, flow=flow, ctx=ctx)
+            self.engine.get_task_context(node=node, flow=flow,
+                                         flow_ctx=flow_ctx)
         )
         self.assertEqual(call_kwargs['task_handler'], self.engine.task_handler)
 

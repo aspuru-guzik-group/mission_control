@@ -16,7 +16,9 @@ class RunJobTaskHandler(BaseTaskHandler):
         if job['status'] == 'COMPLETED':
             task['status'] = 'COMPLETED'
         elif job['status'] == 'FAILED':
-            raise Exception(error=job['data']['error'])
+            try: error = job['data']['error']
+            except KeyError: error = '<unknown>'
+            raise Exception(error)
 
     def get_job(self, task=None, flow_ctx=None):
         return flow_ctx['get_job'](uuid=task['data']['job_uuid'])

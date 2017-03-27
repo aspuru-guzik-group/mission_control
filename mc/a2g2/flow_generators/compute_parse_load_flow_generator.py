@@ -38,19 +38,6 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
               task_params:
                 job_spec:
                   job_params: %(job_params_yaml)s
-                  job_tasks:
-                  - task_key: execute
-                    task_type: a2g2.tasks.jobs.execute
-                  - task_key: put_artifact
-                    task_params:
-                      src: '{{ctx.tasks.execute.data.artifact}}'
-                    task_type: a2g2.tasks.jobs.storage.put
-                  - task_key: expose_artifact
-                    task_params:
-                      value_specs:
-                      - dest: ctx.job.data.outputs.artifact
-                        value: '{{ctx.tasks.put_artifact.data.artifact}}'
-                    task_type: a2g2.tasks.set_values
               task_type: a2g2.tasks.nodes.run_job
             - task_key: expose_job_outputs
               task_params:
@@ -75,35 +62,17 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
         node = yaml.load(
             '''
             node_tasks:
-            - task_key: set_job_input_artifact
+            - task_key: set_job_input_artifacts
               task_type: a2g2.tasks.set_values
               task_params:
                 value_specs:
                   - dest: ctx.node.tasks.run_job.task_params.job_spec
-                      .job_tasks.0.task_params.artifact
+                      .inputs.artifacts
                     value: '{{ctx.flow.nodes.compute.data.outputs.artifact}}'
             - task_key: run_job
               task_params:
                 job_spec:
                   job_params: %(job_params_yaml)s
-                  job_tasks:
-                  - task_key: get_input_artifact
-                    task_type: a2g2.tasks.jobs.storage.get
-                    task_params:
-                      artifact: TO_BE_WIRED_IN
-                      dest: '{{ctx.job.dir}}/dir_to_parse'
-                  - task_key: execute
-                    task_type: a2g2.tasks.jobs.execute
-                  - task_key: put_artifact
-                    task_params:
-                      src: '{{ctx.tasks.execute.data.artifact}}'
-                    task_type: a2g2.tasks.jobs.storage.put
-                  - task_key: expose_artifact
-                    task_params:
-                      value_specs:
-                      - dest: ctx.job.data.outputs.artifact
-                        value: '{{ctx.tasks.put_artifact.data.artifact}}'
-                    task_type: a2g2.tasks.set_values
               task_type: a2g2.tasks.nodes.run_job
             - task_key: expose_job_outputs
               task_params:
@@ -128,20 +97,18 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
               task_params:
                 value_specs:
                   - dest: ctx.node.tasks.run_job.task_params.job_spec
-                      .job_tasks.0.task_params.artifact
+                      .inputs.artifacts
                     value: '{{ctx.flow.nodes.parse.data.outputs.artifact}}'
             - task_key: run_job
               task_params:
                 job_spec:
                   job_params: %(job_params_yaml)s
-                  job_tasks:
-                  - task_key: get_input_artifact
-                    task_type: a2g2.tasks.jobs.storage.get
-                    task_params:
-                      artifact: TO_BE_WIRED_IN
-                      dest: '{{ctx.job.dir}}/dir_to_load'
-                  - task_key: execute
-                    task_type: a2g2.tasks.jobs.execute
+            - task_key: expose_job_outputs
+              task_params:
+                value_specs:
+                - dest: ctx.node.data.outputs
+                  value: '{{ctx.tasks.run_job.data.outputs}}'
+              task_type: a2g2.tasks.set_values
             ''' % {
                 'job_params_yaml': cls.dump_inline_yaml(
                     flow.data['flow_spec'].get('load_job_params', {}))

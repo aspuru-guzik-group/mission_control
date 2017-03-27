@@ -25,10 +25,9 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
         self.docker_env = self.setup_docker_env()
         self.a2g2_client = self.generate_a2g2_client()
         self.storage_client = self.generate_storage_client()
-        self.job_submission_factory = self.generate_job_submission_factory()
         self.task_handler = self.generate_task_handler()
-        self.mc_runner = self.generate_mc_runner()
-        self.mc_client = self.mc_runner.mc_client
+        self.combo_runner = self.generate_combo_runner()
+        self.mc_client = self.combo_runner.mc_client
 
     def tearDown(self):
         self.teardown_docker_env(docker_env=self.docker_env)
@@ -51,13 +50,19 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
         return storage_client
 
     def generate_task_handler(self):
+        sub_handlers = {}
+        from a2g2.task_handlers.nodes.run_job_task_handler import (
+            RunJobTaskHandler)
+        sub_handlers['a2g2.tasks.nodes.run_job'] = RunJobTaskHandler()
+
         class TaskHandler(object):
             def __init__(self):
-                self.handlers = {}
+                self.handlers = sub_handlers
 
             def tick_task(self, *args, task=None, task_context=None, **kwargs):
                 handler = self.handlers[task['task_type']]
-                handler.tick_task(*args, task=None, task_context=None, **kwargs)
+                handler.tick_task(*args, task=task, task_context=task_context,
+                                  **kwargs)
 
         return TaskHandler()
 
@@ -66,6 +71,15 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
 
     def _download_wrapper(self, *args, params=None, ctx=None, **kwargs):
         pass
+
+    def generate_combo_runner(self):
+        return OdysseyPushRunner(
+            task_handler=self.task_handler,
+            job_submission_factory=self.generate_job_submission_factory(),
+            ssh_client=self.generate_connected_ssh_client(),
+            flow_generator_classes=self.get_flow_generator_classes(),
+            mc_server_url='http://' + self.docker_env.mc_ip_addr + '/missions/',
+        )
 
     def generate_job_submission_factory(self):
         a2g2_client_cfg_json = json.dumps({
@@ -90,15 +104,6 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
 
     def get_job_engine_class_spec(self): raise NotImplementedError
 
-    def generate_mc_runner(self):
-        return OdysseyPushRunner(
-            ssh_client=self.generate_connected_ssh_client(),
-            task_handler=self.task_handler,
-            flow_generator_classes=self.get_flow_generator_classes(),
-            mc_server_url='http://' + self.docker_env.mc_ip_addr + '/missions/',
-            job_submission_factory=self.job_submission_factory,
-        )
-
     def get_flow_generator_classes(self): raise NotImplementedError
 
     def generate_connected_ssh_client(self):
@@ -119,17 +124,14 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
         ssh_client.connect()
         return ssh_client
 
-    def run_flows_to_completion(self, max_ticks=10, tick_interval=1):
+    def run_flows_to_completion(self, max_ticks=10, tick_interval=0.5):
         incomplete_flows = self.get_incomplete_flows()
         while len(incomplete_flows) > 0:
-            self.mc_runner.tick()
-            if self.mc_runner.tick_counter > max_ticks:
+            self.combo_runner.tick()
+            if self.combo_runner.tick_counter > max_ticks:
                 error_msg = (
-                    "Exceeded max_ticks of '{max_ticks}.'\njobs:\n{jobs}"
-                ).format(
-                    max_ticks=max_ticks,
-                    jobs=json.dumps(self.mc_client.fetch_jobs(), indent=2)
-                )
+                    "Exceeded max_ticks of '{max_ticks}.'"
+                ).format(max_ticks=max_ticks)
                 raise Exception(error_msg)
             incomplete_flows = self.get_incomplete_flows()
             time.sleep(tick_interval)

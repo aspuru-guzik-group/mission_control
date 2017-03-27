@@ -5,9 +5,9 @@ import requests
 from mc.mc_client.mission_control_client import MissionControlClient
 from mc.flow_engines.flow_engine import FlowEngine
 from mc.flow_runners.base_flow_runner import BaseFlowRunner as FlowRunner
-from mc.job_runners.base_job_runner import BaseJobRunner as JobRunner
 from .odyssey_job_submission_factory import OdysseyJobSubmissionFactory as \
         JobSubmissionFactory
+from .odyssey_job_runner import OdysseyJobRunner as JobRunner
 
 
 class OdysseyPushRunner(object):
@@ -26,8 +26,8 @@ class OdysseyPushRunner(object):
               mc_client=None, 
               job_submission_factory=None,
               job_runner=None,
-              job_runner_kwargs=None,
-              tick_ctx=None,
+              ssh_client=None,
+              flow_ctx=None,
               flow_runner=None,
               **kwargs
              ):
@@ -39,8 +39,8 @@ class OdysseyPushRunner(object):
         self.job_submission_factory = job_submission_factory or \
                 self.generate_job_submission_factory()
         self.job_runner = job_runner or self.generate_job_runner(
-            job_runner_kwargs=job_runner_kwargs)
-        self.tick_ctx = self.decorate_tick_ctx(tick_ctx=tick_ctx)
+            ssh_client=ssh_client)
+        self.flow_ctx = self.decorate_flow_ctx(flow_ctx=flow_ctx)
         self.flow_runner = flow_runner or self.generate_flow_runner()
 
     def generate_task_handler(self): pass
@@ -63,29 +63,25 @@ class OdysseyPushRunner(object):
     def generate_job_submission_factory(self):
         return JobSubmissionFactory()
 
-    def generate_job_runner(self, job_runner_kwargs=None): 
-        return JobRunner(
-            task_handler=self.task_handler,
-            job_submission_factory=self.job_submission_factory,
-            job_client=self.mc_client,
-            **(job_runner_kwargs or {})
-        )
+    def generate_job_runner(self, ssh_client=None):
+        return JobRunner(job_client=self.mc_client, ssh_client=ssh_client,
+                         job_submission_factory=self.job_submission_factory)
 
-    def decorate_tick_ctx(self, tick_ctx=None):
-        tick_ctx = tick_ctx or {}
-        decorated_tick_ctx = {
+    def decorate_flow_ctx(self, flow_ctx=None):
+        flow_ctx = flow_ctx or {}
+        decorated_flow_ctx = {
             'create_job': self.mc_client.create_job,
             'get_job': self.mc_client.fetch_job_by_uuid,
             'create_flow': self.mc_client.create_flow,
             'get_flow': self.mc_client.fetch_flow_by_uuid,
-            **tick_ctx
+            **flow_ctx
         }
-        return decorated_tick_ctx
+        return decorated_flow_ctx
 
     def generate_flow_runner(self):
         return FlowRunner(flow_client=self.mc_client,
                           flow_engine=self.flow_engine,
-                          tick_ctx=self.tick_ctx)
+                          flow_ctx=self.flow_ctx)
 
     def create_flow_record(self, *args, flow_record=None, **kwargs):
         return self.mc_client.create_flow(flow=flow_record)

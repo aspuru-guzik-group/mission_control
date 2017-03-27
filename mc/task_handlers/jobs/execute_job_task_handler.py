@@ -19,9 +19,9 @@ class ExecuteJobTaskHandler(BaseTaskHandler):
                                     job=task_context['job'])
 
     def handle_execution_state(self, execution_state=None, task=None, job=None):
-        run_status = execution_state['run_state']
         subhandler_kwargs = {'execution_state': execution_state, 'task': task,
                              'job': job}
+        run_status = execution_state['run_status']
         if run_status == 'COMPLETED':
             self.handle_completed_execution_state(**subhandler_kwargs)
         elif run_status == 'FAILED':
@@ -34,6 +34,6 @@ class ExecuteJobTaskHandler(BaseTaskHandler):
 
     def handle_failed_execution_state(self, execution_state=None, task=None,
                                       job=None):
-        error = execution_state.get('error', 'unknown error')
         task['status'] = 'FAILED'
-        task['data']['error'] = error
+        task['data']['error'] = execution_state.get(
+            'error', '<unknown execution error>')

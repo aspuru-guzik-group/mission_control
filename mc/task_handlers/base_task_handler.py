@@ -14,10 +14,13 @@ class BaseTaskHandler(object):
                 self.initial_tick(task=task, task_context=task_context)
             else:
                 self.intermediate_tick(task=task, task_context=task_context)
-        except Exception as error:
+        except Exception as exception:
             self.logger.exception(self.__class__.__name__ +".tick_task")
             task['status'] = 'FAILED'
-            task['data']['error'] = error
+            task['data']['error'] = self.stringify_exception(exception)
+
+    def stringify_exception(self, exception=None):
+        return '[%s] %s)' % (type(exception), exception)
 
     def _ensure_task(self, task=None):
         task.setdefault('data', {})
