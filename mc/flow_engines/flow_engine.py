@@ -48,11 +48,13 @@ class FlowEngine(object):
         return serialized_flow
 
     def tick_flow(self, flow=None, flow_ctx=None):
-        if flow.status == 'PENDING': self.start_flow(flow=flow)
-        self.start_nearest_pending_nodes(flow=flow)
-        self.tick_running_nodes(flow=flow, flow_ctx=flow_ctx)
-        if not flow.has_incomplete_nodes():
-            self.complete_flow(flow=flow)
+        try:
+            if flow.status == 'PENDING': self.start_flow(flow=flow)
+            self.start_nearest_pending_nodes(flow=flow)
+            self.tick_running_nodes(flow=flow, flow_ctx=flow_ctx)
+            if not flow.has_incomplete_nodes(): self.complete_flow(flow=flow)
+        except Exception as exception:
+            self.fail_flow(flow=flow, error=self.stringify_exception(exception))
 
     def start_flow(self, flow=None):
         flow.status = 'RUNNING'
@@ -67,16 +69,12 @@ class FlowEngine(object):
     def tick_running_nodes(self, flow=None, flow_ctx=None):
         for node in flow.get_nodes_by_status(status='RUNNING'):
             if self.node_is_running(node=node):
-                try:
-                    self.tick_node(node=node, flow=flow, flow_ctx=flow_ctx)
-                except Exception as exception:
-                    self.fail_node(node=node,
-                                   error=self.stringify_exception(exception))
+                self.tick_node(node=node, flow=flow, flow_ctx=flow_ctx)
             else:
                 self.complete_node(node=node)
 
     def stringify_exception(self, exception=None):
-        return '[%s] %s)' % (type(exception), exception)
+        return '(%s: %s)' % (type(exception), exception)
 
     def node_is_running(self, node=None):
         return node['status'] == 'RUNNING'
@@ -90,8 +88,8 @@ class FlowEngine(object):
                 self.complete_node(flow=flow, node=node)
             else:
                 node['status'] = tasks_status
-        except Exception as error:
-            self.fail_node(node=node, error=error)
+        except Exception as exception:
+            self.fail_node(node=node, error=self.stringify_exception(exception))
 
     def get_task_runner_for_node(self, node=None, flow=None, flow_ctx=None):
         task_runner = BaseTaskRunner(
@@ -111,6 +109,15 @@ class FlowEngine(object):
     def fail_node(self, node=None, error=None):
         node['error'] = error
         node['status'] = 'FAILED'
+        msg = "Node with key '{node_key}' failed, error: {error}".format(
+            node_key=node.get('key', '<unknown key>'),
+            error=error
+        )
+        raise Exception(msg)
+
+    def fail_flow(self, flow=None, error=None):
+        flow.data['error'] = error
+        flow.status = 'FAILED'
 
     def complete_node(self, flow=None, node=None):
         node['status'] = 'COMPLETED'
