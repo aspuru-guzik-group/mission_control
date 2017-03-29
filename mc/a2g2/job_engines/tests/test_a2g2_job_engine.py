@@ -20,6 +20,21 @@ class BaseTestCase(unittest.TestCase):
         self.output_dir = 'some_output_dir'
         self.ctx_dir = 'some_ctx_dir'
 
+class BuildJobSubmissionTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.job_dir = MagicMock()
+        self.a2g2_job_engine.get_job_module = MagicMock()
+        self.expected_module = self.a2g2_job_engine.get_job_module.return_value
+
+    def test_dispatches_to_job_module(self):
+        self.a2g2_job_engine.build_job_submission(
+            job=self.job, cfg=self.cfg, job_dir=self.job_dir)
+        self.assertEqual(self.a2g2_job_engine.get_job_module.call_args,
+                         call(job=self.job, cfg=self.cfg))
+        self.assertEqual(self.expected_module.build_job_submission.call_args,
+                         call(job=self.job, cfg=self.cfg, job_dir=self.job_dir))
+
 class ExecuteJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
@@ -45,11 +60,13 @@ class ExecuteJobTestCase(BaseTestCase):
 class GetJobModuleCase(BaseTestCase):
     @patch.object(a2g2_job_engine, 'importlib')
     def test_imports_expected_module(self, patched_importlib):
+        self.a2g2_job_engine.get_job_module_name = MagicMock(
+            return_value='some_module')
         result = self.a2g2_job_engine.get_job_module(job=self.job, cfg=self.cfg)
         # @TODO: brittle test, because of packages, make more robust later.
         expected_module_name = '{package}.{module}'.format(
             package=a2g2_job_engine.DEFAULT_JOB_MODULE_PKGS[0],
-            module=self.job['job_spec']['module']
+            module=self.a2g2_job_engine.get_job_module_name.return_value,
         )
         self.assertEqual(patched_importlib.import_module.call_args,
                          call(expected_module_name))

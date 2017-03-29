@@ -4,7 +4,7 @@ import types
 from mc.job_runners.base_job_runner import BaseJobRunner
 from mc.task_handlers.jobs.execute_job_task_handler import ExecuteJobTaskHandler
 from mc.execution_clients.remote_slurm_execution_client import (
-    RemoteSlurmExecutionClient as ExecutionClient)
+    RemoteSlurmExecutionClient)
 
 
 class OdysseyJobRunner(object):
@@ -21,10 +21,10 @@ class OdysseyJobRunner(object):
 
     def generate_tasks_cfg(self):
         task_defs = collections.OrderedDict()
-        task_defs['build_job'] = {
-            'task_key': 'build_job',
-            'task_type': 'build_job',
-            'tick_fn': self.tick_build_job_task,
+        task_defs['build_job_submission'] = {
+            'task_key': 'build_job_submission',
+            'task_type': 'build_job_submission',
+            'tick_fn': self.tick_build_job_submission_task,
         }
         task_defs['execute_job'] = {
             'task_key': 'execute_job',
@@ -55,8 +55,8 @@ class OdysseyJobRunner(object):
         task_def = self.tasks_cfg['task_defs'][task_type]
         task_def['tick_fn'](*args, task=task, **kwargs)
 
-    def tick_build_job_task(self, *args, task=None, task_context=None,
-                            **kwargs):
+    def tick_build_job_submission_task(self, *args, task=None,
+                                       task_context=None, **kwargs):
         job = task_context['job']
         submission = self.job_submission_factory.build_job_submission(job=job)
         execute_job_task = task_context['tasks']['execute_job']
@@ -65,7 +65,8 @@ class OdysseyJobRunner(object):
         task['status'] = 'COMPLETED'
 
     def tick_execute_job_task(self, *args, **kwargs):
-        execution_client = ExecutionClient(ssh_client=self.ssh_client)
+        execution_client = RemoteSlurmExecutionClient(
+            ssh_client=self.ssh_client)
         task_handler = ExecuteJobTaskHandler(execution_client=execution_client)
         task_handler.tick_task(*args, **kwargs)
 
@@ -74,6 +75,7 @@ class OdysseyJobRunner(object):
         job = task_context['job']
         job['data']['outputs'] = \
                 task_context['tasks']['submit_job']['data']['outputs']
+        task['status'] = 'COMPLETED'
 
     def tick(self, *args, **kwargs):
         return self.base_job_runner.tick(*args, **kwargs)

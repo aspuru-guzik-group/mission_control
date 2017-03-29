@@ -6,23 +6,20 @@ class ConfgenFlowGenerator():
     @classmethod
     def generate_flow(cls, *args, flow_spec=None, **kwargs):
         confgen_flow_spec = flow_spec
-        job_module = 'confgen'
+        job_type_prefix = 'a2g2.jobs.confgen'
         compute_parse_load_flow_spec = {
-            'compute_job_params': {
-                'module': job_module,
-                'command': 'generate_conformers',
-                'kwargs': {
+            'compute_job_spec': {
+                'job_type': job_type_prefix,
+                'job_params': {
                     'smiles': confgen_flow_spec['input']['smiles'],
                     'params': confgen_flow_spec['input']['confgen_params'],
                 }
             },
-            'parse_job_params': {
-                'module': job_module,
-                'command': 'parse_completed_confgen_dir',
+            'parse_job_spec': {
+                'job_type': job_type_prefix + '.parse',
             },
-            'load_job_params': {
-                'module': job_module,
-                'command': 'load',
+            'load_job_spec': {
+                'job_type': job_type_prefix + '.load',
             }
         }
         flow = ComputeParseLoadFlowGenerator.generate_flow(

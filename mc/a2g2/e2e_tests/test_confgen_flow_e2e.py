@@ -46,7 +46,7 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
                 error = job.get('error', '')
                 print("job['error']:", error)
             raise exception
-        self.assertTrue(self.mc_runner.tick_counter > 0)
+        self.assertTrue(self.combo_runner.tick_counter > 0)
         self.assert_domain_db_has_expected_state()
 
     def generate_molecule_library(self):
@@ -82,16 +82,16 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
 
 
 class MockJobEngine(object):
-    def execute_job(self, job=None, cfg=None, output_dir=None, ctx_dir=None):
+    def execute_command(self, command=None, job=None, cfg=None):
         use_real_engine = True
-        if job['job_spec']['module'] == 'confgen':
-            if job['job_spec']['command'] == 'generate_conformers':
+        if command == 'run_job_submission':
+            if job['job_spec']['job_type'] == 'a2g2.jobs.confgen':
                 use_real_engine = False
-                self.generate_fake_confgen_output(output_dir=output_dir)
+                raise NotImplementedError("implement fake confgen")
+                #self.generate_fake_confgen_output(output_dir=output_dir)
         if use_real_engine:
             real_engine = a2g2_job_engine.A2G2JobEngine()
-            real_engine.execute_job(job=job, cfg=cfg, output_dir=output_dir,
-                                    ctx_dir=ctx_dir)
+            real_engine.execute_command(command=command, job=job, cfg=cfg)
 
     def generate_fake_confgen_output(self, output_dir=None):
         mols = generate_test_mols()

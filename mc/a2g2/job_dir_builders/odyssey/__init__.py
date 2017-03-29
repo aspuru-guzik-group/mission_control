@@ -22,8 +22,8 @@ class OdysseyJobDirBuilder(object):
     def build_dir(cls, dir_spec=None, output_dir=None):
         if not output_dir: output_dir = tempfile.mkdtemp(prefix='odyssey.')
         if not os.path.exists(output_dir): os.makedirs(output_dir)
-        cls.write_job_script(dir_spec=dir_spec, output_dir=output_dir)
         cls.write_templates(dir_spec=dir_spec, output_dir=output_dir)
+        cls.write_entrypoint(dir_spec=dir_spec, output_dir=output_dir)
         dir_meta = {
             'dir': output_dir,
             'checkpoint_files': cls.checkpoint_files,
@@ -33,13 +33,13 @@ class OdysseyJobDirBuilder(object):
         return dir_meta
 
     @classmethod
-    def write_job_script(cls, dir_spec=None, output_dir=None):
+    def write_entrypoint(cls, dir_spec=None, output_dir=None):
         script_path = os.path.join(output_dir, 'job.sh')
-        script_content = cls.generate_job_script_content(dir_spec=dir_spec)
+        script_content = cls.generate_entrypoint_content(dir_spec=dir_spec)
         with open(script_path, 'w') as f: f.write(script_content)
 
     @classmethod
-    def generate_job_script_content(cls, dir_spec=None):
+    def generate_entrypoint_content(cls, dir_spec=None):
         content = textwrap.dedent(
             """
             #!/bin/bash
@@ -150,7 +150,7 @@ class OdysseyJobDirBuilder(object):
 
     @classmethod
     def generate_body_section(cls, dir_spec=None):
-        return dir_spec.get('job_script_body', '')
+        return dir_spec.get('entrypoint_body', '')
 
     @classmethod
     def write_templates(cls, dir_spec=None, output_dir=None):

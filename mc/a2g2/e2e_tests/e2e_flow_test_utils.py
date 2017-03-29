@@ -1,5 +1,7 @@
 import json
 import os
+import tempfile
+import textwrap
 import time
 import unittest
 
@@ -11,8 +13,7 @@ from mc.a2g2.runners.odyssey_push_runner.odyssey_push_runner import (
 from mc.storage_client.storage_client import MissionControlStorageClient
 from mc.execution_clients.ssh_control_socket_client import (
     SSHControlSocketClient)
-from mc.a2g2.job_dir_builders.a2g2_job_engine.a2g2_job_engine_dir_builder import (
-    A2G2JobEngineDirBuilder)
+from mc.a2g2.job_engines import a2g2_job_engine
 from .docker.docker_utils import DockerEnv
 
 def get_skip_args():
@@ -82,25 +83,42 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
         )
 
     def generate_job_submission_factory(self):
-        a2g2_client_cfg_json = json.dumps({
-            'base_url': self.a2g2_client.base_url
-        })
-
-        job_engine_class_spec = self.get_job_engine_class_spec()
-
+        cfg = self.generate_job_submission_cfg()
         class JobSubmissionFactory(object):
-            def build_job_submission(self, job=None, output_dir=None):
-                job_dir_meta = A2G2JobEngineDirBuilder.build_odyssey_dir(
+            def build_job_submission(self, job=None, submission_dir=None):
+                submission_dir = submission_dir or tempfile.mkdtemp(
+                    prefix='sf.')
+                job_engine = a2g2_job_engine.A2G2JobEngine()
+                submission_meta = job_engine.build_job_submission(
                     job=job,
-                    cfg={
-                        'A2G2_CLIENT_CFG_JSON': a2g2_client_cfg_json,
-                        'A2G2_JOB_ENGINE_CLASS': job_engine_class_spec,
-                    },
-                    output_dir=output_dir
+                    cfg=cfg,
+                    submission_dir=submission_dir
                 )
-                submission_meta = job_dir_meta
                 return submission_meta
         return JobSubmissionFactory()
+
+    def generate_job_submission_cfg(self):  
+        cfg = {
+            'a2g2_client_cfg_json': json.dumps({
+                'base_url': self.a2g2_client.base_url
+            }),
+            'job_engine': {
+                'entrypoint_preamble': self.get_entrypoint_preamble(),
+                'engine_module': a2g2_job_engine.__name__,
+                'engine_class_spec': self.get_job_engine_class_spec(),
+            }
+        }
+        return cfg
+
+    def get_entrypoint_preamble(self):
+        cluster_conda_env_root = self.docker_env.compose_cfg['services']\
+                ['odyssey']['environment']['ODYSSEY_A2G2_CONDA_ENV_PATH']
+        preamble = textwrap.dedent(
+            '''
+            source {conda_env_root}/bin/activate {conda_env_root}
+            '''
+        ).strip().format(conda_env_root=cluster_conda_env_root)
+        return preamble
 
     def get_job_engine_class_spec(self): raise NotImplementedError
 
@@ -109,7 +127,7 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
     def generate_connected_ssh_client(self):
         def auth_fn(*args, ssh_client=None, ssh_cmd=None, **kwargs):
             child = pexpect.spawn(ssh_cmd, timeout=5)
-            child.expect('.+')
+            child.expect('Password:')
             child.sendline(self.docker_env.odyssey_user_password)
             child.expect('.+')
             child.sendline(ssh_client.user)
@@ -137,11 +155,9 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
             time.sleep(tick_interval)
 
     def get_incomplete_flows(self):
-        complete_flows = self.fetch_and_key_flows(
-            query_params={'status': 'COMPLETED'})
         all_flows = self.fetch_and_key_flows()
         incomplete_flows = [flow for flow_uuid, flow in all_flows.items()
-                            if flow_uuid not in complete_flows]
+                            if flow['status'] not in ['COMPLETED', 'FAILED']]
         return incomplete_flows
 
     def fetch_and_key_flows(self, query_params=None):

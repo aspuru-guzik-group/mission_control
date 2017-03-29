@@ -5,6 +5,8 @@ import socket
 import subprocess
 import time
 
+import yaml
+
 import mc
 
 
@@ -12,6 +14,8 @@ class DockerEnv(object):
     def __init__(self, logger=None):
         this_dir = os.path.dirname(__file__)
         self.docker_dir = os.path.join(this_dir)
+        self.compose_path = os.path.join(self.docker_dir, 'docker-compose.yml')
+        self.compose_cfg = yaml.load(open(self.compose_path).read())
         self.logger = logger or logging
 
     def setup(self):

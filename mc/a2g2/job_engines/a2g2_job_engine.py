@@ -4,40 +4,54 @@ import json
 import sys
 
 DEFAULT_JOB_MODULE_PKGS = ['mc.a2g2.job_modules']
+DEFAULT_JOB_TYPE_PREFIX = 'a2g2.jobs.'
 
 class A2G2JobEngine(object):
-    """Dispatches to job_module engines."""
+    """Facade for job lifecycle commands and job module dispatch."""
 
-    def execute_job(self, *args, job=None, cfg=None, output_dir=None,
-                    ctx_dir=None, **kwargs):
-        job_engine = self.get_job_engine(job=job, cfg=cfg)
-        return job_engine.execute_job(job=job, cfg=cfg, output_dir=output_dir,
-                                      ctx_dir=ctx_dir)
+    def execute_command(self, *args, command=None, **kwargs):
+        handler = getattr(self, command)
+        handler(*args, **kwargs)
 
-    def get_job_engine(self, *args, job=None, cfg=None, **kwargs):
+    def build_job_submission(self, *args, job=None, cfg=None, job_dir=None, 
+                             **kwargs):
         job_module = self.get_job_module(job=job, cfg=cfg)
-        try: return getattr(job_module, 'job_engine')
-        except AttributeError:
-            raise Exception(("job_module '{job_module}' does not have "
-                             " 'job_engine' attribute".format(job_module)))
+        return job_module.build_job_submission(
+            *args, job=job, cfg=cfg, job_dir=job_dir, **kwargs)
 
     def get_job_module(self, job=None, cfg=None):
         job_module_pkgs = DEFAULT_JOB_MODULE_PKGS
-        job_module_name = job['job_spec']['module']
+        job_module_name = self.get_job_module_name(job=job, cfg=cfg)
         try:
             for job_module_pkg in job_module_pkgs:
                 full_module_name = '.'.join([job_module_pkg, job_module_name])
                 try: return importlib.import_module(full_module_name)
                 except ImportError: pass
-            no_module_found_msg = ("No job module found for module"
+            no_module_found_msg = ("No job_module found for job_module"
                                    " '{job_module_name}'").format(
                                        job_module_name=job_module_name)
             raise Exception(no_module_found_msg)
         except Exception as error:
             raise Exception("Could not load module for job: %s" % error)
 
-class ExecuteJobCommand(object):
-    help = 'Execute Job'
+    def get_job_module_name(self, job=None, cfg=None):
+        module_name = self.get_module_name_from_cfg(job=job, cfg=cfg) or \
+                self.get_module_name_from_type(job=job, cfg=cfg)
+        return module_name
+
+    def get_module_name_from_cfg(self, job=None, cfg=None):
+        engine_cfg = cfg.get('job_engine', {})
+        modules_for_types = engine_cfg.get('modules_for_types', {})
+        return modules_for_types.get(job['job_spec']['job_type'], None)
+
+    def get_module_name_from_type(self, job=None, cfg=None):
+        engine_cfg = cfg.get('job_engine', {})
+        job_type_prefix = engine_cfg.get(
+            'job_type_prefix', DEFAULT_JOB_TYPE_PREFIX)
+        return job['job_spec']['job_type'].replace(job_type_prefix, '')
+
+class JobEngineCommand(object):
+    help = 'JobEngine Command'
 
     def __init__(self, streams=None):
         self.setup_streams(streams=streams)
@@ -59,24 +73,19 @@ class ExecuteJobCommand(object):
 
     def add_arguments(self, parser):
         def json_file_type(file_path): return json.load(open(file_path))
+        parser.add_argument('command', type=str)
         parser.add_argument('--job', type=json_file_type)
         parser.add_argument('--cfg', type=json_file_type, default={})
-        parser.add_argument('--output_dir', type=str)
-        parser.add_argument('--ctx_dir', type=str)
 
-    def handle(self, *args, job=None, cfg=None, output_dir=None, ctx_dir=None,
-               **kwargs):
-        self.execute_job(
-            job=job,
-            cfg=cfg,
-            output_dir=output_dir,
-            ctx_dir=ctx_dir,
-            job_engine=self.generate_job_engine(cfg=cfg),
-        )
+    def handle(self, *args, command=None, job=None, cfg=None, **kwargs):
+        self.execute_command(command=command, job=job, cfg=cfg,
+                             job_engine=self.generate_job_engine(cfg=cfg))
 
     def generate_job_engine(self, cfg=None):
         cfg = cfg or {}
-        class_spec = cfg.get('A2G2_JOB_ENGINE_CLASS', None)
+        engine_cfg = cfg.get('job_engine', {})
+        # Class spec allows for using a mock engine in tests.
+        class_spec = engine_cfg.get('engine_class_spec', None)
         if class_spec:
             JobEngineClass = self.get_class_from_class_spec(class_spec)
         else:
@@ -92,11 +101,9 @@ class ExecuteJobCommand(object):
         Clazz = getattr(job_module, class_name)
         return Clazz
 
-    def execute_job(self, job=None, cfg=None, output_dir=None, ctx_dir=None,
-                    job_engine=None):
-        return job_engine.execute_job(job=job, cfg=cfg, output_dir=output_dir,
-                                      ctx_dir=ctx_dir)
+    def execute_command(self, command=None, job=None, cfg=None,
+                        job_engine=None):
+        return job_engine.execute_command(command=command, job=job, cfg=cfg)
 
 if __name__ == '__main__':
-    cmd = ExecuteJobCommand()
-    cmd.execute(argv=sys.argv[1:])
+    JobEngineCommand().execute(argv=sys.argv[1:])

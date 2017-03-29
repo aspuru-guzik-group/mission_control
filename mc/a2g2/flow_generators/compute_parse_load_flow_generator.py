@@ -31,12 +31,14 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
 
     @classmethod
     def generate_compute_node(cls, flow=None):
+        compute_job_spec = flow.data['flow_spec']['compute_job_spec']
         node = yaml.load(
             '''
             node_tasks:
             - task_key: run_job
               task_params:
                 job_spec:
+                  job_type: %(job_type)s
                   job_params: %(job_params_yaml)s
               task_type: a2g2.tasks.nodes.run_job
             - task_key: expose_job_outputs
@@ -46,8 +48,9 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
                   value: '{{ctx.tasks.run_job.data.outputs}}'
               task_type: a2g2.tasks.set_values
             ''' % {
+                'job_type': compute_job_spec['job_type'],
                 'job_params_yaml': cls.dump_inline_yaml(
-                    flow.data['flow_spec'].get('compute_job_params', {}))
+                    compute_job_spec.get('compute_job_params', {}))
             }
         )
         return node
@@ -59,6 +62,7 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
 
     @classmethod
     def generate_parse_node(cls, flow=None):
+        parse_job_spec = flow.data['flow_spec']['parse_job_spec']
         node = yaml.load(
             '''
             node_tasks:
@@ -72,6 +76,7 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
             - task_key: run_job
               task_params:
                 job_spec:
+                  job_type: %(job_type)s
                   job_params: %(job_params_yaml)s
               task_type: a2g2.tasks.nodes.run_job
             - task_key: expose_job_outputs
@@ -81,14 +86,16 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
                   value: '{{ctx.tasks.run_job.data.outputs}}'
               task_type: a2g2.tasks.set_values
             ''' % {
+                'job_type': parse_job_spec['job_type'],
                 'job_params_yaml': cls.dump_inline_yaml(
-                    flow.data['flow_spec'].get('parse_job_params', {}))
+                    parse_job_spec.get('job_params', {}))
             }
         )
         return node
 
     @classmethod
     def generate_load_node(cls, flow=None):
+        load_job_spec = flow.data['flow_spec']['load_job_spec']
         node = yaml.load(
             '''
             node_tasks:
@@ -102,6 +109,7 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
             - task_key: run_job
               task_params:
                 job_spec:
+                  job_type: %(job_type)s
                   job_params: %(job_params_yaml)s
             - task_key: expose_job_outputs
               task_params:
@@ -110,8 +118,9 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
                   value: '{{ctx.tasks.run_job.data.outputs}}'
               task_type: a2g2.tasks.set_values
             ''' % {
+                'job_type': load_job_spec['job_type'],
                 'job_params_yaml': cls.dump_inline_yaml(
-                    flow.data['flow_spec'].get('load_job_params', {}))
+                    load_job_spec.get('job_params', {}))
             }
         )
         return node
