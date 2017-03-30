@@ -30,7 +30,13 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
         return [ConfgenFlowGenerator]
 
     def get_job_engine_class_spec(self):
-        return 'mc.a2g2.e2e_tests.test_confgen_flow_e2e.MockJobEngine'
+        #return 'mc.a2g2.e2e_tests.test_confgen_flow_e2e.MockJobEngine'
+        return None
+
+    def generate_job_submission_cfg(self):  
+        cfg = super().generate_job_submission_cfg()
+        cfg.setdefault('env_vars', {})['CONFGEN_EXE'] = 'fooga'
+        return cfg
 
     def test_flow(self):
         self.mc_client.flush_mc_db()

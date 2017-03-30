@@ -18,7 +18,11 @@ class WorkdirBuilder(object):
                                 getattr(self, '%s_name' % component))
             content_generator = getattr(self, 'generate_%s_content' % component)
             open(path, 'w').write(content_generator())
-        return self.workdir
+        workdir_meta = {
+            'dir': self.workdir,
+            'entrypoint': self.entrypoint_name,
+        }
+        return workdir_meta
 
     def ensure_dir(self, dir=None):
         os.makedirs(dir, exist_ok=True)

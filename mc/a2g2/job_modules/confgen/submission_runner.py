@@ -41,14 +41,15 @@ class SubmissionRunner(object):
         return workdir_params
 
     def run_workdir(self, workdir_meta=None):
-        cmd = ['bash', workdir_meta['entrypoint']]
+        entrypoint_path = os.path.join(workdir_meta['dir'],
+                                       workdir_meta['entrypoint'])
+        cmd = ['/bin/bash', entrypoint_path]
         workdir_env = {
-            **os.environ,
-            'CONFGEN_EXE': self.submission.get('ctx', {}).get('CONFGEN_EXE')
+            **os.environ, 
+            **(self.cfg.get('a2g2.jobs.confgen', {}).get('env_vars', {}))
         }
         subprocess.run(cmd, check=True, env=workdir_env)
 
     def move_workdir_to_outputs(self, workdir_meta=None):
-        outputs_dest = os.path.join(self.submission['dir']['outputs'],
-                                    'confgen')
+        outputs_dest = os.path.join(self.submission['outputs_dir'], 'confgen')
         shutil.move(workdir_meta['dir'], outputs_dest)

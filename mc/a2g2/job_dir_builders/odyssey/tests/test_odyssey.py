@@ -28,7 +28,9 @@ class BuildDirTestCase(BaseTestCase):
         }
         self.assertEqual(dir_meta, expected_dir_meta)
         expected_dir = os.path.join(snapshot_dir, 'expected_output')
-        _test_utils.assert_dirs_equal(self, submission_dir, expected_dir)
+        _test_utils.assert_dirs_equal(
+            test=self, left=submission_dir, right=expected_dir,
+            ignore_patterns=[r'\.gitignore'])
 
 if __name__ == '__main__':
     unittest.main()

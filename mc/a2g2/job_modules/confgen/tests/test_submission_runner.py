@@ -56,11 +56,13 @@ class RunWorkdirTestCase(BaseTestCase):
     def test_runs_workdir_entrypoint(self, mock_subprocess, mock_os):
         workdir_meta = MagicMock()
         self.submission_runner.run_workdir(workdir_meta=workdir_meta)
-        expected_cmd = ['bash', workdir_meta['entrypoint']]
+        expected_entrypoint_path = mock_os.path.join(workdir_meta['dir'],
+                                                     workdir_meta['entrypoint'])
+        expected_cmd = ['/bin/bash', expected_entrypoint_path]
         expected_env = {
             **mock_os.environ,
-            'CONFGEN_EXE': self.submission_runner.submission.get(
-                'context', {}).get('CONFGEN_EXE')
+            **(self.submission_runner.cfg.get('a2g2.jobs.confgen', {}).get(
+                'env_vars', {}))
         }
         self.assertEqual(mock_subprocess.run.call_args,
                          call(expected_cmd, check=True, env=expected_env))
@@ -70,8 +72,7 @@ class MoveWorkdirToOutputsTestCase(BaseTestCase):
     def test_moves_workdir_to_outputs(self, mock_shutil):
         workdir_meta = MagicMock()
         expected_src = workdir_meta['dir']
-        expected_dest = os.path.join(self.submission['outputs']['dir'],
-                                     'confgen')
+        expected_dest = os.path.join(self.submission['outputs_dir'], 'confgen')
         self.submission_runner.move_workdir_to_outputs(
             workdir_meta=workdir_meta)
         self.assertEqual(mock_shutil.move.call_args,

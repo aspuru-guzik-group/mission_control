@@ -103,9 +103,9 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
                 'base_url': self.a2g2_client.base_url
             }),
             'job_engine': {
-                'entrypoint_preamble': self.get_entrypoint_preamble(),
-                'engine_module': a2g2_job_engine.__name__,
                 'engine_class_spec': self.get_job_engine_class_spec(),
+                'entrypoint_preamble': self.get_entrypoint_preamble(),
+                'job_engine_exe': 'python -m %s' % (a2g2_job_engine.__name__),
             }
         }
         return cfg
@@ -120,7 +120,7 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
         ).strip().format(conda_env_root=cluster_conda_env_root)
         return preamble
 
-    def get_job_engine_class_spec(self): raise NotImplementedError
+    def get_job_engine_class_spec(self): return None
 
     def get_flow_generator_classes(self): raise NotImplementedError
 

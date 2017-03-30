@@ -3,14 +3,18 @@ import filecmp
 import io
 import json
 import os
+import re
 from unittest.mock import Mock
 
 
-def assert_dirs_equal(test=None, left=None, right=None):
+def assert_dirs_equal(test=None, left=None, right=None, ignore_patterns=None):
+    ignore_patterns = ignore_patterns or []
     cmp_result = filecmp.dircmp(left, right)
     test.assertEqual(set(cmp_result.left_only), set())
     test.assertEqual(set(cmp_result.right_only), set())
     for differing_file in cmp_result.diff_files:
+        for ignore_pattern in ignore_patterns:
+            if re.search(ignore_pattern, differing_file): continue
         left_file = os.path.join(left, differing_file)
         right_file = os.path.join(right, differing_file)
         if differing_file.endswith('.json'):

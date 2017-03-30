@@ -30,9 +30,17 @@ class BuildWorkdirTestCase(BaseTestCase):
     def test_creates_expected_dir(self):
         mc_test_utils.assert_dirs_equal(
             test=self,
-            left=self.workdir_builder.build_workdir(),
+            left=self.workdir_builder.build_workdir()['dir'],
             right=self.generate_expected_dir()
         )
+
+    def test_returns_workdir_meta(self):
+        workdir_meta = self.workdir_builder.build_workdir()
+        expected_workdir_meta = {
+            'dir': self.workdir_builder.workdir,
+            'entrypoint': self.workdir_builder.entrypoint_name,
+        }
+        self.assertEqual(workdir_meta, expected_workdir_meta)
 
     def generate_expected_dir(self):
         expected_dir = tempfile.mkdtemp()

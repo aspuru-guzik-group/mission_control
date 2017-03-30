@@ -30,7 +30,7 @@ class BuildJobSubmissionTestCase(BaseTestCase):
             MockOdysseyBuilder.build_dir.call_args,
             call(dir_spec={'entrypoint_body': \
                            self.submission_builder.generate_entrypoint_body()},
-                 output_dir=self.submission_dir,
+                 submission_dir=self.submission_dir,
                  submission_meta_file_name=(
                      self.submission_builder.submission_meta_file_name)
                 )
@@ -51,12 +51,12 @@ class GenerateEntrypointBodyTestCase(BaseTestCase):
         expected_entrypoint_body = textwrap.dedent(
             """
             {job_engine_preamble}
-            python -m {job_engine_module} {job_cli_params} \\
-            run_job_submission {submission_cli_params}
+            {job_engine_exe} {job_cli_params} \\
+                run_job_submission {submission_cli_params}
             """
         ).strip().format(
             job_engine_preamble=job_engine_cfg.get('entrypoint_preamble', ''),
-            job_engine_module=job_engine_cfg['engine_module'],
+            job_engine_exe=job_engine_cfg['job_engine_exe'],
             job_cli_params=self.submission_builder.params_to_cli_args(
                 params=self.submission_builder.write_json_params()),
             submission_cli_params=self.submission_builder.params_to_cli_args(

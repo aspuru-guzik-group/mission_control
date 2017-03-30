@@ -23,7 +23,7 @@ class A2G2JobEngine(object):
                            **kwargs):
         job_module = self.get_job_module(job=job, cfg=cfg)
         return job_module.run_job_submission(
-            *args, job=job, cfg=cfg, submision=submission, **kwargs)
+            *args, job=job, cfg=cfg, submission=submission, **kwargs)
 
     def get_job_module(self, job=None, cfg=None):
         job_module_pkgs = DEFAULT_JOB_MODULE_PKGS
