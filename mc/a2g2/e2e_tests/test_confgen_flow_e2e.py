@@ -82,7 +82,7 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
 
 
 class MockJobEngine(object):
-    def execute_command(self, command=None, job=None, cfg=None):
+    def execute_command(self, command=None, job=None, cfg=None, **kwargs):
         use_real_engine = True
         if command == 'run_job_submission':
             if job['job_spec']['job_type'] == 'a2g2.jobs.confgen':
@@ -91,7 +91,8 @@ class MockJobEngine(object):
                 #self.generate_fake_confgen_output(output_dir=output_dir)
         if use_real_engine:
             real_engine = a2g2_job_engine.A2G2JobEngine()
-            real_engine.execute_command(command=command, job=job, cfg=cfg)
+            real_engine.execute_command(command=command, job=job, cfg=cfg,
+                                        **kwargs)
 
     def generate_fake_confgen_output(self, output_dir=None):
         mols = generate_test_mols()

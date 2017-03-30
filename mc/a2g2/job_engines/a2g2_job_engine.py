@@ -9,7 +9,7 @@ DEFAULT_JOB_TYPE_PREFIX = 'a2g2.jobs.'
 class A2G2JobEngine(object):
     """Facade for job lifecycle commands and job module dispatch."""
 
-    def execute_job_command(self, *args, command=None, **kwargs):
+    def execute_command(self, *args, command=None, **kwargs):
         handler = getattr(self, command)
         handler(*args, **kwargs)
 
@@ -81,18 +81,17 @@ class JobEngineCommand(object):
         def json_file_type(file_path): return json.load(open(file_path))
         parser.add_argument('--job', type=json_file_type)
         parser.add_argument('--cfg', type=json_file_type, default={})
-        subparsers = parser.add_subparsers(dest='subcommand',
-                                           title='subcommands',
-                                           description='valid subcommands')
+        subparsers = parser.add_subparsers(dest='command',
+                                           title='commands',
+                                           description='valid commands')
         subparsers.add_parser('build_job_submission')
         run_job_submission_parser = subparsers.add_parser('run_job_submission')
         run_job_submission_parser.add_argument('--submission',
                                                type=json_file_type)
 
     def handle(self, *args, command=None, job=None, cfg=None, **kwargs):
-        self.execute_job_command(command=command, job=job, cfg=cfg,
-                                 job_engine=self.generate_job_engine(cfg=cfg),
-                                 **kwargs)
+        self.execute_command(job_engine=self.generate_job_engine(cfg=cfg),
+                             command=command, job=job, cfg=cfg, **kwargs)
 
     def generate_job_engine(self, cfg=None):
         cfg = cfg or {}
@@ -114,9 +113,10 @@ class JobEngineCommand(object):
         Clazz = getattr(job_module, class_name)
         return Clazz
 
-    def execute_command(self, command=None, job=None, cfg=None,
-                        job_engine=None):
-        return job_engine.execute_command(command=command, job=job, cfg=cfg)
+    def execute_command(self, job_engine=None, command=None, job=None, cfg=None,
+                        **kwargs):
+        return job_engine.execute_command(command=command, job=job, cfg=cfg,
+                                          **kwargs)
 
 if __name__ == '__main__':
     JobEngineCommand().execute(argv=sys.argv[1:])
