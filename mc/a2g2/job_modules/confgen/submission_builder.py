@@ -31,17 +31,16 @@ class SubmissionBuilder(object):
         entrypoint_body = textwrap.dedent(
             """
             {job_engine_preamble}
-            python -m {job_engine_module} {job_engine_command} {cli_params}
+            python -m {job_engine_module} {job_cli_params} \\
+            run_job_submission {submission_cli_params}
             """
         ).strip().format(
             job_engine_preamble=job_engine_cfg.get('entrypoint_preamble', ''),
             job_engine_module=job_engine_cfg['engine_module'],
-            job_engine_command='run_job_submission',
-            cli_params=self.params_to_cli_args(params={
-                **(self.write_json_params()),
-                'submission': os.path.join(self.submission_dir,
-                                           self.submission_meta_file_name)
-            })
+            job_cli_params=self.params_to_cli_args(
+                params=self.write_json_params()),
+            submission_cli_params=self.params_to_cli_args(
+                params={'submission': self.submission_meta_file_name})
         )
         return entrypoint_body
 

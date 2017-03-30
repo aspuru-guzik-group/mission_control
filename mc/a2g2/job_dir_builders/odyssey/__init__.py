@@ -34,7 +34,7 @@ class OdysseyJobDirBuilder(object):
         }
         if submission_meta_file_name:
             meta_file_path = os.path.join(output_dir, submission_meta_file_name)
-            open(meta_file_path).write(json.dumps(submission_meta))
+            open(meta_file_path, 'w').write(json.dumps(submission_meta))
         return submission_meta
 
     @classmethod
