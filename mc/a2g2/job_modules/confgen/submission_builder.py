@@ -10,6 +10,7 @@ class SubmissionBuilder(object):
         self.job = job
         self.cfg = cfg
         self.submission_dir = submission_dir
+        self.submission_meta_file_name = 'submission.json'
 
     def build_submission(self):
         self.ensure_dir(dir=self.submission_dir)
@@ -17,7 +18,8 @@ class SubmissionBuilder(object):
             dir_spec={
                 'entrypoint_body': self.generate_entrypoint_body(),
             },
-            output_dir=self.submission_dir
+            output_dir=self.submission_dir,
+            submission_meta_file_name=self.submission_meta_file_name
         )
         return submission_meta
 
@@ -29,13 +31,17 @@ class SubmissionBuilder(object):
         entrypoint_body = textwrap.dedent(
             """
             {job_engine_preamble}
-            python -m {job_engine_module} {job_engine_command} {params}
+            python -m {job_engine_module} {job_engine_command} {cli_params}
             """
         ).strip().format(
             job_engine_preamble=job_engine_cfg.get('entrypoint_preamble', ''),
             job_engine_module=job_engine_cfg['engine_module'],
             job_engine_command='run_job_submission',
-            params=self.params_to_cli_args(params=self.write_json_params())
+            cli_params=self.params_to_cli_args(params={
+                **(self.write_json_params()),
+                'submission': os.path.join(self.submission_dir,
+                                           self.submission_meta_file_name)
+            })
         )
         return entrypoint_body
 

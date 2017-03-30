@@ -9,7 +9,7 @@ DEFAULT_JOB_TYPE_PREFIX = 'a2g2.jobs.'
 class A2G2JobEngine(object):
     """Facade for job lifecycle commands and job module dispatch."""
 
-    def execute_command(self, *args, command=None, **kwargs):
+    def execute_job_command(self, *args, command=None, **kwargs):
         handler = getattr(self, command)
         handler(*args, **kwargs)
 
@@ -18,6 +18,12 @@ class A2G2JobEngine(object):
         job_module = self.get_job_module(job=job, cfg=cfg)
         return job_module.build_job_submission(
             *args, job=job, cfg=cfg, job_dir=job_dir, **kwargs)
+
+    def run_job_submission(self, *args, job=None, cfg=None, submission=None,
+                           **kwargs):
+        job_module = self.get_job_module(job=job, cfg=cfg)
+        return job_module.run_job_submission(
+            *args, job=job, cfg=cfg, submision=submission, **kwargs)
 
     def get_job_module(self, job=None, cfg=None):
         job_module_pkgs = DEFAULT_JOB_MODULE_PKGS
@@ -73,13 +79,20 @@ class JobEngineCommand(object):
 
     def add_arguments(self, parser):
         def json_file_type(file_path): return json.load(open(file_path))
-        parser.add_argument('command', type=str)
         parser.add_argument('--job', type=json_file_type)
         parser.add_argument('--cfg', type=json_file_type, default={})
+        subparsers = parser.add_subparsers(dest='subcommand',
+                                           title='subcommands',
+                                           description='valid subcommands')
+        subparsers.add_parser('build_job_submission')
+        run_job_submission_parser = subparsers.add_parser('run_job_submission')
+        run_job_submission_parser.add_argument('--submission',
+                                               type=json_file_type)
 
     def handle(self, *args, command=None, job=None, cfg=None, **kwargs):
-        self.execute_command(command=command, job=job, cfg=cfg,
-                             job_engine=self.generate_job_engine(cfg=cfg))
+        self.execute_job_command(command=command, job=job, cfg=cfg,
+                                 job_engine=self.generate_job_engine(cfg=cfg),
+                                 **kwargs)
 
     def generate_job_engine(self, cfg=None):
         cfg = cfg or {}

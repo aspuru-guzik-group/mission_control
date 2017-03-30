@@ -1,4 +1,3 @@
-from collections import defaultdict
 import json
 import os
 import textwrap
@@ -13,11 +12,10 @@ from .. import workdir_builder
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.job = defaultdict(MagicMock)
-        self.cfg = defaultdict(MagicMock)
         self.workdir = MagicMock()
+        self.workdir_params = MagicMock()
         self.workdir_builder = workdir_builder.WorkdirBuilder(
-            job=self.job, cfg=self.cfg, workdir=self.workdir)
+            workdir=self.workdir, workdir_params=self.workdir_params)
 
 class BuildWorkdirTestCase(BaseTestCase):
     def setUp(self):
@@ -65,12 +63,8 @@ class GenerateEntrypointContentTestCase(BaseTestCase):
 class GenerateInfileContentTestCase(BaseTestCase):
     def test_generates_expected_infile_content(self):
         confgen_params = {'some': 'confgen_params'}
-        self.workdir_builder.job = {
-            'job_spec': {
-                'job_params': {
-                    'confgen_params': confgen_params
-                }
-            }
+        self.workdir_builder.workdir_params = {
+            'confgen_params': confgen_params
         }
         expected_infile_content = json.dumps(confgen_params)
         self.assertEqual(self.workdir_builder.generate_infile_content(),

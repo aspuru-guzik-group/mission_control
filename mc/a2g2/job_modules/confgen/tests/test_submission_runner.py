@@ -7,9 +7,11 @@ from .. import submission_runner
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
+        self.job = MagicMock()
+        self.cfg = MagicMock()
         self.submission = MagicMock()
         self.submission_runner = submission_runner.SubmissionRunner(
-            submission=self.submission)
+            job=self.job, cfg=self.cfg, submission=self.submission)
 
 class RunSubmissionTestCase(BaseTestCase):
     def setUp(self):
@@ -37,7 +39,13 @@ class RunSubmissionTestCase(BaseTestCase):
 class CreateWorkdirTestCase(BaseTestCase):
     @patch.object(submission_runner, 'WorkdirBuilder')
     def test_dispatches_to_build_workdir(self, MockWorkdirBuilder):
+        self.submission_runner.generate_workdir = MagicMock()
         workdir_meta = self.submission_runner.create_workdir()
+        self.assertEqual(
+            MockWorkdirBuilder.call_args,
+            call(workdir=self.submission_runner.generate_workdir.return_value,
+                 workdir_params=self.submission_runner.get_workdir_params())
+        )
         self.assertEqual(
             workdir_meta,
             MockWorkdirBuilder.return_value.build_workdir.return_value)

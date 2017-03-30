@@ -30,7 +30,10 @@ class BuildJobSubmissionTestCase(BaseTestCase):
             MockOdysseyBuilder.build_dir.call_args,
             call(dir_spec={'entrypoint_body': \
                            self.submission_builder.generate_entrypoint_body()},
-                 output_dir=self.submission_dir)
+                 output_dir=self.submission_dir,
+                 submission_meta_file_name=(
+                     self.submission_builder.submission_meta_file_name)
+                )
         )
 
     def test_returns_submission_meta(self, MockOdysseyBuilder):
@@ -48,14 +51,21 @@ class GenerateEntrypointBodyTestCase(BaseTestCase):
         expected_entrypoint_body = textwrap.dedent(
             """
             {job_engine_preamble}
-            python -m {job_engine_module} {job_engine_command} {params}
+            python -m {job_engine_module} {job_engine_command} {cli_params}
             """
         ).strip().format(
             job_engine_preamble=job_engine_cfg.get('entrypoint_preamble', ''),
             job_engine_module=job_engine_cfg['engine_module'],
             job_engine_command='run_job_submission',
-            params=self.submission_builder.params_to_cli_args(
-                params=self.submission_builder.write_json_params())
+            cli_params=self.submission_builder.params_to_cli_args(
+                params={
+                    **(self.submission_builder.write_json_params()),
+                    'submission': os.path.join(
+                        self.submission_builder.submission_dir,
+                        self.submission_builder.submission_meta_file_name
+                    )
+                }
+            )
         )
         self.assertEqual(self.submission_builder.generate_entrypoint_body(),
                          expected_entrypoint_body)

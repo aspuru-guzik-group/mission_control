@@ -4,9 +4,9 @@ import textwrap
 
 
 class WorkdirBuilder(object):
-    def __init__(self, job=None, cfg=None, workdir=None, entrypoint_name=None):
-        self.job = job
-        self.cfg = cfg
+    def __init__(self, workdir=None, workdir_params=None, entrypoint_name=None):
+        self.workdir = workdir
+        self.workdir_params = workdir_params
         self.entrypoint_name = entrypoint_name or 'entrypoint.sh'
         self.infile_name = 'confgen.in.json'
         self.outdir_name = 'outputs'
@@ -36,5 +36,5 @@ class WorkdirBuilder(object):
         return entrypoint_content
 
     def generate_infile_content(self):
-        confgen_params = self.job['job_spec']['job_params']['confgen_params']
+        confgen_params = self.workdir_params['confgen_params']
         return json.dumps(confgen_params)
