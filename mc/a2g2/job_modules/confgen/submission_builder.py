@@ -7,8 +7,8 @@ from a2g2.job_dir_builders.odyssey import OdysseyJobDirBuilder
 
 class SubmissionBuilder(object):
     def __init__(self, job=None, cfg=None, submission_dir=None):
-        self.job = job or {}
-        self.cfg = cfg or {}
+        self.job = job
+        self.cfg = cfg
         self.submission_dir = submission_dir
 
     def build_submission(self):
@@ -26,18 +26,18 @@ class SubmissionBuilder(object):
 
     def generate_entrypoint_body(self):
         job_engine_cfg = self.cfg.get('job_engine', {})
-        content = textwrap.dedent(
+        entrypoint_body = textwrap.dedent(
             """
             {job_engine_preamble}
             python -m {job_engine_module} {job_engine_command} {params}
             """
-        ).lstrip().format(
+        ).strip().format(
             job_engine_preamble=job_engine_cfg.get('entrypoint_preamble', ''),
             job_engine_module=job_engine_cfg['engine_module'],
             job_engine_command='run_job_submission',
             params=self.params_to_cli_args(params=self.write_json_params())
         )
-        return content
+        return entrypoint_body
 
     def write_json_params(self):
         json_params = {}
