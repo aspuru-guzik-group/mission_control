@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 import unittest
@@ -8,7 +9,6 @@ from rdkit.Chem import AllChem
 from . import e2e_flow_test_utils
 
 from mc.a2g2.flow_generators.confgen_flow_generator import ConfgenFlowGenerator
-from mc.a2g2.job_engines import a2g2_job_engine
 
 
 def generate_test_mols():
@@ -35,7 +35,12 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
 
     def generate_job_submission_cfg(self):  
         cfg = super().generate_job_submission_cfg()
-        cfg.setdefault('env_vars', {})['CONFGEN_EXE'] = 'fooga'
+        cfg['a2g2.jobs.confgen'] = {
+            'env_vars': {
+                # fake confgen by calling this module' 
+                'CONFGEN_EXE': 'python -m mc.%s fake_confgen' % (__name__)
+            }
+        }
         return cfg
 
     def test_flow(self):
@@ -86,27 +91,29 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
         actual_counts = self.a2g2_client.get_counts()
         self.assertEqual(actual_counts, expected_counts)
 
+#### Handlers for mocking executables ####
 
-class MockJobEngine(object):
-    def execute_command(self, command=None, job=None, cfg=None, **kwargs):
-        use_real_engine = True
-        if command == 'run_job_submission':
-            if job['job_spec']['job_type'] == 'a2g2.jobs.confgen':
-                use_real_engine = False
-                raise NotImplementedError("implement fake confgen")
-                #self.generate_fake_confgen_output(output_dir=output_dir)
-        if use_real_engine:
-            real_engine = a2g2_job_engine.A2G2JobEngine()
-            real_engine.execute_command(command=command, job=job, cfg=cfg,
-                                        **kwargs)
+def handle_confgen_command(args=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--outdir')
+    parsed_args = parser.parse_args(args=args)
+    outdir = parsed_args.outdir
+    mols = generate_test_mols()
+    for mol_counter, mol in enumerate(mols):
+        conformer_file_path = os.path.join(
+            outdir, 'mol_%s_conformers.sdf' % mol_counter)
+        with open(conformer_file_path, 'w') as conformer_file:
+            writer = Chem.SDWriter(conformer_file)
+            for conformer in mol.GetConformers():
+                writer.write(mol, confId=conformer.GetId())
+            writer.close()
 
-    def generate_fake_confgen_output(self, output_dir=None):
-        mols = generate_test_mols()
-        for mol_counter, mol in enumerate(mols):
-            conformer_file_path = os.path.join(
-                output_dir, 'mol_%s_conformers.sdf' % mol_counter)
-            with open(conformer_file_path, 'w') as conformer_file:
-                writer = Chem.SDWriter(conformer_file)
-                for conformer in mol.GetConformers():
-                    writer.write(mol, confId=conformer.GetId())
-                writer.close()
+if __name__ == '__main__':
+    # Logic to fake calls to executables.
+    # This will be called in the fake execution context, NOT in the
+    # unittest context.
+    parser = argparse.ArgumentParser(description='mocked executables')
+    parser.add_argument('command')
+    parsed_args, command_args = parser.parse_known_args()
+    if parsed_args.command == 'confgen':
+        handle_confgen_command(args=command_args)
