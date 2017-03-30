@@ -1,7 +1,4 @@
-from collections import defaultdict
-import json
 import os
-import tempfile
 import unittest
 from unittest.mock import call, MagicMock, patch
 
@@ -10,79 +7,64 @@ from .. import submission_runner
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.submission = self.generate_submission()
+        self.submission = MagicMock()
         self.submission_runner = submission_runner.SubmissionRunner(
             submission=self.submission)
-
-    def generate_submission(self):
-        self.job = self.generate_job()
-        self.cfg = self.generate_cfg()
-        submission_dir = tempfile.mkdtemp()
-        self.write_json_files(submission_dir=submission_dir)
-        submission = {
-            'dir': submission_dir,
-            'outputs_dir': os.path.join(submission_dir, 'outputs'),
-        }
-        return submission
-
-    def generate_job(self):
-        return defaultdict(MagicMock)
-
-    def generate_cfg(self):
-        return defaultdict(MagicMock)
-
-    def write_json_files(self, submission_dir=None):
-        for param in ['job', 'cfg']:
-            with open(os.path.join(submission_dir, param + '.json'), 'w') as f:
-                json.dump(getattr(self, param), f)
 
 class RunSubmissionTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.expected_output_dir = os.path.join(
-            self.submission['outputs_dir'], 'confgen_outputs')
-        self.submission_runner.get_confgen_params = MagicMock()
-        self.submission_runner.generate_conformers = MagicMock()
+        self.submission_runner.create_workdir = MagicMock()
+        self.submission_runner.run_workdir = MagicMock()
+        self.submission_runner.move_workdir_to_outputs = MagicMock()
+        self.expected_workdir_meta = \
+                self.submission_runner.create_workdir.return_value
         self.submission_runner.run_submission()
 
-    def test_creates_output_dir(self):
-        self.assertTrue(os.path.exists(self.expected_output_dir))
+    def test_creates_workdir(self):
+        self.assertEqual(self.submission_runner.create_workdir.call_args,
+                         call())
 
-    def test_calls_generate_conformers(self):
+    def test_runs_workdir(self):
+        self.assertEqual(self.submission_runner.run_workdir.call_args,
+                         call(workdir_meta=self.expected_workdir_meta))
+
+    def test_moves_workdir_to_outputs(self):
         self.assertEqual(
-            self.submission_runner.generate_conformers.call_args,
-            call(confgen_params=\
-                 self.submission_runner.get_confgen_params.return_value,
-                 output_dir=self.expected_output_dir
-                )
-        )
+            self.submission_runner.move_workdir_to_outputs.call_args,
+            call(workdir_meta=self.expected_workdir_meta))
 
-class GetConfgenParamsTestCase(BaseTestCase):
-    def generate_job(self):
-        job = {
-            'job_spec': {
-                'job_params': {
-                    'confgen_params': {
-                        'param': 'value'
-                    }
-                }
-            }
+class CreateWorkdirTestCase(BaseTestCase):
+    @patch.object(submission_runner, 'WorkdirBuilder')
+    def test_dispatches_to_build_workdir(self, MockWorkdirBuilder):
+        workdir_meta = self.submission_runner.create_workdir()
+        self.assertEqual(
+            workdir_meta,
+            MockWorkdirBuilder.return_value.build_workdir.return_value)
+
+class RunWorkdirTestCase(BaseTestCase):
+    @patch.object(submission_runner, 'os')
+    @patch.object(submission_runner, 'subprocess')
+    def test_runs_workdir_entrypoint(self, mock_subprocess, mock_os):
+        workdir_meta = MagicMock()
+        self.submission_runner.run_workdir(workdir_meta=workdir_meta)
+        expected_cmd = ['bash', workdir_meta['entrypoint']]
+        expected_env = {
+            **mock_os.environ,
+            'CONFGEN_EXE': self.submission_runner.submission.get(
+                'context', {}).get('CONFGEN_EXE')
         }
-        return job
+        self.assertEqual(mock_subprocess.run.call_args,
+                         call(expected_cmd, check=True, env=expected_env))
 
-    def test_gets_confgen_params_from_job(self):
-        confgen_params = self.submission_runner.get_confgen_params()
-        self.assertEqual(confgen_params,
-                         self.job['job_spec']['job_params']['confgen_params'])
-
-class GenerateConformersTestCase(BaseTestCase):
-    @patch.object(submission_runner, 'ConformerGenerator')
-    def test_dispatches_to_conformer_generator(self, MockConformerGenerator):
-        confgen_params = defaultdict(MagicMock)
-        self.submission_runner.generate_conformers(
-            confgen_params=confgen_params)
-        self.assertEqual(MockConformerGenerator.call_args,
-                         call(**confgen_params))
-        self.assertEqual(
-            MockConformerGenerator.return_value.generate_conformers.call_args,
-            call())
+class MoveWorkdirToOutputsTestCase(BaseTestCase):
+    @patch.object(submission_runner, 'shutil')
+    def test_moves_workdir_to_outputs(self, mock_shutil):
+        workdir_meta = MagicMock()
+        expected_src = workdir_meta['dir']
+        expected_dest = os.path.join(self.submission['outputs']['dir'],
+                                     'confgen')
+        self.submission_runner.move_workdir_to_outputs(
+            workdir_meta=workdir_meta)
+        self.assertEqual(mock_shutil.move.call_args,
+                         call(expected_src, expected_dest))

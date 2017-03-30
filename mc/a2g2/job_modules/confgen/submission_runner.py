@@ -1,9 +1,10 @@
-import json
 import os
+import tempfile
+import time
+import shutil
+import subprocess
 
-from mc.a2g2.conformer_generators.rdkit_conformer_generator\
-        .rdkit_conformer_generator import (
-            RDKitConformerGenerator as ConformerGenerator)
+from .workdir_builder import WorkdirBuilder
 
 
 class SubmissionRunner(object):
@@ -11,25 +12,27 @@ class SubmissionRunner(object):
         self.submission = submission
 
     def run_submission(self):
-        self.generate_conformers(
-            output_dir=self.make_output_dir(),
-            confgen_params=self.get_confgen_params(),
-        )
+        workdir_meta = self.create_workdir()
+        try:
+            self.run_workdir(workdir_meta=workdir_meta)
+        finally:
+            self.move_workdir_to_outputs(workdir_meta=workdir_meta)
 
-    def make_output_dir(self):
-        output_dir = os.path.join(self.submission['outputs_dir'],
-                                  'confgen_outputs')
-        os.makedirs(output_dir)
-        return output_dir
+    def create_workdir(self):
+        scratch_dir = self.submission.get('scratch_dir') or tempfile.mkdtemp()
+        workdir = os.path.join(scratch_dir, 'confgen.%s' % time.time())
+        workdir_meta = WorkdirBuilder(workdir=workdir).build_workdir()
+        return workdir_meta
 
-    def get_confgen_params(self):
-        job = self.load_job()
-        return job['job_spec']['job_params']['confgen_params']
+    def run_workdir(self, workdir_meta=None):
+        cmd = ['bash', workdir_meta['entrypoint']]
+        workdir_env = {
+            **os.environ,
+            'CONFGEN_EXE': self.submission.get('ctx', {}).get('CONFGEN_EXE')
+        }
+        subprocess.run(cmd, check=True, env=workdir_env)
 
-    def load_job(self):
-        job_json_path = os.path.join(self.submission['dir'], 'job.json')
-        return json.load(open(job_json_path))
-
-    def generate_conformers(self, confgen_params=None):
-        generator = ConformerGenerator(**confgen_params)
-        generator.generate_conformers()
+    def move_workdir_to_outputs(self, workdir_meta=None):
+        outputs_dest = os.path.join(self.submission['dir']['outputs'],
+                                    'confgen')
+        shutil.move(workdir_meta['dir'], outputs_dest)
