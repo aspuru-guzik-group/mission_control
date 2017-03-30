@@ -1,4 +1,5 @@
 import collections
+import json
 import os
 import tempfile
 import textwrap
@@ -19,18 +20,22 @@ class OdysseyJobDirBuilder(object):
     }
 
     @classmethod
-    def build_dir(cls, dir_spec=None, output_dir=None):
+    def build_dir(cls, dir_spec=None, output_dir=None,
+                  submission_meta_file_name='submission.json'):
         if not output_dir: output_dir = tempfile.mkdtemp(prefix='odyssey.')
         if not os.path.exists(output_dir): os.makedirs(output_dir)
         cls.write_templates(dir_spec=dir_spec, output_dir=output_dir)
         cls.write_entrypoint(dir_spec=dir_spec, output_dir=output_dir)
-        dir_meta = {
+        submission_meta = {
             'dir': output_dir,
             'checkpoint_files': cls.checkpoint_files,
             'entrypoint': 'job.sh',
             'output_files': cls.output_files,
         }
-        return dir_meta
+        if submission_meta_file_name:
+            meta_file_path = os.path.join(output_dir, submission_meta_file_name)
+            open(meta_file_path).write(json.dumps(submission_meta))
+        return submission_meta
 
     @classmethod
     def write_entrypoint(cls, dir_spec=None, output_dir=None):
