@@ -14,32 +14,38 @@ class OdysseyJobDirBuilder(object):
         'failed': 'ODYSSEY_JOB__FAILED',
     }
 
-    output_files = {
+    std_log_files = {
         'stdout': 'ODYSSEY_JOB.stdout',
         'stderr': 'ODYSSEY_JOB.stderr',
     }
 
     @classmethod
-    def build_dir(cls, dir_spec=None, output_dir=None,
+    def build_dir(cls, dir_spec=None, submission_dir=None,
                   submission_meta_file_name='submission.json'):
-        if not output_dir: output_dir = tempfile.mkdtemp(prefix='odyssey.')
-        if not os.path.exists(output_dir): os.makedirs(output_dir)
-        cls.write_templates(dir_spec=dir_spec, output_dir=output_dir)
-        cls.write_entrypoint(dir_spec=dir_spec, output_dir=output_dir)
+        if not submission_dir: submission_dir = tempfile.mkdtemp(prefix='ody.')
+        if not os.path.exists(submission_dir): os.makedirs(submission_dir)
+        cls.write_templates(dir_spec=dir_spec, submission_dir=submission_dir)
+        cls.write_entrypoint(dir_spec=dir_spec, submission_dir=submission_dir)
+        for io_dir in  ['inputs', 'outputs']:
+            os.makedirs(os.path.join(submission_dir, io_dir), exist_ok=True)
         submission_meta = {
-            'dir': output_dir,
+            'dir': submission_dir,
             'checkpoint_files': cls.checkpoint_files,
             'entrypoint': 'job.sh',
-            'output_files': cls.output_files,
+            'std_log_files': cls.std_log_files,
+            'inputs_dir': 'inputs',
+            'outputs_dir': 'outputs',
         }
         if submission_meta_file_name:
-            meta_file_path = os.path.join(output_dir, submission_meta_file_name)
-            open(meta_file_path, 'w').write(json.dumps(submission_meta))
+            cls.write_submission_meta(
+                submission_dir=submission_dir,
+                submission_meta_file_name=submission_meta_file_name,
+                submission_meta=submission_meta)
         return submission_meta
 
     @classmethod
-    def write_entrypoint(cls, dir_spec=None, output_dir=None):
-        script_path = os.path.join(output_dir, 'job.sh')
+    def write_entrypoint(cls, dir_spec=None, submission_dir=None):
+        script_path = os.path.join(submission_dir, 'job.sh')
         script_content = cls.generate_entrypoint_content(dir_spec=dir_spec)
         with open(script_path, 'w') as f: f.write(script_content)
 
@@ -70,22 +76,22 @@ class OdysseyJobDirBuilder(object):
 
     @classmethod
     def generate_sbatch_section(cls, dir_spec=None):
-        output_files = cls.get_output_files(dir_spec=dir_spec)
-        output_file_sbatch_params = [
-            ('error', output_files['stderr']),
-            ('output', output_files['stdout']),
+        std_log_files = cls.get_std_log_files(dir_spec=dir_spec)
+        std_log_file_sbatch_params = [
+            ('error', std_log_files['stderr']),
+            ('output', std_log_files['stdout']),
         ]
-        sbatch_params = dir_spec.get('sbatch', []) + output_file_sbatch_params
+        sbatch_params = dir_spec.get('sbatch', []) + std_log_file_sbatch_params
         squashed_sbatch_params = cls.squash_kvp_list(sbatch_params)
         sbatch_lines = ["#SBATCH --{key}={value}".format(key=key, value=value)
                         for key, value in squashed_sbatch_params]
         return "\n".join(sbatch_lines)
 
     @classmethod
-    def get_output_files(cls, dir_spec=None):
+    def get_std_log_files(cls, dir_spec=None):
         return {
-            **cls.output_files,
-            **dir_spec.get('output_files', {})
+            **cls.std_log_files,
+            **dir_spec.get('std_log_files', {})
         }
 
     @classmethod
@@ -96,7 +102,7 @@ class OdysseyJobDirBuilder(object):
 
     @classmethod
     def generate_status_file_section(cls, dir_spec=None):
-        output_files = cls.get_output_files(dir_spec=dir_spec)
+        std_log_files = cls.get_std_log_files(dir_spec=dir_spec)
 
         def generate_tail_cmd(file_name):
             return 'tail -n 50 %s' % file_name
@@ -125,8 +131,8 @@ class OdysseyJobDirBuilder(object):
         ).strip().format(
             completed_checkpoint_file=cls.checkpoint_files['completed'],
             failed_checkpoint_file=cls.checkpoint_files['failed'],
-            tail_stdout_cmd=generate_tail_cmd(output_files['stdout']),
-            tail_stderr_cmd=generate_tail_cmd(output_files['stderr']),
+            tail_stdout_cmd=generate_tail_cmd(std_log_files['stdout']),
+            tail_stderr_cmd=generate_tail_cmd(std_log_files['stderr']),
             ls_cmd='ls -1'
         )
 
@@ -158,18 +164,19 @@ class OdysseyJobDirBuilder(object):
         return dir_spec.get('entrypoint_body', '')
 
     @classmethod
-    def write_templates(cls, dir_spec=None, output_dir=None):
+    def write_templates(cls, dir_spec=None, submission_dir=None):
         templates = dir_spec.get('templates', {})
         if not templates.get('specs', None): return
         ctx = templates.get('ctx', {})
         for template_spec in templates.get('specs', []):
             cls.write_template_spec(template_spec=template_spec,
-                                    output_dir=output_dir,
+                                    submission_dir=submission_dir,
                                     ctx=ctx)
 
     @classmethod
-    def write_template_spec(cls, template_spec=None, output_dir=None, ctx=None):
-        target_path = os.path.join(output_dir, template_spec['target'])
+    def write_template_spec(cls, template_spec=None, submission_dir=None,
+                            ctx=None):
+        target_path = os.path.join(submission_dir, template_spec['target'])
         cls.ensure_dir(dir_path=os.path.dirname(target_path))
         rendered = cls.render_template_spec(template_spec=template_spec,
                                             ctx=ctx)
@@ -190,3 +197,12 @@ class OdysseyJobDirBuilder(object):
     def ensure_dir(cls, dir_path=None):
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
+
+    @classmethod
+    def write_submission_meta(cls, submission_dir=None,
+                              submission_meta_file_name=None,
+                              submission_meta=None):
+        meta_file_path = os.path.join(submission_dir, submission_meta_file_name)
+        pruned_submission_meta = {k: v for k, v in submission_meta.items()
+                                  if k not in ['dir']}
+        open(meta_file_path, 'w').write(json.dumps(pruned_submission_meta))

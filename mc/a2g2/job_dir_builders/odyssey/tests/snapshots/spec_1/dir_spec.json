@@ -9,7 +9,7 @@
   "modules": [
     ["module_1", true]
   ],
-  "job_script_body": "body_value",
+  "entrypoint_body": "entrypoint_body_value",
   "templates": {
     "ctx": {
       "ctx_1": "ctx_1_value",

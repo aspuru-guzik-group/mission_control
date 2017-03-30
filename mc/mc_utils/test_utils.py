@@ -11,10 +11,17 @@ def assert_dirs_equal(test=None, left=None, right=None):
     test.assertEqual(set(cmp_result.left_only), set())
     test.assertEqual(set(cmp_result.right_only), set())
     for differing_file in cmp_result.diff_files:
-        fail_msg = "Files differ:\n%s" % diff(
-            left_file=os.path.join(left, differing_file),
-            right_file=os.path.join(right, differing_file))
-        test.fail(fail_msg)
+        left_file = os.path.join(left, differing_file)
+        right_file = os.path.join(right, differing_file)
+        if differing_file.endswith('.json'):
+            assert_json_files_equal(test=test, left_file=left_file,
+                                    right_file=right_file)
+        else:
+            test.fail("Files differ:\n%s" % (
+                diff(left_file=left_file, right_file=right_file)))
+
+def assert_json_files_equal(test=None, left_file=None, right_file=None):
+    test.assertEqual(json.load(open(left_file)), json.load(open(right_file)))
 
 def diff(left_file=None, right_file=None):
     diff_lines = difflib.unified_diff(

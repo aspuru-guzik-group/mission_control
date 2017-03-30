@@ -27,4 +27,4 @@ env_var_2=env_var_2_value
 
 module load module_1
 
-body_value
+entrypoint_body_value

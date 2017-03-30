@@ -15,18 +15,20 @@ class BuildDirTestCase(BaseTestCase):
         this_dir = os.path.dirname(__file__)
         snapshot_dir = os.path.join(this_dir, 'snapshots', 'spec_1')
         dir_spec = json.load(open(os.path.join(snapshot_dir, 'dir_spec.json')))
-        output_dir = tempfile.mkdtemp(prefix='ody.test.')
+        submission_dir = tempfile.mkdtemp(prefix='ody.test.')
         dir_meta = OdysseyJobDirBuilder.build_dir(dir_spec=dir_spec,
-                                                output_dir=output_dir)
+                                                  submission_dir=submission_dir)
         expected_dir_meta = {
-            'dir': output_dir, 
+            'dir': submission_dir, 
             'checkpoint_files': OdysseyJobDirBuilder.checkpoint_files,
-            'output_files': OdysseyJobDirBuilder.output_files,
+            'std_log_files': OdysseyJobDirBuilder.std_log_files,
             'entrypoint': 'job.sh',
+            'outputs_dir': 'outputs',
+            'inputs_dir': 'inputs',
         }
         self.assertEqual(dir_meta, expected_dir_meta)
         expected_dir = os.path.join(snapshot_dir, 'expected_output')
-        _test_utils.assert_dirs_equal(self, output_dir, expected_dir)
+        _test_utils.assert_dirs_equal(self, submission_dir, expected_dir)
 
 if __name__ == '__main__':
     unittest.main()
