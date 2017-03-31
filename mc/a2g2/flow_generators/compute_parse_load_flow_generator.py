@@ -44,8 +44,8 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
             - task_key: expose_job_outputs
               task_params:
                 value_specs:
-                - dest: ctx.node.data.artifact
-                  value: '{{ctx.tasks.run_job.data.artifact}}'
+                - dest: ctx.node.data.serialized_artifact
+                  value: '{{ctx.tasks.run_job.data.artifact|tojson}}'
               task_type: a2g2.tasks.set_values
             ''' % {
                 'job_type': compute_job_spec['job_type'],
@@ -70,12 +70,15 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
               task_type: a2g2.tasks.set_values
               task_params:
                 value_specs:
-                  - dest: ctx.node.tasks.run_job.task_params.job_spec
-                      .inputs.artifacts.dir_to_parse
-                    value: '{{ctx.flow.nodes.compute.data.artifact}}'
+                  - dest: "ctx.tasks.run_job.task_params.job_spec\\
+                      .inputs.serialized_artifacts.dir_to_parse"
+                    value: '{{ctx.flow.nodes.compute.data.serialized_artifact}}'
             - task_key: run_job
               task_params:
                 job_spec:
+                  inputs:
+                    serialized_artifacts:
+                      dir_to_parse: WILL_BE_SET_FROM_PRECURSOR_TASK
                   job_type: %(job_type)s
                   job_params: %(job_params_yaml)s
               task_type: a2g2.tasks.nodes.run_job
@@ -105,7 +108,7 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
               task_type: a2g2.tasks.set_values
               task_params:
                 value_specs:
-                  - dest: ctx.node.tasks.run_job.task_params.job_spec
+                  - dest: ctx.tasks.run_job.task_params.job_spec
                       .inputs.artifacts
                     value: '{{ctx.flow.nodes.parse.data.outputs.artifact}}'
             - task_key: run_job

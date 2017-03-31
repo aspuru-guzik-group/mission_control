@@ -1,3 +1,4 @@
+from collections import defaultdict
 import unittest
 from unittest.mock import call, MagicMock
 from uuid import uuid4
@@ -16,8 +17,10 @@ class BaseTestCase(unittest.TestCase):
         self.task_handler = RunJobTaskHandler()
 
     def generate_job(self, uuid=None, status='PENDING', **job_state):
+        job = defaultdict(MagicMock)
         if not uuid: uuid = str(uuid4())
-        return {'uuid': uuid, 'status': status, **job_state}
+        job.update({'uuid': uuid, 'status': status, **job_state})
+        return job
 
     def generate_task_context(self, **kwargs):
         task_context = {
@@ -86,6 +89,10 @@ class CompletedJobTestCase(BaseTestCase, IntermediateTickMixin):
 
     def test_has_expected_status(self):
         self.assertEqual(self.task['status'], 'COMPLETED')
+
+    def test_has_expected_artifact(self):
+        self.assertEqual(self.task['data']['artifact'],
+                         self.job['data']['artifact'])
 
 class FailedJobTestCase(BaseTestCase, IntermediateTickMixin):
     def test_throws_exception(self):

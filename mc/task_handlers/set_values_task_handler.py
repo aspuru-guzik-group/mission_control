@@ -30,7 +30,9 @@ class SetValuesTaskHandler(BaseTaskHandler):
         return value
 
     def render_template(self, template=None, context=None):
-        return jinja2.Template(template).render(ctx=context)
+        return jinja2.Template(template, 
+                               undefined=jinja2.StrictUndefined
+                              ).render(ctx=context)
 
     def set_context_dest_value(self, context=None, dest=None, value=None):
         self.set_value_from_dot_spec(obj={'ctx': context}, dot_spec=dest,
@@ -45,11 +47,9 @@ class SetValuesTaskHandler(BaseTaskHandler):
         path_elements = dot_spec.split('.')
         cursor = obj
         for path_element in path_elements[:-1]:
-            next_cursor = self.get_attr_or_item(
-                obj=cursor, key=path_element)
+            next_cursor = self.get_attr_or_item(obj=cursor, key=path_element)
             if next_cursor is None:
                 cursor[path_element] = {}
                 next_cursor = cursor[path_element]
             cursor = next_cursor
         cursor[path_elements[-1]] = value
-

@@ -81,7 +81,7 @@ class HandleExecutionStateTestCase(BaseTestCase):
             execution_state=execution_state, task=self.task, job=self.job)
 
     def test_handles_completed_execution(self):
-        completed_execution_state = {'run_state': 'COMPLETED'}
+        completed_execution_state = {'run_status': 'COMPLETED'}
         self._do_handle_execution_state(
             execution_state=completed_execution_state)
         self.assertEqual(
@@ -92,7 +92,7 @@ class HandleExecutionStateTestCase(BaseTestCase):
         )
 
     def test_handles_failed_execution(self):
-        failed_execution_state = {'run_state': 'FAILED'}
+        failed_execution_state = {'run_status': 'FAILED'}
         self._do_handle_execution_state(execution_state=failed_execution_state)
         self.assertEqual(
             self.task_handler.handle_failed_execution_state.call_args,
