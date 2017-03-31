@@ -3,15 +3,14 @@ import types
 
 from mc.job_runners.base_job_runner import BaseJobRunner
 from mc.task_handlers.jobs.execute_job_task_handler import ExecuteJobTaskHandler
-from mc.execution_clients.remote_slurm_execution_client import (
-    RemoteSlurmExecutionClient)
+from .odyssey_execution_client import OdysseyExecutionClient
 
 
 class OdysseyJobRunner(object):
     def __init__(self, job_submission_factory=None,
                  ssh_client=None, **job_runner_kwargs):
         self.job_submission_factory = job_submission_factory
-        self.ssh_client = ssh_client
+        self.execution_client = OdysseyExecutionClient(ssh_client=ssh_client)
         self.tasks_cfg = self.generate_tasks_cfg()
         self.base_job_runner = BaseJobRunner(
             task_handler=self.generate_task_handler(),
@@ -65,9 +64,8 @@ class OdysseyJobRunner(object):
         task['status'] = 'COMPLETED'
 
     def tick_execute_job_task(self, *args, **kwargs):
-        execution_client = RemoteSlurmExecutionClient(
-            ssh_client=self.ssh_client)
-        task_handler = ExecuteJobTaskHandler(execution_client=execution_client)
+        task_handler = ExecuteJobTaskHandler(
+            execution_client=self.execution_client)
         task_handler.tick_task(*args, **kwargs)
 
     def tick_expose_outputs_task(self, *args, task=None, task_context=None,

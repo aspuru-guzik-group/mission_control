@@ -65,53 +65,15 @@ class UploadSubmissionDirTestCase(BaseTestCase):
         self.assertEqual(remote_dir_meta['dir'], self.expected_remote_dir_path)
 
 class GetExecutionStateTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.rsclient.on_execution_completed = MagicMock()
-        self.wrapped_get_execution_state = \
+    def test_wraps_slurm_execution_client_method(self):
+        wrapped_get_execution_state = \
                 self.rsclient.slurm_execution_client.get_execution_state
-
-    def test_calls_slurm_execution_client_method(self):
         execution_state = self.rsclient.get_execution_state(
             execution_meta=self.execution_meta)
-        self.assertEqual(self.wrapped_get_execution_state.call_args,
+        self.assertEqual(wrapped_get_execution_state.call_args,
                          call(execution_meta=self.execution_meta))
         self.assertEqual(execution_state,
-                         self.wrapped_get_execution_state.return_value)
-
-    def test_calls_on_execution_completed_if_submission_not_running(self):
-        self.wrapped_get_execution_state.return_value = {'run_status': ''}
-        self.rsclient.get_execution_state(execution_meta=self.execution_meta)
-        self.assertEqual(self.rsclient.on_execution_completed.call_count, 1)
-
-    def test_does_not_call_on_execution_completed_if_submission_running(self):
-        self.wrapped_get_execution_state.return_value = \
-                {'run_status': 'RUNNING'}
-        self.rsclient.get_execution_state(execution_meta=self.execution_meta)
-        self.assertEqual(self.rsclient.on_execution_completed.call_count, 0)
-
-class OnExecutionCompletedTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.rsclient.download_completed_dir = MagicMock()
-        self.rsclient.on_execution_completed(execution_meta=self.execution_meta)
-
-    def test_downloads_submission_dir(self):
-        self.assertEqual(self.rsclient.download_completed_dir.call_args,
-                         call(execution_meta=self.execution_meta))
-
-class DownloadCompletedDirTestCase(BaseTestCase):
-    def test_calls_rsync(self):
-        self.rsclient.download_completed_dir(execution_meta=self.execution_meta)
-        expected_remote_src_path = \
-                self.execution_meta['remote_dir']['dir'] + '/'
-        expected_local_dest_path = self.execution_meta['submission']['dir']
-        self.assertEqual(
-            self.rsclient.ssh_client.rsync_from_remote.call_args,
-            call(remote_src_path=expected_remote_src_path,
-                 local_dest_path=expected_local_dest_path,
-                 flags=self.rsclient.rsync_flags)
-        )
+                         wrapped_get_execution_state.return_value)
 
 if __name__ == '__main__':
     unittest.main()

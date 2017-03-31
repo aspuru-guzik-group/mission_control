@@ -1,4 +1,5 @@
 from collections import defaultdict
+import re
 import textwrap
 import unittest
 from unittest.mock import call, MagicMock
@@ -6,7 +7,7 @@ from unittest.mock import call, MagicMock
 from ..slurm_execution_client import SlurmExecutionClient
 
 
-class SlurmExecutionClientBaseTestCase(unittest.TestCase):
+class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.process_runner = MagicMock()
         self.slurm_client = SlurmExecutionClient(
@@ -21,7 +22,7 @@ class SlurmExecutionClientBaseTestCase(unittest.TestCase):
         proc.stderr = 'some error'
         return proc
 
-class StartExecutionTestCase(SlurmExecutionClientBaseTestCase):
+class StartExecutionTestCase(BaseTestCase):
     def test_calls_sbatch(self):
         self.process_runner.run_process.return_value = \
                 self.generate_successful_sbatch_proc()
@@ -57,10 +58,14 @@ class StartExecutionTestCase(SlurmExecutionClientBaseTestCase):
             self.slurm_client.start_execution(job=self.job)
             self.assertEqual(str(context.exception), failed_proc.stderr)
 
-class GetExecutionStateTestCase(SlurmExecutionClientBaseTestCase):
+class GetExecutionStateTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.slurm_client.get_final_execution_state = MagicMock()
+
     def test_calls_scontrol(self):
         self.process_runner.run_process.return_value = \
-                self.generate_completed_scontrol_proc()
+                self.generate_scontrol_proc()
         self.slurm_client.get_execution_state(
             execution_meta=self.execution_meta)
         expected_cmd = ['scontrol', 'show', '--details', '--oneliner',
@@ -68,7 +73,7 @@ class GetExecutionStateTestCase(SlurmExecutionClientBaseTestCase):
         self.assertEqual(self.process_runner.run_process.call_args,
                          call(cmd=expected_cmd, check=True))
 
-    def generate_completed_scontrol_proc(self, job_state='RUNNING'):
+    def generate_scontrol_proc(self, overrides=None):
         proc = MagicMock()
         proc.returncode = 0
         proc.stdout = textwrap.dedent(
@@ -96,24 +101,26 @@ class GetExecutionStateTestCase(SlurmExecutionClientBaseTestCase):
             StdErr=/home/user/slurm-75945797.out StdIn=/dev/null
             StdOut=/home/user/slurm-75945797.out Power=
             """)
+        for key, value in (overrides or {}).items():
+            proc.stdout = re.sub(r'{key}=(.*?)\s'.format(key=key),
+                                 r'{key}={value}'.format(key=key, value=value),
+                                 proc.stdout)
         return proc
 
-    def test_completed_proc(self):
-        self.process_runner.run_process.return_value = \
-                self.generate_completed_scontrol_proc()
+    def test_returns_expected_execution_state(self):
+        scontrol_proc = self.generate_scontrol_proc()
+        self.process_runner.run_process.return_value = scontrol_proc
         execution_state = self.slurm_client.get_execution_state(
             execution_meta=self.execution_meta)
-        self.assertEqual(execution_state['run_status'], 'COMPLETED')
-        self.assertEqual(execution_state['completed_dir'],
-                        self.execution_meta['submission']['dir'])
-        self.assertTrue('slurm_job_meta' in execution_state)
-
-    def test_failed_proc(self):
-        failed_proc = self.generate_failed_proc()
-        self.process_runner.run_cmd.return_value = failed_proc
-        with self.assertRaises(Exception) as context:
-            self.slurm_client.get_execution_sate(job=self.job)
-            self.assertEqual(str(context.exception), failed_proc.stderr)
+        expected_slurm_meta = self.slurm_client.parse_scontrol_output(
+            scontrol_proc.stdout)
+        self.assertEqual(execution_state['slurm_job_meta'],
+                         expected_slurm_meta)
+        self.assertEqual(
+            execution_state['run_status'], 
+            self.slurm_client.get_run_status_from_slurm_job_meta(
+                expected_slurm_meta)
+        )
 
 if __name__ == '__main__':
     unittest.main()
