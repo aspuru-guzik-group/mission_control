@@ -2,6 +2,7 @@ import argparse
 import importlib
 import json
 import sys
+import traceback
 
 DEFAULT_JOB_MODULE_PKGS = ['mc.a2g2.job_modules']
 DEFAULT_JOB_TYPE_PREFIX = 'a2g2.jobs.'
@@ -29,13 +30,16 @@ class A2G2JobEngine(object):
         job_module_pkgs = DEFAULT_JOB_MODULE_PKGS
         job_module_name = self.get_job_module_name(job=job, cfg=cfg)
         try:
+            import_errors = []
             for job_module_pkg in job_module_pkgs:
                 full_module_name = '.'.join([job_module_pkg, job_module_name])
                 try: return importlib.import_module(full_module_name)
-                except ImportError: pass
+                except ImportError: import_errors.append(traceback.format_exc())
             no_module_found_msg = ("No job_module found for job_module"
-                                   " '{job_module_name}'").format(
-                                       job_module_name=job_module_name)
+                                   " '{job_module_name}'. Import errors:\n"
+                                   "{import_errors}").format(
+                                       job_module_name=job_module_name,
+                                       import_errors="\n".join(import_errors))
             raise Exception(no_module_found_msg)
         except Exception as error:
             raise Exception("Could not load module for job: %s" % error)

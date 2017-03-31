@@ -61,8 +61,8 @@ class RunWorkdirTestCase(BaseTestCase):
         expected_cmd = ['/bin/bash', expected_entrypoint_path]
         expected_env = {
             **mock_os.environ,
-            **(self.submission_runner.cfg.get('a2g2.jobs.confgen', {}).get(
-                'env_vars', {}))
+            **(self.submission_runner.cfg.get(
+                'a2g2.jobs.confgen.confgen', {}).get('env_vars', {}))
         }
         self.assertEqual(mock_subprocess.run.call_args,
                          call(expected_cmd, check=True, env=expected_env))

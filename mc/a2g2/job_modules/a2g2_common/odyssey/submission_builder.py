@@ -2,7 +2,7 @@ import json
 import os
 import textwrap
 
-from a2g2.job_dir_builders.odyssey import OdysseyJobDirBuilder
+from mc.a2g2.job_dir_builders.odyssey import OdysseyJobDirBuilder
 
 
 class SubmissionBuilder(object):
@@ -58,3 +58,7 @@ class SubmissionBuilder(object):
             '--{param}="{value}"'.format(param=param, value=value)
             for param, value in params.items()
         ])
+
+def build_job_submission(*args, job=None, cfg=None, submission_dir=None, **kwargs):
+    builder = SubmissionBuilder(job=job, cfg=cfg, submission_dir=submission_dir)
+    return builder.build_submission()

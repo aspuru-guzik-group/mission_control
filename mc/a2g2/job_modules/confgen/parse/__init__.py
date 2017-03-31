@@ -1,0 +1,4 @@
+from ...a2g2_common.odyssey.submission_builder import build_job_submission
+assert build_job_submission
+from .submission_runner import run_job_submission
+assert run_job_submission

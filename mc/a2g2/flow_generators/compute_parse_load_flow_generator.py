@@ -71,7 +71,7 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
               task_params:
                 value_specs:
                   - dest: ctx.node.tasks.run_job.task_params.job_spec
-                      .inputs.artifacts
+                      .inputs.artifacts.dir_to_parse
                     value: '{{ctx.flow.nodes.compute.data.artifact}}'
             - task_key: run_job
               task_params:
@@ -87,8 +87,10 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
               task_type: a2g2.tasks.set_values
             ''' % {
                 'job_type': parse_job_spec['job_type'],
-                'job_params_yaml': cls.dump_inline_yaml(
-                    parse_job_spec.get('job_params', {}))
+                'job_params_yaml': cls.dump_inline_yaml({
+                    **(parse_job_spec.get('job_params', {})),
+                    'dir_to_parse': 'inputs/dir_to_parse'
+                })
             }
         )
         return node

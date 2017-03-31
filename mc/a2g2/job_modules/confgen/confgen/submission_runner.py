@@ -1,37 +1,27 @@
 import os
-import tempfile
-import time
-import shutil
 import subprocess
 
+from ...a2g2_common.base_submission_runner import BaseSubmissionRunner
 from .workdir_builder import WorkdirBuilder
 
 
-class SubmissionRunner(object):
-    def __init__(self, job=None, cfg=None, submission=None):
-        self.job = job
-        self.cfg = cfg
-        self.submission = submission
+class SubmissionRunner(BaseSubmissionRunner):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def run_submission(self):
         workdir_meta = self.create_workdir()
         try:
             self.run_workdir(workdir_meta=workdir_meta)
         finally:
-            self.move_workdir_to_outputs(workdir_meta=workdir_meta)
+            self.move_to_outputs(src=workdir_meta['dir'], outputs_key='confgen')
 
     def create_workdir(self):
         workdir_builder = WorkdirBuilder(
-            workdir=self.generate_workdir(),
+            workdir=self.generate_scratchdir(),
             workdir_params=self.get_workdir_params())
         workdir_meta = workdir_builder.build_workdir()
         return workdir_meta
-
-    def generate_workdir(self):
-        scratch_dir = self.submission.get('scratch_dir') or tempfile.mkdtemp()
-        workdir = os.path.join(scratch_dir, 'confgen.%s' % time.time())
-        os.makedirs(workdir)
-        return workdir
 
     def get_workdir_params(self):
         workdir_params = {
@@ -46,10 +36,11 @@ class SubmissionRunner(object):
         cmd = ['/bin/bash', entrypoint_path]
         workdir_env = {
             **os.environ, 
-            **(self.cfg.get('a2g2.jobs.confgen', {}).get('env_vars', {}))
+            **(self.cfg.get('a2g2.jobs.confgen.confgen', {}).get(
+                'env_vars', {}))
         }
         subprocess.run(cmd, check=True, env=workdir_env)
 
-    def move_workdir_to_outputs(self, workdir_meta=None):
-        outputs_dest = os.path.join(self.submission['outputs_dir'], 'confgen')
-        shutil.move(workdir_meta['dir'], outputs_dest)
+def run_job_submission(*args, job=None, cfg=None, submission=None, **kwargs):
+    runner = SubmissionRunner(job=job, cfg=cfg, submission=submission)
+    return runner.run_submission()

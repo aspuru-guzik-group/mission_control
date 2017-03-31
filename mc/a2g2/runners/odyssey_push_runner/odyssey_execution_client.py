@@ -82,7 +82,7 @@ class OdysseyExecutionClient(object):
 
     def generate_artifact_spec(self, completed_dir=None):
         artifact_spec = {
-            'artifact_type': 'a2g2.artifacts.odyssey.path',
+            'artifact_type': 'a2g2.artifacts.odyssey',
             'artifact_params': {'path': completed_dir}
         }
         return artifact_spec

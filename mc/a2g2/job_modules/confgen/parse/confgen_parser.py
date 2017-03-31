@@ -4,12 +4,10 @@ import os
 
 
 class ConfgenParser(object):
-    def parse_completed_confgen_dir(self, completed_confgen_dir=None,
-                                    output_dir=None):
-        calc_chemthing = self.extract_calc_chemthing(
-            completed_confgen_dir=completed_confgen_dir)
+    def parse_confgen_dir(self, input_dir=None, output_dir=None):
+        calc_chemthing = self.extract_calc_chemthing(input_dir=input_dir)
         conformer_chemthings = self.extract_conformer_chemthings(
-            completed_confgen_dir=completed_confgen_dir,
+            input_dir=input_dir,
             calc_chemthing=calc_chemthing)
         self.write_chemthings_bulk_file(
             chemthings=[calc_chemthing, *conformer_chemthings],
@@ -17,8 +15,8 @@ class ConfgenParser(object):
         )
         return output_dir
 
-    def extract_calc_chemthing(self, completed_confgen_dir=None):
-        job = self.parse_job_file(completed_confgen_dir=completed_confgen_dir)
+    def extract_calc_chemthing(self, input_dir=None):
+        job = self.parse_job_file(input_dir=input_dir)
         calc_chemthing = {
             'uri': 'a2g2:calculation:some_uri',
             'types': ['a2g2:calculation', 'a2g2:calculation:confgen'],
@@ -29,15 +27,14 @@ class ConfgenParser(object):
         }
         return calc_chemthing
 
-    def parse_job_file(self, completed_confgen_dir=None):
-        job_file_path = os.path.join(completed_confgen_dir, 'job.json')
+    def parse_job_file(self, input_dir=None):
+        job_file_path = os.path.join(input_dir, 'job.json')
         with open(job_file_path, 'r') as job_file: job = json.load(job_file)
         return job
 
-    def extract_conformer_chemthings(self, completed_confgen_dir=None,
-                                     calc_chemthing=None):
+    def extract_conformer_chemthings(self, input_dir=None, calc_chemthing=None):
         conformer_chemthings = []
-        xyz_paths = glob.glob(completed_confgen_dir + '/conformers/*')
+        xyz_paths = glob.glob(input_dir + '/conformers/*')
         for i, xyz_path in enumerate(xyz_paths):
             with open(xyz_path, 'r') as xyz_file: xyz = xyz_file.read()
             conformer_chemthing = {
@@ -57,5 +54,5 @@ class ConfgenParser(object):
                 bulk_file.write(json.dumps(chemthing))
 
 
-def parse_completed_confgen_dir(*args, **kwargs):
-    ConfgenParser().parse_completed_confgen_dir(*args, **kwargs)
+def parse_confgen_dir(*args, **kwargs):
+    ConfgenParser().parse_confgen_dir(*args, **kwargs)

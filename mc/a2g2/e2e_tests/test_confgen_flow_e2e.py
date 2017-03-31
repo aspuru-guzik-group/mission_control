@@ -1,10 +1,12 @@
 import argparse
 import json
 import os
+import textwrap
 import unittest
 
 from rdkit import Chem
 from rdkit.Chem import AllChem
+import yaml
 
 from . import e2e_flow_test_utils
 
@@ -35,7 +37,7 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
 
     def generate_job_submission_cfg(self):  
         cfg = super().generate_job_submission_cfg()
-        cfg['a2g2.jobs.confgen'] = {
+        cfg['a2g2.jobs.confgen.confgen'] = {
             'env_vars': {
                 # fake confgen by calling this module' 
                 'CONFGEN_EXE': 'python -m mc.%s fake_confgen' % (__name__)
@@ -44,21 +46,29 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
         return cfg
 
     def test_flow(self):
-        self.mc_client.flush_mc_db()
-        self.a2g2_client.flush_a2g2_db()
-        self.generate_molecule_library()
-        self.create_flows()
-        self.assertTrue(len(self.mc_client.fetch_tickable_flows()) > 0)
         try:
+            self.mc_client.flush_mc_db()
+            self.a2g2_client.flush_a2g2_db()
+            self.generate_molecule_library()
+            self.create_flows()
+            self.assertTrue(len(self.mc_client.fetch_tickable_flows()) > 0)
             self.run_flows_to_completion(max_ticks=15)
+            self.assertTrue(self.combo_runner.tick_counter > 0)
+            self.assert_domain_db_has_expected_state()
         except Exception as exception:
-            jobs = self.mc_client.fetch_jobs()
-            for job in jobs:
-                error = job.get('error', '')
-                print("job['error']:", error)
+            #self.dump_db_state()
             raise exception
-        self.assertTrue(self.combo_runner.tick_counter > 0)
-        self.assert_domain_db_has_expected_state()
+
+    def dump_db_state(self):
+        jobs = self.mc_client.fetch_jobs()
+        for i, job in enumerate(jobs):
+            print("job %s:\n" % i, self.dump_obj(job))
+        flows = self.mc_client.fetch_flows()
+        for i, flow in enumerate(flows):
+            print("flow %s:\n" % i, self.dump_obj(flow))
+
+    def dump_obj(self, obj):
+        return textwrap.indent(yaml.dump(obj), prefix=' ' * 2)
 
     def generate_molecule_library(self):
         mols = generate_test_mols()

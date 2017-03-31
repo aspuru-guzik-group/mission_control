@@ -9,7 +9,7 @@ class ConfgenFlowGenerator():
         job_type_prefix = 'a2g2.jobs.confgen'
         compute_parse_load_flow_spec = {
             'compute_job_spec': {
-                'job_type': job_type_prefix,
+                'job_type': job_type_prefix + '.confgen',
                 'job_params': {
                     'smiles': confgen_flow_spec['input']['smiles'],
                     'params': confgen_flow_spec['input']['confgen_params'],

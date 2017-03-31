@@ -1,4 +1,6 @@
 import collections
+import os
+import tempfile
 import types
 
 from mc.job_runners.base_job_runner import BaseJobRunner
@@ -57,11 +59,29 @@ class OdysseyJobRunner(object):
     def tick_build_job_submission_task(self, *args, task=None,
                                        task_context=None, **kwargs):
         job = task_context['job']
-        submission = self.job_submission_factory.build_job_submission(job=job)
+        submission_dir = tempfile.mkdtemp(prefix='sf.')
+        self.prepare_job_inputs(job=job, submission_dir=submission_dir)
+        submission = self.job_submission_factory.build_job_submission(
+            job=job, submission_dir=submission_dir)
         execute_job_task = task_context['tasks']['execute_job']
         execute_job_task.setdefault('task_params', {})
         execute_job_task['task_params']['submission'] = submission
         task['status'] = 'COMPLETED'
+
+    def prepare_job_inputs(self, job=None, submission_dir=None):
+        inputs_dir = os.path.join(submission_dir, 'inputs')
+        os.makedirs(inputs_dir, exist_ok=True)
+        input_artifacts = job['job_spec'].get('inputs', {}).get('artifacts', {})
+        for artifact_key, artifact in input_artifacts.items():
+            self.prepare_input_artifact(
+                artifact_key=artifact_key,
+                artifact=artifact,
+                inputs_dir=inputs_dir)
+
+    def prepare_input_artifact(self, artifact_key=None, artifact=None,
+                               inputs_dir=None):
+        if artifact['artifact_type'] == 'a2g2.artifacts.odyssey':
+            os.symlink(artifact['path'], os.path.join(inputs_dir, artifact_key))
 
     def tick_execute_job_task(self, *args, **kwargs):
         task_handler = ExecuteJobTaskHandler(
