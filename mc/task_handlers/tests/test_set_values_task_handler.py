@@ -24,7 +24,7 @@ class InitialTickTestCase(BaseTestCase):
         self._do_initial_tick()
         self.assertEqual(
             self.task_handler.set_values.call_args,
-            call(value_specs=self.task['params']['value_specs'],
+            call(value_specs=self.task['task_params']['value_specs'],
                  task_context=self.task_context))
 
     def test_sets_task_status_to_completed(self):

@@ -5,7 +5,7 @@ from .base_task_handler import BaseTaskHandler
 
 class SetValuesTaskHandler(BaseTaskHandler):
     def initial_tick(self, task=None, task_context=None):
-        self.set_values(value_specs=task['params']['value_specs'],
+        self.set_values(value_specs=task['task_params']['value_specs'],
                         task_context=task_context)
         task['status'] = 'COMPLETED'
 

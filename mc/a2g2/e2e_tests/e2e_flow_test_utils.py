@@ -55,6 +55,9 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
         from a2g2.task_handlers.nodes.run_job_task_handler import (
             RunJobTaskHandler)
         sub_handlers['a2g2.tasks.nodes.run_job'] = RunJobTaskHandler()
+        from mc.task_handlers.set_values_task_handler import (
+            SetValuesTaskHandler)
+        sub_handlers['a2g2.tasks.set_values'] = SetValuesTaskHandler()
 
         class TaskHandler(object):
             def __init__(self):

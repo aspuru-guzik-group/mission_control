@@ -45,12 +45,12 @@ class BaseTaskRunner(object):
                     task_key=task.get('task_key', '<unknown>'),
                     task_error=task['data'].get('error', 'unknown error'))
                 raise Exception(error)
-        except Exception as error:
+        except Exception as exception:
             msg = "Failed to tick task with key '{key}'".format(
                 key=task.get('task_key', '<unknown>'))
             self.logger.debug('task: {}'.format(task))
             self.logger.exception(msg)
-            raise Exception(error)
+            raise exception
 
     def get_decorated_task_context(self):
         decorated_task_context = {

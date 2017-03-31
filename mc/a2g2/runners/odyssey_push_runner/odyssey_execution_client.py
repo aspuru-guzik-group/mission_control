@@ -14,7 +14,7 @@ class OdysseyExecutionClient(object):
         return self.remote_slurm_client.start_execution(*args, **kwargs)
 
     def get_execution_state(self, execution_meta=None):
-        slurm_execution_state = self.remote_slurm_client.start_execution(
+        slurm_execution_state = self.remote_slurm_client.get_execution_state(
             execution_meta=execution_meta)
         if slurm_execution_state['run_status'] == 'RUNNING':
             execution_state = slurm_execution_state

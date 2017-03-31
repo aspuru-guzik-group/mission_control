@@ -71,8 +71,8 @@ class OdysseyJobRunner(object):
     def tick_expose_outputs_task(self, *args, task=None, task_context=None,
                                  **kwargs):
         job = task_context['job']
-        job['data']['outputs'] = \
-                task_context['tasks']['submit_job']['data']['outputs']
+        job['data']['artifact'] = \
+                task_context['tasks']['execute_job']['data']['artifact']
         task['status'] = 'COMPLETED'
 
     def tick(self, *args, **kwargs):
