@@ -1,3 +1,4 @@
+import copy
 import logging
 import time
 
@@ -94,7 +95,8 @@ class BaseJobRunner(object):
         self.unregister_job(job=job)
 
     def start_job(self, job=None):
-        if 'tasks' not in job: job['tasks'] = self.default_job_tasks
+        if 'tasks' not in job:
+            job['tasks'] = copy.deepcopy(self.default_job_tasks)
         self.running_jobs[job['uuid']] = job
         self.tick_job(job=job)
 
