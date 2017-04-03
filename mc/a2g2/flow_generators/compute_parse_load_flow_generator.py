@@ -88,7 +88,7 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
             - %(expose_job_outputs_task_yaml)s
             ''' % {
                 'set_input_artifact_task_yaml': cls.dump_inline_yaml(
-                    cls.generate_set_input_artifact_task()),
+                    cls.generate_set_input_artifact_task(src_node='compute')),
                 'job_type': parse_job_spec['job_type'],
                 'job_params_yaml': cls.dump_inline_yaml({
                     **(parse_job_spec.get('job_params', {})),
@@ -101,7 +101,7 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
         return node
 
     @classmethod
-    def generate_set_input_artifact_task(cls):
+    def generate_set_input_artifact_task(cls, src_node=None):
         return yaml.load(
             '''
             task_key: set_job_input_artifacts
@@ -110,8 +110,10 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
               value_specs:
                 - dest: "ctx.tasks.run_job.task_params.job_spec\\
                     .inputs.serialized_artifacts.input_dir"
-                  value: '{{ctx.flow.nodes.compute.data.serialized_artifact}}'
-            ''')
+                  value: "{{ctx.flow.nodes.%(src_node)s.data\\
+                    .serialized_artifact}}"
+            ''' % {'src_node': src_node}
+        ) 
 
     @classmethod
     def generate_load_node(cls, flow=None):
@@ -129,7 +131,7 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
             - %(expose_job_outputs_task_yaml)s
             ''' % {
                 'set_input_artifact_task_yaml': cls.dump_inline_yaml(
-                    cls.generate_set_input_artifact_task()),
+                    cls.generate_set_input_artifact_task(src_node='parse')),
                 'job_type': load_job_spec['job_type'],
                 'job_params_yaml': cls.dump_inline_yaml(
                     load_job_spec.get('job_params', {})),

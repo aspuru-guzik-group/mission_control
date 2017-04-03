@@ -145,15 +145,20 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
         ssh_client.connect()
         return ssh_client
 
-    def run_flows_to_completion(self, max_ticks=10, tick_interval=0.5):
+    def run_flows_to_completion(self, max_ticks=50, tick_interval=0.5,
+                                timeout=30):
+        start_time = time.time()
         incomplete_flows = self.get_incomplete_flows()
         while len(incomplete_flows) > 0:
             self.combo_runner.tick()
+            error_msg = None
             if self.combo_runner.tick_counter > max_ticks:
-                error_msg = (
-                    "Exceeded max_ticks of '{max_ticks}.'"
-                ).format(max_ticks=max_ticks)
-                raise Exception(error_msg)
+                error_msg = ("Exceeded max_ticks of '{max_ticks}.'").format(
+                    max_ticks=max_ticks)
+            elif (time.time() - start_time) > timeout:
+                error_msg = ("Exceeded timeout of {timeout} seconds.").format(
+                    timeout=timeout)
+            if error_msg: raise Exception(error_msg)
             incomplete_flows = self.get_incomplete_flows()
             time.sleep(tick_interval)
 

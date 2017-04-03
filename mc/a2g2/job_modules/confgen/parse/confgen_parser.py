@@ -16,7 +16,7 @@ class ConfgenParser(object):
     def get_completed_confgen_workdir(self):
         submission = self.parse_submission()
         return os.path.join(self.input_dir, submission['outputs_dir'],
-                            confgen_constants.OUTPUTS_KEY)
+                            confgen_constants.CONFGEN_OUTPUTS_KEY)
 
     def parse_submission(self):
         submission_file_path = os.path.join(self.input_dir, 'submission.json')
@@ -28,7 +28,7 @@ class ConfgenParser(object):
             calc_chemthing=calc_chemthing)
         self.write_chemthings_bulk_file(
             chemthings=[calc_chemthing, *conformer_chemthings],
-            target_path=os.path.join(self.output_dir, 'chemthings.bulk')
+            target_path=os.path.join(self.output_dir, 'confgen.chemthings.bulk')
         )
         return self.output_dir
 
@@ -70,5 +70,6 @@ class ConfgenParser(object):
             for chemthing in chemthings:
                 bulk_file.write(json.dumps(chemthing))
 
-def parse_confgen_dir(*args, **kwargs):
-    return ConfgenParser(*args, **kwargs).parse_confgen_dir()
+def parse_confgen_dir(*args, transform_params=None, **kwargs):
+    parser = ConfgenParser(*args, parsing_params=transform_params, **kwargs)
+    return parser.parse_confgen_dir()
