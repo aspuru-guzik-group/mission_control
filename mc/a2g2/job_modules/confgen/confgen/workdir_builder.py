@@ -2,13 +2,15 @@ import json
 import os
 import textwrap
 
+from .. import constants as confgen_constants
+
 
 class WorkdirBuilder(object):
     def __init__(self, workdir=None, workdir_params=None, entrypoint_name=None):
         self.workdir = workdir
         self.workdir_params = workdir_params
         self.entrypoint_name = entrypoint_name or 'entrypoint.sh'
-        self.infile_name = 'confgen.in.json'
+        self.infile_name = confgen_constants.CONFGEN_IN_FILENAME
         self.outdir_name = 'outputs'
 
     def build_workdir(self):

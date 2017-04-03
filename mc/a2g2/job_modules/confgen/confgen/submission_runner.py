@@ -3,6 +3,7 @@ import subprocess
 
 from ...a2g2_common.base_submission_runner import BaseSubmissionRunner
 from .workdir_builder import WorkdirBuilder
+from .. import constants as confgen_constants
 
 
 class SubmissionRunner(BaseSubmissionRunner):
@@ -14,7 +15,8 @@ class SubmissionRunner(BaseSubmissionRunner):
         try:
             self.run_workdir(workdir_meta=workdir_meta)
         finally:
-            self.move_to_outputs(src=workdir_meta['dir'], outputs_key='confgen')
+            self.move_to_outputs(src=workdir_meta['dir'],
+                                 outputs_key=confgen_constants.OUTPUTS_KEY)
 
     def create_workdir(self):
         workdir_builder = WorkdirBuilder(

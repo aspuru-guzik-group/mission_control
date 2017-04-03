@@ -14,12 +14,13 @@ class BaseParseSubmissionRunner(base_submission_runner.BaseSubmissionRunner):
 
     def run_submission(self):
         outdir = self.generate_scratchdir()
-        self.parse_dir_fn(input_dir=self.get_input_dir(), output_dir=outdir)
+        self.parse_dir_fn(input_dir=self.get_input_dir(), output_dir=outdir,
+                          parse_params=self.job['job_spec'].get('job_params'))
         outputs_dest = os.path.join(self.submission['outputs_dir'], 'parse')
         shutil.move(outdir, outputs_dest)
 
     def get_input_dir(self):
-        return os.path.join(self.submission['inputs_dir'], 'dir_to_parse')
+        return os.path.join(self.submission['inputs_dir'], 'input_dir')
 
 def run_job_submission(*args, parse_dir_fn=None, **kwargs):
     return base_submission_runner.run_job_submission(
