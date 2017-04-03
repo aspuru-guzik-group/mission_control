@@ -63,7 +63,7 @@ class GenerateEntrypointContentTestCase(BaseTestCase):
             mkdir {outdir}
             $CONFGEN_EXE --infile={infile} --outdir={outdir}
             '''
-        ).strip().format(infile=self.workdir_builder.infile_name,
+        ).lstrip().format(infile=self.workdir_builder.infile_name,
                          outdir=self.workdir_builder.outdir_name)
         self.assertEqual(self.workdir_builder.generate_entrypoint_content(),
                          expected_entrypoint_content)

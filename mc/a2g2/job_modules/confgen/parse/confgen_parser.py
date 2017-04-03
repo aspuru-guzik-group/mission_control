@@ -51,7 +51,9 @@ class ConfgenParser(object):
 
     def extract_conformer_chemthings(self, calc_chemthing=None):
         conformer_chemthings = []
-        xyz_paths = glob.glob(self.completed_confgen_workdir + '/conformers/*')
+        xyz_dir = os.path.join(self.completed_confgen_workdir, 'outputs',
+                               'conformers')
+        xyz_paths = glob.glob(xyz_dir + '/*.xyz')
         for i, xyz_path in enumerate(xyz_paths):
             with open(xyz_path, 'r') as xyz_file: xyz = xyz_file.read()
             conformer_chemthing = {
@@ -68,7 +70,7 @@ class ConfgenParser(object):
     def write_chemthings_bulk_file(self, chemthings=None, target_path=None):
         with open(target_path, 'w') as bulk_file:
             for chemthing in chemthings:
-                bulk_file.write(json.dumps(chemthing))
+                bulk_file.write(json.dumps(chemthing) + "\n")
 
 def parse_confgen_dir(*args, transform_params=None, **kwargs):
     parser = ConfgenParser(*args, parsing_params=transform_params, **kwargs)

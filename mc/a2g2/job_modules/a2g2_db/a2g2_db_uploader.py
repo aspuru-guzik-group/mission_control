@@ -43,7 +43,7 @@ class A2G2_DB_Uploader(object):
     def parse_bulk_file(self, bulk_file_path=None):
         bulk_file_items = collections.defaultdict(list)
         with open(bulk_file_path, 'r') as bulk_file:
-            for i, line in enumerate(bulk_file.readlines()):
+            for line_num, line in enumerate(bulk_file.readlines()):
                 try:
                     item = json.loads(line.strip())
                     # @TODO: for now, we assume everything is a chemthing.
@@ -51,9 +51,10 @@ class A2G2_DB_Uploader(object):
                     # for other actions.
                     bulk_file_items['chemthings'].append(item)
                 except Exception as error:
-                    raise Exception(("Invalid bulk_file line #{line_no}:\n"
+                    raise Exception(("Invalid bulk_file line #{line_num}:\n"
                                      "Line: '{line}'\n."
                                      "Error: '{error}'").format(
+                                         line_num=line_num,
                                          line=line,
                                          error=error))
         return bulk_file_items

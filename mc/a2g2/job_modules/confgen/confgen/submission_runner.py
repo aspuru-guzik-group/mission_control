@@ -42,7 +42,7 @@ class SubmissionRunner(BaseSubmissionRunner):
             **(self.cfg.get('a2g2.jobs.confgen.confgen', {}).get(
                 'env_vars', {}))
         }
-        subprocess.run(cmd, check=True, env=workdir_env)
+        subprocess.run(cmd, env=workdir_env, check=True)
 
 def run_job_submission(*args, job=None, cfg=None, submission=None, **kwargs):
     runner = SubmissionRunner(job=job, cfg=cfg, submission=submission)

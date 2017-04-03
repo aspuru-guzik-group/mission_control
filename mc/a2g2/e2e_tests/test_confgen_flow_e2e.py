@@ -106,17 +106,35 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
 def handle_confgen_command(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument('--outdir')
-    parsed_args = parser.parse_args(args=args)
+    parsed_args, extra_args = parser.parse_known_args(args=args)
     outdir = parsed_args.outdir
     mols = generate_test_mols()
+
+    def _conformer_to_xyz_str(conformer):
+        return _atoms_to_xyz_str(_conformer_to_atoms(conformer))
+
+    def _conformer_to_atoms(conformer):
+        atoms = []
+        for i, atom in enumerate(conformer.GetOwningMol().GetAtoms()):
+            pos = conformer.GetAtomPosition(i)
+            atoms.append([atom.GetSymbol(), [pos.x, pos.y, pos.z]])
+        return atoms
+
+    def _atoms_to_xyz_str(atoms=None, comment=None):
+        xyz_lines = []
+        xyz_lines.append("%s" % len(atoms))
+        xyz_lines.append("%s" % (comment or ""))
+        for atom in atoms:
+            xyz_lines.append("%s %.4f %.4f %.4f" % (atom[0], *atom[1]))
+        xyz_str = "\n".join(xyz_lines)
+        return xyz_str
+
+    xyz_dir = os.path.join(outdir, 'conformers')
+    os.makedirs(xyz_dir, exist_ok=True)
     for mol_counter, mol in enumerate(mols):
-        conformer_file_path = os.path.join(
-            outdir, 'mol_%s_conformers.sdf' % mol_counter)
-        with open(conformer_file_path, 'w') as conformer_file:
-            writer = Chem.SDWriter(conformer_file)
-            for conformer in mol.GetConformers():
-                writer.write(mol, confId=conformer.GetId())
-            writer.close()
+        for i, conformer in enumerate(mol.GetConformers()):
+            xyz_path = os.path.join(xyz_dir, 'conformer_%s.xyz' % i)
+            open(xyz_path, 'w').write(_conformer_to_xyz_str(conformer))
 
 if __name__ == '__main__':
     # Logic to fake calls to executables.
@@ -125,5 +143,5 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='mocked executables')
     parser.add_argument('command')
     parsed_args, command_args = parser.parse_known_args()
-    if parsed_args.command == 'confgen':
+    if parsed_args.command == 'fake_confgen':
         handle_confgen_command(args=command_args)

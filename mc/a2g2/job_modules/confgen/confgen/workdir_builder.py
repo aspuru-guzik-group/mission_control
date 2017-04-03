@@ -38,7 +38,7 @@ class WorkdirBuilder(object):
             mkdir {outdir}
             $CONFGEN_EXE --infile={infile} --outdir={outdir}
             '''
-        ).strip().format(infile=self.infile_name, outdir=self.outdir_name)
+        ).lstrip().format(infile=self.infile_name, outdir=self.outdir_name)
         return entrypoint_content
 
     def generate_infile_content(self):
