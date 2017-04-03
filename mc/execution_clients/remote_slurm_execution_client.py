@@ -9,7 +9,7 @@ class RemoteSlurmExecutionClient(object):
     def __init__(self, ssh_client=None, remote_workdir=None):
         self.ssh_client = ssh_client
         self.rsync_flags = ['-a', '--no-owner']
-        self.remote_workdir = '.remote_slurm_execution_client'
+        self.remote_workdir = '$HOME/.remote_slurm_execution_client'
         self.slurm_execution_client = SlurmExecutionClient(
             process_runner=self.ssh_client)
 
@@ -34,7 +34,10 @@ class RemoteSlurmExecutionClient(object):
         return remote_dir_meta
 
     def generate_remote_dir_path(self):
-        return os.path.join(self.remote_workdir, str(uuid4()))
+        raw_path = os.path.join(self.remote_workdir, str(uuid4()))
+        resolved_path = self.ssh_client.run_process(
+            cmd=['readlink',  '-f',  raw_path], check=True).stdout.strip()
+        return resolved_path
 
     def ensure_remote_workdir(self):
         self.ssh_client.run_process(cmd=['mkdir', '-p', self.remote_workdir],

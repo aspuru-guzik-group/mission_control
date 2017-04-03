@@ -17,7 +17,7 @@ class SlurmExecutionClient(object):
     def start_execution(self, submission=None):
         workdir = submission['dir']
         entrypoint = workdir + '/' + submission['entrypoint']
-        cmd = ['sbatch', '--workdir=%s' % workdir, entrypoint]
+        cmd = ['sbatch', '--workdir="%s"' % workdir, entrypoint]
         try:
             completed_proc = self.process_runner.run_process(cmd=cmd, check=True)
         except self.process_runner.CalledProcessError as called_process_error:
