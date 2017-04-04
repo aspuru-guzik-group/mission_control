@@ -17,6 +17,10 @@ class ConfgenFlowGenerator():
             },
             'parse_job_spec': {
                 'job_type': job_type_prefix + '.parse',
+                'job_params': {
+                    'precursors': confgen_flow_spec['input'].get(
+                        'precursors', {}),
+                }
             },
             'load_job_spec': {
                 'job_type': job_type_prefix + '.load',

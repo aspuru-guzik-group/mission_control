@@ -6,7 +6,8 @@ from ..models import ChemThing
 class ChemThingTestCase(TestCase):
     def test_has_expected_fields(self):
         kwargs = {
-            'types': ['type1', 'type2'],
+            'types': {'type1': True, 'type2': True},
+            'precursors': {'precursor1': True, 'precursor2': True},
             'props': {'some': 'prop'},
         }
         chemthing = ChemThing.objects.create(**kwargs)

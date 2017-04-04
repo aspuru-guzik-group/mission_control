@@ -1,6 +1,7 @@
 import glob
 import json
 import os
+from uuid import uuid4
 
 from .. import constants as confgen_constants
 
@@ -33,20 +34,21 @@ class ConfgenParser(object):
         return self.output_dir
 
     def extract_calc_chemthing(self):
-        confgen_inputs = self.parse_confgen_input_file()
         calc_chemthing = {
-            'uri': 'a2g2:calculation:some_uri',
-            'types': ['a2g2:calculation', 'a2g2:calculation:confgen'],
-            'props': {
-                'a2g2:confgen:parameters': confgen_inputs,
+            'uuid': str(uuid4()),
+            'types': {
+                'a2g2:type:calc:confgen': True,
             },
-            'precursors': self.parsing_params.get('precursors')
+            'props': {
+                'a2g2:prop:confgen:parameters': self.parse_confgen_params(),
+            },
+            'precursors': self.parsing_params.get('precursors', {})
         }
         return calc_chemthing
 
-    def parse_confgen_input_file(self):
-        file_path = os.path.join(self.completed_confgen_workdir,
-                                 confgen_constants.CONFGEN_IN_FILENAME)
+    def parse_confgen_params(self):
+        file_path = os.path.join(self.completed_confgen_workdir, 'outputs',
+                                 confgen_constants.CONFGEN_PARAMS_FILENAME)
         return json.load(open(file_path))
 
     def extract_conformer_chemthings(self, calc_chemthing=None):
@@ -55,17 +57,35 @@ class ConfgenParser(object):
                                'conformers')
         xyz_paths = glob.glob(xyz_dir + '/*.xyz')
         for i, xyz_path in enumerate(xyz_paths):
-            with open(xyz_path, 'r') as xyz_file: xyz = xyz_file.read()
+            parsed_xyz = self.parse_xyz(xyz=open(xyz_path).read())
             conformer_chemthing = {
-                'uri': 'a2g2:molecule3d:uri_%s' % i,
-                'types': ['a2g2:molecule', 'a2g2:molecule3d'],
+                'uuid': str(uuid4()),
+                'types': {'a2g2:type:mol3d': True},
                 'props': {
-                    'a2g2:xyz': xyz
+                    'a2g2:prop:atoms': parsed_xyz['atoms'],
+                    'a2g2:prop:confgen:comment': parsed_xyz['comment'],
                 },
-                'precursors': calc_chemthing['uri'],
+                'precursors': {calc_chemthing['uuid']: True},
             }
             conformer_chemthings.append(conformer_chemthing)
         return conformer_chemthings
+
+    def parse_xyz(self, xyz=None):
+        xyz_lines = xyz.split("\n")
+        parsed_xyz = {
+            'num_atoms': int(xyz_lines[0]),
+            'comment': xyz_lines[1],
+            'atoms': [self.parse_atom_line(atom_line)
+                      for atom_line in xyz_lines[2:]]
+        }
+        return parsed_xyz
+
+    def parse_atom_line(self, atom_line=None):
+        line_parts = atom_line.split()
+        element = line_parts[0]
+        x, y, z = [float("%.4f" % float(line_part))
+                   for line_part in line_parts[1:]]
+        return {'element': element, 'x': x, 'y': y, 'z': z}
 
     def write_chemthings_bulk_file(self, chemthings=None, target_path=None):
         with open(target_path, 'w') as bulk_file:
