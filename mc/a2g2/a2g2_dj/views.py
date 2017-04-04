@@ -15,9 +15,7 @@ class ChemThingViewSet(viewsets.ModelViewSet):
 
 @require_http_methods(["GET"])
 def counts(request):
-    counts = {
-        'ChemThing': ChemThing.objects.count()
-    }
+    counts = {'ChemThing': ChemThing.objects.count()}
     return JsonResponse(counts)
 
 @require_http_methods(["GET"])
