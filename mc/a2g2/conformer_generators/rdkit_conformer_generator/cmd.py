@@ -28,7 +28,7 @@ class Command(object):
         parser.add_argument(
             '--forcefield_id',
             help="id of forcefield model to use.",
-            choices=RDKitConformerGenerator.forcefields,
+            choices=RDKitConformerGenerator.FORCE_FIELDS,
             default='mmff'
         )
         parser.add_argument(

@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import re
@@ -12,8 +13,9 @@ from rdkit.Chem.AllChem import (
 )
 
 class RDKitConformerGenerator(object):
-
-    forcefields = ['mmff', 'uff']
+    CONFORMERS_OUTDIR_NAME = 'conformers'
+    PARAMS_OUTFILE_NAME = 'confgen.params.json'
+    FORCE_FIELDS = ['mmff', 'uff']
 
     '''
     Generates low-resolution conformers.
@@ -31,6 +33,7 @@ class RDKitConformerGenerator(object):
         cluster_energy_auto_accept_radius=1e-3,
         cluster_rms_radius=0.1,
         xyz_filename_tpl='Conf_{index}.xyz',
+        scratch_dir=None,
         fallback_to_align_for_rms=False,
         **kwargs
     ):
@@ -38,22 +41,24 @@ class RDKitConformerGenerator(object):
             raise Exception("Smiles '{}' contains boron, but MMFF94"
                             " does not have boron\n".format(smiles))
         if forcefield_id != "mmff" and forcefield_id != "uff":
-            raise Exception(
-                "Unrecognised force field '{}'".format(forcefield_id))
+            raise Exception("Unrecognised force field '{}'".format(
+                forcefield_id))
 
-        self.output_limit = output_limit
-        self.candidate_limit = candidate_limit
-        self.smiles = smiles
-        self.output_dir = output_dir
-        self.prune_rms_thresh = prune_rms_thresh
-        self.cluster_energy_range = cluster_energy_range
-        self.cluster_energy_radius = cluster_energy_radius
-        self.cluster_energy_auto_accept_radius = (
+        self.params = {}
+        self.params['output_limit'] = output_limit
+        self.params['candidate_limit'] = candidate_limit
+        self.params['smiles'] = smiles
+        self.params['prune_rms_thresh'] = prune_rms_thresh
+        self.params['cluster_energy_range'] = cluster_energy_range
+        self.params['cluster_energy_radius'] = cluster_energy_radius
+        self.params['cluster_energy_auto_accept_radius'] = (
             cluster_energy_auto_accept_radius)
-        self.cluster_rms_radius = cluster_rms_radius
-        self.forcefield_id = forcefield_id
-        self.fallback_to_align_for_rms = fallback_to_align_for_rms
-        self.mol = AddHs(MolFromSmiles(self.smiles), addCoords=True)
+        self.params['cluster_rms_radius'] = cluster_rms_radius
+        self.params['forcefield_id'] = forcefield_id
+        self.params['fallback_to_align_for_rms'] = fallback_to_align_for_rms
+
+        self.output_dir = output_dir
+        self.mol = AddHs(MolFromSmiles(self.params['smiles']), addCoords=True)
         self.xyz_filename_tpl = xyz_filename_tpl
 
     def generate_conformers(self):
@@ -64,7 +69,8 @@ class RDKitConformerGenerator(object):
             self.mol.GetConformer(energy['conformer_id'])
             for energy in squashed_energys
         ]
-        tmp_dir = tempfile.mkdtemp(prefix="confgen.")
+        tmp_dir = os.path.join(self.output_dir, '.tmp')
+        os.makedirs(tmp_dir, exist_ok=True)
         xyz_files = []
         for conformer in conformers_for_squashed_energys:
             xyz_basename = "conf_id_%s.xyz" % conformer.GetId()
@@ -75,22 +81,30 @@ class RDKitConformerGenerator(object):
         if not xyz_files:
             raise Exception("No candidate conformers after energy clustering.")
 
-        deannotated_smarts = self._smiles_to_deannotated_smarts(self.smiles)
+        deannotated_smarts = self._smiles_to_deannotated_smarts(
+            self.params['smiles'])
 
         rms_squashed_xyz_files = self._squash_xyz_files_by_rms(
             xyz_files=xyz_files,
             smarts=deannotated_smarts
         )
+        conformers_dir = os.path.join(self.output_dir,
+                                      self.CONFORMERS_OUTDIR_NAME)
+        os.makedirs(conformers_dir, exist_ok=True)
         for i, squashed_xyz_file in enumerate(rms_squashed_xyz_files):
             xyz_filename = self.xyz_filename_tpl.format(index=(i + 1))
-            output_xyz_path = os.path.join(self.output_dir, xyz_filename)
-            shutil.copy(squashed_xyz_file, output_xyz_path)
+            output_xyz_path = os.path.join(conformers_dir, xyz_filename)
+            shutil.move(squashed_xyz_file, output_xyz_path)
+        shutil.rmtree(tmp_dir)
+        params_outfile_path = os.path.join(self.output_dir,
+                                           self.PARAMS_OUTFILE_NAME)
+        json.dump(self.params, open(params_outfile_path, 'w'))
 
     def _get_conformer_ids(self):
         conformer_ids = EmbedMultipleConfs(
             self.mol,
-            numConfs=self.candidate_limit,
-            pruneRmsThresh=self.prune_rms_thresh,
+            numConfs=self.params['candidate_limit'],
+            pruneRmsThresh=self.params['prune_rms_thresh'],
             useRandomCoords=False,
             randomSeed=1,
         )
@@ -98,12 +112,12 @@ class RDKitConformerGenerator(object):
 
     def _get_energys(self, conformer_ids=None):
         energys = []
-        if self.forcefield_id == "mmff":
+        if self.params['forcefield_id'] == "mmff":
             mol_props = MMFFGetMoleculeProperties(self.mol)
             def _get_forcefield(confId):
                 return MMFFGetMoleculeForceField(self.mol, mol_props,
                                                  confId=confId)
-        elif self.forcefield_id == "uff":
+        elif self.params['forcefield_id'] == "uff":
             def _get_forcefield(confId):
                 return UFFGetMoleculeForceField(self.mol, confId=confId)
         for conformer_id in conformer_ids:
@@ -138,17 +152,18 @@ class RDKitConformerGenerator(object):
         for i in range(num_energys):
             if i in clustered_indexs: continue
             seed = sorted_energys[i]
-            if _get_energy_delta(seed, min_energy) > self.cluster_energy_range:
-                break
+            if _get_energy_delta(seed, min_energy) > \
+               self.params['cluster_energy_range']: break
             cluster = _generate_new_cluster(seed, i)
             for j in range(num_energys):
                 if j in clustered_indexs: continue
                 candidate = sorted_energys[j]
                 candidate_delta = _get_energy_delta(seed, candidate)
-                if candidate_delta <= self.cluster_energy_auto_accept_radius:
+                if candidate_delta <= \
+                   self.params['cluster_energy_auto_accept_radius']:
                     _add_to_cluster(cluster, candidate, j)
                     continue
-                if candidate_delta <= self.cluster_energy_radius:
+                if candidate_delta <= self.params['cluster_energy_radius']:
                     rms = GetBestRMS(
                         mol_no_hs,
                         mol_no_hs,
@@ -156,7 +171,7 @@ class RDKitConformerGenerator(object):
                         probeConfId=candidate['conformer_id'],
                         maps=[atom_map]
                     )
-                    if rms <= self.cluster_rms_radius:
+                    if rms <= self.params['cluster_rms_radius']:
                         _add_to_cluster(cluster, candidate, j, rms=rms)
                         continue
             clusters.append(cluster)
@@ -179,7 +194,7 @@ class RDKitConformerGenerator(object):
                     xyz_b_file=xyz_b_file,
                     smarts=smarts,
                 )
-                if rms > self.cluster_rms_radius:
+                if rms > self.params['cluster_rms_radius']:
                     if xyz_b_file not in inverted_files:
                         with open(xyz_b_file) as f:
                             xyz_b = f.read()
@@ -195,7 +210,7 @@ class RDKitConformerGenerator(object):
                         xyz_b_file=inverted_xyz_b_file,
                         smarts=smarts,
                     )
-                if rms <= self.cluster_rms_radius:
+                if rms <= self.params['cluster_rms_radius']:
                     files_to_exclude[xyz_b_file] = xyz_b_file
         squashed_xyz_files = [f for f in xyz_files
                               if f not in files_to_exclude]
@@ -264,7 +279,7 @@ class RDKitConformerGenerator(object):
         try:
             rms = self._get_obfit_rms(xyz_a_file, xyz_b_file, smarts)
         except subprocess.CalledProcessError:
-            if self.fallback_to_align_for_rms:
+            if self.params['fallback_to_align_for_rms']:
                 rms = self._get_align_rms(xyz_a_file, xyz_b_file)
             else:
                 raise
