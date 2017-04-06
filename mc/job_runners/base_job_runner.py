@@ -7,18 +7,21 @@ from mc.task_runners.base_task_runner import BaseTaskRunner
 
 class BaseJobRunner(object):
     def __init__(self, job_client=None, tick_interval=120, max_running_jobs=3, 
-                 task_handler=None, default_job_tasks=None, logger=None):
+                 task_handler=None, get_default_job_tasks=None, logger=None):
         self.job_client = job_client
         self.tick_interval = tick_interval
         self.max_running_jobs = max_running_jobs
         self.task_handler = task_handler
-        self.default_job_tasks = default_job_tasks or None
+        if get_default_job_tasks:
+            self.get_default_job_tasks = get_default_job_tasks
         self.logger = logger or logging
 
         self._ticking = False
         self.tick_counter = 0
         self.jobs = {}
         self.running_jobs = {}
+
+    def get_default_job_tasks(self, job=None): return []
 
     def start(self):
         self._ticking = True
@@ -73,9 +76,9 @@ class BaseJobRunner(object):
         job = claimed_job
         self.register_job(job=job)
         try: self.start_job(job=job)
-        except Exception as error:
+        except Exception as exception:
             self.logger.exception("Job failed")
-            self.fail_job(job=job, error=error)
+            self.fail_job(job=job, error=self.stringify_exception(exception))
 
     def claim_job(self, job=None):
         claimed_jobs = self.job_client.claim_jobs(
@@ -96,21 +99,24 @@ class BaseJobRunner(object):
 
     def start_job(self, job=None):
         if 'tasks' not in job:
-            job['tasks'] = copy.deepcopy(self.default_job_tasks)
+            job['tasks'] = self.get_default_job_tasks(job=job)
         self.running_jobs[job['uuid']] = job
         self.tick_job(job=job)
 
     def tick_job(self, job=None):
-        task_runner = BaseTaskRunner(
-            get_tasks=lambda: job.get('tasks', []),
-            get_task_context=lambda : self.get_task_context(job=job),
-            task_handler=self.task_handler
-        )
         try:
+            task_runner = self.get_task_runner(job=job)
             tasks_status = task_runner.tick_tasks()
             job['status'] = tasks_status
         except Exception as exception:
             self.fail_job(job=job, error=self.stringify_exception(exception))
+
+    def get_task_runner(self, job=None):
+        return BaseTaskRunner(
+            get_tasks=lambda: job.get('tasks', []),
+            get_task_context=lambda : self.get_task_context(job=job),
+            task_handler=self.task_handler
+        )
 
     def stringify_exception(self, exception=None):
         return '[%s] %s)' % (type(exception), exception)
@@ -120,11 +126,14 @@ class BaseJobRunner(object):
         return task_context
 
     def complete_job(self, job=None):
-        self.update_job(job=job, updates={
-            'status': 'COMPLETED',
-            'data': job.get('data', {})
-        })
-        self.unregister_job(job=job)
+        if job['status'] == 'FAILED':
+            self.fail_job(job=job, error=job.get('error', '<unknown error>'))
+        else:
+            self.update_job(job=job, updates={
+                'status': 'COMPLETED',
+                'data': job.get('data', {})
+            })
+            self.unregister_job(job=job)
 
     def update_job(self, job=None, updates=None):
         self.job_client.update_jobs(updates_by_uuid={job['uuid']: updates})

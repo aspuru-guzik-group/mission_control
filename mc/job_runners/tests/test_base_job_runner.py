@@ -1,7 +1,7 @@
 from collections import defaultdict
 import logging
 import unittest
-from unittest.mock import call, DEFAULT, MagicMock, patch
+from unittest.mock import call, MagicMock, patch
 from ..base_job_runner import BaseJobRunner
 
 
@@ -9,31 +9,16 @@ class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.job = defaultdict(MagicMock)
         self.task_handler = MagicMock()
-        self.execution_client = MagicMock()
         self.job_client = MagicMock()
         self.job_submission_factory = MagicMock()
         self.runner = self.generate_base_job_runner()
         self.runner_methods_to_patch = []
-        self.decorate_runner_methods_to_patch()
-        if self.runner_methods_to_patch:
-            self.patcher = patch.multiple(
-                self.runner,
-                **{method: DEFAULT for method in self.runner_methods_to_patch}
-            )
-            self.mocks = self.patcher.start()
 
-    def decorate_runner_methods_to_patch(self): pass
-
-    def tearDown(self):
-        if hasattr(self, 'patcher'): self.patcher.stop()
-
-    def generate_base_job_runner(self, runner_kwargs=None):
+    def generate_base_job_runner(self, **runner_kwargs):
         runner_kwargs = runner_kwargs or {}
         default_kwargs = {
             'task_handler': self.task_handler,
-            'execution_client': self.execution_client,
             'job_client': self.job_client,
-            'job_submission_factory': self.job_submission_factory,
         }
         return BaseJobRunner(**{**default_kwargs, **runner_kwargs})
 
@@ -50,18 +35,19 @@ class RunTestCase(BaseTestCase):
                 [call(tick_interval) for tick_interval in tick_intervals])
 
 class TickTestCase(BaseTestCase):
-    def decorate_runner_methods_to_patch(self):
-        self.runner_methods_to_patch.extend(['fetch_claimable_jobs',
-                                             'process_claimable_job',
-                                             'process_running_jobs'])
+    def setUp(self):
+        super().setUp()
+        for method_name in ['fetch_claimable_jobs', 'process_claimable_job',
+                            'process_running_jobs']:
+            setattr(self.runner, method_name, MagicMock())
 
     def test_processes_running_jobs(self):
         self.runner.tick()
-        self.assertEqual(self.mocks['process_running_jobs'].call_count, 1)
+        self.assertEqual(self.runner.process_running_jobs.call_count, 1)
 
     def test_fetches_claimable_job(self):
         self.runner.tick()
-        self.assertTrue(self.mocks['fetch_claimable_jobs'].called)
+        self.assertEqual(self.runner.fetch_claimable_jobs.call_count, 1)
 
     def test_processes_claimable_jobs(self):
         self.runner.max_running_jobs = 3
@@ -70,11 +56,10 @@ class TickTestCase(BaseTestCase):
             {'uuid': i}
             for i in range(self.runner.max_running_jobs + extra_jobs)
         ]
-        self.mocks['fetch_claimable_jobs'].return_value = jobs
+        self.runner.fetch_claimable_jobs.return_value = jobs
         self.runner.tick()
-        expected_call_args = [call(job=job)
-                              for job in jobs[:-1 * extra_jobs]]
-        self.assertTrue(self.mocks['process_claimable_job'].call_args_list,
+        expected_call_args = [call(job=job) for job in jobs[:-1 * extra_jobs]]
+        self.assertTrue(self.runner.process_claimable_job.call_args_list,
                         expected_call_args)
 
 class ProcessRunningJobsTestCase(BaseTestCase):
@@ -87,18 +72,39 @@ class ProcessRunningJobsTestCase(BaseTestCase):
         }
         def mock_job_is_running(job=None): return ('running' in job['uuid'])
         self.runner.job_is_running = mock_job_is_running
+        self.runner.complete_job = MagicMock()
         self.runner.process_running_jobs()
-
-    def decorate_runner_methods_to_patch(self):
-        self.runner_methods_to_patch.extend(['complete_job'])
 
     def test_completes_expected_jobs(self):
         expected_calls = [call(job=job) for job in self.completed_jobs]
-        calls = self.mocks['complete_job'].mock_calls
-        calls_sort_key_fn = lambda c: c[2]['job']['uuid']
-        sorted_calls = sorted(calls, key=calls_sort_key_fn)
-        sorted_expected_calls = sorted(expected_calls, key=calls_sort_key_fn)
-        self.assertEqual(sorted_calls, sorted_expected_calls)
+        def _calls_by_job_uuid(calls):
+            return {_call[-1]['job']['uuid']: _call for _call in calls}
+        self.assertEqual(
+            _calls_by_job_uuid(self.runner.complete_job.call_args_list),
+            _calls_by_job_uuid(expected_calls)
+        )
+
+class TickJobTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.runner.get_task_runner = MagicMock()
+        self.expected_task_runner = self.runner.get_task_runner.return_value
+
+    def test_dispatches_to_task_runner_tick_tasks(self):
+        self.runner.tick_job(job=self.job)
+        self.assertEqual(self.runner.get_task_runner.call_args,
+                         call(job=self.job))
+        self.assertEqual(self.expected_task_runner.tick_tasks.call_args, call())
+
+    def test_fails_job_on_execption(self):
+        exception = Exception('some exception')
+        self.expected_task_runner.tick_tasks.side_effect = exception
+        self.runner.fail_job = MagicMock()
+        self.runner.tick_job(job=self.job)
+        self.assertEqual(
+            self.runner.fail_job.call_args,
+            call(job=self.job, error=self.runner.stringify_exception(exception))
+        )
 
 class CompleteJobTestCase(BaseTestCase):
     def setUp(self):
@@ -106,9 +112,8 @@ class CompleteJobTestCase(BaseTestCase):
         self.job = defaultdict(MagicMock)
         self.job['execution'] = defaultdict(MagicMock)
         self.runner.register_job(job=self.job)
-
-    def decorate_runner_methods_to_patch(self):
-        self.runner_methods_to_patch.extend(['update_job', 'unregister_job'])
+        self.runner.update_job = MagicMock()
+        self.runner.unregister_job = MagicMock()
 
     def test_updates_successful_job_and_unregisters(self):
         self.job['execution']['result'] = {'result': 'COMPLETED'}
@@ -125,12 +130,12 @@ class CompleteJobTestCase(BaseTestCase):
                          call(job=self.job))
 
     def test_fails_failed_job(self):
-        error = 'some error'
-        self.job['execution']['result'] = {'result': 'FAILED', 'error': error}
+        self.job['status'] = 'FAILED'
+        self.job['error'] = 'some error'
         self.runner.fail_job = MagicMock()
         self.runner.complete_job(job=self.job)
         self.assertEqual(self.runner.fail_job.call_args,
-                         call(job=self.job, error=error))
+                         call(job=self.job, error=self.job['error']))
 
 class UpdateJobTestCase(BaseTestCase):
     def test_update_job(self):
@@ -147,10 +152,10 @@ class FetchClaimableJobsTestCase(BaseTestCase):
             self.job_client.fetch_claimable_jobs.call_count, 1)
 
 class ProcessClaimableJobTestCase(BaseTestCase):
-    def decorate_runner_methods_to_patch(self):
-        self.runner_methods_to_patch.extend(['build_job_submission',
-                                             'start_job',
-                                             'update_job'])
+    def setUp(self):
+        super().setUp()
+        for method_name in ['start_job', 'update_job']:
+            setattr(self.runner, method_name, MagicMock())
 
     def tearDown(self):
         logging.disable(logging.NOTSET)
@@ -160,51 +165,31 @@ class ProcessClaimableJobTestCase(BaseTestCase):
         job = {'uuid': 'abcd'}
         self.job_client.claim_jobs.return_value = {job['uuid']: job}
         self.runner.process_claimable_job(job=job)
-        expected_submission_meta = self.mocks['build_job_submission']\
-                .return_value
-        self.assertEqual(self.mocks['build_job_submission'].call_count, 1)
-        self.assertEqual(job['submission'], expected_submission_meta)
+        self.assertEqual(self.runner.start_job.call_args, call(job=job))
 
     def test_unclaimable_job(self):
         job = {'uuid': 'abcd'}
-        self.job_client.claim_jobs.return_value = {
-            job['uuid']: None}
+        self.job_client.claim_jobs.return_value = {job['uuid']: None}
         self.runner.process_claimable_job(job)
-        self.assertEqual(self.mocks['start_job'].call_count, 0)
-
-class BuildJobSubmissionTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.job = {'uuid': 'abcd'}
-
-    def decorate_runner_methods_to_patch(self):
-        self.runner_methods_to_patch.extend(['generate_job_dir'])
-
-    def test_generates_job_dir(self):
-        self.runner.build_job_submission(job=self.job)
-        self.assertEqual(self.job['job_dir'],
-                         self.runner.generate_job_dir.return_value)
-
-    def test_calls_job_submission_factory(self):
-        self.runner.build_job_submission(job=self.job)
-        self.assertEqual(
-            self.runner.job_submission_factory.build_job_submission.call_args,
-            call(job=self.job, output_dir=self.job['job_dir'])
-        )
+        self.assertEqual(self.runner.start_job.call_args, None)
 
 class StartJobTestCase(BaseTestCase):
-    def decorate_runner_methods_to_patch(self):
-        self.runner_methods_to_patch.extend(['tick_job'])
+    def setUp(self):
+        super().setUp()
+        self.get_default_job_tasks = MagicMock()
+        self.runner = self.generate_base_job_runner(
+            get_default_job_tasks=self.get_default_job_tasks)
+        self.runner.tick_job = MagicMock()
 
     def test_ticks_job_tasks(self):
         self.runner.start_job(job=self.job)
-        self.assertEqual(self.mocks['tick_job'].call_args,
-                         call(job=self.job))
+        self.assertEqual(self.runner.tick_job.call_args, call(job=self.job))
 
     def test_fallsback_to_default_tasks(self):
-        self.runner.default_tasks = MagicMock()
         self.runner.start_job(job=self.job)
-        self.assertEqual(self.job['tasks'], self.runner.default_tasks)
+        self.assertEqual(self.get_default_job_tasks.call_args,
+                         call(job=self.job))
+        self.assertEqual(self.job['tasks'], self.get_default_job_tasks())
 
 class GetTaskContextTestCase(BaseTestCase):
     def _do_get_task_context(self):

@@ -29,7 +29,7 @@ class StartExecutionTestCase(BaseTestCase):
         self.slurm_client.start_execution(submission=self.submission)
         workdir = self.submission['dir']
         entrypoint = workdir + '/' + self.submission['entrypoint']
-        expected_cmd = ['sbatch', '--workdir=%s' % workdir, entrypoint]
+        expected_cmd = ['sbatch', '--workdir="%s"' % workdir, entrypoint]
         self.assertEqual(self.process_runner.run_process.call_args,
                          call(cmd=expected_cmd, check=True))
 

@@ -17,7 +17,7 @@ class OdysseyJobRunner(object):
         self.tasks_cfg = self.generate_tasks_cfg()
         self.base_job_runner = BaseJobRunner(
             task_handler=self.generate_task_handler(),
-            default_job_tasks=self.tasks_cfg['default_job_tasks'],
+            get_default_job_tasks=(lambda: self.tasks_cfg['default_job_tasks']),
             **job_runner_kwargs,
         )
 
