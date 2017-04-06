@@ -1,4 +1,8 @@
-from ...a2g2_common.odyssey.submission_builder import build_job_submission
+from ...a2g2_common.odyssey import (
+    submission_builder as odyssey_submission_builder)
+build_job_submission = odyssey_submission_builder.build_job_submission
 assert build_job_submission
-from .submission_runner import run_job_submission
+
+from . import submission_runner as confgen_submission_runner
+run_job_submission = confgen_submission_runner.run_job_submission
 assert run_job_submission
