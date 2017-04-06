@@ -45,7 +45,7 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
             ''' % {
                 'job_type': compute_job_spec['job_type'],
                 'job_params_yaml': cls.dump_inline_yaml(
-                    compute_job_spec.get('compute_job_params', {})),
+                    compute_job_spec.get('job_params', {})),
                 'expose_job_outputs_task_yaml': cls.dump_inline_yaml(
                     cls.generate_expose_job_outputs_task()),
             }
