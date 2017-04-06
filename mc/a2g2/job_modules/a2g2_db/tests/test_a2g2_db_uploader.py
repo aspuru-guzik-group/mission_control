@@ -18,7 +18,7 @@ class UploadFromBulkFilesTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.cfg = defaultdict(MagicMock)
-        self.cfg['A2G2_CLIENT_CFG_JSON'] = json.dumps({})
+        self.cfg['a2g2_client_cfg_json'] = json.dumps({})
         self.chemthings = self.generate_chemthings()
         self.dir_to_upload = self.generate_dir_to_upload(
             chemthings=self.chemthings)
@@ -32,7 +32,7 @@ class UploadFromBulkFilesTestCase(BaseTestCase):
 
     def generate_dir_to_upload(self, chemthings=None):
         _dir = tempfile.mkdtemp()
-        chemthings_bulk_path = os.path.join(_dir, 'chemthings.a2g2_db.bulk')
+        chemthings_bulk_path = os.path.join(_dir, 'test.chemthings.bulk')
         with open(chemthings_bulk_path, 'w') as chemthings_bulk_file:
             for chemthing in chemthings:
                 chemthings_bulk_file.write(json.dumps(chemthing) + "\n")
