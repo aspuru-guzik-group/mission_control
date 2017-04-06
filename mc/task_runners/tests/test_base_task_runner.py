@@ -73,7 +73,7 @@ class TickTaskTestCase(BaseTestCase):
 class DecorateContextTestCase(BaseTestCase):
     def test_decorated_task_context_has_keyed_tasks(self):
         self.task_context = {'key_%s' % i : 'value_%s' % i for i in range(3)}
-        expected_keyed_tasks = {task['key']: task
+        expected_keyed_tasks = {task['task_key']: task
                                 for task in self.task_runner.get_tasks()}
         expected_decorated_task_context = {
             'tasks': expected_keyed_tasks,
