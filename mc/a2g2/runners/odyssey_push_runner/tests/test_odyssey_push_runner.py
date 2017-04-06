@@ -164,11 +164,11 @@ class RunnerSetupTestCase(BaseTestCase):
     def test_has_job_runner(self):
         self.run_subcomponent_generator_fallback_test('job_runner')
 
-    def test_has_tick_ctx(self):
-        tick_ctx = Mock()
-        self.call_real_setup(tick_ctx=tick_ctx)
-        self.assertEqual(self.mock_runner.decorate_tick_ctx.call_args,
-                         call(tick_ctx=tick_ctx))
+    def test_has_flow_ctx(self):
+        flow_ctx = Mock()
+        self.call_real_setup(flow_ctx=flow_ctx)
+        self.assertEqual(self.mock_runner.decorate_flow_ctx.call_args,
+                         call(flow_ctx=flow_ctx))
 
     def test_has_flow_runner(self):
         self.run_subcomponent_generator_fallback_test('flow_runner')
@@ -235,52 +235,48 @@ class GenerateJobRunnerTestCase(BaseTestCase):
                                                   'JobRunner')
 
     def test_generates_job_runner(self):
-        job_runner_kwargs = {'mock': 'kwargs'}
-        job_runner = self.mock_runner.call_real_method(
-            'generate_job_runner', **{'job_runner_kwargs': job_runner_kwargs})
+        job_runner = self.mock_runner.call_real_method('generate_job_runner')
         self.assertEqual(job_runner, self.mocks['JobRunner'].return_value)
         self.assertEqual(
             self.mocks['JobRunner'].call_args,
-            call(
-                task_handler=self.mock_runner.task_handler,
-                job_client=self.mock_runner.mc_client,
-                job_submission_factory=self.mock_runner.job_submission_factory,
-                **job_runner_kwargs
+            call(job_client=self.mock_runner.mc_client,
+                 job_submission_factory=self.mock_runner.job_submission_factory,
+                 ssh_client=self.mock_runner.ssh_client
             )
         )
 
-class DecorateTickCtxTestCase(BaseTestCase):
+class DecorateFlowCtxTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.orig_tick_ctx = {'k1': 'v1', 'k2': 'v2'}
-        self.decorated_tick_ctx = self.mock_runner.call_real_method(
-            'decorate_tick_ctx', tick_ctx=self.orig_tick_ctx)
+        self.orig_flow_ctx = {'k1': 'v1', 'k2': 'v2'}
+        self.decorated_flow_ctx = self.mock_runner.call_real_method(
+            'decorate_flow_ctx', flow_ctx=self.orig_flow_ctx)
 
-    def test_includes_original_tick_ctx(self):
-        self.assert_is_subdict(self.orig_tick_ctx, self.decorated_tick_ctx)
+    def test_includes_original_flow_ctx(self):
+        self.assert_is_subdict(self.orig_flow_ctx, self.decorated_flow_ctx)
 
     def test_create_job_wraps_mc_client(self):
         args = Mock()
-        self.decorated_tick_ctx['create_job'](args)
+        self.decorated_flow_ctx['create_job'](args)
         self.assertEqual(self.mock_runner.mc_client.create_job.call_args,
                          call(args))
 
     def test_get_job_wraps_mc_client(self):
         args = Mock()
-        self.decorated_tick_ctx['get_job'](args)
+        self.decorated_flow_ctx['get_job'](args)
         self.assertEqual(
             self.mock_runner.mc_client.fetch_job_by_uuid.call_args,
             call(args))
 
     def test_create_flow_wraps_mc_client(self):
         args = Mock()
-        self.decorated_tick_ctx['create_flow'](args)
+        self.decorated_flow_ctx['create_flow'](args)
         self.assertEqual(self.mock_runner.mc_client.create_flow.call_args,
                          call(args))
 
     def test_get_flow_wraps_mc_client(self):
         args = Mock()
-        self.decorated_tick_ctx['get_flow'](args)
+        self.decorated_flow_ctx['get_flow'](args)
         self.assertEqual(
             self.mock_runner.mc_client.fetch_flow_by_uuid.call_args,
             call(args))
@@ -295,7 +291,7 @@ class GenerateFlowRunnerTestCase(BaseTestCase):
         self.assertEqual(self.mocks['FlowRunner'].call_args,
                          call(flow_client=self.mock_runner.mc_client,
                               flow_engine=self.mock_runner.flow_engine,
-                              tick_ctx=self.mock_runner.tick_ctx))
+                              flow_ctx=self.mock_runner.flow_ctx))
 
 class RunTestCase(BaseTestCase):
     def setUp(self):

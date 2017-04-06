@@ -38,8 +38,8 @@ class OdysseyPushRunner(object):
         self.mc_client = mc_client or self.generate_mc_client()
         self.job_submission_factory = job_submission_factory or \
                 self.generate_job_submission_factory()
-        self.job_runner = job_runner or self.generate_job_runner(
-            ssh_client=ssh_client)
+        self.ssh_client = ssh_client
+        self.job_runner = job_runner or self.generate_job_runner()
         self.flow_ctx = self.decorate_flow_ctx(flow_ctx=flow_ctx)
         self.flow_runner = flow_runner or self.generate_flow_runner()
 
@@ -63,8 +63,9 @@ class OdysseyPushRunner(object):
     def generate_job_submission_factory(self):
         return JobSubmissionFactory()
 
-    def generate_job_runner(self, ssh_client=None):
-        return JobRunner(job_client=self.mc_client, ssh_client=ssh_client,
+    def generate_job_runner(self):
+        return JobRunner(job_client=self.mc_client, 
+                         ssh_client=self.ssh_client,
                          job_submission_factory=self.job_submission_factory)
 
     def decorate_flow_ctx(self, flow_ctx=None):
