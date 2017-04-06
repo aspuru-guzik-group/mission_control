@@ -21,7 +21,7 @@ class SubmissionRunner(BaseSubmissionRunner):
 
     def create_workdir(self):
         workdir_builder = WorkdirBuilder(
-            workdir=self.generate_scratchdir(),
+            workdir=self.generate_tmp_dir(),
             workdir_params=self.get_workdir_params())
         workdir_meta = workdir_builder.build_workdir()
         return workdir_meta

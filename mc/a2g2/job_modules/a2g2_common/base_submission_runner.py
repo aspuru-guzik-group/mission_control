@@ -12,11 +12,18 @@ class BaseSubmissionRunner(object):
 
     def run_submission(self): raise NotImplementedError
 
-    def generate_scratchdir(self):
-        scratch_dir = self.submission.get('scratch_dir') or tempfile.mkdtemp()
-        workdir = os.path.join(scratch_dir, 'confgen.%s' % time.time())
-        os.makedirs(workdir)
-        return workdir
+    def generate_tmp_dir(self, prefix=None, use_time_suffix=True):
+        if prefix is None: prefix = ''
+        time_suffix = ''
+        if use_time_suffix: time_suffix = str(time.time())
+        scratch_dir = self.submission.get('scratch_dir')
+        if scratch_dir:
+            tmp_dir = os.path.join(scratch_dir, prefix)
+        else:
+            tmp_dir = tempfile.mkdtemp()
+        tmp_dir = tmp_dir + time_suffix
+        os.makedirs(tmp_dir)
+        return tmp_dir
 
     def move_to_outputs(self, src=None, outputs_key=None):
         outputs_dest = os.path.join(self.submission['outputs_dir'], outputs_key)

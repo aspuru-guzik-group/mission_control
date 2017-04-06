@@ -1,4 +1,4 @@
-import os
+import collections
 import unittest
 from unittest.mock import call, MagicMock, patch
 
@@ -9,7 +9,7 @@ class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.job = MagicMock()
         self.cfg = MagicMock()
-        self.submission = MagicMock()
+        self.submission = collections.defaultdict(MagicMock)
         self.submission_runner = submission_runner.SubmissionRunner(
             job=self.job, cfg=self.cfg, submission=self.submission)
 
@@ -18,7 +18,7 @@ class RunSubmissionTestCase(BaseTestCase):
         super().setUp()
         self.submission_runner.create_workdir = MagicMock()
         self.submission_runner.run_workdir = MagicMock()
-        self.submission_runner.move_workdir_to_outputs = MagicMock()
+        self.submission_runner.move_to_outputs = MagicMock()
         self.expected_workdir_meta = \
                 self.submission_runner.create_workdir.return_value
         self.submission_runner.run_submission()
@@ -33,17 +33,20 @@ class RunSubmissionTestCase(BaseTestCase):
 
     def test_moves_workdir_to_outputs(self):
         self.assertEqual(
-            self.submission_runner.move_workdir_to_outputs.call_args,
-            call(workdir_meta=self.expected_workdir_meta))
+            self.submission_runner.move_to_outputs.call_args,
+            call(src=self.expected_workdir_meta['dir'],
+                 outputs_key=(
+                     submission_runner.confgen_constants.CONFGEN_OUTPUTS_KEY)
+                ))
 
 class CreateWorkdirTestCase(BaseTestCase):
     @patch.object(submission_runner, 'WorkdirBuilder')
     def test_dispatches_to_build_workdir(self, MockWorkdirBuilder):
-        self.submission_runner.generate_workdir = MagicMock()
+        self.submission_runner.generate_tmp_dir = MagicMock()
         workdir_meta = self.submission_runner.create_workdir()
         self.assertEqual(
             MockWorkdirBuilder.call_args,
-            call(workdir=self.submission_runner.generate_workdir.return_value,
+            call(workdir=self.submission_runner.generate_tmp_dir.return_value,
                  workdir_params=self.submission_runner.get_workdir_params())
         )
         self.assertEqual(
@@ -66,14 +69,3 @@ class RunWorkdirTestCase(BaseTestCase):
         }
         self.assertEqual(mock_subprocess.run.call_args,
                          call(expected_cmd, check=True, env=expected_env))
-
-class MoveWorkdirToOutputsTestCase(BaseTestCase):
-    @patch.object(submission_runner, 'shutil')
-    def test_moves_workdir_to_outputs(self, mock_shutil):
-        workdir_meta = MagicMock()
-        expected_src = workdir_meta['dir']
-        expected_dest = os.path.join(self.submission['outputs_dir'], 'confgen')
-        self.submission_runner.move_workdir_to_outputs(
-            workdir_meta=workdir_meta)
-        self.assertEqual(mock_shutil.move.call_args,
-                         call(expected_src, expected_dest))
