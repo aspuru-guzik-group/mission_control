@@ -23,39 +23,33 @@ class BaseTestCase(unittest.TestCase):
 class BuildJobSubmissionTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.job_dir = MagicMock()
+        self.output_dir = MagicMock()
         self.a2g2_job_engine.get_job_module = MagicMock()
         self.expected_module = self.a2g2_job_engine.get_job_module.return_value
 
     def test_dispatches_to_job_module(self):
         self.a2g2_job_engine.build_job_submission(
-            job=self.job, cfg=self.cfg, job_dir=self.job_dir)
+            job=self.job, cfg=self.cfg, output_dir=self.output_dir)
         self.assertEqual(self.a2g2_job_engine.get_job_module.call_args,
                          call(job=self.job, cfg=self.cfg))
-        self.assertEqual(self.expected_module.build_job_submission.call_args,
-                         call(job=self.job, cfg=self.cfg, job_dir=self.job_dir))
-
-class ExecuteJobTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.a2g2_job_engine.get_job_engine = MagicMock()
-
-    def test_dispatches_to_get_job_engine_result(self):
-        result = self.a2g2_job_engine.execute_job(
-            job=self.job,
-            cfg=self.cfg,
-            output_dir=self.output_dir,
-            ctx_dir=self.ctx_dir
-        )
-        self.assertEqual(self.a2g2_job_engine.get_job_engine.call_args,
-                         call(job=self.job, cfg=self.cfg))
-        expected_engine = self.a2g2_job_engine.get_job_engine.return_value
         self.assertEqual(
-            expected_engine.execute_job.call_args,
-            call(job=self.job, cfg=self.cfg, output_dir=self.output_dir,
-                 ctx_dir=self.ctx_dir)
-        )
-        self.assertEqual(result, expected_engine.execute_job.return_value)
+            self.expected_module.build_job_submission.call_args,
+            call(job=self.job, cfg=self.cfg, job_dir=self.output_dir))
+
+class ExecuteCommandTestCase(BaseTestCase):
+    def test_build_job_submission_command(self):
+        self.assert_handles_command(command='build_job_submission')
+
+    def assert_handles_command(self, command=None):
+        mock_handler = MagicMock()
+        setattr(self.a2g2_job_engine, command, mock_handler)
+        kwargs = {'job': self.job, 'cfg': self.cfg, 'extra': 'extra'}
+        result = self.a2g2_job_engine.execute_command(command=command, **kwargs)
+        self.assertEqual(mock_handler.call_args, call(**kwargs))
+        self.assertEqual(result, mock_handler.return_value)
+
+    def test_run_job_submission_command(self):
+        self.assert_handles_command(command='run_job_submission')
 
 class GetJobModuleCase(BaseTestCase):
     @patch.object(a2g2_job_engine, 'importlib')
@@ -72,20 +66,23 @@ class GetJobModuleCase(BaseTestCase):
                          call(expected_module_name))
         self.assertEqual(result, patched_importlib.import_module.return_value)
 
-class ExecuteJobCommandTestCase(BaseTestCase):
+class JobEngineCommandTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.cmd = a2g2_job_engine.ExecuteJobCommand()
+        self.cmd = a2g2_job_engine.JobEngineCommand()
         self.arg_files = self.generate_arg_files()
         self.arg_tuples = [
             *self.arg_files.items(),
             ('output_dir', self.output_dir),
-            ('ctx_dir', self.ctx_dir)
         ]
-        self.argv = self.generate_argv(arg_tuples=self.arg_tuples)
+        self.job_command = 'build_job_submission'
+        self.argv = self.generate_argv(
+            job_command=self.job_command,
+            arg_tuples=self.arg_tuples
+        )
 
-    def generate_argv(self, arg_tuples=None):
-        argv = []
+    def generate_argv(self, job_command=None, arg_tuples=None):
+        argv = [job_command]
         for arg_name, arg_value in arg_tuples:
             argv.append('--%s' % arg_name)
             argv.append(arg_value)
@@ -101,20 +98,17 @@ class ExecuteJobCommandTestCase(BaseTestCase):
             arg_files[arg_name] = arg_file_path
         return arg_files
 
-    def test_calls_execute_job_w_parsed_args(self):
+    def test_calls_execute_command_w_parsed_args(self):
         mock_generate_job_engine = MagicMock()
         self.cmd.generate_job_engine = mock_generate_job_engine
         self.cmd.execute(argv=self.argv)
+        expected_command_kwargs = { 
+            'command': self.job_command,
+            **{arg_name: json.load(open(arg_file_path))
+               for arg_name, arg_file_path in self.arg_files.items()},
+            'output_dir': self.output_dir,
+        }
         self.assertEqual(
-            mock_generate_job_engine.return_value.execute_job.call_args,
-            call(
-                **{
-                    **{
-                        arg_name: json.load(open(arg_file_path))
-                        for arg_name, arg_file_path in self.arg_files.items()
-                    },
-                    'output_dir': self.output_dir,
-                    'ctx_dir': self.ctx_dir
-                }
-            )
+            mock_generate_job_engine.return_value.execute_command.call_args,
+            call(**expected_command_kwargs)
         )
