@@ -158,10 +158,15 @@ class FetchJobsTestCase(BaseTestCase):
                          call(expected_url, query_params))
 
     def test_handles_populated_response(self):
-        jobs = [{'uuid': i} for i in range(3)]
-        self.mocks['requests'].get.return_value.json.return_value = jobs
+        mock_fetch_data = [{'uuid': i} for i in range(3)]
+        self.mocks['requests'].get.return_value.json.return_value = \
+                mock_fetch_data
         fetched_jobs = self.mc_client.fetch_jobs()
-        self.assertEqual(fetched_jobs, jobs)
+        expected_fetched_jobs = [
+            self.mc_client.format_fetched_job(fetched_job=mock_fetched_job)
+            for mock_fetched_job in mock_fetch_data
+        ]
+        self.assertEqual(fetched_jobs, expected_fetched_jobs)
 
     def test_handles_empty_response(self):
         jobs = []
@@ -203,10 +208,10 @@ class ClaimJobsTestCase(BaseTestCase):
 
     def test_handles_populated_response(self):
         self.mocks['requests'].post.return_value.json.return_value = {
-            _uuid: True for _uuid in self.uuids
+            _uuid: {} for _uuid in self.uuids
         }
         result = self.mc_client.claim_jobs(uuids=self.uuids)
-        expected_result = {_uuid: True for _uuid in self.uuids}
+        expected_result = {_uuid: {} for _uuid in self.uuids}
         self.assertEqual(result, expected_result)
 
     def test_handles_empty_response(self):
@@ -246,25 +251,28 @@ class UpdateJobsTestCase(BaseTestCase):
 class CreateJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
+        self.mc_client.json_raise_for_status = Mock()
+        self.mc_client.format_fetched_job = Mock()
         self.job_kwargs = {'data': 'some data'}
-        self.mocks['requests'].post.return_value.status_code = 200
 
     def test_makes_post_call(self):
         self.mc_client.create_job(job_kwargs=self.job_kwargs)
-        self.assertEqual(
-            self.mocks['requests'].post.call_args,
-            call(self.base_url + 'jobs/', json={
-                **self.job_kwargs,
-                'data': json.dumps(self.job_kwargs['data']),
-            })
-        )
+        self.assertEqual(self.mocks['requests'].post.call_args,
+                         call(self.base_url + 'jobs/', json={
+                             **self.job_kwargs,
+                             'data': json.dumps(self.job_kwargs['data']),
+                         }))
 
-    def test_returns_post_result(self):
-        mock_result = {'some': 'result'}
-        self.mocks['requests'].post.return_value.json.return_value = \
-                mock_result
-        result = self.mc_client.create_job(job_kwargs=self.job_kwargs)
-        self.assertEqual(result, mock_result)
+    def test_returns_formatted_post_result(self):
+        expected_json_result = self.mc_client.json_raise_for_status.return_value
+        expected_created_job = self.mc_client.format_fetched_job.return_value
+        created_job = self.mc_client.create_job(job_kwargs=self.job_kwargs)
+        self.assertEqual(
+            self.mc_client.json_raise_for_status.call_args,
+            call(response=self.mocks['requests'].post.return_value))
+        self.assertEqual(self.mc_client.format_fetched_job.call_args,
+                         call(fetched_job=expected_json_result))
+        self.assertEqual(created_job, expected_created_job)
 
 class FlushTestCase(BaseTestCase):
     def test_gets_flush_endpoint(self):

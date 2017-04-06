@@ -67,11 +67,11 @@ class MissionControlClient(object):
         return results_by_uuid
 
     def create_job(self, job_kwargs=None):
-            formatted_job_kwargs = self.format_job_kwargs(job_kwargs)
-            response = self.request_client.post(self.urls['jobs'],
-                                                json=formatted_job_kwargs)
-            return self.format_fetched_job(
-                fetched_job=self.json_raise_for_status(response=response))
+        formatted_job_kwargs = self.format_job_kwargs(job_kwargs)
+        response = self.request_client.post(self.urls['jobs'],
+                                            json=formatted_job_kwargs)
+        return self.format_fetched_job(
+            fetched_job=self.json_raise_for_status(response=response))
 
     def format_job_kwargs(self, job_kwargs=None):
         formatted_job_kwargs = {**job_kwargs}
