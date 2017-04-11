@@ -112,6 +112,10 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
                     .inputs.serialized_artifacts.input_dir"
                   value: "{{ctx.flow.nodes.%(src_node)s.data\\
                     .serialized_artifact}}"
+                - dest: "ctx.tasks.run_job.task_params.job_spec\\
+                    .job_params.artifact"
+                  value: "{{ctx.flow.nodes.%(src_node)s.data\\
+                    .serialized_artifact}}"
             ''' % {'src_node': src_node}
         ) 
 

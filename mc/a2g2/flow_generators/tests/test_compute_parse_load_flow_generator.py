@@ -71,6 +71,8 @@ class GenerateFlowTestCase(BaseTestCase):
                   value_specs:
                   - dest: ctx.tasks.run_job.task_params.job_spec.inputs.serialized_artifacts.input_dir
                     value: '{{ctx.flow.nodes.compute.data.serialized_artifact}}'
+                  - dest: "ctx.tasks.run_job.task_params.job_spec.job_params.artifact"
+                    value: '{{ctx.flow.nodes.compute.data.serialized_artifact}}'
                 task_type: a2g2.tasks.set_values
               - task_key: run_job
                 task_params:
@@ -95,6 +97,8 @@ class GenerateFlowTestCase(BaseTestCase):
                 task_params:
                   value_specs:
                   - dest: ctx.tasks.run_job.task_params.job_spec.inputs.serialized_artifacts.input_dir
+                    value: '{{ctx.flow.nodes.parse.data.serialized_artifact}}'
+                  - dest: ctx.tasks.run_job.task_params.job_spec.job_params.artifact
                     value: '{{ctx.flow.nodes.parse.data.serialized_artifact}}'
                 task_type: a2g2.tasks.set_values
               - task_key: run_job

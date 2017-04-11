@@ -36,7 +36,7 @@ class QChemInputGenerator(object):
         ])
 
     def generate_atom_block(self, atom=None):
-        return " ".join(atom[attr] for attr in ['element', 'x', 'y', 'z'])
+        return " ".join(str(atom[attr]) for attr in ['element', 'x', 'y', 'z'])
 
     def generate_rem_block(self):
         return "\n".join([

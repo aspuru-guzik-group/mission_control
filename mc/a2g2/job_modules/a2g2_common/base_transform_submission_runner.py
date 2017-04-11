@@ -11,7 +11,7 @@ class BaseTransformSubmissionRunner(base_submission_runner.BaseSubmissionRunner)
         self.output_key = output_key or 'output'
 
     def run_submission(self):
-        scratch_dir = self.generate_scratchdir()
+        scratch_dir = self.generate_tmp_dir()
         self.transform_fn(
             input_dir=self.get_input_dir(),
             output_dir=scratch_dir,

@@ -29,14 +29,13 @@ class QChemParser(object):
         calc_chemthing = self.extract_calc_chemthing()
         self.write_chemthings_bulk_file(
             chemthings=[calc_chemthing],
-            target_path=os.path.join(self.output_dir,
-                                     'qchem.chemthings.bulk.json')
+            target_path=os.path.join(self.output_dir, 'qchem.chemthings.bulk')
         )
         return self.output_dir
 
     def extract_calc_chemthing(self):
         calc_chemthing = {
-            'types': {'a2g2:calculation': True},
+            'types': {'a2g2:type:calc': True},
             'keys': {self.generate_calculation_key(): True},
             'props': {
                 'a2g2:calculation:artifact': self.parsing_params['artifact'],

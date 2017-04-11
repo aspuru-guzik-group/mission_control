@@ -51,8 +51,8 @@ class GenerateEntrypointBodyTestCase(BaseTestCase):
         expected_entrypoint_body = textwrap.dedent(
             """
             {job_engine_preamble}
-            {job_engine_exe} {job_cli_params} \\
-                run_job_submission {submission_cli_params}
+            {job_engine_exe} \\
+                run_job_submission {job_cli_params} {submission_cli_params}
             """
         ).strip().format(
             job_engine_preamble=job_engine_cfg.get('entrypoint_preamble', ''),

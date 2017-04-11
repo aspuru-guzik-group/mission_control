@@ -13,15 +13,11 @@ class BaseSubmissionRunner(object):
     def run_submission(self): raise NotImplementedError
 
     def generate_tmp_dir(self, prefix=None, use_time_suffix=True):
-        if prefix is None: prefix = ''
+        if prefix is None: prefix = 'sr'
         time_suffix = ''
-        if use_time_suffix: time_suffix = str(time.time())
-        scratch_dir = self.submission.get('scratch_dir')
-        if scratch_dir:
-            tmp_dir = os.path.join(scratch_dir, prefix)
-        else:
-            tmp_dir = tempfile.mkdtemp()
-        tmp_dir = tmp_dir + time_suffix
+        if use_time_suffix: time_suffix = '.' + str(time.time())
+        scratch_dir = self.submission.get('scratch_dir') or tempfile.mkdtemp()
+        tmp_dir = os.path.join(scratch_dir, prefix + time_suffix)
         os.makedirs(tmp_dir)
         return tmp_dir
 

@@ -56,7 +56,7 @@ class ParseQChemDirTestCase(unittest.TestCase):
             completed_qchem_dir=completed_qchem_dir)
         self.write_chemthings_bulk_file(
             chemthings=[calc_chemthing],
-            target_path=os.path.join(output_dir, 'qchem.chemthings.bulk.json')
+            target_path=os.path.join(output_dir, 'qchem.chemthings.bulk')
         )
         return output_dir
 
@@ -64,7 +64,7 @@ class ParseQChemDirTestCase(unittest.TestCase):
         expected_key = self.generate_expected_key(
             completed_qchem_dir=completed_qchem_dir)
         calc_chemthing = {
-            'types': {'a2g2:calculation': True},
+            'types': {'a2g2:type:calc': True},
             'keys': {expected_key: True},
             'props': {
                 'a2g2:calculation:artifact': self.parsing_params['artifact'],
@@ -134,5 +134,6 @@ class ParseQChemDirTestCase(unittest.TestCase):
         mc_test_utils.assert_dirs_equal(
             test=self,
             left=self.output_dir,
-            right=self.expected_output_dir
+            right=self.expected_output_dir,
+            json_patterns=[r'\.json$', r'chemthings\.bulk$']
         )

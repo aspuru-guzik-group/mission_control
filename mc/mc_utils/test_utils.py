@@ -7,8 +7,10 @@ import re
 from unittest.mock import Mock
 
 
-def assert_dirs_equal(test=None, left=None, right=None, ignore_patterns=None):
+def assert_dirs_equal(test=None, left=None, right=None, ignore_patterns=None,
+                      json_patterns=None):
     ignore_patterns = ignore_patterns or []
+    json_patterns = json_patterns or [r'\.json$']
     cmp_result = filecmp.dircmp(left, right)
     test.assertEqual(set(cmp_result.left_only), set())
     test.assertEqual(set(cmp_result.right_only), set())
@@ -17,7 +19,12 @@ def assert_dirs_equal(test=None, left=None, right=None, ignore_patterns=None):
             if re.search(ignore_pattern, differing_file): continue
         left_file = os.path.join(left, differing_file)
         right_file = os.path.join(right, differing_file)
-        if differing_file.endswith('.json'):
+        check_as_json = False
+        for json_pattern in json_patterns:
+            if re.search(json_pattern, differing_file):
+                check_as_json = True
+                break
+        if check_as_json:
             assert_json_files_equal(test=test, left_file=left_file,
                                     right_file=right_file)
         else:

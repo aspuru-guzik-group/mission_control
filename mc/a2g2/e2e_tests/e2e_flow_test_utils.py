@@ -5,6 +5,7 @@ import textwrap
 import time
 import unittest
 
+import yaml
 import pexpect
 
 from mc.a2g2.a2g2_client.a2g2_client import A2G2_Client
@@ -69,12 +70,6 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
                                   **kwargs)
 
         return TaskHandler()
-
-    def _upload_wrapper(self, *args, params=None, ctx=None, **kwargs):
-        pass
-
-    def _download_wrapper(self, *args, params=None, ctx=None, **kwargs):
-        pass
 
     def generate_combo_runner(self):
         return OdysseyPushRunner(
@@ -174,3 +169,25 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
             for flow in self.mc_client.fetch_flows(query_params=query_params)
         }
         return keyed_flows
+
+    def dump_db_state(self):
+        jobs = self.mc_client.fetch_jobs()
+        for i, job in enumerate(jobs):
+            print("job %s:\n" % i, self.dump_obj(job))
+        flows = self.mc_client.fetch_flows()
+        for i, flow in enumerate(flows):
+            print("flow %s:\n" % i, self.dump_obj(flow))
+
+    def dump_obj(self, obj):
+        return textwrap.indent(yaml.dump(obj), prefix=' ' * 2)
+
+    def filter_chemthings_by_type(self, chemthings=None, _type=None):
+        return [chemthing for chemthing in chemthings
+                if _type in chemthing['types']]
+
+    def assert_plucked_lists_equal(self, left=None, right=None, keys=None):
+        self.assertEqual([self._pluck(item, keys) for item in left],
+                         [self._pluck(item, keys) for item in right])
+
+    def _pluck(self, _dict, keys=None):
+        return {k: v for k, v in _dict.items() if k in keys}

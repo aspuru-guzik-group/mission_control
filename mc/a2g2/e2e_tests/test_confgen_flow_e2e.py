@@ -1,12 +1,10 @@
 import argparse
 import json
 import os
-import textwrap
 import unittest
 
 from rdkit import Chem
 from rdkit.Chem import AllChem
-import yaml
 
 from . import e2e_flow_test_utils
 
@@ -63,15 +61,9 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
         super().setUp()
         self.fixtures = Fixtures()
     
-    def teardown_docker_env(self, docker_env=None):
-        pass
+    def teardown_docker_env(self, docker_env=None): pass
 
-    def get_flow_generator_classes(self):
-        return [ConfgenFlowGenerator]
-
-    def get_job_engine_class_spec(self):
-        #return 'mc.a2g2.e2e_tests.test_confgen_flow_e2e.MockJobEngine'
-        return None
+    def get_flow_generator_classes(self): return [ConfgenFlowGenerator]
 
     def generate_job_submission_cfg(self):  
         cfg = super().generate_job_submission_cfg()
@@ -96,17 +88,6 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
         except Exception as exception:
             #self.dump_db_state()
             raise exception
-
-    def dump_db_state(self):
-        jobs = self.mc_client.fetch_jobs()
-        for i, job in enumerate(jobs):
-            print("job %s:\n" % i, self.dump_obj(job))
-        flows = self.mc_client.fetch_flows()
-        for i, flow in enumerate(flows):
-            print("flow %s:\n" % i, self.dump_obj(flow))
-
-    def dump_obj(self, obj):
-        return textwrap.indent(yaml.dump(obj), prefix=' ' * 2)
 
     def generate_molecule_library(self):
         for mol in self.fixtures.mols:
@@ -159,17 +140,6 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
             right=sorted(expected_chemthings, key=_sort_key),
             keys=['props', 'types']
         )
-
-    def filter_chemthings_by_type(self, chemthings=None, _type=None):
-        return [chemthing for chemthing in chemthings
-                if _type in chemthing['types']]
-
-    def assert_plucked_lists_equal(self, left=None, right=None, keys=None):
-        self.assertEqual([self._pluck(item, keys) for item in left],
-                         [self._pluck(item, keys) for item in right])
-
-    def _pluck(self, _dict, keys=None):
-        return {k: v for k, v in _dict.items() if k in keys}
 
     def assert_has_expected_calc_chemthings(self, chemthings=None):
         actual_chemthings = self.filter_chemthings_by_type(
@@ -244,9 +214,8 @@ def handle_confgen_command(args=None):
         f.write(json.dumps(fixtures.confgen_params))
 
 if __name__ == '__main__':
-    # Logic to fake calls to executables.
-    # This will be called in the fake execution context, NOT in the
-    # unittest context.
+    # Map fake calls to handlers.
+    # Will be called in fake execution context, NOT in unittest context.
     parser = argparse.ArgumentParser(description='mocked executables')
     parser.add_argument('command')
     parsed_args, command_args = parser.parse_known_args()

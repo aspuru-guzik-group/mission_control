@@ -1,4 +1,5 @@
 import collections
+import copy
 import json
 import os
 import tempfile
@@ -17,7 +18,7 @@ class OdysseyJobRunner(object):
         self.tasks_cfg = self.generate_tasks_cfg()
         self.base_job_runner = BaseJobRunner(
             task_handler=self.generate_task_handler(),
-            get_default_job_tasks=(lambda: self.tasks_cfg['default_job_tasks']),
+            get_default_job_tasks=self.get_default_job_tasks,
             **job_runner_kwargs,
         )
 
@@ -46,6 +47,9 @@ class OdysseyJobRunner(object):
             ]
         }
         return tasks_cfg
+
+    def get_default_job_tasks(self, *args, **kwargs):
+        return copy.deepcopy(self.tasks_cfg['default_job_tasks'])
 
     def generate_task_handler(self):
         task_handler = types.SimpleNamespace()
