@@ -1,9 +1,9 @@
 from collections import defaultdict
 import unittest
-from unittest.mock import call, MagicMock
+from unittest.mock import call, patch, MagicMock
 from uuid import uuid4
 
-from ..run_flow_task_handler import RunFlowTaskHandler
+from .. import run_flow_task_handler
 
 
 class BaseTestCase(unittest.TestCase):
@@ -14,7 +14,7 @@ class BaseTestCase(unittest.TestCase):
             'create_flow': MagicMock(),
             'get_flow': MagicMock()
         }
-        self.task_handler = RunFlowTaskHandler()
+        self.task_handler = run_flow_task_handler.RunFlowTaskHandler()
 
     def generate_flow(self, uuid=None, status='PENDING', **flow_state):
         flow = defaultdict(MagicMock)
@@ -40,6 +40,7 @@ class InitialTickTestCase(BaseTestCase):
             }
         }
         self.task = {**self.initial_task}
+        self.task_handler.generate_flow = MagicMock()
         self.task_handler.initial_tick(
             task=self.task,
             task_context=self.generate_task_context()
@@ -48,14 +49,22 @@ class InitialTickTestCase(BaseTestCase):
     def test_initial_tick_creates_flow(self):
         self.assertEqual(
             self.flow_ctx['create_flow'].call_args,
-            call(flow_kwargs={
-                'flow_spec': self.initial_task['task_params']['flow_spec'],
-            })
+            call(flow=self.task_handler.generate_flow.return_value)
         )
 
     def test_has_flow_uuid(self):
         self.assertEqual(self.task['data']['flow_uuid'],
                          self.flow_ctx['create_flow'].return_value['uuid'])
+
+class GenerateFlowTestCase(BaseTestCase):
+    @patch.object(run_flow_task_handler.flow_engine, 'FlowEngine')
+    def test_dispatches_to_flow_engine(self, MockFlowEngine):
+        flow_spec = MagicMock()
+        flow = self.task_handler.generate_flow(flow_spec=flow_spec)
+        expected_flow = {
+            'serialization': MockFlowEngine.serialize_flow.return_value
+        }
+        self.assertEqual(flow, expected_flow)
 
 class IntermediateTickMixin(object):
     def do_intermediate_tick(self, flow_state=None):
