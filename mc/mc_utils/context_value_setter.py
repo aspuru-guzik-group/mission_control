@@ -2,7 +2,7 @@ import jinja2
 
 class ContextValueSetter(object):
     def set_context_values(self, value_specs=None, context=None):
-        for value_spec in value_specs:
+        for value_spec in (value_specs or []):
             self.set_context_value(value_spec=value_spec, context=context)
 
     def set_context_value(self, value_spec=None, context=None):
@@ -47,4 +47,5 @@ class ContextValueSetter(object):
         cursor[path_elements[-1]] = value
 
 def set_context_values(value_specs=None, context=None):
-    ContextValueSetter().set_values(value_specs=value_specs, context=context)
+    ContextValueSetter().set_context_values(value_specs=value_specs,
+                                            context=context)
