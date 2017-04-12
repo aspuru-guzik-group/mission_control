@@ -1,4 +1,3 @@
-import collections
 import logging
 
 from mc.task_runners.base_task_runner import BaseTaskRunner
@@ -12,22 +11,6 @@ class FlowEngine(object):
     def __init__(self, task_handler=None, logger=None):
         self.logger = logger or logging
         self.task_handler = task_handler
-        self.flow_generator_class_registry = collections.OrderedDict()
-
-    def register_flow_generator_class(self, flow_generator_class=None):
-        key = getattr(flow_generator_class, 'flow_type',
-                      flow_generator_class.__name__)
-        self.flow_generator_class_registry[key] = flow_generator_class
-        self.register_flow_generator_class_dependencies(
-            flow_generator_class=flow_generator_class)
-
-    def register_flow_generator_class_dependencies(self,
-                                                   flow_generator_class=None):
-        if not hasattr(flow_generator_class, 'get_dependencies'): return
-        dependencies = flow_generator_class.get_dependencies()
-        for generator_class in dependencies.get('flow_generator_classes', []):
-            self.register_flow_generator_class(
-                flow_generator_class=generator_class)
 
     def deserialize_flow(self, serialized_flow=None):
         flow = Flow()
@@ -123,28 +106,5 @@ class FlowEngine(object):
     def complete_node(self, flow=None, node=None):
         node['status'] = 'COMPLETED'
 
-    def get_engine_for_node(self, node=None):
-        node_engine = self.node_engine_registry.get(node['node_engine'], None)
-        if not node_engine:
-            raise Exception("Could not find node_engine for node '%s'" % node)
-        return node_engine
-
     def complete_flow(self, flow=None):
         flow.status = 'COMPLETED'
-
-    def generate_flow(self, flow_spec=None):
-        FlowGenerator = self.get_flow_generator_class_for_spec(flow_spec)
-        if not FlowGenerator:
-            msg = "Could not find FlowGenerator for flow_spec '{}'".format( 
-                flow_spec)
-            raise Exception(msg)
-        flow_kwargs = self.get_flow_kwargs_for_flow_spec(flow_spec=flow_spec)
-        flow = FlowGenerator.generate_flow(**flow_kwargs)
-        return flow
-
-    def get_flow_generator_class_for_spec(self, flow_spec=None):
-        return self.flow_generator_class_registry.get(
-            flow_spec['flow_type'], None)
-
-    def get_flow_kwargs_for_flow_spec(self, flow_spec=None):
-        return {'flow_spec': flow_spec}

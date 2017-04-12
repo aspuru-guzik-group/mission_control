@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import call, DEFAULT, patch, MagicMock, Mock
+from unittest.mock import call, DEFAULT, patch, MagicMock
 from uuid import uuid4
 
 from .. import flow_engine
@@ -25,9 +25,9 @@ class BaseTestCase(unittest.TestCase):
 class DeserializationTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.setup_node_engines()
+        self.setup_flow()
 
-    def setup_node_engines(self):
+    def setup_flow(self):
         self.serialized_flow = {
             'data': 'some data',
             'nodes': [
@@ -269,18 +269,6 @@ class StartNodeTestCase(BaseTestCase):
     def test_sets_status_to_running(self):
         self.engine.start_node(flow=self.flow, node=self.node)
         self.assertEqual(self.node['status'], 'RUNNING')
-
-class GenerateFlowTestCase(BaseTestCase):
-    def test_generates_flow_from_spec(self):
-        class MockFlowGenerator(object):
-            flow_type = 'some flow type'
-            generate_flow = Mock()
-        self.engine.register_flow_generator_class(MockFlowGenerator)
-        flow_spec = {'flow_type': MockFlowGenerator.flow_type}
-        flow = self.engine.generate_flow(flow_spec=flow_spec)
-        self.assertEqual(MockFlowGenerator.generate_flow.call_args,
-                         call(flow_spec=flow_spec))
-        self.assertEqual(flow, MockFlowGenerator.generate_flow.return_value)
 
 if __name__ == '__main__':
     unittest.main()
