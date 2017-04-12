@@ -12,6 +12,14 @@ class FlowEngine(object):
         self.logger = logger or logging
         self.task_handler = task_handler
 
+    @classmethod
+    def generate_flow(cls, flow_spec=None):
+        flow = Flow()
+        flow.data = flow_spec.get('data')
+        for node_spec in flow_spec.get('node_specs', []):
+            flow.add_node(**node_spec)
+        return flow
+
     def deserialize_flow(self, serialized_flow=None):
         flow = Flow()
         for attr in self.simple_flow_serialization_attrs:
