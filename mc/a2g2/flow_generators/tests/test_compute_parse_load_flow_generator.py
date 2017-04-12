@@ -48,7 +48,7 @@ class GenerateFlowTestCase(BaseTestCase):
         return yaml.load(textwrap.dedent(
             '''
             compute:
-              key: compute
+              node_key: compute
               node_tasks:
               - task_key: run_job
                 task_params:
@@ -64,7 +64,7 @@ class GenerateFlowTestCase(BaseTestCase):
                 task_type: a2g2.tasks.set_values
               status: PENDING
             parse:
-              key: parse
+              node_key: parse
               node_tasks:
               - task_key: set_job_input_artifacts
                 task_params:
@@ -91,7 +91,7 @@ class GenerateFlowTestCase(BaseTestCase):
                 task_type: a2g2.tasks.set_values
               status: PENDING
             load:
-              key: load
+              node_key: load
               node_tasks:
               - task_key: set_job_input_artifacts
                 task_params:

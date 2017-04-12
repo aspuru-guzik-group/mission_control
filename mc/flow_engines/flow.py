@@ -3,10 +3,7 @@ from uuid import uuid4
 
 
 class Flow(object):
-    def __init__(self, *args, input=None, output=None, data=None, status=None,
-                 **kwargs):
-        self.input = input
-        self.output = output
+    def __init__(self, *args, data=None, status=None, **kwargs):
         self.data = data or {}
         self.status = status or 'PENDING'
 
@@ -16,33 +13,23 @@ class Flow(object):
             lambda: collections.defaultdict(dict))
         self.root_node_key = None
 
-    def add_node(self, node=None, key=None, as_root=False,
-                 precursor_keys=None, successor_keys=None):
-        self._prepare_node(node=node, key=key)
-        self.nodes[node['key']] = node
-        if as_root: self.root_node_key = node['key']
+    def add_node(self, node=None, as_root=None, precursor_keys=None,
+                 successor_keys=None):
+        node.setdefault('node_tasks', [])
+        node.setdefault('node_key', self.generate_node_key())
+        node.setdefault('status', 'PENDING')
+        self.nodes[node['node_key']] = node
+        if as_root: self.root_node_key = node['node_key']
         for precursor_key in (precursor_keys or []):
             self.add_edge(edge={'src_key': precursor_key,
-                                'dest_key': node['key']})
+                                'dest_key': node['node_key']})
         for successor_key in (successor_keys or []):
-            self.add_edge(edge={'src_key': node['key'],
+            self.add_edge(edge={'src_key': node['node_key'],
                                 'dest_key': successor_key})
         return node
 
-    def _prepare_node(self, node=None, key=None):
-        self._ensure_node_key(node=node, key=key)
-        self._ensure_node_status(node=node)
-
-    def _ensure_node_key(self, node=None, key=None):
-        if key is not None: node['key'] = key
-        elif node.get('key', None) is None:
-            node['key'] = self.generate_node_key()
-
     def generate_node_key(self):
         return str(uuid4())
-
-    def _ensure_node_status(self, node=None):
-        if 'status' not in node: node['status'] = 'PENDING'
 
     def add_edge(self, edge=None):
         src_key, dest_key = (edge['src_key'], edge['dest_key'])
@@ -57,13 +44,13 @@ class Flow(object):
         return (src_key, dest_key) in self.edges
 
     def get_precursors(self, node=None):
-        node_edges = self.edges_by_node_key[node['key']]
+        node_edges = self.edges_by_node_key[node['node_key']]
         precursors = [self.nodes[edge['src_key']]
                       for edge in node_edges['incoming'].values()]
         return precursors
 
     def get_successors(self, node=None):
-        node_edges = self.edges_by_node_key[node['key']]
+        node_edges = self.edges_by_node_key[node['node_key']]
         successors = [self.nodes[edge['dest_key']] 
                       for edge in node_edges['outgoing'].values()]
         return successors

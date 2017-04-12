@@ -7,6 +7,8 @@ from .flow import Flow
 
 
 class FlowEngine(object):
+    simple_flow_serialization_attrs = ['data', 'status', 'root_node_key']
+
     def __init__(self, task_handler=None, logger=None):
         self.logger = logger or logging
         self.task_handler = task_handler
@@ -29,7 +31,7 @@ class FlowEngine(object):
 
     def deserialize_flow(self, serialized_flow=None):
         flow = Flow()
-        for attr in ['data', 'input', 'output', 'status', 'root_node_key']:
+        for attr in self.simple_flow_serialization_attrs:
             setattr(flow, attr, serialized_flow.get(attr, None))
         for node in serialized_flow.get('nodes', []):
             flow.add_node(node=node)
@@ -40,8 +42,7 @@ class FlowEngine(object):
     def serialize_flow(self, flow=None):
         serialized_flow = {
             **{attr: getattr(flow, attr, None)
-               for attr in ['data', 'input', 'output', 'status',
-                            'root_node_key']},
+               for attr in self.simple_flow_serialization_attrs},
             'nodes': list(flow.nodes.values()),
             'edges': list(flow.edges.values()),
         }
@@ -110,7 +111,7 @@ class FlowEngine(object):
         node['error'] = error
         node['status'] = 'FAILED'
         msg = "Node with key '{node_key}' failed, error: {error}".format(
-            node_key=node.get('key', '<unknown key>'),
+            node_key=node.get('node_key', '<unknown key>'),
             error=error
         )
         raise Exception(msg)
@@ -129,19 +130,7 @@ class FlowEngine(object):
         return node_engine
 
     def complete_flow(self, flow=None):
-        flow.output = self.get_flow_output(flow=flow)
         flow.status = 'COMPLETED'
-
-    def get_flow_output(self, flow=None):
-        _get_node_output = lambda t: t.get('output', None)
-        tail_nodes = flow.get_tail_nodes()
-        if len (tail_nodes) == 0: output = None
-        elif len(tail_nodes) == 1: output = _get_node_output(tail_nodes[0])
-        elif len(tail_nodes) > 1: output = {
-            tail_node['key']: _get_node_output(tail_node)
-            for tail_node in tail_nodes
-        }
-        return output
 
     def generate_flow(self, flow_spec=None):
         FlowGenerator = self.get_flow_generator_class_for_spec(flow_spec)

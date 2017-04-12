@@ -12,21 +12,11 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
     def generate_flow(cls, *args, flow_spec=None, **kwargs):
         flow = Flow()
         flow.data['flow_spec'] = flow_spec
-        flow.add_node(
-            as_root=True,
-            key='compute',
-            node=cls.generate_compute_node(flow=flow)
-        )
-        flow.add_node(
-            key='parse',
-            precursor_keys=['compute'],
-            node=cls.generate_parse_node(flow=flow)
-        )
-        flow.add_node(
-            key='load',
-            precursor_keys=['parse'],
-            node=cls.generate_load_node(flow=flow)
-        )
+        flow.add_node(node=cls.generate_compute_node(flow=flow), as_root=True)
+        flow.add_node(node=cls.generate_parse_node(flow=flow),
+                      precursor_keys=['compute'])
+        flow.add_node(node=cls.generate_load_node(flow=flow),
+                      precursor_keys=['parse'])
         return flow
 
     @classmethod
@@ -34,6 +24,7 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
         compute_job_spec = flow.data['flow_spec']['compute_job_spec']
         node = yaml.load(
             '''
+            node_key: compute
             node_tasks:
             - task_key: run_job
               task_params:
@@ -74,6 +65,7 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
         parse_job_spec = flow.data['flow_spec']['parse_job_spec']
         node = yaml.load(
             '''
+            node_key: parse
             node_tasks:
             - %(set_input_artifact_task_yaml)s
             - task_key: run_job
@@ -124,6 +116,7 @@ class ComputeParseLoadFlowGenerator(base_flow_generator.BaseFlowGenerator):
         load_job_spec = flow.data['flow_spec']['load_job_spec']
         node = yaml.load(
             '''
+            node_key: load
             node_tasks:
             - %(set_input_artifact_task_yaml)s
             - task_key: run_job
