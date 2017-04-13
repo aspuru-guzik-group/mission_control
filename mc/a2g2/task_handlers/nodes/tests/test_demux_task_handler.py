@@ -83,9 +83,15 @@ class GenerateFlowSpecTestCase(BaseTestCase):
         self.flow_spec = self.task_handler.generate_flow_spec(
             task=self.task, task_context=self.task_context)
 
+    def test_flow_spec_has_expected_root_node(self):
+        self.fail()
+
     def test_flow_spec_has_expected_data(self):
         self.assertEqual(self.flow_spec['data'],
                          self.task['task_params']['flow_data'])
+
+    def test_flow_spec_has_expected_cfg(self):
+        self.fail()
 
     def test_makes_expected_generate_node_spec_calls(self):
         expected_call_args_list = [
@@ -114,7 +120,7 @@ class GenerateNodeSpecTestCase(BaseTestCase):
         self.item = MagicMock()
         self.index = 1
 
-    def test_sets_node_as_root(self):
+    def test_sets_root_node_as_precursor(self):
         self.fail()
 
     def test_calls_set_context_values(self, mock_set_context_values,

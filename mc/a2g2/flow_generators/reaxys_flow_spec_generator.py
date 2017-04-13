@@ -81,8 +81,13 @@ class ReaxysFlowSpecGenerator(object):
             'task_type': 'a2g2.tasks.nodes.demux',
             'task_params': {
                 'items': 'TO BE WIRED',
-                'flow_data': {
-                    'dft_flow_spec': self.generate_dft_flow_spec()
+                'demux_flow_params': {
+                    'cfg': {
+                        'fail_fast': False,
+                    },
+                    'data': {
+                        'dft_flow_spec': self.generate_dft_flow_spec()
+                    }
                 },
                 'node_spec_template_obj': {
                     'node': {
@@ -127,17 +132,17 @@ class ReaxysFlowSpecGenerator(object):
                         flow_params={
                             'label': 'b3lyp_6_31gs_opt_flow',
                             'compute_job_spec': {
-                                'job_type': 'a2g2.jobs.qcalc.qcalc',
+                                'job_type': 'a2g2.jobs.qchem.qchem',
                                 'job_params': {
                                     'method': 'b3lyp',
                                     'basis': '6_31gs',
                                 },
                             },
                             'parse_job_spec': {
-                                'job_type': 'a2g2.jobs.qcalc.parse'
+                                'job_type': 'a2g2.jobs.qchem.parse'
                             },
                             'load_job_spec': {
-                                'job_type': 'a2g2.jobs.qcalc.load'
+                                'job_type': 'a2g2.jobs.qchem.load'
                             }
                         }
                     ),
@@ -153,17 +158,17 @@ class ReaxysFlowSpecGenerator(object):
                         flow_params={
                             'label': 'b3lyp_6_31gs_opt_t1_flow',
                             'compute_job_spec': {
-                                'job_type': 'a2g2.jobs.qcalc.qcalc',
+                                'job_type': 'a2g2.jobs.qchem.qchem',
                                 'job_params': {
                                     'method': 'b3lyp',
                                     'basis': '6_31gs',
                                 },
                             },
                             'parse_job_spec': {
-                                'job_type': 'a2g2.jobs.qcalc.parse'
+                                'job_type': 'a2g2.jobs.qchem.parse'
                             },
                             'load_job_spec': {
-                                'job_type': 'a2g2.jobs.qcalc.load'
+                                'job_type': 'a2g2.jobs.qchem.load'
                             }
                         }
                     ),
@@ -179,17 +184,17 @@ class ReaxysFlowSpecGenerator(object):
                         flow_params={
                             'label': 'b3lyp_6_31gs_tddft_flow',
                             'compute_job_spec': {
-                                'job_type': 'a2g2.jobs.qcalc.qcalc',
+                                'job_type': 'a2g2.jobs.qchem.qchem',
                                 'job_params': {
                                     'method': 'b3lyp',
                                     'basis': '6_31gs',
                                 },
                             },
                             'parse_job_spec': {
-                                'job_type': 'a2g2.jobs.qcalc.parse'
+                                'job_type': 'a2g2.jobs.qchem.parse'
                             },
                             'load_job_spec': {
-                                'job_type': 'a2g2.jobs.qcalc.load'
+                                'job_type': 'a2g2.jobs.qchem.load'
                             }
                         }
                     )

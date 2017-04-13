@@ -3,16 +3,18 @@ from uuid import uuid4
 
 
 class Flow(object):
-    def __init__(self, *args, data=None, label=None, status=None, **kwargs):
+    def __init__(self, *args, cfg=None, data=None, label=None, status=None,
+                 root_node_key=None, **kwargs):
+        self.cfg = cfg or {'fail_fast': True}
         self.data = data or {}
         self.label = label
         self.status = status or 'PENDING'
+        self.root_node_key = root_node_key
 
         self.nodes = {}
         self.edges = {}
         self.edges_by_node_key = collections.defaultdict(
             lambda: collections.defaultdict(dict))
-        self.root_node_key = None
 
     def add_node(self, node=None, as_root=None, precursor_keys=None,
                  successor_keys=None):

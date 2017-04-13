@@ -277,11 +277,15 @@ class CompleteNodeTestCase(BaseTestCase):
         self.assertEqual(self.node['status'], 'COMPLETED')
 
 class CompleteFlowTestCase(BaseTestCase):
-    def test_sets_status_to_completed(self):
+    def test_sets_status_to_completed_if_no_errors(self):
+        self.fail()
         flow = flow_engine.Flow()
         self.assertTrue(flow.status != 'COMPLETED')
         self.engine.complete_flow(flow=flow)
         self.assertTrue(flow.status == 'COMPLETED')
+
+    def test_fails_if_has_errors(self):
+        self.fail()
 
 class StartNodeTestCase(BaseTestCase):
     def setUp(self):

@@ -6,8 +6,10 @@ from .flow import Flow
 
 
 class FlowEngine(object):
-    simple_flow_serialization_attrs = ['data', 'label', 'status',
+    simple_flow_serialization_attrs = ['data', 'label', 'status', 'cfg',
                                        'root_node_key']
+
+    class NodeError(Exception): pass
 
     def __init__(self, task_handler=None, logger=None):
         self.logger = logger or logging
@@ -15,9 +17,9 @@ class FlowEngine(object):
 
     @classmethod
     def generate_flow(self, flow_spec=None):
-        flow = Flow()
-        flow.data = flow_spec.get('data')
-        flow.label = flow_spec.get('label')
+        flow_kwargs = {k:v for k, v in flow_spec.items()
+                       if k in self.simple_flow_serialization_attrs}
+        flow = Flow(**flow_kwargs)
         for node_spec in flow_spec.get('node_specs', []):
             flow.add_node(**node_spec)
         return flow
@@ -52,7 +54,12 @@ class FlowEngine(object):
             self.tick_running_nodes(flow=flow, flow_ctx=flow_ctx)
             if not flow.has_incomplete_nodes(): self.complete_flow(flow=flow)
         except Exception as exception:
-            self.fail_flow(flow=flow, error=self.stringify_exception(exception))
+            fail_flow = True
+            error = self.stringify_exception(exception)
+            if isinstance(exception, self.NodeError):
+                if not flow.cfg.get('fail_fast', True): fail_flow = False
+            if fail_flow: self.fail_flow(flow=flow, error=error)
+            else: self.append_flow_error(flow=flow, error=error)
 
     def start_flow(self, flow=None):
         flow.status = 'RUNNING'
@@ -111,14 +118,19 @@ class FlowEngine(object):
             node_key=node.get('node_key', '<unknown key>'),
             error=error
         )
-        raise Exception(msg)
+        raise self.NodeError(msg)
 
     def fail_flow(self, flow=None, error=None):
-        flow.data['error'] = error
+        if error: self.append_flow_error(flow=flow, error=error)
         flow.status = 'FAILED'
+
+    def append_flow_error(self, flow=None, error=None):
+        flow.data.setdefault('errors', [])
+        flow.data['errors'].append(error)
 
     def complete_node(self, flow=None, node=None):
         node['status'] = 'COMPLETED'
 
     def complete_flow(self, flow=None):
-        flow.status = 'COMPLETED'
+        if flow.data.get('errors'): self.fail_flow(flow=flow)
+        else: flow.status = 'COMPLETED'
