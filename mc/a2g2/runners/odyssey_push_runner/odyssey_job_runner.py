@@ -1,6 +1,5 @@
 import collections
 import copy
-import json
 import os
 import tempfile
 import types
@@ -76,13 +75,11 @@ class OdysseyJobRunner(object):
     def prepare_job_inputs(self, job=None, submission_dir=None):
         inputs_dir = os.path.join(submission_dir, 'inputs')
         os.makedirs(inputs_dir, exist_ok=True)
-        serialized_artifacts = job['job_spec'].get('inputs', {}).get(
-            'serialized_artifacts', {})
-        for artifact_key, serialized_artifact in serialized_artifacts.items():
-            self.prepare_input_artifact(
-                artifact_key=artifact_key,
-                artifact=json.loads(serialized_artifact),
-                inputs_dir=inputs_dir)
+        artifacts = job['job_spec'].get('inputs', {}).get('artifacts', {})
+        for artifact_key, artifact in artifacts.items():
+            self.prepare_input_artifact(artifact_key=artifact_key,
+                                        artifact=artifact,
+                                        inputs_dir=inputs_dir)
 
     def prepare_input_artifact(self, artifact_key=None, artifact=None,
                                inputs_dir=None):

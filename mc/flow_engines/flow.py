@@ -3,8 +3,9 @@ from uuid import uuid4
 
 
 class Flow(object):
-    def __init__(self, *args, data=None, status=None, **kwargs):
+    def __init__(self, *args, data=None, label=None, status=None, **kwargs):
         self.data = data or {}
+        self.label = label
         self.status = status or 'PENDING'
 
         self.nodes = {}

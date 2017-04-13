@@ -58,8 +58,13 @@ class GenerateFlowTaskTestCase(BaseTestCase):
         self.flow_task = self.task_handler.generate_flow_task(
             task=self.task, task_context=self.task_context)
 
+    def test_has_expected_task_key(self):
+        self.assertEqual(self.flow_task['task_key'],
+                         self.task['task_key'] + '__demux')
+
     def test_has_expected_task_type(self):
-        self.assertEqual(self.flow_task['task_type'], 'a2g2:task:run_flow')
+        self.assertEqual(self.flow_task['task_type'],
+                         'a2g2.tasks.nodes.run_flow')
 
     def test_has_expected_task_params(self):
         self.assertEqual(self.task_handler.generate_flow_spec.call_args,
@@ -73,9 +78,14 @@ class GenerateFlowSpecTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.task['task_params']['items'] = [MagicMock() for i in range(3)]
+        self.task['task_params']['flow_data'] = MagicMock()
         self.task_handler.generate_node_spec = MagicMock()
         self.flow_spec = self.task_handler.generate_flow_spec(
             task=self.task, task_context=self.task_context)
+
+    def test_flow_spec_has_expected_data(self):
+        self.assertEqual(self.flow_spec['data'],
+                         self.task['task_params']['flow_data'])
 
     def test_makes_expected_generate_node_spec_calls(self):
         expected_call_args_list = [
@@ -86,7 +96,7 @@ class GenerateFlowSpecTestCase(BaseTestCase):
         self.assertEqual(self.task_handler.generate_node_spec.call_args_list,
                          expected_call_args_list)
 
-    def test_has_expected_node_specs(self):
+    def test_flow_spec_has_expected_node_specs(self):
         expected_node_specs = [
             self.task_handler.generate_node_spec.return_value
             for item in self.task['task_params'].get('items', [])
@@ -104,6 +114,9 @@ class GenerateNodeSpecTestCase(BaseTestCase):
         self.item = MagicMock()
         self.index = 1
 
+    def test_sets_node_as_root(self):
+        self.fail()
+
     def test_calls_set_context_values(self, mock_set_context_values,
                                       mock_deepcopy):
         self.task_handler.generate_node_spec(
@@ -113,8 +126,8 @@ class GenerateNodeSpecTestCase(BaseTestCase):
             mock_deepcopy.call_args,
             call(self.task['task_params']['node_spec_template_obj']))
         expected_context = {
-            'item': self.item,
-            'index': self.index,
+            'demux_item': self.item,
+            'demux_index': self.index,
             'node_spec': mock_deepcopy.return_value,
         }
         self.assertEqual(

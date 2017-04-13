@@ -90,6 +90,10 @@ class DeserializationTestCase(BaseTestCase):
         self.assertEqual(
             self.flow.status, self.serialized_flow['status'])
 
+    def test_data_defaults_to_dict(self):
+        flow = self.engine.deserialize_flow(serialized_flow={})
+        self.assertEqual(flow.data, {})
+
 class SerializationTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()

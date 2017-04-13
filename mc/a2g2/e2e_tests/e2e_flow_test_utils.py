@@ -1,5 +1,7 @@
 import json
+import operator
 import os
+import sys
 import tempfile
 import textwrap
 import time
@@ -15,6 +17,7 @@ from mc.storage_client.storage_client import MissionControlStorageClient
 from mc.execution_clients.ssh_control_socket_client import (
     SSHControlSocketClient)
 from mc.a2g2.job_engines import a2g2_job_engine
+
 from .docker.docker_utils import DockerEnv
 
 def get_skip_args():
@@ -59,13 +62,23 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
         from mc.task_handlers.set_values_task_handler import (
             SetValuesTaskHandler)
         sub_handlers['a2g2.tasks.set_values'] = SetValuesTaskHandler()
+        from a2g2.task_handlers.nodes.run_flow_task_handler import (
+            RunFlowTaskHandler)
+        sub_handlers['a2g2.tasks.nodes.run_flow'] = RunFlowTaskHandler()
+        from a2g2.task_handlers.nodes.demux_task_handler import (
+            DemuxTaskHandler)
+        sub_handlers['a2g2.tasks.nodes.demux'] = DemuxTaskHandler()
 
         class TaskHandler(object):
             def __init__(self):
                 self.handlers = sub_handlers
 
             def tick_task(self, *args, task=None, task_context=None, **kwargs):
-                handler = self.handlers[task['task_type']]
+                try:
+                    handler = self.handlers[task['task_type']]
+                except KeyError as exception:
+                    raise Exception("Could not find task handler for task_type"
+                                    " '%s'" % task['task_type'])
                 handler.tick_task(*args, task=task, task_context=task_context,
                                   **kwargs)
 
@@ -120,7 +133,7 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
 
     def get_job_engine_class_spec(self): return None
 
-    def get_flow_generator_classes(self): raise NotImplementedError
+    def get_flow_generator_classes(self): return []
 
     def generate_connected_ssh_client(self):
         def auth_fn(*args, ssh_client=None, ssh_cmd=None, **kwargs):
@@ -170,16 +183,26 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
         }
         return keyed_flows
 
-    def dump_db_state(self):
-        jobs = self.mc_client.fetch_jobs()
-        for i, job in enumerate(jobs):
-            print("job %s:\n" % i, self.dump_obj(job))
-        flows = self.mc_client.fetch_flows()
-        for i, flow in enumerate(flows):
-            print("flow %s:\n" % i, self.dump_obj(flow))
+    def dump_db_state(self, stream=sys.stdout):
+        self.dump_db_jobs(stream=stream)
+        self.dump_db_flows(stream=stream)
 
-    def dump_obj(self, obj):
+    def dump_db_jobs(self, stream=sys.stdout):
+        jobs = self.mc_client.fetch_jobs()
+        self.dump_db_objects(db_objects=jobs, label='job', stream=stream)
+
+    def dump_db_objects(self, db_objects=None, label='', stream=sys.stdout):
+        sorted_objects = sorted(db_objects, key=operator.itemgetter('created'))
+        for i, obj in enumerate(sorted_objects):
+            stream.write("{label} {i}:\n".format(label=label, i=i))
+            stream.write(self.obj_to_yaml(obj))
+
+    def obj_to_yaml(self, obj):
         return textwrap.indent(yaml.dump(obj), prefix=' ' * 2)
+
+    def dump_db_flows(self, stream=sys.stdout):
+        flows = self.mc_client.fetch_flows()
+        self.dump_db_objects(db_objects=flows, label='flow', stream=stream)
 
     def filter_chemthings_by_type(self, chemthings=None, _type=None):
         return [chemthing for chemthing in chemthings

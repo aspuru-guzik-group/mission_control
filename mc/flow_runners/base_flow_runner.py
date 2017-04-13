@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 
@@ -78,29 +77,12 @@ class BaseFlowRunner(object):
         flow = self.get_flow_for_flow_record(flow_record=flow_record)
         self.flow_engine.tick_flow(flow=flow, flow_ctx=self.flow_ctx)
         updated_serialization = self.flow_engine.serialize_flow(flow=flow)
-        updates = {'serialization': json.dumps(updated_serialization)}
+        updates = {'serialization': updated_serialization}
         updates['status'] = updated_serialization['status']
         return updates
 
     def get_flow_for_flow_record(self, flow_record=None):
-        json_flow_serialization = flow_record.get('serialization', None)
-        if json_flow_serialization:
-            flow = self.deserialize_flow(
-                json_flow_serialization=json_flow_serialization)
-        else:
-            flow_spec = json.loads(flow_record['spec'])
-            flow = self.generate_flow_from_spec(flow_spec=flow_spec)
-        return flow
-
-    def deserialize_flow(self, json_flow_serialization=None):
-        serialized_flow = json.loads(json_flow_serialization)
-        flow = self.flow_engine.deserialize_flow(
-            serialized_flow=serialized_flow)
-        return flow
-
-    def generate_flow_from_spec(self, flow_spec=None):
-        flow = self.flow_engine.generate_flow(flow_spec=flow_spec)
-        return flow
+        return self.flow_engine.deserialize_flow(flow_record['serialization'])
 
     def update_flow_record(self, flow_record=None, updates=None):
         self.flow_client.update_flows(updates_by_uuid={

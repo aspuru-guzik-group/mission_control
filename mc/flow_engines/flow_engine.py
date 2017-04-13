@@ -6,7 +6,8 @@ from .flow import Flow
 
 
 class FlowEngine(object):
-    simple_flow_serialization_attrs = ['data', 'status', 'root_node_key']
+    simple_flow_serialization_attrs = ['data', 'label', 'status',
+                                       'root_node_key']
 
     def __init__(self, task_handler=None, logger=None):
         self.logger = logger or logging
@@ -16,6 +17,7 @@ class FlowEngine(object):
     def generate_flow(self, flow_spec=None):
         flow = Flow()
         flow.data = flow_spec.get('data')
+        flow.label = flow_spec.get('label')
         for node_spec in flow_spec.get('node_specs', []):
             flow.add_node(**node_spec)
         return flow
@@ -25,6 +27,7 @@ class FlowEngine(object):
         flow = Flow()
         for attr in self.simple_flow_serialization_attrs:
             setattr(flow, attr, serialized_flow.get(attr, None))
+        if flow.data is None: flow.data = {}
         for node in serialized_flow.get('nodes', []):
             flow.add_node(node=node)
         for edge in serialized_flow.get('edges', []):

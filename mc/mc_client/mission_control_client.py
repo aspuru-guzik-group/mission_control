@@ -19,9 +19,26 @@ class MissionControlClient(object):
             'flush': self.base_url + 'flush/',
         }
 
-    def create_flow(self, flow=None):
-        response = self.request_client.post(self.urls['flows'], json=flow)
-        return self.json_raise_for_status(response=response)
+    def create_flow(self, flow_kwargs=None):
+        formatted_flow_kwargs = self.format_flow_kwargs(flow_kwargs)
+        response = self.request_client.post(self.urls['flows'],
+                                            json=formatted_flow_kwargs)
+        return self.format_fetched_flow(
+            fetched_flow=self.json_raise_for_status(response=response))
+
+    def format_flow_kwargs(self, flow_kwargs=None):
+        formatted_flow_kwargs = {**flow_kwargs}
+        if 'serialization' in flow_kwargs:
+            formatted_flow_kwargs['serialization'] = json.dumps(
+                flow_kwargs['serialization'])
+        return formatted_flow_kwargs
+
+    def format_fetched_flow(self, fetched_flow=None):
+        formatted_flow = {
+            **fetched_flow,
+            'serialization': json.loads(fetched_flow.get('serialization', '{}'))
+        }
+        return formatted_flow
 
     def json_raise_for_status(self, response=None):
         try:
@@ -37,7 +54,13 @@ class MissionControlClient(object):
         args = [self.urls['flows']]
         if query_params: args.append(query_params)
         response = self.request_client.get(*args)
-        return self.json_raise_for_status(response=response)
+        return self.format_flow_list_response(response=response)
+
+    def format_flow_list_response(self, response=None):
+        return [
+            self.format_fetched_flow(fetched_flow)
+            for fetched_flow in self.json_raise_for_status(response=response)
+        ]
 
     def fetch_flow_by_uuid(self, uuid=None):
         fetch_flows_result = self.fetch_flows(query_params={'uuid': uuid})
@@ -51,14 +74,20 @@ class MissionControlClient(object):
     def claim_flows(self, uuids=None):
         response = self.request_client.post(self.urls['claim_flows'], 
                                             json={'uuids': uuids})
-        return self.json_raise_for_status(response=response)
+        claimed_flows_by_uuid = self.json_raise_for_status(response=response)
+        return {
+            uuid: self.format_fetched_flow(claimed_flow)
+            for uuid, claimed_flow in claimed_flows_by_uuid.items()
+        }
 
     def update_flows(self, updates_by_uuid=None):
         results_by_uuid = {}
         for _uuid, updates_for_uuid in updates_by_uuid.items():
+            formatted_updates_for_uuid = self.format_flow_kwargs(
+                flow_kwargs=updates_for_uuid)
             flow_url = self.base_url + 'flows/' + _uuid + '/'
-            response = self.request_client.patch(flow_url,
-                                                 json=updates_for_uuid)
+            response = self.request_client.patch(
+                flow_url, json=formatted_updates_for_uuid)
             try:
                 result = self.json_raise_for_status(response=response)
             except Exception as exception:

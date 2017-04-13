@@ -37,6 +37,7 @@ FlowStatuses.tickable_statuses = [getattr(FlowStatuses, status)
 class Flow(TimeStampedModel):
     uuid = models.CharField(primary_key=True, default=str_uuid4,
                             editable=False, max_length=64)
+    label = models.CharField(max_length=256, blank=True, null=True)
     serialization = models.TextField(null=True)
     spec = models.TextField(null=True)
     mission = models.ForeignKey('Mission', null=True, on_delete=models.CASCADE)

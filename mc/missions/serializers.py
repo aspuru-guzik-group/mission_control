@@ -7,7 +7,7 @@ class FlowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Flow
         fields = ('uuid', 'serialization', 'spec', 'status',
-                  'created', 'modified', 'mission', 'claimed')
+                  'created', 'modified', 'mission', 'claimed', 'label')
         read_only_fields = ('uuid', 'created', 'modified')
 
 class JobSerializer(serializers.ModelSerializer):

@@ -1,65 +1,18 @@
 import argparse
 import json
-import os
 import unittest
 
-from rdkit import Chem
-from rdkit.Chem import AllChem
-
 from . import e2e_flow_test_utils
+from .fixtures.confgen import ConfgenFixtures
 
 from mc.a2g2.flow_generators.confgen_flow_generator import ConfgenFlowGenerator
 
-class Fixtures(object):
-    def __init__(self):
-        self.mols = self.generate_mols()
-        self.conformers = self.generate_conformers()
-        self.confgen_params = self.generate_confgen_params()
-    
-    def generate_mols(self):
-        smiles_list = ['Cc1ccccc1']
-        return [Chem.MolFromSmiles(smiles) for smiles in smiles_list]
-
-    def generate_conformers(self, num_confs=1):
-        mol = self.mols[0]
-        AllChem.EmbedMultipleConfs(mol, numConfs=num_confs)
-        return mol.GetConformers()
-
-    def generate_confgen_params(self):
-        return {'param_%s' % i: 'value_%s' % i for i in range(3)}
-
-    def conformer_to_xyz(self, conformer=None):
-        return self.atoms_to_xyz(
-            atoms=self.conformer_to_atoms(conformer),
-            comment=self.generate_conformer_comment(conformer)
-        )
-
-    def atoms_to_xyz(self, atoms=None, comment=None):
-        xyz_lines = []
-        xyz_lines.append("%s" % len(atoms))
-        xyz_lines.append("%s" % (comment or ""))
-        for atom in atoms:
-            xyz_lines.append("{element} {x:.4f} {y:.4f} {z:.4f}".format(**atom))
-        xyz = "\n".join(xyz_lines)
-        return xyz
-
-    def conformer_to_atoms(self, conformer=None):
-        atoms = []
-        for i, atom in enumerate(conformer.GetOwningMol().GetAtoms()):
-            pos = conformer.GetAtomPosition(i)
-            coords = {coord: float("%.4f" % getattr(pos, coord))
-                      for coord in ['x', 'y', 'z']}
-            atoms.append({'element': atom.GetSymbol(), **coords})
-        return atoms
-
-    def generate_conformer_comment(self, conformer=None):
-        return json.dumps({'rdkit_conformer_id': conformer.GetId()})
 
 @unittest.skipUnless(*e2e_flow_test_utils.get_skip_args())
 class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.fixtures = Fixtures()
+        self.confgen_fixtures = ConfgenFixtures()
     
     def teardown_docker_env(self, docker_env=None): pass
 
@@ -90,10 +43,11 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
             raise exception
 
     def generate_molecule_library(self):
-        for mol in self.fixtures.mols:
+        for mol in self.confgen_fixtures.mols:
             self.a2g2_client.create_chemthing({
                 'types': {'a2g2:type:mol2d': True},
-                'props': {'a2g2:prop:smiles': Chem.MolToSmiles(mol)}
+                'props': {'a2g2:prop:smiles': (
+                    self.confgen_fixtures.Chem.MolToSmiles(mol))}
             })
 
     def create_flows(self):
@@ -126,10 +80,11 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
         actual_chemthings = self.filter_chemthings_by_type(
             chemthings=chemthings, _type='a2g2:type:mol2d')
         expected_chemthings = []
-        for mol in self.fixtures.mols:
+        for mol in self.confgen_fixtures.mols:
             expected_chemthings.append({
                 'props': {
-                    'a2g2:prop:smiles': Chem.MolToSmiles(mol),
+                    'a2g2:prop:smiles': self.confgen_fixtures.Chem.MolToSmiles(
+                        mol),
                 },
                 'types': {'a2g2:type:mol2d': True}
             })
@@ -151,7 +106,7 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
                 'types': {'a2g2:type:calc:confgen': True},
                 'props': {
                     'a2g2:prop:confgen:parameters': (
-                        self.fixtures.confgen_params)
+                        self.confgen_fixtures.confgen_params)
                 },
                 'precursors': {mol_chemthing['uuid']: True}
             })
@@ -170,14 +125,15 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
         expected_chemthings = []
         for calc_chemthing in self.filter_chemthings_by_type(
             chemthings=chemthings, _type='a2g2:type:calc:confgen'):
-            for conformer in self.fixtures.conformers:
+            for conformer in self.confgen_fixtures.conformers:
                 expected_chemthings.append({
                     'types': {'a2g2:type:mol3d': True},
                     'props': {
-                        'a2g2:prop:atoms': self.fixtures.conformer_to_atoms(
-                            conformer),
+                        'a2g2:prop:atoms': (
+                            self.confgen_fixtures.conformer_to_atoms(conformer)
+                        ),
                         'a2g2:prop:confgen:comment': (
-                            self.fixtures.generate_conformer_comment(
+                            self.confgen_fixtures.generate_conformer_comment(
                                 conformer=conformer))
                     },
                     'precursors': {calc_chemthing['uuid']: True}
@@ -196,23 +152,6 @@ class ConfgenFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
         )
 
 #### Handlers for mocking executables ####
-
-def handle_confgen_command(args=None):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--outdir')
-    parsed_args, extra_args = parser.parse_known_args(args=args)
-    outdir = parsed_args.outdir
-    xyz_dir = os.path.join(outdir, 'conformers')
-    os.makedirs(xyz_dir, exist_ok=True)
-    fixtures = Fixtures()
-    for i, conformer in enumerate(fixtures.conformers):
-        xyz_path = os.path.join(xyz_dir, 'conformer_%s.xyz' % i)
-        open(xyz_path, 'w').write(fixtures.conformer_to_xyz(conformer))
-    from mc.a2g2.job_modules.confgen.constants import CONFGEN_PARAMS_FILENAME
-    confgen_params_outfile_path = os.path.join(outdir, CONFGEN_PARAMS_FILENAME)
-    with open(confgen_params_outfile_path, 'w') as f:
-        f.write(json.dumps(fixtures.confgen_params))
-
 if __name__ == '__main__':
     # Map fake calls to handlers.
     # Will be called in fake execution context, NOT in unittest context.
@@ -220,4 +159,4 @@ if __name__ == '__main__':
     parser.add_argument('command')
     parsed_args, command_args = parser.parse_known_args()
     if parsed_args.command == 'fake_confgen':
-        handle_confgen_command(args=command_args)
+        ConfgenFixtures.handle_confgen_command(args=command_args)
