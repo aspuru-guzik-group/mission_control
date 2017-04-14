@@ -3,28 +3,16 @@ import glob
 import json
 import os
 
-from mc.a2g2.a2g2_client import a2g2_client as a2g2_client_module
+from . import util as a2g2_db_utils
 
 
 class A2G2_DB_Uploader(object):
     def upload_bulk_files(self, *args, bulk_files_dir=None, cfg=None, **kwargs):
-        a2g2_client = self.generate_a2g2_client(cfg=cfg)
-        parsed_items = self.parse_bulk_files_dir(
-            bulk_files_dir=bulk_files_dir)
+        a2g2_client = a2g2_db_utils.generate_a2g2_client(cfg=cfg)
+        parsed_items = self.parse_bulk_files_dir(bulk_files_dir=bulk_files_dir)
         return self.upload_chemthings(
             chemthings=parsed_items.get('chemthings', []),
             a2g2_client=a2g2_client)
-
-    def generate_a2g2_client(self, cfg=None):
-        a2g2_client_cfg_json = self.get_cfg_value(
-            cfg=cfg, key='a2g2_client_cfg_json', default='{}')
-        a2g2_client_cfg = json.loads(a2g2_client_cfg_json)
-        a2g2_client = a2g2_client_module.A2G2_Client(**a2g2_client_cfg)
-        return a2g2_client
-
-    def get_cfg_value(self, cfg=None, key=None, default=None):
-        if key in os.environ: return os.environ[key]
-        return (cfg or {}).get(key, default)
 
     def parse_bulk_files_dir(self, bulk_files_dir=None):
         parsed_items = collections.defaultdict(list)
@@ -66,8 +54,7 @@ class A2G2_DB_Uploader(object):
             results.append(result)
         return results
 
-def generate_uploader():
-    return A2G2_DB_Uploader()
+def generate_uploader(): return A2G2_DB_Uploader()
 
 def load_from_input_dir(*args, input_dir=None, cfg=None, **kwargs):
     uploader = A2G2_DB_Uploader()
