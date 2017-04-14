@@ -6,7 +6,7 @@
 START_DIR=$PWD
 output_status_file () {
     PREV_RETURN_CODE=$?
-    pushd $START_DIR
+    pushd $START_DIR > /dev/null
     if [ $PREV_RETURN_CODE -eq 0 ]; then
         touch ODYSSEY_JOB__COMPLETED
     else
@@ -18,7 +18,7 @@ output_status_file () {
         echo "ls -1:" >> ODYSSEY_JOB__FAILED
         ls -1 >> ODYSSEY_JOB__FAILED
     fi
-    popd
+    popd > /dev/null
 }
 trap "output_status_file" EXIT
 
