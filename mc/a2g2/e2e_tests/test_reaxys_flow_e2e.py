@@ -9,6 +9,9 @@ from .fixtures.confgen import ConfgenFixtures
 from .fixtures.qchem import QChemFixtures
 from .fixtures.a2g2_db import A2G2_DB_Fixtures
 
+import logging
+logging.basicConfig(level=logging.INFO)
+
 
 @unittest.skipUnless(*e2e_flow_test_utils.get_skip_args())
 class QChemFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
@@ -49,7 +52,7 @@ class QChemFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
             self.a2g2_client.flush_a2g2_db()
             self.create_flows()
             self.assertTrue(len(self.mc_client.fetch_tickable_flows()) > 0)
-            self.run_flows_to_completion(timeout=10)
+            self.run_flows_to_completion(timeout=30)
             self.assert_domain_db_has_expected_state()
         except Exception as exception:
             flows = self.mc_client.fetch_flows()
@@ -92,9 +95,9 @@ class FakeJobEngine(object):
         if job['job_spec']['job_type'].startswith('a2g2.jobs.confgen'):
             pass
         elif job['job_spec']['job_type'].startswith('a2g2.jobs.a2g2_db.query'):
-            if command == 'run_job_submisison':
+            if command == 'run_job_submission':
                 a2g2_db_fixtures = A2G2_DB_Fixtures()
-                a2g2_db_fixtures.run_fake_query()
+                a2g2_db_fixtures.run_fake_conformer_query(num_results=1)
         else:
             return self.wrapped_engine.execute_command(
                 *args, job=job, command=command, **kwargs)

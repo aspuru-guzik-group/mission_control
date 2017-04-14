@@ -3,7 +3,7 @@ import glob
 import json
 import os
 
-from . import util as a2g2_db_utils
+from . import utils as a2g2_db_utils
 
 
 class A2G2_DB_Uploader(object):

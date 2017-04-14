@@ -48,13 +48,15 @@ class SetContextValueTestCase(BaseTestCase):
                                       context=self.context)
         self.assertEqual(self.context['foo']['bar'], self.value_spec['value'])
 
-
 class GetValueForValueSpecTestCase(BaseTestCase):
-    def test_handles_raw_value(self):
+    def test_handles_from_value(self):
         self.fail()
 
     def test_handles_template_value(self):
         self.fail()
 
     def test_handles_context_value(self):
+        self.fail()
+
+    def test_handles_json_value(self):
         self.fail()

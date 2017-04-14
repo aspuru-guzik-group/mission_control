@@ -71,7 +71,7 @@ class ParseQChemDirTestCase(unittest.TestCase):
                 'a2g2:calculation:qchem:rem_items': self.parse_rem_section(
                     completed_qchem_dir=completed_qchem_dir)
             },
-            'precursors': self.parsing_params['precursors']
+            'precursors': self.parsing_params.get('precursors')
         }
         return calc_chemthing
 

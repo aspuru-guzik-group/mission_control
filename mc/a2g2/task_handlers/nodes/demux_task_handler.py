@@ -5,7 +5,7 @@ from mc.task_handlers.base_task_handler import BaseTaskHandler
 
 
 class DemuxTaskHandler(BaseTaskHandler):
-    ROOT_NODE_KEY = 'root'
+    ROOT_NODE_KEY = 'ROOT'
 
     def initial_tick(self, task=None, task_context=None):
         flow_task = self.generate_flow_task(task=task,
@@ -32,20 +32,16 @@ class DemuxTaskHandler(BaseTaskHandler):
         demux_flow_params = task['task_params'].get('demux_flow_params', {})
         flow_spec['data'] = demux_flow_params.get('data', {})
         flow_spec['cfg'] = demux_flow_params.get('cfg', {})
-        flow_spec['node_specs'] = [self.generate_root_node_spec()] + [
+        flow_spec['node_specs'] = [
             self.generate_node_spec(item=item, index=index,
                                     task=task, task_context=task_context)
             for index, item in enumerate(task['task_params'].get('items', []))
         ]
         return flow_spec
 
-    def generate_root_node_spec(self):
-        return {'node': {'node_key': self.ROOT_NODE_KEY},
-                'precursor_keys': ['ROOT']}
-
     def generate_node_spec(self, item=None, index=None, task=None,
                            task_context=None):
-        node_spec = deepcopy(task['task_params']['node_spec_template_obj'])
+        node_spec = deepcopy(task['task_params']['node_spec_template'])
         node_spec.setdefault('node', {})
         node_spec['node']['node_key'] = "{task_key}_{index}".format(
             task_key=task['task_key'], index=index)

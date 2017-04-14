@@ -59,15 +59,26 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
         from a2g2.task_handlers.nodes.run_job_task_handler import (
             RunJobTaskHandler)
         sub_handlers['a2g2.tasks.nodes.run_job'] = RunJobTaskHandler()
+
         from mc.task_handlers.set_values_task_handler import (
             SetValuesTaskHandler)
         sub_handlers['a2g2.tasks.set_values'] = SetValuesTaskHandler()
+
         from a2g2.task_handlers.nodes.run_flow_task_handler import (
             RunFlowTaskHandler)
         sub_handlers['a2g2.tasks.nodes.run_flow'] = RunFlowTaskHandler()
+
         from a2g2.task_handlers.nodes.demux_task_handler import (
             DemuxTaskHandler)
         sub_handlers['a2g2.tasks.nodes.demux'] = DemuxTaskHandler()
+
+        from mc.task_handlers.log_task_handler import LogTaskHandler
+        sub_handlers['log'] = LogTaskHandler()
+
+        from a2g2.task_handlers.nodes.run_compute_parse_load_flow_handler \
+                import (RunComputeParseLoadFlowTaskHandler)
+        sub_handlers['a2g2.tasks.nodes.run_compute_parse_load_flow'] = \
+                RunComputeParseLoadFlowTaskHandler()
 
         class TaskHandler(object):
             def __init__(self):

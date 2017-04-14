@@ -94,6 +94,10 @@ class CompletedJobTestCase(BaseTestCase, IntermediateTickMixin):
         self.assertEqual(self.task['data']['artifact'],
                          self.job['data'].get('artifact'))
 
+    def test_has_expected_stdout(self):
+        self.assertEqual(self.task['data']['stdout'],
+                         self.job['data'].get('stdout'))
+
 class FailedJobTestCase(BaseTestCase, IntermediateTickMixin):
     def test_throws_exception(self):
         with self.assertRaises(Exception) as ctx:

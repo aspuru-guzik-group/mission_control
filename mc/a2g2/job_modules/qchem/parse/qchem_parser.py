@@ -41,7 +41,7 @@ class QChemParser(object):
                 'a2g2:calculation:artifact': self.parsing_params['artifact'],
                 'a2g2:calculation:qchem:rem_items': self.extract_rem_items()
             },
-            'precursors': self.parsing_params['precursors']
+            'precursors': self.parsing_params.get('precursors')
         }
         return calc_chemthing
 

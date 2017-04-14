@@ -1,29 +1,56 @@
 import yaml
+from mc.task_handlers.base_task_handler import BaseTaskHandler
 
 
-class ComputeParseLoadFlowSpecGenerator(object):
-    def __init__(self, *args, flow_params=None, **kwargs):
-        self.flow_params = flow_params
+class RunComputeParseLoadFlowTaskHandler(BaseTaskHandler):
+    def initial_tick(self, task=None, task_context=None):
+        flow_task = self.generate_flow_task(task=task,
+                                            task_context=task_context)
+        task_context['node']['node_tasks'].append(flow_task)
+        task['status'] = 'COMPLETED'
 
-    def generate_flow_spec(self):
-        flow_spec = {
-            'label': self.flow_params.get('label'),
-            'node_specs': self.generate_node_specs(),
+    def generate_flow_task(self, task=None, task_context=None):
+        label = task['task_key'] + '__flow'
+        flow_task = {
+            'task_key': label,
+            'task_type': 'a2g2.tasks.nodes.run_flow',
+            'task_params': {
+                'flow_spec': self.generate_flow_spec(task=task,
+                                                     task_context=task_context,
+                                                     label=label)
+            }
         }
+        return flow_task
+
+    def generate_flow_spec(self, task=None, task_context=None, label=None):
+        flow_spec = {}
+        flow_spec['label'] = label
+        flow_params = task['task_params'].get('flow_params', {})
+        flow_spec['data'] = flow_params.get('data', {})
+        flow_spec['cfg'] = flow_params.get('cfg', {})
+        flow_spec['node_specs'] = self.generate_node_specs(
+            flow_params=flow_params)
         return flow_spec
 
-    def generate_node_specs(self):
+    def generate_node_specs(self, task=None, task_context=None,
+                            flow_params=None):
         node_specs = []
-        node_specs.append({'node': self.generate_compute_node(),
-                           'precursor_keys': ['ROOT']})
-        node_specs.append({'node': self.generate_parse_node(),
-                           'precursor_keys': ['compute']})
-        node_specs.append({'node': self.generate_load_node(),
-                           'precursor_keys': ['parse']})
+        node_specs.append({
+            'node': self.generate_compute_node(flow_params=flow_params),
+            'precursor_keys': ['ROOT']
+        })
+        node_specs.append({
+            'node': self.generate_parse_node(flow_params=flow_params),
+            'precursor_keys': ['compute']
+        })
+        node_specs.append({
+            'node': self.generate_load_node(flow_params=flow_params),
+            'precursor_keys': ['parse']
+        })
         return node_specs
 
-    def generate_compute_node(self):
-        compute_job_spec = self.flow_params['compute_job_spec']
+    def generate_compute_node(self, flow_params=None):
+        compute_job_spec = flow_params['compute_job_spec']
         node = yaml.load(
             '''
             node_key: compute
@@ -60,8 +87,8 @@ class ComputeParseLoadFlowSpecGenerator(object):
         return yaml.dump(obj, default_style='"', default_flow_style=True)\
                 .strip()
 
-    def generate_parse_node(self):
-        parse_job_spec = self.flow_params['parse_job_spec']
+    def generate_parse_node(self, flow_params=None):
+        parse_job_spec = flow_params['parse_job_spec']
         node = yaml.load(
             '''
             node_key: parse
@@ -107,8 +134,8 @@ class ComputeParseLoadFlowSpecGenerator(object):
             ''' % {'src_node': src_node}
         ) 
 
-    def generate_load_node(self):
-        load_job_spec = self.flow_params['load_job_spec']
+    def generate_load_node(self, flow_params=None):
+        load_job_spec = flow_params['load_job_spec']
         node = yaml.load(
             '''
             node_key: load
@@ -132,9 +159,3 @@ class ComputeParseLoadFlowSpecGenerator(object):
             }
         )
         return node
-
-def generate_flow_spec(*args, flow_params=None, **kwargs):
-    generator = ComputeParseLoadFlowSpecGenerator(*args,
-                                                  flow_params=flow_params,
-                                                  **kwargs)
-    return generator.generate_flow_spec()

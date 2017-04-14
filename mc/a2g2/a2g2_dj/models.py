@@ -8,8 +8,8 @@ a2g2_dj_models = []
 
 class ChemThing(TimeStampedModel):
     uuid = models.CharField(primary_key=True, default=uuid.uuid4, max_length=64)
-    types = JSONField(default=dict)
-    props = JSONField(default=dict)
-    precursors = JSONField(default=dict)
+    types = JSONField(default=dict, null=True)
+    props = JSONField(default=dict, null=True)
+    precursors = JSONField(default=dict, null=True)
 
 a2g2_dj_models.append(ChemThing)

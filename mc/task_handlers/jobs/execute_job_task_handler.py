@@ -29,7 +29,8 @@ class ExecuteJobTaskHandler(BaseTaskHandler):
 
     def handle_completed_execution_state(self, execution_state=None, task=None,
                                          job=None):
-        task['data']['artifact'] = execution_state['artifact']
+        for attr in ['artifact', 'stdout']:
+            task['data'][attr] = execution_state.get(attr)
         task['status'] = 'COMPLETED'
 
     def handle_failed_execution_state(self, execution_state=None, task=None,

@@ -112,10 +112,15 @@ class HandleCompletedExecutionTestCase(BaseTestCase):
             task=self.task,
             job=self.job)
 
-    def test_saves_artifact_to_task(self):
+    def test_saves_artifact_to_task_data(self):
         self._do_handle_completed_execution_state()
         self.assertEqual(self.task['data']['artifact'],
                          self.completed_execution_state['artifact'])
+
+    def test_saves_stdout_to_task_data(self):
+        self._do_handle_completed_execution_state()
+        self.assertEqual(self.task['data']['stdout'],
+                         self.completed_execution_state['stdout'])
 
     def test_sets_status(self):
         self._do_handle_completed_execution_state()

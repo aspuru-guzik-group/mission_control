@@ -1,4 +1,6 @@
 import jinja2
+import json
+
 
 class ContextValueSetter(object):
     def set_context_values(self, value_specs=None, context=None):
@@ -32,14 +34,24 @@ class ContextValueSetter(object):
         return elided_string
 
     def get_value_for_value_spec(self, value_spec=None, context=None):
-        if value_spec.get('as_raw_value'):
+        if value_spec.get('from_value'):
             value = value_spec['value']
         elif value_spec.get('as_template'):
             value = self.render_template(template=value_spec['value'],
                                          context=context)
+        elif value_spec.get('from_json'):
+            raw_value = self.get_value_from_dot_spec(
+                obj={'ctx': context}, dot_spec=value_spec['source'])
+            try:
+                value = json.loads(raw_value)
+            except Exception as exception:
+                msg = ("from_json error: {exception}\n"
+                       "raw_value was: '{raw_value}'").format(
+                           exception=exception, raw_value=raw_value)
+                raise Exception(msg)
         else: 
             value = self.get_value_from_dot_spec(obj={'ctx': context},
-                                                 dot_spec=value_spec['value'])
+                                                 dot_spec=value_spec['source'])
         return value
 
     def render_template(self, template=None, context=None):

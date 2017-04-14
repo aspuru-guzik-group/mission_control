@@ -15,6 +15,7 @@ class RunJobTaskHandler(BaseTaskHandler):
         assert job is not None
         if job['status'] == 'COMPLETED':
             task['data']['artifact'] = job['data'].get('artifact')
+            task['data']['stdout'] = job['data'].get('stdout')
             task['status'] = 'COMPLETED'
         elif job['status'] == 'FAILED':
             try: error = job['data']['error']
