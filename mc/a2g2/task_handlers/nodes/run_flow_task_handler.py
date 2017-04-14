@@ -15,6 +15,8 @@ class RunFlowTaskHandler(BaseTaskHandler):
             flow_spec=formatted_task_params['flow_spec'])
         created_flow = task_context['flow_ctx']['create_flow'](
             flow_kwargs=flow_kwargs)
+        if formatted_task_params.get('delete_flow_spec_after_creation'):
+            task['task_params'].pop('flow_spec', None)
         task['data']['flow_uuid'] = created_flow['uuid']
 
     def format_task_params(self, task_params=None, task_context=None):

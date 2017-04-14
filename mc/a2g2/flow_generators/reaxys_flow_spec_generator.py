@@ -56,7 +56,8 @@ class ReaxysFlowSpecGenerator(object):
                 'flow_spec': (
                     compute_parse_load_flow_spec_generator.generate_flow_spec(
                         flow_params=flow_params)
-                )
+                ),
+                'delete_flow_spec_after_creation': True,
             }
         }
 
@@ -97,7 +98,9 @@ class ReaxysFlowSpecGenerator(object):
                                 'task_type': 'a2g2.tasks.nodes.run_flow',
                                 'task_params': {
                                     '_task_params_type': 'interpolated_object',
-                                    'object_template': {},
+                                    'object_template': {
+                                        'delete_flow_spec_after_creation': True,
+                                    },
                                     'interpolations': [
                                         {
                                             'value': ('ctx.task_context.flow'
@@ -126,6 +129,16 @@ class ReaxysFlowSpecGenerator(object):
         node_specs.append({'node': {'node_key': 'root'}, 'as_root': True})
         node_specs.append({
             'node': {
+                'node_key': 'mol3d_to_molecule',
+                'node_tasks': [
+                    'HERE!!!',
+                    'make a custom task that translates a chemthing to a mol'
+                ]
+            },
+            'precursor_keys': ['root'],
+        })
+        node_specs.append({
+            'node': {
                 'node_key': 'b3lyp_6_31gs_opt',
                 'node_tasks': [
                     self.generate_compute_parse_load_task(
@@ -148,7 +161,7 @@ class ReaxysFlowSpecGenerator(object):
                     ),
                 ]
             },
-            'precursor_keys': ['root'],
+            'precursor_keys': ['mol3d_to_molecule'],
         })
         node_specs.append({
             'node': {
