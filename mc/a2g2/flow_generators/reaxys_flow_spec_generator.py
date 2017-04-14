@@ -6,15 +6,15 @@ class ReaxysFlowSpecGenerator(object):
 
     def generate_flow_spec(self):
         node_specs = []
-        node_specs.append({
-            'node': {
-                'node_key': 'confgen',
-                'data': {
-                    'conformer_chemthings': ['FAKE_%s' % i for i in range(3)]
-                }
-            },
-            'as_root': True
-        })
+        #node_specs.append({
+            #'node': {
+                #'node_key': 'confgen',
+                #'data': {
+                    #'conformer_chemthings': ['FAKE_%s' % i for i in range(3)]
+                #}
+            #},
+            #'precursor_keys': ['ROOT']
+        #})
         #node_specs.append({
             #'node': {
                 #'node_key': 'confgen',
@@ -38,12 +38,19 @@ class ReaxysFlowSpecGenerator(object):
                     #'conformer_chemthings': [1],
                 #}
             #},
-            #'as_root': True
+            #'precursor_keys': ['ROOT'],
         #})
+        node_specs.append({
+            HRE
+            'node': {
+                'node_key': 'conformer_query',
+            },
+            'precursor_keys': ['ROOT']
+        })
         node_specs.append({
             'node': {'node_key': 'confgen_demux',
                      'node_tasks': self.generate_confgen_demux_tasks()},
-            'precursor_keys': ['confgen']
+            'precursor_keys': ['conformer_query']
         })
         flow_spec = {'label': 'reaxys_flow', 'node_specs': node_specs}
         return flow_spec

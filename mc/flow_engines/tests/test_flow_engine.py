@@ -34,12 +34,13 @@ class GenerateFlowTestCase(BaseTestCase):
     def test_generates_flow_from_flow_spec(self, MockFlow):
         flow = self.engine.generate_flow(flow_spec=self.flow_spec)
         self.assertEqual(flow, MockFlow.return_value)
+        self.assertEqual(MockFlow.call_args,
+                         call(data=self.flow_spec['data']))
         expected_add_node_call_args_list = [
             call(**node_spec) for node_spec in self.flow_spec['node_specs']
         ]
         self.assertEqual(flow.add_node.call_args_list,
                          expected_add_node_call_args_list)
-        self.assertEqual(flow.data, self.flow_spec['data'])
 
 class DeserializationTestCase(BaseTestCase):
     def setUp(self):
@@ -55,8 +56,8 @@ class DeserializationTestCase(BaseTestCase):
                 {'node_key': 'c', 'status': 'RUNNING'},
                 {'node_key': 'd', 'status': 'RUNNING'},
             ],
-            'root_node_key': 'a',
             'edges': [
+                {'src_key': 'ROOT', 'dest_key': 'a'},
                 {'src_key': 'a', 'dest_key': 'b'},
                 {'src_key': 'b', 'dest_key': 'c'},
                 {'src_key': 'b', 'dest_key': 'd'},
@@ -71,13 +72,10 @@ class DeserializationTestCase(BaseTestCase):
 
     def test_has_expected_nodes(self):
         self.assertEqual(
-            self.flow.nodes,
+            {k: node for k, node in self.flow.nodes.items()
+             if k != flow_engine.Flow.ROOT_NODE_KEY},
             {node['node_key']: node for node in self.serialized_flow['nodes']}
         )
-
-    def test_has_expected_root_node_key(self):
-        self.assertEqual(self.flow.root_node_key,
-                         self.flow.nodes['a']['node_key'])
 
     def test_has_expected_edges(self):
         expected_edges = {}
@@ -105,7 +103,6 @@ class SerializationTestCase(BaseTestCase):
         flow.data = 'some data'
         nodes = [{'key': i, 'status': 's_%s' % i} for i in range(3)]
         for node in nodes: flow.add_node(node=node)
-        flow.root_node_key = nodes[0]['node_key']
         edges = [{'src_key': nodes[0]['node_key'], 'dest_key': nodes[1]['key']},
                  {'src_key': nodes[1]['node_key'], 'dest_key': nodes[2]['key']}]
         for edge in edges: flow.add_edge(edge=edge)
@@ -113,14 +110,19 @@ class SerializationTestCase(BaseTestCase):
         return flow
 
     def test_serializes_basic_attrs(self):
-        for attr in ['data', 'root_node_key', 'status']:
+        for attr in flow_engine.FlowEngine.simple_flow_serialization_attrs:
             self.assertEqual(self.serialization[attr], getattr(self.flow, attr))
 
     def test_serializes_nodes(self):
         def sorted_node_list(node_list):
             return sorted(node_list, key=lambda node: node['node_key'])
-        self.assertEqual(sorted_node_list(self.serialization['nodes']),
-                         sorted_node_list(self.flow.nodes.values()))
+        self.assertEqual(
+            sorted_node_list(self.serialization['nodes']),
+            sorted_node_list([
+                node for node in self.flow.nodes.values()
+                if node['node_key'] != flow_engine.Flow.ROOT_NODE_KEY
+            ])
+        )
 
     def test_serializes_edges(self):
         def sorted_edge_list(edge_list):
@@ -161,15 +163,13 @@ class TickTestCase(BaseTestCase):
 
     def _generate_flow_with_pending_successors(self):
         flow = flow_engine.Flow()
-        flow.add_node(node={'node_key': 'ROOT', 'status': 'COMPLETED'},
-                      as_root=True)
         self._add_branch_with_pending_leaf_to_flow(flow, depth=3)
         self._add_branch_with_pending_leaf_to_flow(flow, depth=2)
         return flow
 
     def _add_branch_with_pending_leaf_to_flow(self, flow, depth=3):
         branch_root = flow.add_node(node={'status': 'COMPLETED'},
-                                    precursor_keys=[flow.root_node_key])
+                                    precursor_keys=[flow.ROOT_NODE_KEY])
         for i in range(depth):
             child_node = flow.add_node(
                 node={'node_key': str(uuid4()), 'status': 'COMPLETED',
@@ -202,10 +202,9 @@ class TickTestCase(BaseTestCase):
 
     def _generate_flow_with_running_nodes(self):
         flow = flow_engine.Flow()
-        flow.add_node(node={'status': 'COMPLETED'}, as_root=True)
         for i in range(3):
             flow.add_node(node={'node_key': i, 'status': 'RUNNING'},
-                          precursor_keys=[flow.root_node_key])
+                          precursor_keys=[flow.ROOT_NODE_KEY])
         return flow
 
     def summarize_nodes(self, nodes):
@@ -221,7 +220,6 @@ class TickTestCase(BaseTestCase):
 
     def test_calls_complete_flow_if_no_incomplete_nodes(self):
         flow = flow_engine.Flow()
-        flow.add_node(node={'status': 'COMPLETED'}, as_root=True)
         self.assertEqual(self.mocks['engine']['complete_flow'].call_count, 0)
         self.engine.tick_flow(flow)
         self.assertEqual(self.mocks['engine']['complete_flow'].call_count, 1)
@@ -278,14 +276,15 @@ class CompleteNodeTestCase(BaseTestCase):
 
 class CompleteFlowTestCase(BaseTestCase):
     def test_sets_status_to_completed_if_no_errors(self):
-        self.fail()
         flow = flow_engine.Flow()
-        self.assertTrue(flow.status != 'COMPLETED')
         self.engine.complete_flow(flow=flow)
-        self.assertTrue(flow.status == 'COMPLETED')
+        self.assertEqual(flow.status, 'COMPLETED')
 
     def test_fails_if_has_errors(self):
-        self.fail()
+        flow = flow_engine.Flow()
+        flow.data['errors'] = MagicMock()
+        self.engine.complete_flow(flow=flow)
+        self.assertEqual(flow.status, 'FAILED')
 
 class StartNodeTestCase(BaseTestCase):
     def setUp(self):

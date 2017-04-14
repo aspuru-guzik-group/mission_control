@@ -45,10 +45,6 @@ class AddNodeTestCase(BaseTestCase):
         self.assertEqual(self.node['node_key'],
                          self.flow.generate_node_key.return_value)
 
-    def test_add_as_root(self):
-        self.flow.add_node(node=self.node, as_root=True)
-        self.assertEqual(self.flow.root_node_key, self.node['node_key'])
-
     def test_adds_edges_for_precursors(self):
         precursors = [self.flow.add_node(node=self.generate_node(key=i))
                       for i in range(1)]
@@ -100,10 +96,6 @@ class GetNearestPendingNodesTestCase(BaseTestCase):
         self.setup_flow()
 
     def setup_flow(self):
-        self.flow.add_node(
-            node=self.generate_node(node_key='ROOT', status='COMPLETED'),
-            as_root=True
-        )
         self.linear_branches = {
             '1': [
                 self.generate_node(node_key='1.1', status='COMPLETED'),
@@ -122,7 +114,7 @@ class GetNearestPendingNodesTestCase(BaseTestCase):
                                            branch_nodes=branch_nodes)
 
     def add_linear_branch_to_flow(self, flow=None, branch_nodes=None):
-        tail = flow.nodes[flow.root_node_key]
+        tail = flow.nodes[flow.ROOT_NODE_KEY]
         for node in branch_nodes:
             tail = flow.add_node(node=node, precursor_keys=[tail['node_key']])
 
@@ -138,9 +130,8 @@ class GetSuccessorsTestCase(BaseTestCase):
         self.setup_flow(flow=self.flow)
 
     def setup_flow(self, flow=None):
-        self.flow.add_node(node=self.generate_node(node_key='ROOT'), as_root=True)
         node_1 = self.generate_node(node_key='1')
-        self.flow.add_node(node=node_1, precursor_keys=[flow.root_node_key])
+        self.flow.add_node(node=node_1, precursor_keys=[flow.ROOT_NODE_KEY])
         node_1_1 = self.generate_node(node_key='1_1')
         self.flow.add_node(node=node_1_1, precursor_keys=[node_1['node_key']])
         node_1_2 = self.generate_node(node_key='1_2')
@@ -196,15 +187,15 @@ class HasIncompleteNodesTestCase(BaseTestCase):
 
 class GetTailNodesTestCase(BaseTestCase):
     def test_gets_tail_nodes(self):
-        root_node = self.flow.add_node(node=self.generate_node(), as_root=True)
-        tail_nodes = [self.flow.add_node(node=self.generate_node(),
-                                         precursor_keys=[root_node['node_key']])
-                      for i in range(3)]
+        tail_nodes = [
+            self.flow.add_node(node=self.generate_node(),
+                               precursor_keys=[self.flow.ROOT_NODE_KEY])
+            for i in range(3)]
         self.assertTrue(self.flow.get_tail_nodes(), tail_nodes)
 
     def test_handles_flow_with_only_root_node(self):
-        root_node = self.flow.add_node(node=self.generate_node(), as_root=True)
-        self.assertTrue(self.flow.get_tail_nodes(), [root_node])
+        self.assertTrue(self.flow.get_tail_nodes(),
+                        self.flow.nodes[self.flow.ROOT_NODE_KEY])
 
 if __name__ == '__main__':
     unittest.main()

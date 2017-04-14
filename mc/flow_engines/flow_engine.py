@@ -6,8 +6,7 @@ from .flow import Flow
 
 
 class FlowEngine(object):
-    simple_flow_serialization_attrs = ['data', 'label', 'status', 'cfg',
-                                       'root_node_key']
+    simple_flow_serialization_attrs = ['data', 'label', 'status', 'cfg']
 
     class NodeError(Exception): pass
 
@@ -31,6 +30,7 @@ class FlowEngine(object):
             setattr(flow, attr, serialized_flow.get(attr, None))
         if flow.data is None: flow.data = {}
         for node in serialized_flow.get('nodes', []):
+            if node['node_key'] == Flow.ROOT_NODE_KEY: continue
             flow.add_node(node=node)
         for edge in serialized_flow.get('edges', []):
             flow.add_edge(edge=edge)
@@ -42,8 +42,9 @@ class FlowEngine(object):
         serialized_flow = {
             **{attr: getattr(flow, attr, None)
                for attr in self.simple_flow_serialization_attrs},
-            'nodes': list(flow.nodes.values()),
-            'edges': list(flow.edges.values()),
+            'nodes': [node for node in flow.nodes.values()
+                      if node.get('node_key') != Flow.ROOT_NODE_KEY],
+            'edges': [edge for edge in flow.edges.values()],
         }
         return serialized_flow
 

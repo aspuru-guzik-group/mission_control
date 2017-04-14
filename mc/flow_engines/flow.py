@@ -3,26 +3,31 @@ from uuid import uuid4
 
 
 class Flow(object):
+    ROOT_NODE_KEY = 'ROOT'
+
     def __init__(self, *args, cfg=None, data=None, label=None, status=None,
-                 root_node_key=None, **kwargs):
+                 **kwargs):
         self.cfg = cfg or {'fail_fast': True}
         self.data = data or {}
         self.label = label
         self.status = status or 'PENDING'
-        self.root_node_key = root_node_key
 
         self.nodes = {}
         self.edges = {}
         self.edges_by_node_key = collections.defaultdict(
             lambda: collections.defaultdict(dict))
 
-    def add_node(self, node=None, as_root=None, precursor_keys=None,
-                 successor_keys=None):
+        self.add_root_node()
+
+    def add_root_node(self):
+        self.add_node(node={'node_key': self.ROOT_NODE_KEY,
+                            'status': 'COMPLETED'})
+
+    def add_node(self, node=None,  precursor_keys=None, successor_keys=None):
         node.setdefault('node_tasks', [])
         node.setdefault('node_key', self.generate_node_key())
         node.setdefault('status', 'PENDING')
         self.nodes[node['node_key']] = node
-        if as_root: self.root_node_key = node['node_key']
         for precursor_key in (precursor_keys or []):
             self.add_edge(edge={'src_key': precursor_key,
                                 'dest_key': node['node_key']})
@@ -36,7 +41,7 @@ class Flow(object):
 
     def add_edge(self, edge=None):
         src_key, dest_key = (edge['src_key'], edge['dest_key'])
-        if dest_key is self.root_node_key:
+        if dest_key is self.ROOT_NODE_KEY:
             raise Exception("Root node can not be an edge dest")
         edge_key = (src_key, dest_key)
         self.edges[edge_key] = edge
@@ -59,9 +64,8 @@ class Flow(object):
         return successors
 
     def get_nearest_pending_nodes(self):
-        if not self.root_node_key: return []
         nearest_pending_nodes = []
-        cursors = [self.nodes[self.root_node_key]]
+        cursors = [self.nodes[self.ROOT_NODE_KEY]]
         while len(cursors) > 0:
             next_cursors = []
             for cursor in cursors:
@@ -73,9 +77,11 @@ class Flow(object):
             cursors = next_cursors
         return nearest_pending_nodes
 
-    def filter_nodes(self, filters=None):
+    def filter_nodes(self, filters=None, include_root_node=False):
         result = []
         for node in self.nodes.values():
+            if not include_root_node and node['node_key'] == self.ROOT_NODE_KEY:
+                continue
             passes_filters = True
             for _filter in filters:
                 if not _filter(node):
@@ -96,8 +102,8 @@ class Flow(object):
         return len(incomplete_nodes) > 0
 
     def get_tail_nodes(self):
-        if len(self.nodes) == 1 and self.root_node_key in self.nodes:
-            tail_nodes = [self.nodes[self.root_node_key]]
+        if len(self.nodes) == 1 and self.ROOT_NODE_KEY in self.nodes:
+            tail_nodes = [self.nodes[self.ROOT_NODE_KEY]]
         else:
             tail_nodes = [
                 self.nodes[node_key]

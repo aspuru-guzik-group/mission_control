@@ -40,7 +40,8 @@ class DemuxTaskHandler(BaseTaskHandler):
         return flow_spec
 
     def generate_root_node_spec(self):
-        return {'node': {'node_key': self.ROOT_NODE_KEY}, 'as_root': True}
+        return {'node': {'node_key': self.ROOT_NODE_KEY},
+                'precursor_keys': ['ROOT']}
 
     def generate_node_spec(self, item=None, index=None, task=None,
                            task_context=None):

@@ -43,8 +43,6 @@ class FlowRunnerE2ETestCase(TestCase):
 
     def populate_flows(self):
         flow = Flow()
-        root_node = {'status': 'PENDING'}
-        flow.add_node(node=root_node, as_root=True)
         serialization = self.flow_engine.serialize_flow(flow)
         flow_model = FlowModel.objects.create(
             serialization=json.dumps(serialization))

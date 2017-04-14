@@ -15,7 +15,7 @@ class ComputeParseLoadFlowSpecGenerator(object):
     def generate_node_specs(self):
         node_specs = []
         node_specs.append({'node': self.generate_compute_node(),
-                           'as_root': True})
+                           'precursor_keys': ['ROOT']})
         node_specs.append({'node': self.generate_parse_node(),
                            'precursor_keys': ['compute']})
         node_specs.append({'node': self.generate_load_node(),
