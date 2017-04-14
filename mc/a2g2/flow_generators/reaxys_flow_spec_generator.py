@@ -41,9 +41,20 @@ class ReaxysFlowSpecGenerator(object):
             #'precursor_keys': ['ROOT'],
         #})
         node_specs.append({
-            HRE
             'node': {
                 'node_key': 'conformer_query',
+                'node_tasks': [
+                    {
+                        'task_key': 'run_query_job',
+                        'task_params': {
+                            'job_spec': {
+                                'job_type': 'a2g2.jobs.query',
+                                'job_params': {},
+                            }
+                        },
+                        'task_type': 'a2g2.tasks.nodes.run_job'
+                    }
+                ]
             },
             'precursor_keys': ['ROOT']
         })

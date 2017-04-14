@@ -7,6 +7,7 @@ from mc.a2g2.flow_generators import reaxys_flow_spec_generator
 from . import e2e_flow_test_utils
 from .fixtures.confgen import ConfgenFixtures
 from .fixtures.qchem import QChemFixtures
+from .fixtures.a2g2_db import A2G2_DB_Fixtures
 
 
 @unittest.skipUnless(*e2e_flow_test_utils.get_skip_args())
@@ -29,6 +30,12 @@ class QChemFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
             'env_vars': {
                 # fake confgen by calling this module' 
                 'QCHEM_EXE': 'python -m mc.%s fake_qchem' % (__name__)
+            }
+        }
+        cfg['a2g2.jobs.a2g2_db.query'] = {
+            'env_vars': {
+                # fake confgen by calling this module' 
+                'A2G2_DB_EXE': 'python -m mc.%s fake_a2g2_db' % (__name__)
             }
         }
         return cfg
@@ -84,6 +91,10 @@ class FakeJobEngine(object):
     def execute_command(self, *args, job=None, command=None, **kwargs):
         if job['job_spec']['job_type'].startswith('a2g2.jobs.confgen'):
             pass
+        elif job['job_spec']['job_type'].startswith('a2g2.jobs.a2g2_db.query'):
+            if command == 'run_job_submisison':
+                a2g2_db_fixtures = A2G2_DB_Fixtures()
+                a2g2_db_fixtures.run_fake_query()
         else:
             return self.wrapped_engine.execute_command(
                 *args, job=job, command=command, **kwargs)

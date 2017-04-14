@@ -30,6 +30,8 @@ class OdysseyExecutionClient(object):
         decorated_execution_state = {**slurm_execution_state}
         submission = execution_meta['submission']
         completed_dir = submission['dir']
+        decorated_execution_state['artifact'] = self.generate_artifact_spec(
+            completed_dir=completed_dir)
         if 'checkpoint_files' in submission:
             try:
                 self.validate_checkpoint_files(
@@ -39,9 +41,16 @@ class OdysseyExecutionClient(object):
                 decorated_execution_state['run_status'] = 'FAILED'
                 decorated_execution_state['error'] = \
                         self.stringify_exception(exception)
-        decorated_execution_state['artifact'] = self.generate_artifact_spec(
-            completed_dir=completed_dir)
+        decorated_execution_state['stdout'] = self.get_stdout(
+            submission=submission, completed_dir=completed_dir)
         return decorated_execution_state
+
+    def generate_artifact_spec(self, completed_dir=None):
+        artifact_spec = {
+            'artifact_type': 'a2g2.artifacts.odyssey',
+            'artifact_params': {'path': completed_dir}
+        }
+        return artifact_spec
 
     def stringify_exception(self, exception=None):
         return '[%s] %s)' % (type(exception), exception)
@@ -80,9 +89,10 @@ class OdysseyExecutionClient(object):
                                                      check=True)
         return completed_proc.stdout
 
-    def generate_artifact_spec(self, completed_dir=None):
-        artifact_spec = {
-            'artifact_type': 'a2g2.artifacts.odyssey',
-            'artifact_params': {'path': completed_dir}
-        }
-        return artifact_spec
+    def get_stdout(self, submission=None, completed_dir=None):
+        stdout = ''
+        stdout_log_name = submission.get('std_log_files', {}).get('stdout')
+        if stdout_log_name:
+            stdout_log_path = os.path.join(completed_dir, stdout_log_name)
+            stdout = self.read_file(stdout_log_path)
+        return stdout
