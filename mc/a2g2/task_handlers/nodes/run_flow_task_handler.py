@@ -53,3 +53,5 @@ class RunFlowTaskHandler(BaseTaskHandler):
 
     def get_flow(self, task=None, flow_ctx=None):
         return flow_ctx['get_flow'](uuid=task['data']['flow_uuid'])
+
+TaskHandler = RunFlowTaskHandler

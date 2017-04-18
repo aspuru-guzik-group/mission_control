@@ -15,10 +15,12 @@ class LogTaskHandler(BaseTaskHandler):
                 msg += "\n" + textwrap.indent(self.format_obj(obj), '  ')
             logging.log(log_level, msg)
         if 'msg' in task_params: _log(task_params['msg'])
-        if task_params.get('dump_task'): _log("task", obj=task)
-        if task_params.get('dump_task_context'):
+        if task_params.get('dump_task', True): _log("task", obj=task)
+        if task_params.get('dump_task_context', True):
             _log("task_context", obj=task_context)
         task['status'] = 'COMPLETED'
 
     def format_obj(self, obj=None):
         return pprint.PrettyPrinter(indent=2).pformat(obj)
+
+TaskHandler = LogTaskHandler

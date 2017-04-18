@@ -40,7 +40,8 @@ class ReaxysFlowSpecGenerator(object):
     def generate_compute_parse_load_task(self, task_key=None, flow_params=None):
         return {
             'task_key': task_key or 'compute_parse_load_task',
-            'task_type': 'a2g2.tasks.nodes.run_compute_parse_load_flow',
+            'task_type': ('a2g2.task_handlers.nodes'
+                          '.run_compute_parse_load_flow_handler'),
             'task_params': {
                 'flow_params': {
                     'delete_flow_spec_after_creation': True,
@@ -62,7 +63,8 @@ class ReaxysFlowSpecGenerator(object):
                                 'job_params': {},
                             }
                         },
-                        'task_type': 'a2g2.tasks.nodes.run_job'
+                        'task_type': ('a2g2.task_handlers.nodes'
+                                      '.run_job_task_handler')
                     },
                     {
                         'task_key': 'expose_chemthings',
@@ -82,7 +84,7 @@ class ReaxysFlowSpecGenerator(object):
                                 }
                             ]
                         },
-                        'task_type': 'a2g2.tasks.set_values'
+                        'task_type': 'mc.task_handlers.set_values_task_handler'
                     },
                 ]
             },
@@ -100,7 +102,7 @@ class ReaxysFlowSpecGenerator(object):
         confgen_demux_tasks = [
             {
                 'task_key': 'wire_confgen_demux',
-                'task_type': 'a2g2.tasks.set_values',
+                'task_type': 'mc.task_handlers.set_values_task_handler',
                 'task_params': {
                     'value_specs': [
                         {
@@ -118,7 +120,7 @@ class ReaxysFlowSpecGenerator(object):
     def generate_demux_task(self):
         demux_task = {
             'task_key': 'confgen_demux',
-            'task_type': 'a2g2.tasks.nodes.demux',
+            'task_type': 'a2g2.task_handlers.nodes.demux_task_handler',
             'task_params': {
                 'items': 'TO BE WIRED',
                 'demux_flow_params': {
@@ -151,7 +153,7 @@ class ReaxysFlowSpecGenerator(object):
                     self.generate_molecule_to_chemthing_task(),
                     {
                         'task_key': 'wire_dft_flow_params_into_task',
-                        'task_type': 'a2g2.tasks.set_values',
+                        'task_type': 'mc.task_handlers.set_values_task_handler',
                         'task_params': {
                             'value_specs': [
                                 {
@@ -165,7 +167,7 @@ class ReaxysFlowSpecGenerator(object):
                     },
                     {
                         'task_key': 'wire_molecule_into_flow_spec',
-                        'task_type': 'a2g2.tasks.set_values',
+                        'task_type': 'mc.task_handlers.set_values_task_handler',
                         'task_params': {
                             'value_specs': [
                                 {
@@ -179,7 +181,8 @@ class ReaxysFlowSpecGenerator(object):
                     },
                     {
                         'task_key': 'run_dft_flow',
-                        'task_type': 'a2g2.tasks.nodes.run_flow',
+                        'task_type': ('a2g2.task_handlers.nodes'
+                                      '.run_flow_task_handler'),
                         'task_params': 'TO BE WIRED',
                     },
                 ]
@@ -190,7 +193,7 @@ class ReaxysFlowSpecGenerator(object):
     def generate_molecule_to_chemthing_task(self):
         molecule_to_chemthing_task = {
             'task_key': 'generate_molecule_from_chemthing',
-            'task_type': 'a2g2.tasks.set_values',
+            'task_type': 'mc.task_handlers.set_values_task_handler',
             'task_params': {
                 'value_specs': [
                     {
@@ -215,30 +218,31 @@ class ReaxysFlowSpecGenerator(object):
         return molecule_to_chemthing_task
 
     def generate_run_dft_flow_params(self):
-        node_specs = []
-        
-        def generate_wire_molecule_into_cpl_task(cpl_key=None):
-            return {
-                'task_key': 'wire_molecule_into_compute_parse_load',
-                'task_type': 'a2g2.tasks.set_values',
-                'task_params': {
-                    'value_specs': [{
-                        'source': 'ctx.flow.data.molecule',
-                        'dest': ('ctx.tasks.{cpl_key}'
-                                 '.task_params.flow_params'
-                                 '.compute_job_spec.job_params.qchem_params'
-                                 '.molecule').format(cpl_key=cpl_key)
-                    }]
-                }
-            }
-        
+        run_dft_flow_params = {
+            'flow_spec': self.generate_dft_flow_spec(),
+            'delete_flow_spec_after_creation': True,
+        }
+        return run_dft_flow_params
+
+    def generate_dft_flow_spec(self):
+        dft_flow_spec = {
+            'label': 'dft_flow',
+            'node_specs': [
+                self.generate_b3lyp_opt_node_spec(),
+                #self.generate_b3lyp_opt_t1_node_spec(),
+                #self.generate_b3lyp_tddft_node_spec(),
+            ]
+        }
+        return dft_flow_spec
+
+    def generate_b3lyp_opt_node_spec(self):
         node_key = 'b3lyp_6_31gs_opt'
         cpl_key = node_key + '_cpl'
-        node_specs.append({
+        return {
             'node': {
                 'node_key': node_key,
                 'node_tasks': [
-                    generate_wire_molecule_into_cpl_task(cpl_key=cpl_key),
+                    self.generate_wire_molecule_into_cpl_task(cpl_key=cpl_key),
                     self.generate_compute_parse_load_task(
                         task_key=cpl_key,
                         flow_params={
@@ -253,26 +257,64 @@ class ReaxysFlowSpecGenerator(object):
                                     }
                                 },
                             },
-                            'parse_job_spec': {
-                                'job_type': 'a2g2.jobs.qchem.parse'
+                            'parse_load_job_spec': {
+                                'job_type': 'a2g2.jobs.flow.task_list',
+                                'job_params': {
+                                    'tasks': [
+                                        {
+                                            'task_type': (
+                                                'mc.a2g2.job_modules.qchem'
+                                                '.task_handlers'
+                                                '.parse_computation_meta'
+                                                '_task_handler'
+                                            ),
+                                        },
+                                        {
+                                            'task_type': (
+                                                'mc.a2g2.job_modules.qchem'
+                                                '.task_handlers'
+                                                '.parse_opt_coords_task_handler'
+                                            ),
+                                        },
+                                        {
+                                            'task_type': (
+                                                'mc.task_handlers.'
+                                                'log_task_handler'
+                                            ),
+                                        }
+                                    ]
+                                }
                             },
-                            'load_job_spec': {
-                                'job_type': 'a2g2.jobs.qchem.load'
-                            }
                         }
                     ),
                 ]
             },
             'precursor_keys': ['ROOT'],
-        })
+        }
 
+    def generate_wire_molecule_into_cpl_task(self, cpl_key=None):
+        return {
+            'task_key': 'wire_molecule_into_compute_parse_load',
+            'task_type': 'mc.task_handlers.set_values_task_handler',
+            'task_params': {
+                'value_specs': [{
+                    'source': 'ctx.flow.data.molecule',
+                    'dest': ('ctx.tasks.{cpl_key}'
+                             '.task_params.flow_params'
+                             '.compute_job_spec.job_params.qchem_params'
+                             '.molecule').format(cpl_key=cpl_key)
+                }]
+            }
+        }
+
+    def generate_b3lyp_opt_t1_node_spec(self):
         node_key = 'b3lyp_6_31gs_opt_t1'
         cpl_key = node_key + '_cpl'
-        node_specs.append({
+        return {
             'node': {
                 'node_key': 'b3lyp_6_31gs_opt_t1',
                 'node_tasks': [
-                    generate_wire_molecule_into_cpl_task(cpl_key=cpl_key),
+                    self.generate_wire_molecule_into_cpl_task(cpl_key=cpl_key),
                     self.generate_compute_parse_load_task(
                         task_key=cpl_key,
                         flow_params={
@@ -297,9 +339,11 @@ class ReaxysFlowSpecGenerator(object):
                 ]
             },
             'precursor_keys': ['ROOT'],
-        })
+        }
 
-        node_specs.append({
+
+    def generate_b3lyp_tddft_node_spec(self):
+        return {
             'node': {
                 'node_key': 'b3lyp_6_31gs_tddft',
                 'node_tasks': [
@@ -326,16 +370,7 @@ class ReaxysFlowSpecGenerator(object):
                 ]
             },
             'precursor_keys': ['b3lyp_6_31gs_opt'],
-        })
-        dft_flow_spec = {
-            'label': 'dft_flow',
-            'node_specs': node_specs
         }
-        run_dft_flow_params = {
-            'flow_spec': dft_flow_spec,
-            'delete_flow_spec_after_creation': True,
-        }
-        return run_dft_flow_params
 
 def generate_flow_spec(*args, flow_params=None, **kwargs):
     generator = ReaxysFlowSpecGenerator(*args, flow_params=flow_params,

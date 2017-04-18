@@ -132,6 +132,31 @@ class SerializationTestCase(BaseTestCase):
         self.assertEqual(sorted_edge_list(self.serialization['edges']),
                          sorted_edge_list(self.flow.edges.values()))
 
+class RunFlowTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.flow = MagicMock()
+        self.engine.tick_flow = MagicMock()
+        self.tick_counter = 0
+
+    def _setup_mock_tick(self, flow_end_status=None, num_ticks=3, max_ticks=5):
+        def mock_tick(*args, flow=None, **kwargs):
+            self.tick_counter += 1
+            if self.tick_counter == num_ticks: flow.status = flow_end_status
+            if self.tick_counter > max_ticks:
+                raise Exception("exceeded max ticks")
+        self.engine.tick_flow.side_effect = mock_tick
+
+    def test_stops_if_flow_completes(self):
+        self._setup_mock_tick(flow_end_status='COMPLETED')
+        self.engine.run_flow(flow=self.flow)
+        self.assertEqual(self.flow.status, 'COMPLETED')
+
+    def test_stops_if_flow_fails(self):
+        self._setup_mock_tick(flow_end_status='FAILED')
+        self.engine.run_flow(flow=self.flow)
+        self.assertEqual(self.flow.status, 'FAILED')
+
 class TickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()

@@ -48,6 +48,11 @@ class FlowEngine(object):
         }
         return serialized_flow
 
+    def run_flow(self, flow=None, flow_ctx=None):
+        completed_statuses = set(['COMPLETED', 'FAILED'])
+        while flow.status not in completed_statuses:
+            self.tick_flow(flow=flow, flow_ctx=flow_ctx)
+
     def tick_flow(self, flow=None, flow_ctx=None):
         try:
             if flow.status == 'PENDING': self.start_flow(flow=flow)
@@ -101,7 +106,7 @@ class FlowEngine(object):
         task_runner = BaseTaskRunner(
             get_tasks=(lambda: node.get('node_tasks', [])),
             get_task_context=(
-                lambda :self.get_task_context(node=node, flow=flow,
+                lambda: self.get_task_context(node=node, flow=flow,
                                               flow_ctx=flow_ctx)
             ),
             task_handler=self.task_handler

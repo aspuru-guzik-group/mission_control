@@ -1,4 +1,5 @@
 import json
+import logging
 import operator
 import os
 import sys
@@ -17,6 +18,7 @@ from mc.storage_client.storage_client import MissionControlStorageClient
 from mc.execution_clients.ssh_control_socket_client import (
     SSHControlSocketClient)
 from mc.a2g2.job_engines import a2g2_job_engine
+from mc.a2g2.utils.dot_spec_task_handler import DotSpecTaskHandler
 
 from .docker.docker_utils import DockerEnv
 
@@ -55,43 +57,15 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
         return storage_client
 
     def generate_task_handler(self):
-        sub_handlers = {}
-        from a2g2.task_handlers.nodes.run_job_task_handler import (
-            RunJobTaskHandler)
-        sub_handlers['a2g2.tasks.nodes.run_job'] = RunJobTaskHandler()
-
-        from mc.task_handlers.set_values_task_handler import (
-            SetValuesTaskHandler)
-        sub_handlers['a2g2.tasks.set_values'] = SetValuesTaskHandler()
-
-        from a2g2.task_handlers.nodes.run_flow_task_handler import (
-            RunFlowTaskHandler)
-        sub_handlers['a2g2.tasks.nodes.run_flow'] = RunFlowTaskHandler()
-
-        from a2g2.task_handlers.nodes.demux_task_handler import (
-            DemuxTaskHandler)
-        sub_handlers['a2g2.tasks.nodes.demux'] = DemuxTaskHandler()
-
-        from mc.task_handlers.log_task_handler import LogTaskHandler
-        sub_handlers['log'] = LogTaskHandler()
-
-        from a2g2.task_handlers.nodes.run_compute_parse_load_flow_handler \
-                import (RunComputeParseLoadFlowTaskHandler)
-        sub_handlers['a2g2.tasks.nodes.run_compute_parse_load_flow'] = \
-                RunComputeParseLoadFlowTaskHandler()
-
         class TaskHandler(object):
-            def __init__(self):
-                self.handlers = sub_handlers
-
-            def tick_task(self, *args, task=None, task_context=None, **kwargs):
+            def tick_task(self, *args, task=None, **kwargs):
                 try:
-                    handler = self.handlers[task['task_type']]
-                except KeyError as exception:
-                    raise Exception("Could not find task handler for task_type"
-                                    " '%s'" % task['task_type'])
-                handler.tick_task(*args, task=task, task_context=task_context,
-                                  **kwargs)
+                    DotSpecTaskHandler.tick_task(task=task, **kwargs)
+                except Exception as exception:
+                    msg = ("Could not handle task with type"
+                           " '%s'" % task['task_type'])
+                    logging.exception(msg)
+                    raise
 
         return TaskHandler()
 

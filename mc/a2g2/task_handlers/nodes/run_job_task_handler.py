@@ -24,3 +24,5 @@ class RunJobTaskHandler(BaseTaskHandler):
 
     def get_job(self, task=None, flow_ctx=None):
         return flow_ctx['get_job'](uuid=task['data']['job_uuid'])
+
+TaskHandler = RunJobTaskHandler

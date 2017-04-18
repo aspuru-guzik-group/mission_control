@@ -5,15 +5,15 @@ class BaseTaskHandler(object):
     def __init__(self, *args, logger=None, **kwargs):
         self.logger = logger or logging
 
-    def tick_task(self, task=None, task_context=None):
+    def tick_task(self, *args, task=None, **kwargs):
         try:
             self._ensure_task(task=task)
             self.increment_tick_counter(task=task)
             if task['data']['_tick_counter'] == 1:
                 task['status'] = 'RUNNING'
-                self.initial_tick(task=task, task_context=task_context)
+                self.initial_tick(task=task, **kwargs)
             else:
-                self.intermediate_tick(task=task, task_context=task_context)
+                self.intermediate_tick(task=task, **kwargs)
         except Exception as exception:
             self.logger.exception(self.__class__.__name__ +".tick_task")
             task['status'] = 'FAILED'
@@ -29,8 +29,8 @@ class BaseTaskHandler(object):
     def increment_tick_counter(self, task=None):
         task['data']['_tick_counter'] += 1
 
-    def initial_tick(self, task=None, task_context=None):
+    def initial_tick(self, task=None, **kwargs):
         raise NotImplementedError
 
-    def intermediate_tick(self, task=None, task_context=None):
+    def intermediate_tick(self, task=None, **kwargs):
         raise NotImplementedError

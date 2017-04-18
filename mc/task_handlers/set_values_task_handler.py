@@ -7,3 +7,5 @@ class SetValuesTaskHandler(BaseTaskHandler):
         set_context_values(value_specs=task['task_params']['value_specs'],
                            context=task_context)
         task['status'] = 'COMPLETED'
+
+TaskHandler = SetValuesTaskHandler

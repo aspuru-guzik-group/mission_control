@@ -7,20 +7,8 @@ from .. import constants as qchem_constants
 
 
 class QChemComputationParser(object):
-    def __init__(self, *args, input_dir=None, parsing_params=None, **kwargs):
-        self.input_dir = input_dir
-
-    def generate_chemthing(self, computation_meta=None, parse_params=None):
-        chemthing = {}
-        chemthing['uuid'] = str(uuid4())
-        chemthing['props'] = {
-            'a2g2:prop:artifacts': parse_params['artifacts'],
-            'a2g2:prop:command_meta': computation_meta['command_meta'],
-            'a2g2:prop:execution_meta': computation_meta['execution_meta'],
-        }
-        chemthing['precursors'] = parse_params.get('precursors')
-        chemthing['ancestors'] = parse_params.get('ancestors')
-        return chemthing
+    def __init__(self, *args, parsing_params=None, **kwargs):
+        self.parsing_params = parsing_params
 
     def extract_computation_meta(self, job_dir=None):
         computation_meta = {
@@ -40,7 +28,7 @@ class QChemComputationParser(object):
 
     def get_completed_qchem_work_dir(self, job_dir=None):
         submission = self.parse_submission(job_dir=job_dir)
-        return os.path.join(self.input_dir, submission['outputs_dir'],
+        return os.path.join(job_dir, submission['outputs_dir'],
                             qchem_constants.QCHEM_OUTPUTS_KEY)
 
     def parse_submission(self, job_dir=None):
@@ -92,9 +80,22 @@ class QChemComputationParser(object):
 
     def extract_execution_meta(self, job_dir=None):
         submission = self.parse_submission(job_dir=job_dir)
+        if 'execution_meta_name' not in submission: return {}
         execution_meta_path = os.path.join(job_dir, submission['outputs_dir'],
                                            submission['execution_meta_name'])
         return json.load(open(execution_meta_path))
+
+    def generate_chemthing(self, computation_meta=None, parse_params=None):
+        chemthing = {}
+        chemthing['uuid'] = str(uuid4())
+        chemthing['props'] = {
+            'a2g2:prop:artifacts': parse_params['artifacts'],
+            'a2g2:prop:command_meta': computation_meta['command_meta'],
+            'a2g2:prop:execution_meta': computation_meta['execution_meta'],
+        }
+        chemthing['precursors'] = parse_params.get('precursors')
+        chemthing['ancestors'] = parse_params.get('ancestors')
+        return chemthing
 
     def write_chemthings_bulk_file(self, chemthings=None, path=None):
         json.dump(chemthings, open(path, 'w'))
