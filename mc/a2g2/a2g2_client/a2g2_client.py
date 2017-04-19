@@ -22,18 +22,18 @@ class A2G2_Client(object):
                                             json=chemthing)
         return self.json_raise_for_status(response=response)
 
-    def post_chemthing_bulk_actions(self, bulk_actions=None):
+    def post_chemthing_actions(self, chemthing_actions=None):
         bulk_endpoint = self.urls['chemthings'] + '_bulk/'
         response = self.request_client.post(
             bulk_endpoint,
-            data=self.serialize_bulk_actions(bulk_actions=bulk_actions)
+            data=self.serialize_actions(actions=chemthing_actions)
         )
         return self.json_raise_for_status(response=response)
 
-    def serialize_bulk_actions(self, bulk_actions=None):
-        serialized_bulk_actions = "\n".join([json.dumps(action)
-                                             for action in bulk_actions])
-        return serialized_bulk_actions
+    def serialize_actions(self, actions=None):
+        serialized_actions = "\n".join(
+            [json.dumps(action) for action in actions])
+        return serialized_actions
 
     def json_raise_for_status(self, response=None):
         try:

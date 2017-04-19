@@ -262,6 +262,7 @@ class ReaxysFlowSpecGenerator(object):
                                 'job_params': {
                                     'tasks': [
                                         {
+                                            'task_key': 'parse_computation',
                                             'task_type': (
                                                 'mc.a2g2.job_modules.qchem'
                                                 '.task_handlers'
@@ -270,17 +271,125 @@ class ReaxysFlowSpecGenerator(object):
                                             ),
                                         },
                                         {
+                                            'task_key': 'wire_computation',
+                                            'task_type': (
+                                                'mc.task_handlers'
+                                                '.set_values_task_handler'
+                                            ),
+                                            'task_params': {
+                                                'value_specs': [{
+                                                    'source': (
+                                                        'ctx.tasks'
+                                                        '.parse_computation'
+                                                        '.data.computation_meta'
+                                                    ),
+                                                    'dest': (
+                                                        'ctx.tasks'
+                                                        '.parse_opt_coords'
+                                                        '.task_params'
+                                                        '.parent_computation'
+                                                    ),
+                                                }]
+                                            },
+                                        },
+                                        {
+                                            'task_key': 'parse_opt_coords',
                                             'task_type': (
                                                 'mc.a2g2.job_modules.qchem'
                                                 '.task_handlers'
                                                 '.parse_opt_coords_task_handler'
                                             ),
+                                            'task_params': {
+                                                'parent_computation': 'TO_WIRE'
+                                            }
+                                        },
+
+                                        {
+                                            'task_key': 'wire_computation',
+                                            'task_type': (
+                                                'mc.task_handlers'
+                                                '.set_values_task_handler'
+                                            ),
+                                            'task_params': {
+                                                'value_specs': [{
+                                                    'source': (
+                                                        'ctx.tasks'
+                                                        '.parse_computation'
+                                                        '.data.computation_meta'
+                                                    ),
+                                                    'dest': (
+                                                        'ctx.tasks'
+                                                        '.set_geom_props'
+                                                        '.task_params'
+                                                        '.parent_computation'
+                                                    ),
+                                                }]
+                                            },
                                         },
                                         {
+                                            'task_key': 'set_geom_props',
                                             'task_type': (
-                                                'mc.task_handlers.'
-                                                'log_task_handler'
+                                                'mc.a2g2.job_modules.qchem'
+                                                '.task_handlers'
+                                                '.set_geom_props_task_handler'
                                             ),
+                                            'task_params': {
+                                                'parent_computation': 'TO_WIRE',
+                                                'props': {
+                                                    'fungly': 'yes',
+                                                    'blammo': 'cowjuice',
+                                                }
+                                            }
+                                        },
+
+                                        {
+                                            'task_key': (
+                                                'collect_chemthing_actions'),
+                                            'task_type': (
+                                                'mc.a2g2.job_modules.a2g2_db'
+                                                '.task_handlers'
+                                                '.collect_chemthing_actions'
+                                                '_task_handler'
+                                            ),
+                                        },
+                                        {
+                                            'task_key': (
+                                                'wire_chemthing_actions'),
+                                            'task_type': (
+                                                'mc.task_handlers'
+                                                '.set_values_task_handler'
+                                            ),
+                                            'task_params': {
+                                                'value_specs': [{
+                                                    'source': (
+                                                        'ctx.tasks'
+                                                        '.collect_chemthing_'
+                                                        'actions'
+                                                        '.data'
+                                                        '.chemthing_actions'
+                                                    ),
+                                                    'dest': (
+                                                        'ctx.tasks'
+                                                        '.post_chemthing_'
+                                                        'actions'
+                                                        '.task_params'
+                                                        '.chemthing_actions'
+                                                    ),
+                                                }]
+                                            },
+                                        },
+                                        {
+                                            'task_key': (
+                                                'post_chemthing_actions'),
+                                            'task_type': (
+                                                'mc.a2g2.job_modules.a2g2_db'
+                                                '.task_handlers'
+                                                '.post_chemthing_actions'
+                                                '_task_handler'
+                                            ),
+                                            'task_params': {
+                                                'chemthing_actions': 'TK'
+                                            }
                                         }
                                     ]
                                 }

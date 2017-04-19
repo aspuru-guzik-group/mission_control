@@ -9,4 +9,23 @@ class TaskHandler(BaseTaskHandler):
         parser = QChemComputationParser(input_dir=input_dir)
         computation_meta = parser.extract_computation_meta(job_dir=input_dir)
         task['data']['computation_meta'] = computation_meta
+        task['data']['chemthing_actions'] = self.generate_chemthing_actions(
+            computation_meta=computation_meta)
         task['status'] = 'COMPLETED'
+
+    def generate_chemthing_actions(self, computation_meta=None):
+        chemthing_actions = [
+            {
+                'key': computation_meta['uuid'],
+                'updates': {
+                    'props': {
+                        'a2g2:prop:artifacts': 'HERE!!!',
+                        'a2g2:prop:command_meta': (
+                            computation_meta['command_meta']),
+                        'a2g2:prop:execution_meta': (
+                            computation_meta['execution_meta']),
+                    }
+                }
+            }
+        ]
+        return chemthing_actions

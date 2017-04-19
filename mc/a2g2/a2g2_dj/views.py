@@ -19,7 +19,7 @@ class ChemThingViewSet(viewsets.ModelViewSet):
     @list_route(methods=['post'])
     def _bulk(self, request):
         result = _a2g2_dj_utils.process_serialized_chemthing_actions(
-            serialized_chemthing_actions=request.body)
+            serialized_chemthing_actions=request.body.decode())
         return JsonResponse(result, safe=False)
 
 @require_http_methods(["GET"])

@@ -12,6 +12,7 @@ class QChemComputationParser(object):
 
     def extract_computation_meta(self, job_dir=None):
         computation_meta = {
+            'uuid': str(uuid4()),
             'command_meta': self.extract_command_meta(
                 qchem_output_file=self.get_qchem_output_file(job_dir=job_dir)),
             'execution_meta': self.extract_execution_meta(job_dir=job_dir)
@@ -84,18 +85,3 @@ class QChemComputationParser(object):
         execution_meta_path = os.path.join(job_dir, submission['outputs_dir'],
                                            submission['execution_meta_name'])
         return json.load(open(execution_meta_path))
-
-    def generate_chemthing(self, computation_meta=None, parse_params=None):
-        chemthing = {}
-        chemthing['uuid'] = str(uuid4())
-        chemthing['props'] = {
-            'a2g2:prop:artifacts': parse_params['artifacts'],
-            'a2g2:prop:command_meta': computation_meta['command_meta'],
-            'a2g2:prop:execution_meta': computation_meta['execution_meta'],
-        }
-        chemthing['precursors'] = parse_params.get('precursors')
-        chemthing['ancestors'] = parse_params.get('ancestors')
-        return chemthing
-
-    def write_chemthings_bulk_file(self, chemthings=None, path=None):
-        json.dump(chemthings, open(path, 'w'))

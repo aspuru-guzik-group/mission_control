@@ -52,7 +52,7 @@ class GetOrCreateChemForActionThing(BaseTestCase):
         self.processor.get_or_create_chemthing_for_action(
             action=action_with_key)
         self.assertEqual(MockChemThing.objects.get_or_create.call_args,
-                         call(key=action_with_key['key']))
+                         call(keys__has_key=action_with_key['key']))
         action_sans_key = {}
         self.processor.get_or_create_chemthing_for_action(
             action=action_sans_key)

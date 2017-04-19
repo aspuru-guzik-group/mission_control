@@ -31,14 +31,14 @@ class CreateChemThingTestCase(BaseTestCase):
 class PostChemThingBulkActionsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.bulk_actions = MagicMock()
-        self.a2g2_client.serialize_bulk_actions = MagicMock()
-        self.result = self.a2g2_client.post_chemthing_bulk_actions(
-            bulk_actions=self.bulk_actions)
+        self.actions = MagicMock()
+        self.a2g2_client.serialize_actions = MagicMock()
+        self.result = self.a2g2_client.post_chemthing_actions(
+            chemthing_actions=self.actions)
 
     def test_makes_post(self):
         expected_url = self.base_url + 'chemthings/' + '_bulk/'
-        expected_data = self.a2g2_client.serialize_bulk_actions.return_value
+        expected_data = self.a2g2_client.serialize_actions.return_value
         self.assertEqual(self.request_client.post.call_args,
                          call(expected_url, data=expected_data))
 
@@ -49,16 +49,16 @@ class PostChemThingBulkActionsTestCase(BaseTestCase):
 class SerializeBulkActionsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.bulk_actions = list(range(3))
+        self.actions = list(range(3))
 
     @patch.object(a2g2_client, 'json')
-    def test_serializes_bulk_actions(self, mock_json):
+    def test_serializes_actions(self, mock_json):
         mock_json.dumps.return_value = 'mock_json_dumps'
-        serialized_bulk_actions = self.a2g2_client.serialize_bulk_actions(
-            bulk_actions=self.bulk_actions)
-        expected_serialization = "\n".join([mock_json.dumps(action)
-                                            for action in self.bulk_actions])
-        self.assertEqual(serialized_bulk_actions, expected_serialization)
+        serialized_actions = self.a2g2_client.serialize_actions(
+            actions=self.actions)
+        expected_serialization = "\n".join(
+            [mock_json.dumps(action) for action in self.actions])
+        self.assertEqual(serialized_actions, expected_serialization)
 
 class GetCountsTestCase(BaseTestCase):
     def test_generates_expected_request(self):
