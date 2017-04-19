@@ -1,10 +1,12 @@
 import json
+from unittest.mock import patch
 
 from django.conf.urls import url, include
 from django.test import TestCase
 from django.test.utils import override_settings
 from rest_framework.test import APITestCase
 
+from .. import views
 from ..models import a2g2_dj_models, ChemThing
 from ..serializers import ChemThingSerializer
 from .. import urls as _urls
@@ -39,6 +41,19 @@ class PatchChemThingTestCase(APITestCase):
         patched_chemthing_attrs = {attr: getattr(patched_chemthing, attr)
                              for attr in new_values.keys()}
         self.assertEqual(patched_chemthing_attrs, new_values)
+
+@override_settings(ROOT_URLCONF=__name__)
+class PostChemThingBulkActionsTestCase(APITestCase):
+    @patch.object(views, '_a2g2_dj_utils')
+    def test_list_chemthings(self, mock_a2g2_dj_utils):
+        mock_result = 'mock_result'
+        mock_a2g2_dj_utils.process_serialized_chemthing_actions\
+                .return_value = mock_result
+        serialized_bulk_actions = 'mock_serialized_bulk_actions'
+        bulk_url = '/' + BASE_PATH + 'chemthings/_bulk/'
+        response = self.client.generic('POST', bulk_url,
+                                       serialized_bulk_actions)
+        self.assertEqual(response.json(), mock_result)
 
 @override_settings(ROOT_URLCONF=__name__)
 class GetCountsTestCase(TestCase):
