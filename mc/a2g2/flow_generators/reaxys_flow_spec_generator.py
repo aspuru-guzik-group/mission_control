@@ -1,3 +1,6 @@
+import textwrap
+import yaml
+
 class ReaxysFlowSpecGenerator(object):
     def __init__(self, *args, flow_params=None, **kwargs):
         self.flow_params = flow_params
@@ -11,7 +14,7 @@ class ReaxysFlowSpecGenerator(object):
         return flow_spec
 
     def generate_confgen_node_spec(self):
-       return { 
+       node_spec = { 
             'node': {
                 'node_key': 'confgen',
                 'node_tasks': [
@@ -35,10 +38,11 @@ class ReaxysFlowSpecGenerator(object):
                 }
             },
             'precursor_keys': ['ROOT'],
-        }
+       }
+       return node_spec
 
     def generate_compute_parse_load_task(self, task_key=None, flow_params=None):
-        return {
+        task = {
             'task_key': task_key or 'compute_parse_load_task',
             'task_type': ('a2g2.tasks.nodes'
                           '.run_compute_parse_load_flow'),
@@ -49,53 +53,56 @@ class ReaxysFlowSpecGenerator(object):
                 }
             }
         }
+        return task
 
     def generate_conformer_query_node_spec(self):
-        return {
-            'node': {
-                'node_key': 'conformer_query',
-                'node_tasks': [
-                    {
-                        'task_key': 'run_conformer_query_job',
-                        'task_params': {
-                            'job_spec': {
-                                'job_type': 'a2g2.jobs.a2g2_db.query',
-                                'job_params': {},
-                            }
-                        },
-                        'task_type': 'a2g2.tasks.nodes.run_job_task'
-                    },
-                    {
-                        'task_type': 'set_value',
-                        'task_params': {
-                            'from_json': True,
-                            'source': ('ctx.tasks'
-                                       '.run_conformer_query_job.data'
-                                       '.stdout'),
-                            'dest': 'ctx.node.scratch.query_results',
-                        }
-                    },
-                    {
-                        'task_type': 'set_value',
-                        'task_params': {
-                            'source': 'ctx.node.scratch.query_results.hits',
-                            'dest': 'ctx.node.data.conformer_chemthings'
-                        },
-                    },
-                ]
-            },
-            'precursor_keys': ['ROOT']
-        }
+        node_spec_yaml = textwrap.dedent(
+            '''
+            node:
+              node_key: conformer_query
+              node_tasks:
+              - task_key: run_conformer_query_job
+                task_params:
+                  job_spec:
+                    job_params: {}
+                    job_type: a2g2.jobs.a2g2_db.query
+                task_type: a2g2.tasks.nodes.run_job_task
+              - task_params:
+                  dest: ctx.node.scratch.query_results
+                  from_json: true
+                  source: ctx.tasks.run_conformer_query_job.data.stdout
+                task_type: set_value
+              - task_params:
+                  dest: ctx.node.data.conformer_chemthings
+                  source: ctx.node.scratch.query_results.hits
+                task_type: set_value
+            precursor_keys: [ROOT]
+            '''
+        )
+        node_spec = yaml.load(node_spec_yaml)
+        return node_spec
     
     def generate_conformer_demux_node_spec(self):
-        return {
-            'node': {'node_key': 'confgen_demux',
-                     'node_tasks': self.generate_confgen_demux_tasks()},
-            'precursor_keys': ['conformer_query']
-        }
+        node_spec_yaml = textwrap.dedent(
+            '''
+            node
+              node_key: confgen_demux
+              node_tasks: %(node_tasks_yaml)s
+            precursor_keys: [conformer_query]
+            ''' % {
+                'node_tasks_yaml': self.dump_inline_yaml(
+                    self.generate_confgen_demux_tasks())
+            }
+        )
+        node_spec = yaml.load(node_spec_yaml)
+        return node_spec
+
+    def dump_inline_yaml(self, obj=None):
+        return yaml.dump(obj, default_style='"', default_flow_style=True)\
+                .strip()
 
     def generate_confgen_demux_tasks(self):
-        confgen_demux_tasks = [
+        tasks = [
             {
                 'task_key': 'wire_confgen_demux',
                 'task_type': 'set_value',
@@ -107,7 +114,7 @@ class ReaxysFlowSpecGenerator(object):
             },
             self.generate_demux_task()
         ]
-        return confgen_demux_tasks
+        return tasks
 
     def generate_demux_task(self):
         demux_task = {
@@ -437,3 +444,6 @@ def generate_flow_spec(*args, flow_params=None, **kwargs):
     generator = ReaxysFlowSpecGenerator(*args, flow_params=flow_params,
                                         **kwargs)
     return generator.generate_flow_spec()
+
+if __name__ == '__main__':
+    generate_flow_spec()
