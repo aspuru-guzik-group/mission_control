@@ -42,4 +42,3 @@ class DotSpecLoader(object):
             try: return obj[key]
             except: return None
 
-

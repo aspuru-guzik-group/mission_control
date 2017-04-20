@@ -83,7 +83,7 @@ class RunComputeParseLoadFlowTaskHandler(BaseTaskHandler):
                 .strip()
 
     def generate_parse_load_node(self, flow_params=None):
-        job_spec = flow_params['parse_load_job_spec']
+        parse_load_params = flow_params['parse_load_params']
         node = {
             'node_key': 'parse_load',
             'node_tasks': [
@@ -96,8 +96,9 @@ class RunComputeParseLoadFlowTaskHandler(BaseTaskHandler):
                             'inputs': {
                                 'artifacts': {}
                             },
-                            'job_type': job_spec['job_type'],
-                            'job_params': job_spec.get('job_params', {}),
+                            'job_type': parse_load_params['job_type'],
+                            'job_params': parse_load_params.get(
+                                'job_params', {}),
                         }
                     }
                 },
@@ -111,19 +112,18 @@ class RunComputeParseLoadFlowTaskHandler(BaseTaskHandler):
             {
                 'task_type': 'set_value',
                 'task_params': {
-                    'dest': ('ctx.tasks.run_job.task_params.job_spec'
-                             '.inputs.artifacts.input_dir'),
                     'source': 'ctx.flow.nodes.%s.data.artifact' % src_node,
+                    'dest': 'ctx.tasks.run_job.task_params.artifact',
                 }
             },
             {
                 'task_type': 'set_value',
                 'task_params': {
-                    'dest': ('ctx.tasks.run_job.task_params.job_spec'
-                             '.job_params.artifact'),
                     'source': 'ctx.flow.nodes.%s.data.artifact' % src_node,
+                    'dest': ('ctx.tasks.run_job.task_params.job_spec'
+                             '.inputs.artifacts.input_dir'),
                 }
-            }
+            },
         ]
 
 TaskHandler = RunComputeParseLoadFlowTaskHandler

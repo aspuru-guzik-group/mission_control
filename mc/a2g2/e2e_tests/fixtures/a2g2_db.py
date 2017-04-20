@@ -11,6 +11,7 @@ class A2G2_DB_Fixtures(object):
             'query': {},
             'hits': [
                 {
+                    'uuid': 'uuid-%s' % i,
                     'types': {
                         'a2g2:type:mol3d': True
                     },

@@ -1,3 +1,4 @@
+import collections
 import jinja2
 import json
 
@@ -36,9 +37,9 @@ class ContextValueSetter(object):
         return elided_string
 
     def get_value_for_value_spec(self, value_spec=None, context=None):
-        if value_spec.get('from_value'):
+        if value_spec.get('value'):
             value = value_spec['value']
-        elif value_spec.get('as_template'):
+        elif value_spec.get('template'):
             value = self.render_template(template=value_spec['value'],
                                          context=context)
         elif value_spec.get('from_json'):
@@ -81,7 +82,10 @@ class ContextValueSetter(object):
                     next_cursor = cursor[path_element]
                 cursor = next_cursor
                 pos += 1
-            cursor[path_elements[-1]] = value
+            last_key = path_elements[-1]
+            if self.is_listlike(cursor): last_key = int(last_key)
+            cursor[last_key] = value
+
         except Exception as exception:
             raise Exception(("Unable to set value\n"
                              "  exception: {exception}\n"
@@ -93,6 +97,10 @@ class ContextValueSetter(object):
     def get_value_from_dot_spec(self, obj=None, dot_spec=None):
         return dot_spec_loader.DotSpecLoader.get_obj_value_from_dot_spec(
             obj=obj, dot_spec=dot_spec)
+
+    def is_listlike(self, o):
+        return isinstance(o, collections.Sequence) and not isinstance(o, str)
+
 
 def set_context_values(value_specs=None, context=None):
     ContextValueSetter().set_context_values(value_specs=value_specs,

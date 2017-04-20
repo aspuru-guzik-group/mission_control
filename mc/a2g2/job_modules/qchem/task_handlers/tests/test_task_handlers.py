@@ -7,3 +7,6 @@ class StubTestCase(unittest.TestCase):
 
     def test_generates_chemthing_actions(self):
         self.fail("test for computation parser")
+
+    def test_computation_parser_has_artifact(self):
+        self.fail()
