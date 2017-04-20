@@ -97,3 +97,7 @@ class ContextValueSetter(object):
 def set_context_values(value_specs=None, context=None):
     ContextValueSetter().set_context_values(value_specs=value_specs,
                                             context=context)
+
+def set_context_value(value_spec=None, context=None):
+    ContextValueSetter().set_context_value(value_spec=value_spec,
+                                           context=context)
