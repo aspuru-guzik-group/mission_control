@@ -1,6 +1,6 @@
 from mc.flow_engines import flow_engine
 
-from mc.a2g2.utils.dot_spec_task_handler import DotSpecTaskHandler
+from mc.a2g2.utils.a2g2_task_handler import A2G2TaskHandler
 from ...a2g2_common.base_submission_runner import BaseSubmissionRunner
 
 
@@ -10,7 +10,7 @@ class SubmissionRunner(BaseSubmissionRunner):
         self.flow_engine = self.generate_flow_engine()
 
     def generate_flow_engine(self):
-        return flow_engine.FlowEngine(task_handler=DotSpecTaskHandler())
+        return flow_engine.FlowEngine(task_handler=A2G2TaskHandler())
 
     def run_submission(self):
         self.run_flow(flow=self.generate_flow(),

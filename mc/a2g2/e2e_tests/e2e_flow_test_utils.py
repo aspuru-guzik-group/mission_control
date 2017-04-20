@@ -18,7 +18,7 @@ from mc.storage_client.storage_client import MissionControlStorageClient
 from mc.execution_clients.ssh_control_socket_client import (
     SSHControlSocketClient)
 from mc.a2g2.job_engines import a2g2_job_engine
-from mc.a2g2.utils.dot_spec_task_handler import DotSpecTaskHandler
+from mc.a2g2.utils.a2g2_task_handler import A2G2TaskHandler
 
 from .docker.docker_utils import DockerEnv
 
@@ -60,7 +60,7 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
         class TaskHandler(object):
             def tick_task(self, *args, task=None, **kwargs):
                 try:
-                    DotSpecTaskHandler.tick_task(task=task, **kwargs)
+                    A2G2TaskHandler.tick_task(task=task, **kwargs)
                 except Exception as exception:
                     msg = ("Could not handle task with type"
                            " '%s'" % task['task_type'])
