@@ -17,7 +17,7 @@ class DemuxTaskHandler(BaseTaskHandler):
         label = task['task_key'] + '__flow'
         flow_task = {
             'task_key': label,
-            'task_type': 'a2g2.task_handlers.nodes.run_flow_task_handler',
+            'task_type': 'a2g2.tasks.nodes.run_flow_task',
             'task_params': {
                 'flow_spec': self.generate_flow_spec(task=task,
                                                      task_context=task_context,

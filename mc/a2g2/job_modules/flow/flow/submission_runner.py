@@ -1,6 +1,6 @@
 from mc.flow_engines import flow_engine
 
-from mc.a2g2.utils.a2g2_task_handler import A2G2TaskHandler
+from mc.a2g2.task_handlers.a2g2_task_handler import A2G2TaskHandler
 from ...a2g2_common.base_submission_runner import BaseSubmissionRunner
 
 

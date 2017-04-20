@@ -41,7 +41,7 @@ class ReaxysFlowSpecGenerator(object):
         return {
             'task_key': task_key or 'compute_parse_load_task',
             'task_type': ('a2g2.tasks.nodes'
-                          '.run_compute_parse_load_flow'),
+                          '.run_compute_parse_load_flow_task'),
             'task_params': {
                 'flow_params': {
                     'delete_flow_spec_after_creation': True,
@@ -95,33 +95,20 @@ class ReaxysFlowSpecGenerator(object):
         }
 
     def generate_confgen_demux_tasks(self):
-        confgen_demux_tasks = [
-            {
-                'task_key': 'wire_confgen_demux',
-                'task_type': 'set_value',
-                'task_params': {
-                    'source': ('ctx.flow.nodes.conformer_query.data'
-                               '.conformer_chemthings'),
-                    'dest': 'ctx.tasks.confgen_demux.task_params.items',
-                },
-            },
-            self.generate_demux_task()
-        ]
-        return confgen_demux_tasks
-
-    def generate_demux_task(self):
-        demux_task = {
+        demux_tasks = [{
             'task_key': 'confgen_demux',
             'task_type': 'a2g2.tasks.nodes.demux_task',
             'task_params': {
-                'items': 'TO BE WIRED',
+                'items': ('_ctx:flow.nodes.conformer_query.data'
+                          '.conformer_chemthings'),
                 'demux_flow_params': {
                     'cfg': {
                         'fail_fast': False,
                     },
                     'data': {
-                        'run_dft_flow_params': (
-                            self.generate_run_dft_flow_params())
+                        'run_dft_flow_params': {
+                            'flow_spec': self.generate_dft_flow_spec(),
+                        }
                     }
                 },
                 'node_spec_template': self.generate_demux_node_spec_template(),
@@ -132,17 +119,29 @@ class ReaxysFlowSpecGenerator(object):
                     }
                 ]
             }
-        }
-        return demux_task
+        }]
+        return demux_tasks
 
     def generate_demux_node_spec_template(self):
         node_spec_template = {
             'node': {
-                'data': {
-                    'conformer_chemthing': 'TO BE WIRED',
-                },
                 'node_tasks': [
-                    *(self.generate_molecule_to_chemthing_tasks()),
+                    {
+                        'task_type': 'set_value',
+                        'task_params': {
+                            'from_value': True,
+                            'value': {'multiplicity': 0, 'charge': 0},
+                            'dest': 'ctx.node.data.molecule'
+                        },
+                    },
+                    {
+                        'task_type': 'set_value',
+                        'task_params': {
+                            'source': ('ctx.node.data.conformer_chemthing'
+                                       '.props.a2g2:prop:atoms'),
+                            'dest': 'ctx.node.data.molecule.atoms'
+                        },
+                    },
                     {
                         'task_key': 'wire_dft_flow_params_into_task',
                         'task_type': 'set_value',
@@ -169,34 +168,6 @@ class ReaxysFlowSpecGenerator(object):
             }
         }
         return node_spec_template
-
-    def generate_molecule_to_chemthing_tasks(self):
-        molecule_to_chemthing_tasks = [
-            {
-                'task_type': 'set_value',
-                'task_params': {
-                    'from_value': True,
-                    'value': {'multiplicity': 0, 'charge': 0},
-                    'dest': 'ctx.node.data.molecule'
-                },
-            },
-            {
-                'task_type': 'set_value',
-                'task_params': {
-                    'source': ('ctx.node.data.conformer_chemthing'
-                               '.props.a2g2:prop:atoms'),
-                    'dest': 'ctx.node.data.molecule.atoms'
-                },
-            }
-        ]
-        return molecule_to_chemthing_tasks
-
-    def generate_run_dft_flow_params(self):
-        run_dft_flow_params = {
-            'flow_spec': self.generate_dft_flow_spec(),
-            'delete_flow_spec_after_creation': True,
-        }
-        return run_dft_flow_params
 
     def generate_dft_flow_spec(self):
         dft_flow_spec = {
@@ -246,7 +217,7 @@ class ReaxysFlowSpecGenerator(object):
 
     def generate_wire_molecule_into_cpl_task(self, cpl_key=None):
         return {
-            'task_key': 'wire_molecule_into_compute_parse_load',
+            'task_key': 'wire_molecule_into_cpl',
             'task_type': 'set_value',
             'task_params': {
                 'source': 'ctx.flow.data.molecule',
@@ -261,64 +232,25 @@ class ReaxysFlowSpecGenerator(object):
         return [
             {
                 'task_key': 'parse_computation',
-                'task_type': (
-                    'mc.a2g2.job_modules.qchem'
-                    '.tasks'
-                    '.parse_computation_meta_task'
-                ),
-            },
-            {
-                'task_key': 'wire_computation',
-                'task_type': 'set_value',
-                'task_params': {
-                    'source': (
-                        'ctx.tasks'
-                        '.parse_computation'
-                        '.data.computation_meta'
-                    ),
-                    'dest': (
-                        'ctx.tasks.parse_opt_coords'
-                        '.task_params'
-                        '.parent_computation'
-                    ),
-                }
+                'task_type': ('mc.a2g2.job_modules.qchem.tasks'
+                              '.parse_computation_meta_task')
             },
             {
                 'task_key': 'parse_opt_coords',
-                'task_type': (
-                    'mc.a2g2.job_modules.qchem'
-                    '.tasks'
-                    '.parse_opt_coords_task'
-                ),
+                'task_type': ('mc.a2g2.job_modules.qchem.tasks'
+                              '.parse_opt_coords_task'),
                 'task_params': {
-                    'parent_computation': 'TO_WIRE'
+                    'parent_computation': ('_ctx:tasks.parse_computation'
+                                           '.data.computation_meta'),
                 }
             },
             {
-                'task_key': 'wire_computation',
-                'task_type': 'set_value',
+                'task_key': 'set_extra_geom_props',
+                'task_type': ('mc.a2g2.job_modules.qchem.tasks'
+                              '.set_geom_props_task'),
                 'task_params': {
-                    'source': (
-                        'ctx.tasks'
-                        '.parse_computation.data'
-                        '.computation_meta'
-                    ),
-                    'dest': (
-                        'ctx.tasks.set_geom_props'
-                        '.task_params'
-                        '.parent_computation'
-                    ),
-                }
-            },
-            {
-                'task_key': 'set_geom_props',
-                'task_type': (
-                    'mc.a2g2.job_modules.qchem'
-                    '.tasks'
-                    '.set_geom_props_task'
-                ),
-                'task_params': {
-                    'parent_computation': 'TO_WIRE',
+                    'parent_computation': ('_ctx:tasks.parse_computation'
+                                           '.data.computation_meta'),
                     'props': {
                         'fungly': 'yes',
                         'blammo': 'cowjuice',
@@ -326,44 +258,17 @@ class ReaxysFlowSpecGenerator(object):
                 }
             },
             {
-                'task_key': (
-                    'collect_chemthing_actions'),
-                'task_type': (
-                    'mc.a2g2.job_modules.a2g2_db'
-                    '.tasks'
-                    '.collect_chemthing_actions'
-                    '_task'
-                ),
+                'task_key': 'collect_chemthing_actions',
+                'task_type': ('mc.a2g2.job_modules.a2g2_db.tasks'
+                              '.collect_chemthing_actions_task')
             },
             {
-                'task_key': (
-                    'wire_chemthing_actions'),
-                'task_type': 'set_value',
+                'task_key': 'post_chemthing_actions',
+                'task_type': ('mc.a2g2.job_modules.a2g2_db.tasks'
+                              '.post_chemthing_actions_task'),
                 'task_params': {
-                    'source': (
-                        'ctx.tasks'
-                        '.collect_chemthing_actions'
-                        '.data.chemthing_actions'
-                    ),
-                    'dest': (
-                        'ctx.tasks'
-                        '.post_chemthing_actions'
-                        '.task_params'
-                        '.chemthing_actions'
-                    ),
-                }
-            },
-            {
-                'task_key': (
-                    'post_chemthing_actions'),
-                'task_type': (
-                    'mc.a2g2.job_modules.a2g2_db'
-                    '.tasks'
-                    '.post_chemthing_actions'
-                    '_task'
-                ),
-                'task_params': {
-                    'chemthing_actions': 'TK'
+                    'chemthing_actions': ('_ctx:tasks.collect_chemthing_actions'
+                                          '.data.chemthing_actions'),
                 }
             }
         ]

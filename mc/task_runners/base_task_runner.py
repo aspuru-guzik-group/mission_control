@@ -27,7 +27,8 @@ class BaseTaskRunner(object):
                 current_task = next_task
             return tasks_status
         except Exception as error:
-            raise Exception("Error ticking tasks: {}".format(error))
+            self.logger.exception("Error ticking tasks: {}".format(error))
+            raise
 
     def get_first_incomplete_task(self):
         for task in self.get_tasks():

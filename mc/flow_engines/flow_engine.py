@@ -62,10 +62,10 @@ class FlowEngine(object):
         except Exception as exception:
             fail_flow = True
             error = self.stringify_exception(exception)
+            self.append_flow_error(flow=flow, error=error)
             if isinstance(exception, self.NodeError):
                 if not flow.cfg.get('fail_fast', True): fail_flow = False
-            if fail_flow: self.fail_flow(flow=flow, error=error)
-            else: self.append_flow_error(flow=flow, error=error)
+            if fail_flow: self.fail_flow(flow=flow)
 
     def start_flow(self, flow=None):
         flow.status = 'RUNNING'

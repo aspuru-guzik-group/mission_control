@@ -18,7 +18,7 @@ from mc.storage_client.storage_client import MissionControlStorageClient
 from mc.execution_clients.ssh_control_socket_client import (
     SSHControlSocketClient)
 from mc.a2g2.job_engines import a2g2_job_engine
-from mc.a2g2.utils.a2g2_task_handler import A2G2TaskHandler
+from mc.a2g2.task_handlers.a2g2_task_handler import A2G2TaskHandler
 
 from .docker.docker_utils import DockerEnv
 
