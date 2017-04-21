@@ -65,8 +65,17 @@ class UpdateChemThingFromAction(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.action = {
-            'updates': {attr: MagicMock() for attr in (
-                self.processor.ATTRS_TO_UPDATE + self.processor.ATTRS_TO_SET)}
+            'updates': {
+                **{
+                    attr: MagicMock()
+                    for attr in [*self.processor.ATTRS_TO_UPDATE,
+                                 *self.processor.ATTRS_TO_SET]
+                },
+                'tags': {
+                    **{'tag_%s' % i: True for i in range(3)},
+                    **{'tag_%s' % i: False for i in range(3)}
+                }
+            }
         }
         self.chemthing = MagicMock()
         self.processor.update_chemthing_from_action(chemthing=self.chemthing,
@@ -88,6 +97,20 @@ class UpdateChemThingFromAction(BaseTestCase):
             actual_values[attr] = getattr(self.chemthing, attr)
             expected_values[attr] = self.action['updates'][attr]
         self.assertEqual(actual_values, expected_values)
+
+    def test_processes_tags(self):
+        expected_add_call_args_list = [
+            call(tag) for tag, active in self.action['updates']['tags'].items()
+            if active
+        ]
+        expected_remove_call_args_list = [
+            call(tag) for tag, active in self.action['updates']['tags'].items()
+            if not active
+        ]
+        self.assertEqual(self.chemthing.tags.add.call_args_list,
+                         expected_add_call_args_list)
+        self.assertEqual(self.chemthing.tags.remove.call_args_list,
+                         expected_remove_call_args_list)
 
     def test_saves_chemthing(self):
         self.assertEqual(self.chemthing.save.call_args, call())

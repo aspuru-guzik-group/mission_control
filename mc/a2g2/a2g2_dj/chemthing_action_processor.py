@@ -27,4 +27,7 @@ class ChemThingActionProcessor(object):
                 setattr(chemthing, attr, {**prev_value, **updates[attr]})
         for attr in self.ATTRS_TO_SET:
             if attr in updates: setattr(chemthing, attr, updates[attr])
+        for tag, add in updates.get('tags', {}).items():
+            if add: chemthing.tags.add(tag)
+            else: chemthing.tags.remove(tag)
         chemthing.save()
