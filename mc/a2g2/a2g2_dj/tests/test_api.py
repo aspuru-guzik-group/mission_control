@@ -48,7 +48,7 @@ class QueryChemThingsTestCase(BaseAPITestCase):
     def test_filter_by_tag(self):
         tags = ['tag_%s' % i for i in range(2)]
         tagged_chemthings = self.generate_tagged_chemthings(
-            num_chemthings=(len(tags) + 1), tags=tags)
+            tags=tags, tags_per_chemthing=2)
         chemthings_by_tag = {
             tag: [chemthing for chemthing in tagged_chemthings
                   if tag in chemthing.tags]
@@ -58,16 +58,15 @@ class QueryChemThingsTestCase(BaseAPITestCase):
             wanted_chemthings = chemthings_by_tag[tag]
             self.run_query_test(wanted_chemthings=wanted_chemthings,
                                 query_params={'tag': tag})
-        self.run_query_test(wanted_chemthings=tagged_chemthings,
-                            query_params={'tag': tag})
 
-    def generate_tagged_chemthings(self):
+    def generate_tagged_chemthings(self, tags=None, tags_per_chemthing=1,
+                                   num_chemthings=None):
+        num_chemthings = num_chemthings or (2 * len(tags) + 1)
         chemthings = []
-        for i in range(6):
-            tags = []
-            for j in [2, 3]:
-                if (i % j) == 0: tags.append(str(j))
-                chemthings.append(ChemThing.objects.create(tags=tags))
+        for i in range(num_chemthings):
+            tags = [tags[(i + j) % len(tags)]
+                    for j in range(tags_per_chemthing)]
+            chemthings.append(ChemThing.objects.create(tags=tags))
         return chemthings
 
 class PatchChemThingTestCase(BaseAPITestCase):

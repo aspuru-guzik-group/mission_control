@@ -1,7 +1,8 @@
 
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
-from django_filters.rest_framework import DjangoFilterBackend
+import django_filters as _dj_filters
+import django_filters.rest_framework as _drf_filters
 from rest_framework import viewsets
 from rest_framework.decorators import list_route
 
@@ -10,11 +11,17 @@ from .serializers import ChemThingSerializer
 from . import utils as _a2g2_dj_utils
 
 
+class ChemThingFilter(_drf_filters.FilterSet):
+    tag = _dj_filters.CharFilter(name="tags__name")
+    class Meta:
+        model = ChemThing
+        fields = ['uuid', 'tag']
+
 class ChemThingViewSet(viewsets.ModelViewSet):
     queryset = ChemThing.objects.all()
     serializer_class = ChemThingSerializer
-    filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('uuid',)
+    filter_backends = (_drf_filters.DjangoFilterBackend,)
+    filter_class = ChemThingFilter
 
     @list_route(methods=['post'])
     def _bulk(self, request):
