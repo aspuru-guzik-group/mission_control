@@ -49,10 +49,10 @@ class A2G2_Client(object):
         response = self.request_client.get(self.urls['counts'])
         return self.json_raise_for_status(response=response)
 
-    def query(self, q=None):
-        obj_type = q.get('collection')
+    def query(self, query_params=None):
+        obj_type = query_params.get('collection')
         url = self.urls[obj_type]
-        response = self.request_client.get(url)
+        response = self.request_client.get(url, query_params.get('filters', {}))
         return self.json_raise_for_status(response=response)
 
     def flush_a2g2_db(self):

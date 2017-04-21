@@ -74,9 +74,14 @@ class GetCountsTestCase(BaseTestCase):
 
 class QueryTestCase(BaseTestCase):
     def test_queries_chemthings(self):
-        result = self.a2g2_client.query(q={'collection': 'chemthings'})
+        filters = {('filter_%s' % i): ('value_%s' % i) for i in range(3)}
+        result = self.a2g2_client.query(query_params={
+            'collection': 'chemthings',
+            'filters': filters
+        })
         expected_url = self.base_url + 'chemthings/'
-        self.assertEqual(self.request_client.get.call_args, call(expected_url))
+        self.assertEqual(self.request_client.get.call_args,
+                         call(expected_url, filters))
         self.assertEqual(result,
                          self.request_client.get.return_value.json.return_value)
 
