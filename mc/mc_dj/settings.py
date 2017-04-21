@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'rest_framework',
+    'taggit',
     'missions',
     'e2e',
     'a2g2.a2g2_dj.apps.A2G2_DJ_Config',
