@@ -30,6 +30,8 @@ class ProcessActionTestCase(BaseTestCase):
         for attr in ['get_or_create_chemthing_for_action',
                      'update_chemthing_from_action']:
             setattr(self.processor, attr, MagicMock())
+        self.processor.get_or_create_chemthing_for_action.return_value = \
+                (MagicMock(), MagicMock())
         self.result = self.processor.process_action(action=self.action)
 
     def test_updates_get_or_create_result(self):
@@ -40,7 +42,8 @@ class ProcessActionTestCase(BaseTestCase):
                 self.processor.get_or_create_chemthing_for_action.return_value
         self.assertEqual(
             self.processor.update_chemthing_from_action.call_args,
-            call(chemthing=expected_get_or_create_result, action=self.action)) 
+            call(chemthing=expected_get_or_create_result[0], action=self.action)
+        ) 
         self.assertEqual(
             self.result,
             self.processor.update_chemthing_from_action.return_value)

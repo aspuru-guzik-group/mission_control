@@ -2,7 +2,7 @@ from unittest.mock import call, MagicMock, patch
 
 from django.test import TestCase
 
-from .. import _utils
+from .. import utils as _utils
 
 
 @patch.object(_utils, 'ChemThingActionProcessor')

@@ -2,7 +2,6 @@ import json
 from unittest.mock import patch
 
 from django.conf.urls import url, include
-from django.test import TestCase
 from django.test.utils import override_settings
 from rest_framework.test import APITestCase
 
@@ -17,7 +16,9 @@ urlpatterns = [
 ]
 
 @override_settings(ROOT_URLCONF=__name__)
-class ListChemThingsTestCase(APITestCase):
+class BaseAPITestCase(APITestCase): pass
+
+class ListChemThingsTestCase(BaseAPITestCase):
     def test_list_chemthings(self):
         chemthings = [ChemThing.objects.create() for i in range(3)]
         response = self.client.get('/' + BASE_PATH + 'chemthings/')
@@ -25,8 +26,7 @@ class ListChemThingsTestCase(APITestCase):
         self.assertEqual(sorted(response.data, key=lambda j: j['uuid']),
                          sorted(expected_data, key=lambda j:j['uuid']))
 
-@override_settings(ROOT_URLCONF=__name__)
-class PatchChemThingTestCase(APITestCase):
+class PatchChemThingTestCase(BaseAPITestCase):
     def setUp(self):
         self.chemthings = [ChemThing.objects.create() for i in range(1)]
 
@@ -42,8 +42,7 @@ class PatchChemThingTestCase(APITestCase):
                              for attr in new_values.keys()}
         self.assertEqual(patched_chemthing_attrs, new_values)
 
-@override_settings(ROOT_URLCONF=__name__)
-class PostChemThingBulkActionsTestCase(APITestCase):
+class PostChemThingBulkActionsTestCase(BaseAPITestCase):
     @patch.object(views, '_a2g2_dj_utils')
     def test_list_chemthings(self, mock_a2g2_dj_utils):
         mock_result = 'mock_result'
@@ -55,8 +54,7 @@ class PostChemThingBulkActionsTestCase(APITestCase):
                                        serialized_bulk_actions)
         self.assertEqual(response.json(), mock_result)
 
-@override_settings(ROOT_URLCONF=__name__)
-class GetCountsTestCase(TestCase):
+class GetCountsTestCase(BaseAPITestCase):
     def setUp(self):
         self.create_chemthings()
 
@@ -73,8 +71,7 @@ class GetCountsTestCase(TestCase):
         self.assertEqual(json.loads(response.content.decode()),
                          expected_data)
 
-@override_settings(ROOT_URLCONF=__name__)
-class FlushTestCase(TestCase):
+class FlushTestCase(BaseAPITestCase):
     def setUp(self):
         self.create_models()
 
