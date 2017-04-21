@@ -16,7 +16,7 @@ class SubmissionRunner(BaseSubmissionRunner):
 
     def execute_query(self, query_params=None):
         a2g2_client = a2g2_db_utils.generate_a2g2_client(cfg=self.cfg)
-        return a2g2_client.execute_query(**query_params)
+        return a2g2_client.query(query_params=query_params)
 
     def write_query_results(self, query_results=None):
         sys.stdout.write(json.dumps(query_results))

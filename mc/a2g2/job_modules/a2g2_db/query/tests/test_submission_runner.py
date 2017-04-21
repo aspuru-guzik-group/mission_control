@@ -47,10 +47,9 @@ class ExecuteQueryTestCase(BaseTestCase):
         )
         expected_client = submission_runner.a2g2_db_utils.generate_a2g2_client\
                 .return_value
-        self.assertEqual(expected_client.execute_query.call_args,
-                         call(**self.query_params))
-        self.assertEqual(query_results,
-                         expected_client.execute_query.return_value)
+        self.assertEqual(expected_client.query.call_args,
+                         call(query_params=self.query_params))
+        self.assertEqual(query_results, expected_client.query.return_value)
 
 @patch.object(submission_runner, 'sys')
 @patch.object(submission_runner, 'json')
