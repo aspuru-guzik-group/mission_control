@@ -1,3 +1,6 @@
+import time
+
+
 class ReaxysFlowSpecGenerator(object):
     def __init__(self, *args, flow_params=None, **kwargs):
         self.flow_params = flow_params
@@ -188,8 +191,8 @@ class ReaxysFlowSpecGenerator(object):
             'label': 'dft_flow',
             'node_specs': [
                 self.generate_b3lyp_opt_node_spec(),
+                self.generate_b3lyp_tddft_node_spec(),
                 #self.generate_b3lyp_opt_t1_node_spec(),
-                #self.generate_b3lyp_tddft_node_spec(),
             ]
         }
         return dft_flow_spec
@@ -302,6 +305,97 @@ class ReaxysFlowSpecGenerator(object):
             }
         ]
 
+    def generate_b3lyp_tddft_node_spec(self):
+        node_key = 'b3lyp_opt_tddft'
+        cpl_key = node_key + '_cpl'
+        return {
+            'node': {
+                'node_key': node_key,
+                'node_tasks': [
+                    {
+                        'task_key': 'set_query_params',
+                        'task_type': 'set_value',
+                        'task_params': {
+                            'src': '<PRECURSOR KEY>',
+                            'dest': 'ctx.task.data.query_params.key'
+                        },
+                    },
+                    *(self.generate_chemthing_query_tasks(
+                        query_params_src='set_query_params.data.query_params',
+                        dest='ctx.tasks.set_precursor_chemthing.data.precursor')
+                    ),
+                    {
+                        'task_key': 'set_precursor_chemthing',
+                        'task_type': 'noop',
+                    },
+                    self.generate_wire_precursor_into_cpl_task(cpl_key=cpl_key),
+                    self.generate_wire_molecule_into_cpl_task(cpl_key=cpl_key),
+                    self.generate_compute_parse_load_task(
+                        task_key=cpl_key,
+                        flow_params={
+                            'label': 'b3lyp_6_31gs_opt_flow',
+                            'compute_job_spec': {
+                                'job_type': 'a2g2.jobs.qchem.qchem',
+                                'job_params': {
+                                    'qchem_params': {
+                                        'method': 'b3lyp',
+                                        'basis': '6_31gs',
+                                        'molecule': 'TO BE WIRED',
+                                    }
+                                },
+                            },
+                            'parse_load_params': {
+                                'job_type': 'a2g2.jobs.flow.task_list',
+                                'job_params': {
+                                    'tasks': self.generate_opt_parse_tasks()
+                                },
+                            }
+                        }
+                    )
+                ]
+            },
+            'precursor_keys': ['b3lyp_6_31gs_opt'],
+        }
+
+    def generate_chemthing_query_tasks(self, query_params_src=None, dest=None):
+        query_key = 'query_%s' % time.time()
+        scratch_path = 'ctx.%s_scratch.query_results' % query_key
+        tasks = [
+            self.generate_query_task(query_key=query_key,
+                                     query_params_src=None),
+            {
+                'task_type': 'set_value',
+                'task_params': {
+                    'from_json': True,
+                    'source': 'ctx.tasks.run_conformer_query_job.data.stdout',
+                    'dest': scratch_path,
+                }
+            },
+            {
+                'task_type': 'set_value',
+                'task_params': {
+                    'source': '%s.hits' % scratch_path,
+                    'dest': dest
+                },
+            },
+        ]
+        return tasks
+
+    def generate_query_task(self, task_key=None, query_params_src=None):
+        query_task = {
+            'task_key': task_key,
+            'task_params': {
+                'job_spec': {
+                    'job_type': 'a2g2.jobs.a2g2_db.query',
+                    'job_params': {
+                        'query_params': '_ctx:%s' % query_params_src
+                    }
+                }
+            },
+            'task_type': 'a2g2.tasks.nodes.run_job_task'
+        }
+        return query_task
+
     def generate_b3lyp_opt_t1_node_spec(self):
         node_key = 'b3lyp_6_31gs_opt_t1'
         cpl_key = node_key + '_cpl'
@@ -334,37 +428,6 @@ class ReaxysFlowSpecGenerator(object):
                 ]
             },
             'precursor_keys': ['ROOT'],
-        }
-
-
-    def generate_b3lyp_tddft_node_spec(self):
-        return {
-            'node': {
-                'node_key': 'b3lyp_6_31gs_tddft',
-                'node_tasks': [
-                    self.generate_compute_parse_load_task(
-                        flow_params={
-                            'label': 'b3lyp_6_31gs_tddft_flow',
-                            'compute_job_spec': {
-                                'job_type': 'a2g2.jobs.qchem.qchem',
-                                'job_params': {
-                                    'qchem_params': {
-                                        'method': 'b3lyp',
-                                        'basis': '6_31gs',
-                                    },
-                                },
-                            },
-                            'parse_job_spec': {
-                                'job_type': 'a2g2.jobs.qchem.parse'
-                            },
-                            'load_job_spec': {
-                                'job_type': 'a2g2.jobs.qchem.load'
-                            }
-                        }
-                    )
-                ]
-            },
-            'precursor_keys': ['b3lyp_6_31gs_opt'],
         }
 
 def generate_flow_spec(*args, flow_params=None, **kwargs):
