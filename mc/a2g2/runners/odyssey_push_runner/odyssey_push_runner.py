@@ -82,7 +82,8 @@ class OdysseyPushRunner(object):
     def generate_flow_runner(self):
         return FlowRunner(flow_client=self.mc_client,
                           flow_engine=self.flow_engine,
-                          flow_ctx=self.flow_ctx)
+                          flow_ctx=self.flow_ctx,
+                          max_flows_per_tick=10)
 
     def create_flow_record(self, *args, flow_record=None, **kwargs):
         return self.mc_client.create_flow(flow=flow_record)

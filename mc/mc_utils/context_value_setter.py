@@ -37,12 +37,11 @@ class ContextValueSetter(object):
         return elided_string
 
     def get_value_for_value_spec(self, value_spec=None, context=None):
-        if value_spec.get('value'):
-            value = value_spec['value']
-        elif value_spec.get('template'):
-            value = self.render_template(template=value_spec['value'],
+        if 'value' in value_spec: value = value_spec['value']
+        elif 'template' in value_spec:
+            value = self.render_template(template=value_spec['template'],
                                          context=context)
-        elif value_spec.get('from_json'):
+        elif 'from_json' in value_spec:
             raw_value = self.get_value_from_dot_spec(
                 obj={'ctx': context}, dot_spec=value_spec['source'])
             try:
@@ -58,9 +57,8 @@ class ContextValueSetter(object):
         return value
 
     def render_template(self, template=None, context=None):
-        return jinja2.Template(template, 
-                               undefined=jinja2.StrictUndefined
-                              ).render(ctx=context)
+        return jinja2.Template(
+            template, undefined=jinja2.StrictUndefined).render(ctx=context)
 
     def set_context_dest_value(self, context=None, dest=None, value=None):
         self.set_value_from_dot_spec(obj={'ctx': context}, dot_spec=dest,

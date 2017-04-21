@@ -52,7 +52,7 @@ class QChemFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
             self.a2g2_client.flush_a2g2_db()
             self.create_flows()
             self.assertTrue(len(self.mc_client.fetch_tickable_flows()) > 0)
-            self.run_flows_to_completion(timeout=30)
+            self.run_flows_to_completion(timeout=60, max_ticks=100)
             self.assert_domain_db_has_expected_state()
         except Exception as exception:
             flows = self.mc_client.fetch_flows()

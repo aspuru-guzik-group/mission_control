@@ -204,7 +204,9 @@ class ReaxysFlowSpecGenerator(object):
             'node': {
                 'node_key': node_key,
                 'node_tasks': [
-                    self.generate_wire_precursor_into_cpl_task(cpl_key=cpl_key),
+                    self.generate_wire_precursors_into_cpl_task(
+                        precursors_source='ctx.flow.data.precursors',
+                        cpl_key=cpl_key),
                     self.generate_wire_molecule_into_cpl_task(cpl_key=cpl_key),
                     self.generate_compute_parse_load_task(
                         task_key=cpl_key,
@@ -225,20 +227,29 @@ class ReaxysFlowSpecGenerator(object):
                                 'job_params': {
                                     'tasks': self.generate_opt_parse_tasks()
                                 },
-                            }
+                            },
                         }
-                    )
+                    ),
+                    {
+                        'task_type': 'set_value',
+                        'task_params': {
+                            'source': ('ctx.tasks.{cpl_key}.data.flow_data'
+                                       '.opt_geom_tag'),
+                            'dest': 'ctx.node.data.outputs.opt_geom_tag'
+                        }
+                    },
                 ]
             },
             'precursor_keys': ['ROOT'],
         }
 
-    def generate_wire_precursor_into_cpl_task(self, cpl_key=None):
+    def generate_wire_precursors_into_cpl_task(self, precursors_source=None,
+                                               cpl_key=None):
         return {
-            'task_key': 'wire_precursor_into_cpl',
+            'task_key': 'wire_precursors_into_cpl',
             'task_type': 'set_value',
             'task_params': {
-                'source': 'ctx.flow.data.precursors',
+                'source': precursors_source,
                 'dest': ('ctx.tasks.{cpl_key}.task_params.flow_params'
                          '.parse_load_params.job_params.flow_data.precursors'
                         ).format(cpl_key=cpl_key)
@@ -268,12 +279,20 @@ class ReaxysFlowSpecGenerator(object):
                 }
             },
             {
+                'task_key': 'opt_geom_key',
+                'task_type': 'set_value',
+                'task_params': {
+                    'template': ('{{ctx.tasks.parse_computation.data'
+                                 '.computation_meta.uuid}}:opt_geom'),
+                    'dest': 'ctx.task.data.key'
+                }
+            },
+            {
                 'task_key': 'parse_opt_coords',
                 'task_type': ('mc.a2g2.job_modules.qchem.tasks'
                               '.parse_opt_coords_task'),
                 'task_params': {
-                    'parent_computation': ('_ctx:tasks.parse_computation'
-                                           '.data.computation_meta'),
+                    'key': '_ctx:tasks.opt_geom_key.data.key',
                 }
             },
             {
@@ -281,8 +300,7 @@ class ReaxysFlowSpecGenerator(object):
                 'task_type': ('mc.a2g2.job_modules.qchem.tasks'
                               '.set_geom_props_task'),
                 'task_params': {
-                    'parent_computation': ('_ctx:tasks.parse_computation'
-                                           '.data.computation_meta'),
+                    'key': '_ctx:tasks.opt_geom_key.data.key',
                     'props': {
                         'fungly': 'yes',
                         'blammo': 'cowjuice',
@@ -302,6 +320,12 @@ class ReaxysFlowSpecGenerator(object):
                     'chemthing_actions': ('_ctx:tasks.collect_chemthing_actions'
                                           '.data.chemthing_actions'),
                 }
+            },
+            {
+                'task_type': 'print',
+                'task_params': {
+                    'message': '_ctx:tasks.opt_geom_key.data.opt_geom_key',
+                }
             }
         ]
 
@@ -316,19 +340,40 @@ class ReaxysFlowSpecGenerator(object):
                         'task_key': 'set_query_params',
                         'task_type': 'set_value',
                         'task_params': {
-                            'src': '<PRECURSOR KEY>',
-                            'dest': 'ctx.task.data.query_params.key'
+                            'source': ('ctx.flow.nodes.b3lyp_6_31gs_opt.data'
+                                       '.outputs.opt_geom_tag'),
+                            'dest': 'ctx.task.data.query_params.filters.tag'
                         },
+                        'data': {
+                            'query_params': {
+                                'collection': 'chemthings'
+                            }
+                        }
                     },
                     *(self.generate_chemthing_query_tasks(
                         query_params_src='set_query_params.data.query_params',
-                        dest='ctx.tasks.set_precursor_chemthing.data.precursor')
+                        dest='ctx.node.data.precursors')
+                    ),
+                    self.generate_wire_precursors_into_cpl_task(
+                        precursors_source='ctx.node.data.precursors',
+                        cpl_key=cpl_key
                     ),
                     {
-                        'task_key': 'set_precursor_chemthing',
-                        'task_type': 'noop',
+                        'task_type': 'set_value',
+                        'task_params': {
+                            'from_value': True,
+                            'value': {'multiplicity': 0, 'charge': 0},
+                            'dest': 'ctx.node.data.molecule'
+                        },
                     },
-                    self.generate_wire_precursor_into_cpl_task(cpl_key=cpl_key),
+                    {
+                        'task_type': 'set_value',
+                        'task_params': {
+                            'source': ('ctx.node.data.opt_geom_chemthing'
+                                       '.props.a2g2:prop:atoms'),
+                            'dest': 'ctx.node.data.molecule.atoms'
+                        },
+                    },
                     self.generate_wire_molecule_into_cpl_task(cpl_key=cpl_key),
                     self.generate_compute_parse_load_task(
                         task_key=cpl_key,
@@ -358,24 +403,34 @@ class ReaxysFlowSpecGenerator(object):
         }
 
     def generate_chemthing_query_tasks(self, query_params_src=None, dest=None):
-        query_key = 'query_%s' % time.time()
-        scratch_path = 'ctx.%s_scratch.query_results' % query_key
+        query_task_key = 'query_%s' % int(time.time())
+        scratch_path = 'ctx.node.data.%s_scratch.query_results' % query_task_key
         tasks = [
-            self.generate_query_task(query_key=query_key,
+            self.generate_query_task(task_key=query_task_key,
                                      query_params_src=None),
             {
+                'task_key': 'parse_query_job_stdout',
                 'task_type': 'set_value',
                 'task_params': {
                     'from_json': True,
-                    'source': 'ctx.tasks.run_conformer_query_job.data.stdout',
+                    'source': 'ctx.tasks.%s.data.stdout' % query_task_key,
                     'dest': scratch_path,
                 }
             },
             {
+                'task_key': 'pipe_query_hits_to_dest',
                 'task_type': 'set_value',
                 'task_params': {
                     'source': '%s.hits' % scratch_path,
                     'dest': dest
+                },
+            },
+            {
+                'task_key': 'clear_scratch',
+                'task_type': 'set_value',
+                'task_params': {
+                    'value': None,
+                    'dest': scratch_path,
                 },
             },
         ]

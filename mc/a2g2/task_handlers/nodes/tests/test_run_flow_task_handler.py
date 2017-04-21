@@ -99,6 +99,9 @@ class CompletedFlowTestCase(BaseTestCase, IntermediateTickMixin):
     def test_has_expected_status(self):
         self.assertEqual(self.task['status'], 'COMPLETED')
 
+    def test_has_expected_data(self):
+        self.assertEqual(self.task['data']['flow'], self.flow.data)
+
 class FailedFlowTestCase(BaseTestCase, IntermediateTickMixin):
     def test_throws_exception(self):
         with self.assertRaises(Exception) as ctx:

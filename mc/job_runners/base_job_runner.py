@@ -1,6 +1,6 @@
-import copy
 import logging
 import time
+import traceback
 
 from mc.task_runners.base_task_runner import BaseTaskRunner
 
@@ -78,7 +78,7 @@ class BaseJobRunner(object):
         try: self.start_job(job=job)
         except Exception as exception:
             self.logger.exception("Job failed")
-            self.fail_job(job=job, error=self.stringify_exception(exception))
+            self.fail_job(job=job, error=traceback.format_exc())
 
     def claim_job(self, job=None):
         claimed_jobs = self.job_client.claim_jobs(
@@ -109,7 +109,7 @@ class BaseJobRunner(object):
             tasks_status = task_runner.tick_tasks()
             job['status'] = tasks_status
         except Exception as exception:
-            self.fail_job(job=job, error=self.stringify_exception(exception))
+            self.fail_job(job=job, error=traceback.format_exc())
 
     def get_task_runner(self, job=None):
         return BaseTaskRunner(
@@ -117,9 +117,6 @@ class BaseJobRunner(object):
             get_task_context=lambda : self.get_task_context(job=job),
             task_handler=self.task_handler
         )
-
-    def stringify_exception(self, exception=None):
-        return '[%s] %s)' % (type(exception), exception)
 
     def get_task_context(self, job=None):
         task_context = {'job': job}

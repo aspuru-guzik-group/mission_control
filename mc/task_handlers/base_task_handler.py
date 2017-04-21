@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 
 class BaseTaskHandler(object):
@@ -17,10 +18,7 @@ class BaseTaskHandler(object):
         except Exception as exception:
             self.logger.exception(self.__class__.__name__ +".tick_task")
             task['status'] = 'FAILED'
-            task['data']['error'] = self.stringify_exception(exception)
-
-    def stringify_exception(self, exception=None):
-        return '[%s] %s)' % (type(exception), exception)
+            task['data']['error'] = traceback.format_exc()
 
     def _ensure_task(self, task=None):
         task.setdefault('data', {})

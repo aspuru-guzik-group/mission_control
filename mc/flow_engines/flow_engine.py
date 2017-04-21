@@ -1,4 +1,5 @@
 import logging
+import traceback
 
 from mc.task_runners.base_task_runner import BaseTaskRunner
 
@@ -61,8 +62,7 @@ class FlowEngine(object):
             if not flow.has_incomplete_nodes(): self.complete_flow(flow=flow)
         except Exception as exception:
             fail_flow = True
-            error = self.stringify_exception(exception)
-            self.append_flow_error(flow=flow, error=error)
+            self.append_flow_error(flow=flow, error=traceback.format_exc())
             if isinstance(exception, self.NodeError):
                 if not flow.cfg.get('fail_fast', True): fail_flow = False
             if fail_flow: self.fail_flow(flow=flow)
@@ -84,9 +84,6 @@ class FlowEngine(object):
             else:
                 self.complete_node(node=node)
 
-    def stringify_exception(self, exception=None):
-        return '(%s: %s)' % (type(exception), exception)
-
     def node_is_running(self, node=None):
         return node['status'] == 'RUNNING'
 
@@ -100,7 +97,7 @@ class FlowEngine(object):
             else:
                 node['status'] = tasks_status
         except Exception as exception:
-            self.fail_node(node=node, error=self.stringify_exception(exception))
+            self.fail_node(node=node, error=traceback.format_exc())
 
     def get_task_runner_for_node(self, node=None, flow=None, flow_ctx=None):
         task_runner = BaseTaskRunner(
@@ -132,7 +129,11 @@ class FlowEngine(object):
 
     def append_flow_error(self, flow=None, error=None):
         flow.data.setdefault('errors', [])
-        flow.data['errors'].append(error)
+        flow.data['errors'].append(self.elide_text(error))
+
+    def elide_text(self, text=None, max_len=512):
+        if len(text) > max_len: text = text[0:max_len] + '...'
+        return text
 
     def complete_node(self, flow=None, node=None):
         node['status'] = 'COMPLETED'

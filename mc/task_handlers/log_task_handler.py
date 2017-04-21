@@ -10,10 +10,12 @@ class LogTaskHandler(BaseTaskHandler):
         task_params = task.get('task_params', {})
         log_level_name = task_params.get('log_level', 'INFO')
         log_level = getattr(logging, log_level_name)
+        use_print = task_params.get('use_print')
         def _log(msg, obj=None):
             if obj is not None:
                 msg += "\n" + textwrap.indent(self.format_obj(obj), '  ')
-            logging.log(log_level, msg)
+            if use_print: print(msg)
+            else: logging.log(log_level, msg)
         if 'msg' in task_params: _log(task_params['msg'])
         if task_params.get('dump_task', True): _log("task", obj=task)
         if task_params.get('dump_task_context', True):

@@ -10,17 +10,19 @@ class A2G2TaskHandler(object):
         handler = self.get_handler(task=task)
         interpolated_task = self.get_interpolated_task(
             task=task, task_context=task_context)
-        result = handler.tick_task(*args,
-                                 task=interpolated_task,
-                                 task_context=task_context,
-                                 **kwargs)
+        result = handler.tick_task(
+            *args,
+            task=interpolated_task,
+            task_context={**task_context, 'task': interpolated_task},
+            **kwargs)
         for k, v in interpolated_task.items():
-            if k == 'task_params': continue
-            task[k] = v
+            if k != 'task_params': task[k] = v
         return result
 
     def get_handler(self, task=None):
         task_type = task['task_type']
+        if task_type == 'noop': return NoOpTaskHandler()
+        if task_type == 'print': return PrintTaskHandler()
         if task_type == 'set_value':
             handler_dot_spec = 'mc.task_handlers.set_value_task_handler'
         else:
@@ -61,3 +63,12 @@ class A2G2TaskHandler(object):
     def get_ctx_value(self, ctx=None, dot_spec=None):
         return dot_spec_loader.DotSpecLoader.get_obj_value_from_dot_spec(
             obj=ctx, dot_spec=dot_spec)
+
+class NoOpTaskHandler(object):
+    def tick_task(self, task=None, **kwargs):
+        task['status'] = 'COMPLETED'
+
+class PrintTaskHandler(object):
+    def tick_task(self, task=None, **kwargs):
+        print(task['task_params']['message'])
+        task['status'] = 'COMPLETED'

@@ -1,4 +1,5 @@
 import os
+import traceback
 
 from mc.execution_clients.remote_slurm_execution_client import (
     RemoteSlurmExecutionClient)
@@ -39,8 +40,7 @@ class OdysseyExecutionClient(object):
                     completed_dir=completed_dir)
             except Exception as exception:
                 decorated_execution_state['run_status'] = 'FAILED'
-                decorated_execution_state['error'] = \
-                        self.stringify_exception(exception)
+                decorated_execution_state['error'] = traceback.format_exc()
         decorated_execution_state['stdout'] = self.get_stdout(
             submission=submission, completed_dir=completed_dir)
         return decorated_execution_state
@@ -51,9 +51,6 @@ class OdysseyExecutionClient(object):
             'artifact_params': {'path': completed_dir}
         }
         return artifact_spec
-
-    def stringify_exception(self, exception=None):
-        return '[%s] %s)' % (type(exception), exception)
 
     def validate_checkpoint_files(self, checkpoint_files=None,
                                   completed_dir=None):
@@ -71,10 +68,8 @@ class OdysseyExecutionClient(object):
                         error = (
                             "Error unknown, unable to read checkpoint file"
                             " '{path}': {read_error}."
-                        ).format(
-                            path=failed_checkpoint_path,
-                            read_error=self.stringify_exception(read_exception)
-                        )
+                        ).format(path=failed_checkpoint_path,
+                                 read_error=traceback.format_exc())
                     raise Exception(error)
 
     def file_exists(self, path=None):

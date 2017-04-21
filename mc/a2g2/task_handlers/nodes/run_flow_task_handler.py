@@ -25,6 +25,7 @@ class RunFlowTaskHandler(BaseTaskHandler):
         assert flow is not None
         if flow['status'] == 'COMPLETED':
             task['status'] = 'COMPLETED'
+            task['data']['flow_data'] = flow.get('data')
         elif flow['status'] == 'FAILED':
             try: error = str(flow['serialization']['data']['errors'])
             except KeyError: error = '<unknown>'

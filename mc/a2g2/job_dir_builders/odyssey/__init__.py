@@ -104,7 +104,7 @@ class OdysseyJobDirBuilder(object):
     def generate_status_file_section(cls, dir_spec=None):
         std_log_files = cls.get_std_log_files(dir_spec=dir_spec)
 
-        def generate_tail_cmd(file_name):
+        def generate_summary_cmd(file_name):
             return 'tail -n 50 %s' % file_name
 
         return textwrap.dedent(
@@ -117,10 +117,10 @@ class OdysseyJobDirBuilder(object):
                     touch {completed_checkpoint_file}
                 else
                     touch {failed_checkpoint_file}
-                    echo "{tail_stdout_cmd}:" >> {failed_checkpoint_file}
-                    {tail_stdout_cmd} >> {failed_checkpoint_file}
-                    echo "{tail_stderr_cmd}:" >> {failed_checkpoint_file}
-                    {tail_stderr_cmd} >> {failed_checkpoint_file}
+                    echo "{summary_stdout_cmd}:" >> {failed_checkpoint_file}
+                    {summary_stdout_cmd} >> {failed_checkpoint_file}
+                    echo "{summary_stderr_cmd}:" >> {failed_checkpoint_file}
+                    {summary_stderr_cmd} >> {failed_checkpoint_file}
                     echo "{ls_cmd}:" >> {failed_checkpoint_file}
                     {ls_cmd} >> {failed_checkpoint_file}
                 fi
@@ -131,8 +131,8 @@ class OdysseyJobDirBuilder(object):
         ).strip().format(
             completed_checkpoint_file=cls.checkpoint_files['completed'],
             failed_checkpoint_file=cls.checkpoint_files['failed'],
-            tail_stdout_cmd=generate_tail_cmd(std_log_files['stdout']),
-            tail_stderr_cmd=generate_tail_cmd(std_log_files['stderr']),
+            summary_stdout_cmd=generate_summary_cmd(std_log_files['stdout']),
+            summary_stderr_cmd=generate_summary_cmd(std_log_files['stderr']),
             ls_cmd='ls -1'
         )
 

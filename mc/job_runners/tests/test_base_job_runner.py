@@ -96,7 +96,7 @@ class TickJobTestCase(BaseTestCase):
                          call(job=self.job))
         self.assertEqual(self.expected_task_runner.tick_tasks.call_args, call())
 
-    def test_fails_job_on_execption(self):
+    def test_fails_job_on_exception(self):
         exception = Exception('some exception')
         self.expected_task_runner.tick_tasks.side_effect = exception
         self.runner.fail_job = MagicMock()

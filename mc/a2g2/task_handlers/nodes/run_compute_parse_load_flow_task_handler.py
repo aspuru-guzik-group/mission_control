@@ -1,4 +1,3 @@
-import yaml
 from mc.task_handlers.base_task_handler import BaseTaskHandler
 
 
@@ -15,9 +14,8 @@ class RunComputeParseLoadFlowTaskHandler(BaseTaskHandler):
             'task_key': label,
             'task_type': 'a2g2.tasks.nodes.run_flow_task',
             'task_params': {
-                'flow_spec': self.generate_flow_spec(task=task,
-                                                     task_context=task_context,
-                                                     label=label)
+                'flow_spec': self.generate_flow_spec(
+                    task=task, task_context=task_context, label=label)
             }
         }
         return flow_task
@@ -43,44 +41,63 @@ class RunComputeParseLoadFlowTaskHandler(BaseTaskHandler):
             'node': self.generate_parse_load_node(flow_params=flow_params),
             'precursor_keys': ['compute']
         })
+        node_specs.append({
+            'node': {
+                'node_key': 'expose_parse_outputs',
+                'node_tasks': [
+                    {
+                        'task_type': 'set_value',
+                        'task_params': {
+                            'source': 'ctx.flow.nodes.parse_load.data.stdout',
+                            'dest': 'ctx.flow.data.parse_load_stdout',
+                        }
+                    },
+                ]
+            },
+            'precursor_keys': ['parse_load']
+        })
         return node_specs
 
     def generate_compute_node(self, flow_params=None):
         compute_job_spec = flow_params['compute_job_spec']
-        node = yaml.load(
-            '''
-            node_key: compute
-            node_tasks:
-            - task_key: run_job
-              task_params:
-                job_spec:
-                  job_type: %(job_type)s
-                  job_params: %(job_params_yaml)s
-              task_type: a2g2.tasks.nodes.run_job_task
-            - %(expose_job_outputs_task_yaml)s
-            ''' % {
-                'job_type': compute_job_spec['job_type'],
-                'job_params_yaml': self.dump_inline_yaml(
-                    compute_job_spec.get('job_params', {})),
-                'expose_job_outputs_task_yaml': self.dump_inline_yaml(
-                    self.generate_expose_job_outputs_task()),
-            }
-        )
+        node = {
+            'node_key': 'compute',
+            'node_tasks': [
+                {
+
+                    'task_type': 'a2g2.tasks.nodes.run_job_task',
+                    'task_key': 'run_job',
+                    'task_params': {
+                        'job_spec': {
+                            'job_type': compute_job_spec['job_type'],
+                            'job_params': compute_job_spec.get(
+                                'job_params', {}),
+                        }
+                    },
+                },
+                *(self.generate_expose_job_outputs_tasks()),
+            ]
+        }
         return node
 
-    def generate_expose_job_outputs_task(self):
-        return yaml.load(
-            '''
-            task_key: expose_job_outputs
-            task_params:
-              dest: ctx.node.data.artifact
-              source: ctx.tasks.run_job.data.artifact
-            task_type: set_value
-            ''')
-
-    def dump_inline_yaml(self, obj=None):
-        return yaml.dump(obj, default_style='"', default_flow_style=True)\
-                .strip()
+    def generate_expose_job_outputs_tasks(self):
+        tasks = [
+            {
+                'task_type': 'set_value',
+                'task_params': {
+                    'dest': 'ctx.node.data.artifact',
+                    'source': 'ctx.tasks.run_job.data.artifact',
+                }
+            },
+            {
+                'task_type': 'set_value',
+                'task_params': {
+                    'dest': 'ctx.node.data.stdout',
+                    'source': 'ctx.tasks.run_job.data.stdout',
+                }
+            },
+        ]
+        return tasks
 
     def generate_parse_load_node(self, flow_params=None):
         parse_load_params = flow_params['parse_load_params']
@@ -102,7 +119,7 @@ class RunComputeParseLoadFlowTaskHandler(BaseTaskHandler):
                         }
                     }
                 },
-                self.generate_expose_job_outputs_task()
+                *self.generate_expose_job_outputs_tasks()
             ]
         }
         return node
