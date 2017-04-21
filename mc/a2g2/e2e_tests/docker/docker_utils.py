@@ -112,7 +112,7 @@ class DockerEnv(object):
             mc_is_ready = mc_is_ready or self.get_mc_ready_status()
             odyssey_is_ready = odyssey_is_ready or \
                     self.get_odyssey_ready_status()
-            if not services_are_ready(): time.sleep(1)
+            if not services_are_ready(): time.sleep(2)
 
     def get_mc_ready_status(self):
         return self.socket_is_connected(host=self.mc_ip_addr, port=80)

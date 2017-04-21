@@ -19,11 +19,12 @@ RUN /bin/bash -c "CONDA_ROOT=$CONDA_ROOT MINICONDA_URL=$MINICONDA_URL /setup_con
 
 ARG CTX_ROOT
 ARG CONDA_ENV_FILE
+ARG PIP_FILE
 ARG IMG_CONDA_ENV_FILE=/conda_env.yml
+ARG IMG_PIP_FILE=/pip-requirements.txt
 COPY $COMPOSE_ROOT/$CONDA_ENV_FILE $IMG_CONDA_ENV_FILE
 RUN /bin/bash -c "source $CONDA_ROOT/bin/activate root && conda env update -f $IMG_CONDA_ENV_FILE --name=root"
+COPY $COMPOSE_ROOT/$PIP_FILE $IMG_PIP_FILE
+RUN /bin/bash -c "source $CONDA_ROOT/bin/activate root && pip install -r $IMG_PIP_FILE"
 
 ENV CONDA_ROOT=$CONDA_ROOT
-# Entrypoint expected to be mounted.
-ENTRYPOINT ["/entrypoint/entrypoint.sh"]
-CMD /bin/bash -c "source \$CONDA_ROOT/bin/activate root && /wait_for_postgres.sh /start_mc_server.sh"

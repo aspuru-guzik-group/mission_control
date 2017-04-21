@@ -9,7 +9,7 @@ INTERVAL=3
 i=0
 CONNECTED=0
 while [ $i -le "$MAX_ATTEMPTS" ]; do
-  $i=$(($i+1))
+  i=$(($i+1))
   eval $PGCMD
   if [ $? -eq 0 ]; then
     CONNECTED=1

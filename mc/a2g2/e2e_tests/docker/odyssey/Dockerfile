@@ -77,12 +77,19 @@ COPY $COMPOSE_ROOT/setup_conda.sh /setup_conda.sh
 ARG MINICONDA_URL
 RUN /bin/bash -c "CONDA_ROOT=$CONDA_ROOT MINICONDA_URL=$MINICONDA_URL /setup_conda.sh"
 
-ARG IMG_CONDA_ENV_FILE=/conda_env.yml
 ARG CONDA_ENV_FILE
+ARG IMG_CONDA_ENV_FILE=/conda_env.yml
 COPY $COMPOSE_ROOT/$CONDA_ENV_FILE $IMG_CONDA_ENV_FILE
 ARG A2G2_CONDA_ENV_PATH="/a2g2_env"
 RUN mkdir -p $A2G2_CONDA_ENV_PATH && chown -R test_user $A2G2_CONDA_ENV_PATH
+ARG IMG_CONDA_ENV_FILE=/conda_env.yml
 RUN su - $TEST_USER_USERNAME -c "source $CONDA_ROOT/bin/activate && conda env create -f $IMG_CONDA_ENV_FILE --prefix $A2G2_CONDA_ENV_PATH"
+
+ARG PIP_FILE
+ARG IMG_PIP_FILE=/pip-requirements.txt
+COPY $COMPOSE_ROOT/$PIP_FILE $IMG_PIP_FILE
+RUN su - $TEST_USER_USERNAME -c "source $CONDA_ROOT/bin/activate /$A2G2_CONDA_ENV_PATH && pip install -r $IMG_PIP_FILE"
+
 RUN su - $TEST_USER_USERNAME -c "source $CONDA_ROOT/bin/activate /$A2G2_CONDA_ENV_PATH && conda develop /a2g2_env-packages"
 ENV A2G2_CONDA_ENV_PATH=$A2G2_CONDA_ENV_PATH
 

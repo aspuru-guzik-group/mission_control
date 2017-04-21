@@ -6,14 +6,4 @@ dependencies:
   - pkgw::modern-xorg-stack=2016.03
   - postgresql=9.5.4
   - psycopg2=2.6.2
-  - pip:
-    - Django
-    - django-extensions
-    - djangorestframework
-    - psutil
-    - requests
-    - django-filter
-    - pexpect
-    - jinja2
-    - pyyaml
-
+  - pip
