@@ -22,9 +22,53 @@ class ListChemThingsTestCase(BaseAPITestCase):
     def test_list_chemthings(self):
         chemthings = [ChemThing.objects.create() for i in range(3)]
         response = self.client.get('/' + BASE_PATH + 'chemthings/')
-        expected_data = [ChemThingSerializer(chemthing).data for chemthing in chemthings]
+        expected_data = [ChemThingSerializer(chemthing).data
+                         for chemthing in chemthings]
         self.assertEqual(sorted(response.data, key=lambda j: j['uuid']),
                          sorted(expected_data, key=lambda j:j['uuid']))
+
+class QueryChemThingsTestCase(BaseAPITestCase):
+    def _get_sorted_chemthings(self, chemthings=None):
+        return sorted(chemthings, key=lambda c: c['uuid'])
+
+    def run_query_test(self, wanted_chemthings=None, query_params=None):
+        response = self.client.get('/' + BASE_PATH + 'chemthings/')
+        expected_data = [ChemThingSerializer(chemthing).data
+                         for chemthing in wanted_chemthings]
+        self.assertEqual(self._get_sorted_chemthings(response.data),
+                         self._get_sorted_chemthings(expected_data))
+
+    def test_filter_by_uuid(self):
+        uuid = 'some_uuid'
+        self.run_query_test(
+            wanted_chemthings=[ChemThing.objects.create(uuid=uuid)],
+            query_params={'uuid': uuid}
+        )
+
+    def test_filter_by_tag(self):
+        tags = ['tag_%s' % i for i in range(2)]
+        tagged_chemthings = self.generate_tagged_chemthings(
+            num_chemthings=(len(tags) + 1), tags=tags)
+        chemthings_by_tag = {
+            tag: [chemthing for chemthing in tagged_chemthings
+                  if tag in chemthing.tags]
+            for tag in tags
+        }
+        for tag in tags:
+            wanted_chemthings = chemthings_by_tag[tag]
+            self.run_query_test(wanted_chemthings=wanted_chemthings,
+                                query_params={'tag': tag})
+        self.run_query_test(wanted_chemthings=tagged_chemthings,
+                            query_params={'tag': tag})
+
+    def generate_tagged_chemthings(self):
+        chemthings = []
+        for i in range(6):
+            tags = []
+            for j in [2, 3]:
+                if (i % j) == 0: tags.append(str(j))
+                chemthings.append(ChemThing.objects.create(tags=tags))
+        return chemthings
 
 class PatchChemThingTestCase(BaseAPITestCase):
     def setUp(self):
