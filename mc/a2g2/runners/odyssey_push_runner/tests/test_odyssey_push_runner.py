@@ -1,17 +1,9 @@
-import io
-import json
-import os
-import tempfile
-import shlex
 import unittest
 from unittest.mock import call, DEFAULT, Mock, patch
 
 from django.test import TestCase
 
 from .. import odyssey_push_runner
-from ..commands import base as base_command
-from ..commands import create_flow_record as create_flow_record_command
-from ..commands import run as run_command
 
 
 class BaseTestCase(TestCase):
@@ -53,85 +45,6 @@ class BaseTestCase(TestCase):
                                      *args, **kwargs):
         method =  getattr(odyssey_push_runner.OdysseyPushRunner, method_name)
         return method(mock, *args, **kwargs)
-
-class BaseCommandTestCase(BaseTestCase):
-    def setUp(self):
-        self.params = {'param1': 'value1', 'param2': 'value2'}
-        super().setUp()
-        self.setup_mock_add_arguments()
-
-    def decorate_patchers(self):
-        self.patchers['BaseCommand'] = patch.multiple(
-            base_command.BaseCommand, handle=DEFAULT, add_arguments=DEFAULT)
-
-    def setup_mock_add_arguments(self):
-        def mock_add_arguments(parser):
-            for param in self.params: parser.add_argument('--%s' % param)
-        self.mocks['BaseCommand']['add_arguments'].side_effect = \
-                mock_add_arguments
-
-    def params_to_args(self, params=None):
-        arg_strs = ["--%s='%s'" % (k, v) for k, v in params.items()]
-        args = shlex.split(' '.join(arg_strs))
-        return args
-
-    def test_gets_params_from_cli(self):
-        args = self.params_to_args(params=self.params)
-        base_command.BaseCommand.run(args=args)
-        self.assert_is_subdict(self.mocks['BaseCommand']['handle'].call_args[1],
-                               self.params)
-
-    def test_gets_params_from_file(self):
-        params_dir = tempfile.mkdtemp(prefix='base_command.params.')
-        params_file_path = os.path.join(params_dir, 'params.json')
-        with open(params_file_path, 'w') as f: json.dump(self.params, f)
-        args = self.params_to_args(params={'params_file': params_file_path})
-        base_command.BaseCommand.run(args=args)
-        self.assert_is_subdict(self.mocks['BaseCommand']['handle'].call_args[1],
-                               self.params)
-
-class CreateFlowRecordCommandTestCase(BaseTestCase):
-    def decorate_patchers(self):
-        self.patchers['odyssey_push_runner'] = patch.multiple(
-            odyssey_push_runner, OdysseyPushRunner=DEFAULT)
-
-    def test_handle_calls_runner_create_flow_record(self):
-        mock_runner = self.mocks['odyssey_push_runner']['OdysseyPushRunner']\
-                .return_value
-        mock_flow = {'mock': 'flow'}
-        mock_runner.create_flow_record.return_value = mock_flow
-        flow_spec_json = json.dumps({'mock': 'flow'})
-        command = create_flow_record_command.Command()
-        stdout = io.StringIO()
-        command.set_streams(stdout=stdout)
-        command.handle(flow_spec_json=flow_spec_json)
-        self.assertEqual(mock_runner.create_flow_record.call_args,
-                         call(flow_record={'spec': flow_spec_json}))
-        expected_output = {"status": "SUCCESS",
-                           "flow": mock_runner.create_flow_record.return_value}
-        self.assertEqual(json.loads(stdout.getvalue().strip()), expected_output)
-
-class RunnerCreateFlowRecordTestCase(BaseTestCase):
-    def test_wraps_mc_client_method(self):
-        mock_mc_client = Mock()
-        self.runner.mc_client = mock_mc_client
-        mock_flow_record = Mock()
-        result = self.runner.create_flow_record(flow_record=mock_flow_record)
-        self.assertEqual(mock_mc_client.create_flow.call_args,
-                         call(flow=mock_flow_record))
-        self.assertEqual(result, mock_mc_client.create_flow.return_value)
-
-class RunCommandTestCase(BaseTestCase):
-    def decorate_patchers(self):
-        self.patchers['odyssey_push_runner'] = patch.multiple(
-            odyssey_push_runner, OdysseyPushRunner=DEFAULT)
-
-    def test_handle_calls_runner_create_flow(self):
-        command = run_command.Command()
-        command.handle()
-        mock_runner = self.mocks['odyssey_push_runner']['OdysseyPushRunner']\
-                .return_value
-        self.assertEqual(mock_runner.run.call_args, call())
 
 class RunnerSetupTestCase(BaseTestCase):
     def test_falls_back_to_generate_flow_generator_classes(self):

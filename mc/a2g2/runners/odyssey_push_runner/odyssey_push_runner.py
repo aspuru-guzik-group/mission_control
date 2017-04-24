@@ -29,6 +29,7 @@ class OdysseyPushRunner(object):
               ssh_client=None,
               flow_ctx=None,
               flow_runner=None,
+              flow_runner_kwargs=None,
               **kwargs
              ):
         self.task_handler = task_handler or self.generate_task_handler()
@@ -41,7 +42,8 @@ class OdysseyPushRunner(object):
         self.ssh_client = ssh_client
         self.job_runner = job_runner or self.generate_job_runner()
         self.flow_ctx = self.decorate_flow_ctx(flow_ctx=flow_ctx)
-        self.flow_runner = flow_runner or self.generate_flow_runner()
+        self.flow_runner = flow_runner or self.generate_flow_runner(
+            flow_runner_kwargs=flow_runner_kwargs)
 
     def generate_task_handler(self): pass
 
@@ -79,14 +81,11 @@ class OdysseyPushRunner(object):
         }
         return decorated_flow_ctx
 
-    def generate_flow_runner(self):
+    def generate_flow_runner(self, flow_runner_kwargs=None):
         return FlowRunner(flow_client=self.mc_client,
                           flow_engine=self.flow_engine,
                           flow_ctx=self.flow_ctx,
-                          max_flows_per_tick=10)
-
-    def create_flow_record(self, *args, flow_record=None, **kwargs):
-        return self.mc_client.create_flow(flow=flow_record)
+                          **(flow_runner_kwargs or {}))
 
     def run(self, ntimes=None, tick_interval=None):
         if ntimes:
