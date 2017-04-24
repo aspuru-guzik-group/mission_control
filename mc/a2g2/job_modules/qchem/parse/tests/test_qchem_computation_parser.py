@@ -1,3 +1,4 @@
+import collections
 import io
 import json
 import os
@@ -192,7 +193,9 @@ class ExtractExecutionMetaTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.job_dir = MagicMock()
-        self.parser.parse_submission = MagicMock()
+        self.submission = collections.defaultdict(MagicMock)
+        self.submission['execution_meta_name'] = MagicMock()
+        self.parser.parse_submission = MagicMock(return_value=self.submission)
 
     @patch.object(qchem_computation_parser, 'open')
     @patch.object(qchem_computation_parser, 'json')
@@ -209,59 +212,3 @@ class ExtractExecutionMetaTestCase(BaseTestCase):
         self.assertEqual(mock_open.call_args,
                          call(expected_execution_meta_path))
         self.assertEqual(execution_meta, mock_json.load.return_value)
-
-class GenerateChemThingTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.computation_meta = MagicMock()
-        self.parse_params = MagicMock()
-
-    def _generate_chemthing(self):
-        self.chemthing = self.parser.generate_chemthing(
-            computation_meta=self.computation_meta,
-            parse_params=self.parse_params)
-
-    @patch.object(qchem_computation_parser, 'uuid4')
-    def test_has_uuid(self, mock_uuid4):
-        self._generate_chemthing()
-        self.assertEqual(self.chemthing['uuid'], str(mock_uuid4.return_value))
-
-    def test_has_artifacts(self):
-        self._generate_chemthing()
-        self.assertEqual(self.chemthing['props']['a2g2:prop:artifacts'],
-                         self.parse_params['artifacts'])
-
-    def test_has_command_meta(self):
-        self._generate_chemthing()
-        self.assertEqual(self.chemthing['props']['a2g2:prop:command_meta'],
-                         self.computation_meta['command_meta'])
-
-    def test_has_execution_meta(self):
-        self._generate_chemthing()
-        self.assertEqual(self.chemthing['props']['a2g2:prop:execution_meta'],
-                         self.computation_meta['execution_meta'])
-
-    def test_has_precursors(self):
-        self._generate_chemthing()
-        self.assertEqual(self.chemthing['precursors'],
-                         self.parse_params.get('precursors'))
-
-    def test_has_ancestors(self):
-        self._generate_chemthing()
-        self.assertEqual(self.chemthing['ancestors'],
-                         self.parse_params.get('ancestors'))
-
-class WriteChemThing(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.chemthing = MagicMock()
-        self.chemthings_bulk_path = MagicMock()
-
-    @patch.object(qchem_computation_parser, 'open')
-    @patch.object(qchem_computation_parser, 'json')
-    def test_writes_chemthings_bulk_file(self, mock_json, mock_open):
-        self.parser.write_chemthing_bulk_file(chemthings=self.chemthings,
-                                              path=self.chemthings_bulk_path)
-        self.assertEqual(mock_json.dump.call_args,
-                         call(self.chemthing, mock_open.return_value))
-        self.assertEqual(mock_open.call_args, call(self.path))

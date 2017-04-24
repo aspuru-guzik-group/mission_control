@@ -4,11 +4,13 @@ from mc.flow_engines import flow_engine
 
 class RunFlowTaskHandler(BaseTaskHandler):
     def initial_tick(self, task=None, task_context=None):
-        flow_kwargs = self.generate_flow_kwargs(
-            flow_spec=task['task_params']['flow_spec'])
-        created_flow = task_context['flow_ctx']['create_flow'](
-            flow_kwargs=flow_kwargs)
+        created_flow = self.create_flow(task=task, task_context=task_context)
         task['data']['flow_uuid'] = created_flow['uuid']
+
+    def create_flow(self, task=None, task_context=None):
+        flow_spec = task['task_params']['flow_spec']
+        flow_kwargs = self.generate_flow_kwargs(flow_spec=flow_spec)
+        return task_context['flow_ctx']['create_flow'](flow_kwargs=flow_kwargs)
 
     def generate_flow_kwargs(self, flow_spec=None):
         flow_kwargs = {

@@ -14,6 +14,7 @@ class BaseTestCase(unittest.TestCase):
             'create_flow': MagicMock(),
             'get_flow': MagicMock()
         }
+        self.task_context = self.generate_task_context()
         self.task_handler = run_flow_task_handler.RunFlowTaskHandler()
 
     def generate_flow(self, uuid=None, status='PENDING', **flow_state):
@@ -33,38 +34,50 @@ class BaseTestCase(unittest.TestCase):
 class InitialTickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.initial_task = {
-            'data': {},
-            'task_params': {
-                'flow_spec': 'some flow_spec'
-            }
-        }
+        self.initial_task = defaultdict(MagicMock, **{'data': {}})
         self.task = {**self.initial_task}
-        self.task_handler.generate_flow = MagicMock()
-        self.task_handler.initial_tick(
-            task=self.task,
-            task_context=self.generate_task_context()
-        )
+        self.task_handler.create_flow = MagicMock()
+        self.task_handler.initial_tick(task=self.task,
+                                       task_context=self.task_context)
 
     def test_initial_tick_creates_flow(self):
-        self.assertEqual(
-            self.flow_ctx['create_flow'].call_args,
-            call(flow=self.task_handler.generate_flow.return_value)
-        )
+        self.assertEqual(self.task_handler.create_flow.call_args,
+                         call(task=self.task, task_context=self.task_context))
 
     def test_has_flow_uuid(self):
         self.assertEqual(self.task['data']['flow_uuid'],
-                         self.flow_ctx['create_flow'].return_value['uuid'])
+                         self.task_handler.create_flow.return_value['uuid'])
 
-class GenerateFlowTestCase(BaseTestCase):
-    @patch.object(run_flow_task_handler.flow_engine, 'FlowEngine')
-    def test_dispatches_to_flow_engine(self, MockFlowEngine):
+class CreateFlowTestCase(BaseTestCase):
+    def test_creates_flow_w_expected_kwargs(self):
+        self.task_handler.generate_flow_kwargs = MagicMock()
+        flow = self.task_handler.create_flow(task=self.task,
+                                             task_context=self.task_context)
+        expected_flow_kwargs = \
+                self.task_handler.generate_flow_kwargs.return_value
+        self.assertEqual(self.flow_ctx['create_flow'].call_args,
+                         call(flow_kwargs=expected_flow_kwargs))
+        self.assertEqual(self.task_handler.generate_flow_kwargs.call_args,
+                         call(flow_spec=self.task['task_params']['flow_spec']))
+        self.assertEqual(flow, self.flow_ctx['create_flow'].return_value)
+
+class GenerateFlowKwargsTestCase(BaseTestCase):
+    @patch.object(run_flow_task_handler, 'flow_engine')
+    def test_generate_expected_flow_kwargs(self, mock_flow_engine):
+        expected_FlowEngine = mock_flow_engine.FlowEngine
         flow_spec = MagicMock()
-        flow = self.task_handler.generate_flow(flow_spec=flow_spec)
-        expected_flow = {
-            'serialization': MockFlowEngine.serialize_flow.return_value
+        flow_kwargs = self.task_handler.generate_flow_kwargs(
+            flow_spec=flow_spec)
+        expected_flow_kwargs = {
+            'label': flow_spec.get('label'),
+            'serialization': expected_FlowEngine.serialize_flow.return_value
         }
-        self.assertEqual(flow, expected_flow)
+        self.assertEqual(flow_kwargs, expected_flow_kwargs)
+        self.assertEqual(
+            expected_FlowEngine.serialize_flow.call_args,
+            call(flow=expected_FlowEngine.generate_flow.return_value))
+        self.assertEqual(expected_FlowEngine.generate_flow.call_args,
+                         call(flow_spec=flow_spec))
 
 class IntermediateTickMixin(object):
     def do_intermediate_tick(self, flow_state=None):
@@ -100,7 +113,7 @@ class CompletedFlowTestCase(BaseTestCase, IntermediateTickMixin):
         self.assertEqual(self.task['status'], 'COMPLETED')
 
     def test_has_expected_data(self):
-        self.assertEqual(self.task['data']['flow'], self.flow.data)
+        self.assertEqual(self.task['data']['flow_data'], self.flow.get('data'))
 
 class FailedFlowTestCase(BaseTestCase, IntermediateTickMixin):
     def test_throws_exception(self):

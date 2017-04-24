@@ -41,7 +41,7 @@ class DemuxTaskHandler(BaseTaskHandler):
 
     def generate_node_spec(self, item=None, index=None, task=None,
                            task_context=None):
-        node_spec = deepcopy(task['task_params']['node_spec_template'])
+        node_spec = {**deepcopy(task['task_params']['node_spec_template'])}
         node_spec.setdefault('node', {})
         node_spec['node']['node_key'] = "{task_key}_{index}".format(
             task_key=task['task_key'], index=index)

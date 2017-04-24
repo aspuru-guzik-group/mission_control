@@ -76,8 +76,6 @@ class FlowEngine(object):
             except: self.fail_node(node=node, error=traceback.format_exc())
 
     def start_node(self, flow=None, node=None):
-        node['node_tasks'] = self.task_handler.compile_tasks(
-            tasks=node.get('node_tasks'))
         node['status'] = 'RUNNING'
 
     def tick_running_nodes(self, flow=None, flow_ctx=None):

@@ -1,4 +1,3 @@
-import json
 import logging
 import unittest
 from unittest.mock import call, DEFAULT, MagicMock, patch
@@ -146,52 +145,16 @@ class TickFlowRecord(BaseTestCase):
 
     def test_includes_serialization_in_return(self):
         result = self.runner.tick_flow_record(self.flow_record)
-        serialization = self.flow_engine.serialize_flow.return_value
-        self.assertEqual(
-            self.mocks['json']['dumps'].call_args, call(serialization))
-        self.assertEqual(
-            result['serialization'], self.mocks['json']['dumps'].return_value)
+        self.assertEqual(result['serialization'],
+                         self.flow_engine.serialize_flow.return_value)
 
 class GetFlowForFlowRecordTestCase(BaseTestCase):
-    def test_deserializes_if_has_serialization(self):
+    def test_deserializes(self):
         flow_record = {'serialization': MagicMock()}
-        self.runner.deserialize_flow = MagicMock()
         flow = self.runner.get_flow_for_flow_record(flow_record=flow_record)
-        self.assertEqual(flow, self.runner.deserialize_flow.return_value)
+        self.assertEqual(flow,
+                         self.runner.flow_engine.deserialize_flow.return_value)
         
-    def test_generates_if_lacks_serialization(self):
-        flow_record = {'spec': json.dumps({'some': 'spec'})}
-        self.runner.generate_flow_from_spec = MagicMock()
-        flow = self.runner.get_flow_for_flow_record(flow_record=flow_record)
-        self.assertEqual(self.runner.generate_flow_from_spec.call_args,
-                         call(flow_spec=json.loads(flow_record['spec'])))
-        self.assertEqual(flow, self.runner.generate_flow_from_spec.return_value)
-
-class DeserializeFlow(BaseTestCase):
-    def decorate_patchers(self):
-        self.patchers['json'] = patch.multiple('json', loads=DEFAULT,
-                                               dumps=DEFAULT)
-
-    def test_deserializes_flow(self):
-        json_flow_serialization = MagicMock()
-        flow = self.runner.deserialize_flow(
-            json_flow_serialization=json_flow_serialization)
-        self.assertEqual(self.mocks['json']['loads'].call_args,
-                         call(json_flow_serialization))
-        self.assertEqual(
-            self.flow_engine.deserialize_flow.call_args,
-            call(serialized_flow=self.mocks['json']['loads'].return_value)
-        )
-        self.assertEqual(flow, self.flow_engine.deserialize_flow.return_value)
-
-class GenerateFlowFromSpec(BaseTestCase):
-    def test_generates_flow(self):
-        flow_spec = MagicMock()
-        flow = self.runner.generate_flow_from_spec(flow_spec=flow_spec)
-        self.assertEqual(self.flow_engine.generate_flow.call_args,
-                         call(flow_spec=flow_spec))
-        self.assertEqual(flow, self.flow_engine.generate_flow.return_value)
-
 class UpdateFlowRecordTestCase(BaseTestCase):
     def test_update_flow_record(self):
         flow_record = MagicMock()

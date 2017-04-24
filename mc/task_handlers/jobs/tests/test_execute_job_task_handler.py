@@ -104,7 +104,7 @@ class HandleExecutionStateTestCase(BaseTestCase):
 class HandleCompletedExecutionTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.completed_execution_state = {'artifact': 'some_artifact'}
+        self.completed_execution_state = MagicMock()
 
     def _do_handle_completed_execution_state(self):
         self.task_handler.handle_completed_execution_state(
@@ -115,12 +115,12 @@ class HandleCompletedExecutionTestCase(BaseTestCase):
     def test_saves_artifact_to_task_data(self):
         self._do_handle_completed_execution_state()
         self.assertEqual(self.task['data']['artifact'],
-                         self.completed_execution_state['artifact'])
+                         self.completed_execution_state.get('artifact'))
 
     def test_saves_stdout_to_task_data(self):
         self._do_handle_completed_execution_state()
         self.assertEqual(self.task['data']['stdout'],
-                         self.completed_execution_state['stdout'])
+                         self.completed_execution_state.get('stdout'))
 
     def test_sets_status(self):
         self._do_handle_completed_execution_state()

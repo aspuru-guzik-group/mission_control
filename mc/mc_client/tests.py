@@ -1,6 +1,6 @@
 import json
 import unittest
-from unittest.mock import call, DEFAULT, Mock, patch
+from unittest.mock import call, DEFAULT, MagicMock, patch
 
 from . import mission_control_client
 
@@ -23,6 +23,10 @@ class BaseTestCase(unittest.TestCase):
         for patcher in self.patchers.values(): patcher.stop()
 
 class FetchFlowsTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.mc_client.format_fetched_flow = MagicMock()
+
     def test_makes_get(self):
         self.mc_client.fetch_flows()
         expected_url = self.base_url + 'flows/'
@@ -41,7 +45,9 @@ class FetchFlowsTestCase(BaseTestCase):
         flows = [{'uuid': i} for i in range(3)]
         self.mocks['requests'].get.return_value.json.return_value = flows
         fetched_flows = self.mc_client.fetch_flows()
-        self.assertEqual(fetched_flows, flows)
+        self.assertEqual(fetched_flows,
+                         [self.mc_client.format_fetched_flow.return_value
+                          for flow in flows])
 
     def test_handles_empty_response(self):
         flows = []
@@ -53,7 +59,7 @@ class FetchFlowsTestCase(BaseTestCase):
 class FetchFlowByUUIDTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.mc_client.fetch_flows = Mock(return_value=[Mock()])
+        self.mc_client.fetch_flows = MagicMock(return_value=[MagicMock()])
 
     def test_wraps_fetch_flows(self):
         uuid = 'some uuid'
@@ -64,7 +70,7 @@ class FetchFlowByUUIDTestCase(BaseTestCase):
 
 class FetchTickableFlowsTestCase(BaseTestCase):
     def test_fetch_tickable_flow_records(self):
-        self.mc_client.fetch_flows = Mock()
+        self.mc_client.fetch_flows = MagicMock()
         self.mc_client.fetch_tickable_flows()
         self.assertEqual(
             self.mc_client.fetch_flows.call_args, 
@@ -74,6 +80,7 @@ class ClaimFlowsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.uuids = [i for i in range(3)]
+        self.mc_client.format_fetched_flow = MagicMock()
 
     def test_makes_post(self):
         self.mc_client.claim_flows(uuids=self.uuids)
@@ -87,7 +94,10 @@ class ClaimFlowsTestCase(BaseTestCase):
             _uuid: True for _uuid in self.uuids
         }
         result = self.mc_client.claim_flows(uuids=self.uuids)
-        expected_result = {_uuid: True for _uuid in self.uuids}
+        expected_result = {
+            _uuid: self.mc_client.format_fetched_flow.return_value
+            for _uuid in self.uuids
+        }
         self.assertEqual(result, expected_result)
 
     def test_handles_empty_response(self):
@@ -126,21 +136,23 @@ class UpdateFlowsTestCase(BaseTestCase):
 class CreateFlowTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.flow = {'data': 'some data'}
+        self.flow_kwargs = {'data': 'some data'}
         self.mocks['requests'].post.return_value.status_code = 200
+        self.mc_client.format_fetched_flow = MagicMock()
 
     def test_makes_post_call(self):
-        self.mc_client.create_flow(flow=self.flow)
+        self.mc_client.create_flow(flow_kwargs=self.flow_kwargs)
         self.assertEqual(self.mocks['requests'].post.call_args,
-                         call(self.base_url + 'flows/', json=self.flow))
+                         call(self.base_url + 'flows/', json=self.flow_kwargs))
 
-    def test_returns_post_result(self):
+    def test_returns_formatted_post_result(self):
         mock_result = {'some': 'result'}
-        self.mocks['requests'].post.return_value.json.return_value = \
-                mock_result
-        result = self.mc_client.create_flow(flow=self.flow)
-        self.assertEqual(result, mock_result)
-
+        self.mocks['requests'].post.return_value.json.return_value = mock_result
+        result = self.mc_client.create_flow(flow_kwargs=self.flow_kwargs)
+        self.assertEqual(result,
+                         self.mc_client.format_fetched_flow.return_value)
+        self.assertEqual(self.mc_client.format_fetched_flow.call_args,
+                         call(fetched_flow=mock_result))
 
 class FetchJobsTestCase(BaseTestCase):
     def test_makes_get(self):
@@ -185,7 +197,7 @@ class FetchClaimableJobsTest(BaseTestCase):
 class FetchJobByUUIDTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.mc_client.fetch_jobs = Mock(return_value=[Mock()])
+        self.mc_client.fetch_jobs = MagicMock(return_value=[MagicMock()])
 
     def test_wraps_fetch_jobs(self):
         uuid = 'some uuid'
@@ -251,8 +263,8 @@ class UpdateJobsTestCase(BaseTestCase):
 class CreateJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.mc_client.json_raise_for_status = Mock()
-        self.mc_client.format_fetched_job = Mock()
+        self.mc_client.json_raise_for_status = MagicMock()
+        self.mc_client.format_fetched_job = MagicMock()
         self.job_kwargs = {'data': 'some data'}
 
     def test_makes_post_call(self):

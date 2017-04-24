@@ -2,7 +2,7 @@ from collections import defaultdict
 import logging
 import unittest
 from unittest.mock import call, MagicMock, patch
-from ..base_job_runner import BaseJobRunner
+from .. import base_job_runner
 
 
 class BaseTestCase(unittest.TestCase):
@@ -20,7 +20,8 @@ class BaseTestCase(unittest.TestCase):
             'task_handler': self.task_handler,
             'job_client': self.job_client,
         }
-        return BaseJobRunner(**{**default_kwargs, **runner_kwargs})
+        return base_job_runner.BaseJobRunner(
+            **{**default_kwargs, **runner_kwargs})
 
 class RunTestCase(BaseTestCase):
     def test_run(self):
@@ -96,15 +97,15 @@ class TickJobTestCase(BaseTestCase):
                          call(job=self.job))
         self.assertEqual(self.expected_task_runner.tick_tasks.call_args, call())
 
-    def test_fails_job_on_exception(self):
+    @patch.object(base_job_runner, 'traceback')
+    def test_fails_job_on_exception(self, mock_traceback):
         exception = Exception('some exception')
         self.expected_task_runner.tick_tasks.side_effect = exception
         self.runner.fail_job = MagicMock()
         self.runner.tick_job(job=self.job)
         self.assertEqual(
             self.runner.fail_job.call_args,
-            call(job=self.job, error=self.runner.stringify_exception(exception))
-        )
+            call(job=self.job, error=mock_traceback.format_exc.return_value))
 
 class CompleteJobTestCase(BaseTestCase):
     def setUp(self):
@@ -190,9 +191,6 @@ class StartJobTestCase(BaseTestCase):
         self.assertEqual(self.get_default_job_tasks.call_args,
                          call(job=self.job))
         self.assertEqual(self.job['tasks'], self.get_default_job_tasks())
-
-    def test_compiles_tasks(self):
-        self.fail()
 
 class GetTaskContextTestCase(BaseTestCase):
     def _do_get_task_context(self):

@@ -41,19 +41,16 @@ class ContextValueSetter(object):
         elif 'template' in value_spec:
             value = self.render_template(template=value_spec['template'],
                                          context=context)
-        elif 'from_json' in value_spec:
-            raw_value = self.get_value_from_dot_spec(
-                obj={'ctx': context}, dot_spec=value_spec['source'])
-            try:
-                value = json.loads(raw_value)
-            except Exception as exception:
-                msg = ("from_json error: {exception}\n"
-                       "raw_value was: '{raw_value}'").format(
-                           exception=exception, raw_value=raw_value)
-                raise Exception(msg)
-        else: 
+        else:
             value = self.get_value_from_dot_spec(obj={'ctx': context},
                                                  dot_spec=value_spec['source'])
+        if 'from_json' in value_spec:
+            try: value = json.loads(value)
+            except Exception as exception:
+                msg = ("from_json error: {exception}\n"
+                       "value was: '{value}'").format(
+                           exception=exception, value=value)
+                raise Exception(msg)
         return value
 
     def render_template(self, template=None, context=None):
