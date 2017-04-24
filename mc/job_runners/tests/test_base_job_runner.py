@@ -191,6 +191,9 @@ class StartJobTestCase(BaseTestCase):
                          call(job=self.job))
         self.assertEqual(self.job['tasks'], self.get_default_job_tasks())
 
+    def test_compiles_tasks(self):
+        self.fail()
+
 class GetTaskContextTestCase(BaseTestCase):
     def _do_get_task_context(self):
         return self.runner.get_task_context(job=self.job)

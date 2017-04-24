@@ -50,3 +50,7 @@ class InterpolatedTaskParamValueTestCase(BaseTestCase):
 class GetCtxValueTestCase(BaseTestCase):
     def test_dispatches_to_dot_spec_loader(self):
         self.fail()
+
+class CompileTaskTestCase(BaseTestCase):
+    def test_converts_string_tasks_to_dicts(self):
+        self.fail()

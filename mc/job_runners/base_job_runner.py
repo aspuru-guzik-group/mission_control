@@ -100,6 +100,7 @@ class BaseJobRunner(object):
     def start_job(self, job=None):
         if 'tasks' not in job:
             job['tasks'] = self.get_default_job_tasks(job=job)
+        job['tasks'] = self.task_handler.compile_tasks(tasks=job['tasks'])
         self.running_jobs[job['uuid']] = job
         self.tick_job(job=job)
 

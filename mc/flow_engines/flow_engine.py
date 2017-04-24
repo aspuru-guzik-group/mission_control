@@ -72,9 +72,12 @@ class FlowEngine(object):
 
     def start_nearest_pending_nodes(self, flow=None):
         for node in flow.get_nearest_pending_nodes():
-            self.start_node(flow=flow, node=node)
+            try: self.start_node(flow=flow, node=node)
+            except: self.fail_node(node=node, error=traceback.format_exc())
 
     def start_node(self, flow=None, node=None):
+        node['node_tasks'] = self.task_handler.compile_tasks(
+            tasks=node.get('node_tasks'))
         node['status'] = 'RUNNING'
 
     def tick_running_nodes(self, flow=None, flow_ctx=None):
@@ -131,7 +134,7 @@ class FlowEngine(object):
         flow.data.setdefault('errors', [])
         flow.data['errors'].append(self.elide_text(error))
 
-    def elide_text(self, text=None, max_len=512):
+    def elide_text(self, text=None, max_len=1024):
         if len(text) > max_len: text = text[0:max_len] + '...'
         return text
 

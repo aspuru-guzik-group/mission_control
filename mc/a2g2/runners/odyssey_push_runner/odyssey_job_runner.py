@@ -6,6 +6,8 @@ import types
 
 from mc.job_runners.base_job_runner import BaseJobRunner
 from mc.task_handlers.jobs.execute_job_task_handler import ExecuteJobTaskHandler
+from mc.a2g2.task_handlers.a2g2_task_handler import A2G2TaskHandler
+
 from .odyssey_execution_client import OdysseyExecutionClient
 
 
@@ -53,6 +55,7 @@ class OdysseyJobRunner(object):
     def generate_task_handler(self):
         task_handler = types.SimpleNamespace()
         task_handler.tick_task = self.tick_task
+        task_handler.compile_tasks = A2G2TaskHandler.compile_tasks
         return task_handler
 
     def tick_task(self, *args, task=None, **kwargs):

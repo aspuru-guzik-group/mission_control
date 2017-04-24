@@ -67,6 +67,9 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
                     logging.exception(msg)
                     raise
 
+            def compile_tasks(self, *args, **kwargs):
+                return A2G2TaskHandler.compile_tasks(*args, **kwargs)
+
         return TaskHandler()
 
     def generate_combo_runner(self):

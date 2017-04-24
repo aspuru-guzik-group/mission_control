@@ -1,3 +1,5 @@
+import shlex
+
 from mc.mc_utils import dot_spec_loader
 
 
@@ -63,6 +65,31 @@ class A2G2TaskHandler(object):
     def get_ctx_value(self, ctx=None, dot_spec=None):
         return dot_spec_loader.DotSpecLoader.get_obj_value_from_dot_spec(
             obj=ctx, dot_spec=dot_spec)
+
+    @classmethod
+    def compile_tasks(cls, *args, **kwargs):
+        return cls()._compile_tasks(*args, **kwargs)
+
+    def _compile_tasks(self, tasks=None):
+        if not tasks: return tasks
+        return [self.compile_task(task=task) for task in tasks]
+
+    def compile_task(self, task=None):
+        if isinstance(task, str):
+            compiled_task = self.compile_str_task(str_task=task)
+        else: compiled_task = task
+        return compiled_task
+
+    def compile_str_task(self, str_task=None):
+        task_type, *param_key_value_strs = shlex.split(str_task)
+        compiled_task = {
+            'task_type': task_type,
+            'task_params': self.kv_strs_to_dict(kv_strs=param_key_value_strs)
+        }
+        return compiled_task
+
+    def kv_strs_to_dict(self, kv_strs=None):
+        return dict([kv_str.split('=', 1) for kv_str in kv_strs])
 
 class NoOpTaskHandler(object):
     def tick_task(self, task=None, **kwargs):
