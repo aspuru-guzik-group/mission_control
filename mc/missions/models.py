@@ -81,3 +81,10 @@ class FlowJob(TimeStampedModel):
             class_name=self.__class__.__name__,
             f_id=self.flow_id,
             j_id=self.job_id)
+
+
+class Queue(TimeStampedModel):
+    uuid = models.CharField(primary_key=True, default=str_uuid4,
+                            editable=False, max_length=64)
+    label = models.CharField(max_length=256, blank=True, null=True)
+    queue_spec = JSONField(default=dict, blank=True, null=True)

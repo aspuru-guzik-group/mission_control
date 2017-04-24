@@ -1,7 +1,7 @@
 from django.test import TestCase
 
 from ..constants import JobStatuses
-from ..models import (Mission, FlowStatuses, Flow, FlowJob, Job)
+from ..models import (Mission, FlowStatuses, Flow, FlowJob, Job, Queue)
 
 
 class MissionTestCase(TestCase):
@@ -59,3 +59,16 @@ class JobTestCase(TestCase):
                           'data', 'error']
         for attr in expected_attrs:
             self.assertTrue(hasattr(job, attr))
+
+class QueueTestCase(TestCase):
+    def test_has_expected_fields(self):
+        kwargs = {
+            'label': 'test_label',
+            'queue_spec': {'key1': 'value1'}
+        }
+        queue = Queue.objects.create(**kwargs)
+        self.assertEqual(queue.label, kwargs['label'])
+        self.assertEqual(queue.queue_spec, kwargs['queue_spec'])
+        expected_attrs = ['uuid', 'created', 'modified']
+        for attr in expected_attrs:
+            self.assertTrue(hasattr(queue, attr))
