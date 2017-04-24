@@ -34,10 +34,10 @@ class GenerateFlowTestCase(BaseTestCase):
 
     def test_dispatches_to_flow_engine(self):
         flow = self.submission_runner.generate_flow()
+        expected_flow_spec = self.job['job_spec']['job_params']['flow_spec']
         self.assertEqual(
             self.submission_runner.flow_engine.generate_flow.call_args,
-            call(flow_spec=\
-                 self.submission_runner.job['job_params']['flow_spec']))
+            call(flow_spec=expected_flow_spec))
         self.assertEqual(
             flow,
             self.submission_runner.flow_engine.generate_flow.return_value)
@@ -65,4 +65,6 @@ class RunFlowTestCase(BaseTestCase):
                          call(flow=self.flow, flow_ctx=self.flow_ctx))
 
     def test_raises_error_if_flow_fails(self):
-        self.fail()
+        self.submission_runner.flow_engine.run_flow.side_effect = Exception()
+        with self.assertRaises(Exception):
+            self.submission_runner.run_flow(flow=self.flow)
