@@ -8,11 +8,14 @@ from . import utils as a2g2_db_utils
 
 class A2G2_DB_Uploader(object):
     def upload_bulk_files(self, *args, bulk_files_dir=None, cfg=None, **kwargs):
-        a2g2_client = a2g2_db_utils.generate_a2g2_client(cfg=cfg)
+        a2g2_client = self.generate_a2g2_client(cfg=cfg)
         parsed_items = self.parse_bulk_files_dir(bulk_files_dir=bulk_files_dir)
         return self.upload_chemthings(
             chemthings=parsed_items.get('chemthings', []),
             a2g2_client=a2g2_client)
+
+    def generate_a2g2_client(self, *args, **kwargs):
+        return a2g2_db_utils.generate_a2g2_client(*args, **kwargs)
 
     def parse_bulk_files_dir(self, bulk_files_dir=None):
         parsed_items = collections.defaultdict(list)

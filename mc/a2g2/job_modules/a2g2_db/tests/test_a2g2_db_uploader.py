@@ -3,15 +3,13 @@ import json
 import os
 import tempfile
 import unittest
-from unittest.mock import call, MagicMock
+from unittest.mock import call, MagicMock, patch
 
 from .. import a2g2_db_uploader
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.mock_A2G2_Client = MagicMock()
-        a2g2_db_uploader.a2g2_client_module.A2G2_Client = self.mock_A2G2_Client
         self.uploader = a2g2_db_uploader.A2G2_DB_Uploader()
 
 class UploadFromBulkFilesTestCase(BaseTestCase):
@@ -22,9 +20,10 @@ class UploadFromBulkFilesTestCase(BaseTestCase):
         self.chemthings = self.generate_chemthings()
         self.dir_to_upload = self.generate_dir_to_upload(
             chemthings=self.chemthings)
+        self.uploader.generate_a2g2_client = MagicMock()
+        self.expected_client = self.uploader.generate_a2g2_client.return_value
         self.result = self.uploader.upload_bulk_files(
-            bulk_files_dir=self.dir_to_upload,
-            cfg=self.cfg)
+            bulk_files_dir=self.dir_to_upload, cfg=self.cfg)
 
     def generate_chemthings(self):
         chemthings = [{'uri': 'chemthing_%s' % i} for i in range(3)]
@@ -41,14 +40,21 @@ class UploadFromBulkFilesTestCase(BaseTestCase):
     def test_uploads_items_via_client(self):
         expected_call_args_list = [call(chemthing=chemthing)
                                    for chemthing in self.chemthings]
-        self.assertEqual(
-            self.mock_A2G2_Client.return_value.create_chemthing.call_args_list,
-            expected_call_args_list
-        )
+        self.assertEqual(self.expected_client.create_chemthing.call_args_list,
+                         expected_call_args_list)
 
     def test_outputs_upload_results(self):
-        expected_result = [
-            self.mock_A2G2_Client.return_value.create_chemthing.return_value
-            for chemthing in self.chemthings
-        ]
+        expected_result = [self.expected_client.create_chemthing.return_value
+                           for chemthing in self.chemthings]
         self.assertEqual(self.result, expected_result)
+
+class GenerateA2G2ClientTestCase(BaseTestCase):
+    @patch.object(a2g2_db_uploader, 'a2g2_db_utils')
+    def test_dispatches_to_a2g2_db_utils(self, mock_db_utils):
+        args = [MagicMock() for i in range(3)]
+        kwargs = {str(i): MagicMock() for i in range(3)}
+        result = self.uploader.generate_a2g2_client(*args, **kwargs)
+        self.assertEqual(mock_db_utils.generate_a2g2_client.call_args,
+                         call(*args, **kwargs))
+        self.assertEqual(result, mock_db_utils.generate_a2g2_client.return_value)
+
