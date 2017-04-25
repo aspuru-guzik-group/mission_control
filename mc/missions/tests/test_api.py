@@ -266,10 +266,10 @@ class QueueItemsTestCase(BaseTestCase):
         self.mock_serialized_items = ['item_%s' % i for i in range(3)]
 
     @patch.object(_views, '_queue_utils')
-    def test_returns_serialized_queue_items(self, mock_queue_utils):
-        mock_queue_utils.get_serialized_queue_items.return_value = \
+    def test_returns_serialized_claimed_queue_items(self, mock_queue_utils):
+        mock_queue_utils.serialize_queue_items.return_value = \
                 self.mock_serialized_items
-        url = '{base_url}queues/{queue_key}/items/'.format(
+        url = '{base_url}queues/{queue_key}/claim_items/'.format(
             base_url=BASE_URL, queue_key=self.queue.uuid)
         response = self.client.post(url,
                                     json.dumps(self.params),
@@ -278,5 +278,9 @@ class QueueItemsTestCase(BaseTestCase):
         result = response.json()
         self.assertEqual(result['items'], self.mock_serialized_items)
         self.assertEqual(
-            mock_queue_utils.get_serialized_queue_items.call_args,
+            mock_queue_utils.serialize_queue_items.call_args,
+            call(queue=self.queue,
+                 queue_items=mock_queue_utils.claim_queue_items.return_value))
+        self.assertEqual(
+            mock_queue_utils.claim_queue_items.call_args,
             call(queue=self.queue, query_params=self.params['query_params']))

@@ -296,7 +296,7 @@ class FlushTestCase(BaseTestCase):
             result,
             self.mocks['requests'].get.return_value.json.return_value)
 
-class GetJobQueueItemsTestCase(BaseTestCase):
+class ClaimJobQueueItemsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.mc_client.json_raise_for_status = MagicMock()
@@ -305,9 +305,9 @@ class GetJobQueueItemsTestCase(BaseTestCase):
 
     @patch.object(mission_control_client, 'json')
     def test_posts_to_expected_url(self, mock_json):
-        result = self.mc_client.get_job_queue_items(queue_key=self.queue_key,
-                                                    params=self.params)
-        expected_url = '{queues_root}/{queue_key}/items/'.format(
+        result = self.mc_client.claim_job_queue_items(queue_key=self.queue_key,
+                                                      params=self.params)
+        expected_url = '{queues_root}/{queue_key}/claim_items/'.format(
             queues_root=self.mc_client.urls['queues'], queue_key=self.queue_key)
         self.assertEqual(self.mocks['requests'].post.call_args,
                          call(expected_url, data=mock_json.dumps.return_value))

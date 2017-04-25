@@ -38,7 +38,7 @@ class RunTestCase(BaseTestCase):
 class TickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        for method_name in ['fetch_claimable_jobs', 'process_claimable_job',
+        for method_name in ['claim_jobs', 'process_job',
                             'process_running_jobs']:
             setattr(self.runner, method_name, MagicMock())
 
@@ -46,22 +46,18 @@ class TickTestCase(BaseTestCase):
         self.runner.tick()
         self.assertEqual(self.runner.process_running_jobs.call_count, 1)
 
-    def test_fetches_claimable_job(self):
+    def test_fetches_jobs(self):
         self.runner.tick()
-        self.assertEqual(self.runner.fetch_claimable_jobs.call_count, 1)
+        self.assertEqual(self.runner.claim_jobs.call_args,
+                         call(limit=self.runner.max_running_jobs))
 
-    def test_processes_claimable_jobs(self):
-        self.runner.max_running_jobs = 3
-        extra_jobs = 2
-        jobs = [
-            {'uuid': i}
-            for i in range(self.runner.max_running_jobs + extra_jobs)
-        ]
-        self.runner.fetch_claimable_jobs.return_value = jobs
+    def test_processes_jobs(self):
+        jobs = [{'uuid': i} for i in range(3)]
+        self.runner.claim_jobs.return_value = jobs
         self.runner.tick()
-        expected_call_args = [call(job=job) for job in jobs[:-1 * extra_jobs]]
-        self.assertTrue(self.runner.process_claimable_job.call_args_list,
-                        expected_call_args)
+        expected_call_args_list = [call(job=job) for job in jobs]
+        self.assertTrue(self.runner.process_job.call_args_list,
+                        expected_call_args_list)
 
 class ProcessRunningJobsTestCase(BaseTestCase):
     def setUp(self):
@@ -146,13 +142,14 @@ class UpdateJobTestCase(BaseTestCase):
         self.assertEqual(self.job_client.update_jobs.call_args, 
                          call(updates_by_uuid={job['uuid']: updates}))
 
-class FetchClaimableJobsTestCase(BaseTestCase):
+class ClaimJobsTestCase(BaseTestCase):
     def test_fetch_claimable_jobs(self):
-        self.runner.fetch_claimable_jobs()
-        self.assertEqual(
-            self.job_client.fetch_claimable_jobs.call_count, 1)
+        limit = MagicMock()
+        self.runner.claim_jobs(limit=limit)
+        self.assertEqual(self.job_client.claim_jobs.call_args,
+                         call(params={'limit': limit}))
 
-class ProcessClaimableJobTestCase(BaseTestCase):
+class ProcessJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         for method_name in ['start_job', 'update_job']:
@@ -162,17 +159,10 @@ class ProcessClaimableJobTestCase(BaseTestCase):
         logging.disable(logging.NOTSET)
         super().tearDown()
 
-    def test_claimable_job(self):
+    def test_starts_job(self):
         job = {'uuid': 'abcd'}
-        self.job_client.claim_jobs.return_value = {job['uuid']: job}
-        self.runner.process_claimable_job(job=job)
+        self.runner.process_job(job=job)
         self.assertEqual(self.runner.start_job.call_args, call(job=job))
-
-    def test_unclaimable_job(self):
-        job = {'uuid': 'abcd'}
-        self.job_client.claim_jobs.return_value = {job['uuid']: None}
-        self.runner.process_claimable_job(job)
-        self.assertEqual(self.runner.start_job.call_args, None)
 
 class StartJobTestCase(BaseTestCase):
     def setUp(self):

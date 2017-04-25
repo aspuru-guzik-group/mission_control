@@ -50,9 +50,8 @@ class BaseJobRunner(object):
         self.process_running_jobs()
         num_job_slots = self.max_running_jobs - len(self.running_jobs)
         if num_job_slots <= 0: return
-        claimable_jobs = self.fetch_claimable_jobs()
-        for claimable_job in claimable_jobs[:num_job_slots]:
-            self.process_claimable_job(job=claimable_job)
+        for job in self.claim_jobs(limit=num_job_slots):
+            self.process_job(job=job)
 
     def process_running_jobs(self):
         completed_jobs = {}
@@ -67,23 +66,15 @@ class BaseJobRunner(object):
     def job_is_running(self, job=None):
         return job['status'] == 'RUNNING'
 
-    def fetch_claimable_jobs(self):
-        return self.job_client.fetch_claimable_jobs()
+    def claim_jobs(self, limit=None):
+        return self.job_client.claim_jobs(params={'limit': limit})
 
-    def process_claimable_job(self, job=None):
-        claimed_job = self.claim_job(job)
-        if not claimed_job: return
-        job = claimed_job
+    def process_job(self, job=None):
         self.register_job(job=job)
         try: self.start_job(job=job)
         except Exception as exception:
             self.logger.exception("Job failed")
             self.fail_job(job=job, error=traceback.format_exc())
-
-    def claim_job(self, job=None):
-        claimed_jobs = self.job_client.claim_jobs(
-            uuids=[job['uuid']])
-        return claimed_jobs.get(job['uuid'], False)
 
     def register_job(self, job=None):
         self.jobs[job['uuid']] = job

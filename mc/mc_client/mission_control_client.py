@@ -170,9 +170,9 @@ class MissionControlClient(object):
         response = self.request_client.get(url)
         return self.json_raise_for_status(response=response)
 
-    def get_job_queue_items(self, queue_key=None, params=None):
+    def claim_job_queue_items(self, queue_key=None, params=None):
         params = params or {}
-        url = '{queues_root}/{queue_key}/items/'.format(
+        url = '{queues_root}/{queue_key}/claim_items/'.format(
             queues_root=self.urls['queues'], queue_key=queue_key)
         response = self.request_client.post(url, data=json.dumps(params))
         return self.json_raise_for_status(response=response)
