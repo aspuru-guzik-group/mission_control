@@ -90,12 +90,13 @@ class QueueViewSet(viewsets.ModelViewSet):
     queryset = Queue.objects.all()
     serializer_class = QueueSerializer
 
-    @detail_route(methods=['post'])
+    @detail_route(methods=['get', 'post'])
     def claim_items(self, request, pk=None):
         params = {}
-        if request.body: params = json.loads(request.body.decode())
-        queue = self.get_object()
+        body = getattr(request, 'body', None)
+        if body: params = json.loads(request.body.decode())
         query_params = params.get('query_params')
+        queue = self.get_object()
         claimed_items = _queue_utils.claim_queue_items(
             queue=queue, query_params=query_params)
         serialized_items = _queue_utils.serialize_queue_items(

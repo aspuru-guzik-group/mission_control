@@ -19,7 +19,7 @@ class JobSerializer(serializers.ModelSerializer):
     class Meta:
         model = Job
         fields = ('uuid', 'name', 'status', 'created', 'modified', 'job_spec',
-                  'data', 'error')
+                  'data', 'error', 'claimed')
         read_only_fields = ('uuid', 'created', 'modified',)
 missions_serializers[Job] = JobSerializer
 

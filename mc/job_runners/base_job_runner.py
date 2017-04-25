@@ -50,7 +50,7 @@ class BaseJobRunner(object):
         self.process_running_jobs()
         num_job_slots = self.max_running_jobs - len(self.running_jobs)
         if num_job_slots <= 0: return
-        for job in self.claim_jobs(limit=num_job_slots):
+        for job in self.claim_jobs(params={'limit': num_job_slots}):
             self.process_job(job=job)
 
     def process_running_jobs(self):
@@ -66,8 +66,8 @@ class BaseJobRunner(object):
     def job_is_running(self, job=None):
         return job['status'] == 'RUNNING'
 
-    def claim_jobs(self, limit=None):
-        return self.job_client.claim_jobs(params={'limit': limit})
+    def claim_jobs(self, *args, **kwargs):
+        return self.job_client.claim_jobs(*args, **kwargs)
 
     def process_job(self, job=None):
         self.register_job(job=job)

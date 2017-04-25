@@ -307,13 +307,16 @@ class ClaimJobQueueItemsTestCase(BaseTestCase):
     def test_posts_to_expected_url(self, mock_json):
         result = self.mc_client.claim_job_queue_items(queue_key=self.queue_key,
                                                       params=self.params)
-        expected_url = '{queues_root}/{queue_key}/claim_items/'.format(
+        expected_url = '{queues_root}{queue_key}/claim_items/'.format(
             queues_root=self.mc_client.urls['queues'], queue_key=self.queue_key)
         self.assertEqual(self.mocks['requests'].post.call_args,
                          call(expected_url, data=mock_json.dumps.return_value))
         self.assertEqual(mock_json.dumps.call_args, call(self.params))
+        expected_json = self.mc_client.json_raise_for_status.return_value
         self.assertEqual(result,
-                         self.mc_client.json_raise_for_status.return_value)
+                         {**expected_json,
+                          'items': [self.mc_client.format_fetched_job(item)
+                                    for item in expected_json['items']]})
 
 class CreateQueueTestCase(BaseTestCase):
     def setUp(self):

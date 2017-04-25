@@ -27,6 +27,7 @@ class OdysseyPushRunner(object):
               job_submission_factory=None,
               job_runner=None,
               ssh_client=None,
+              job_client=None,
               flow_ctx=None,
               flow_runner=None,
               flow_runner_kwargs=None,
@@ -40,6 +41,7 @@ class OdysseyPushRunner(object):
         self.job_submission_factory = job_submission_factory or \
                 self.generate_job_submission_factory()
         self.ssh_client = ssh_client
+        self.job_client = job_client or self.generate_job_client()
         self.job_runner = job_runner or self.generate_job_runner()
         self.flow_ctx = self.decorate_flow_ctx(flow_ctx=flow_ctx)
         self.flow_runner = flow_runner or self.generate_flow_runner(
@@ -65,8 +67,20 @@ class OdysseyPushRunner(object):
     def generate_job_submission_factory(self):
         return JobSubmissionFactory()
 
+    def generate_job_client(self):
+        # tmp hack: wrap mc_client as job_client. Wraps claim_jobs to
+        # specify job queue.
+        class JobClient(object):
+            def __init__(_self, mc_client=None):
+                _self.mc_client = mc_client
+            def __getattr__(_self, name): return getattr(self.mc_client, name)
+            def claim_jobs(_self, params=None):
+                return _self.mc_client.claim_job_queue_items(
+                    queue_key=self.job_queue_key, params=params)['items']
+        return JobClient(mc_client=self.mc_client)
+
     def generate_job_runner(self):
-        return JobRunner(job_client=self.mc_client, 
+        return JobRunner(job_client=self.job_client, 
                          ssh_client=self.ssh_client,
                          job_submission_factory=self.job_submission_factory)
 

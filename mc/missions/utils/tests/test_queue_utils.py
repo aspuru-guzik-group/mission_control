@@ -47,38 +47,22 @@ class GetRootModelForQueueSpec(BaseTestCase):
 
 def ClaimQueueItemsTestCase(BaseTestCase):
     @patch.multiple(_queue_utils, generate_base_queryset_for_queue_spec=DEFAULT,
-                    generate_claim_update_kwargs_for_queue=DEFAULT)
+                    get_claimed_filter=DEFAULT, claim_queryset_items=DEFAULT)
     def test_returns_updated_base_queryset_results(self, *mock_args,
                                                    **mock_kwargs):
         result = _queue_utils.claim_queue_items(queue=self.queue,
                                                 query_params=self.query_params)
-        expected_qset = \
+        expected_base_qset = \
                 _queue_utils.generate_queryset_for_queue_spec.return_value
-        self.assertEqual(result, expected_qset)
         self.assertEqual(
             _queue_utils.generate_queryset_for_queue_spec.call_args,
             call(queue_spec=self.queue.queue_spec,
                  query_params=self.query_params))
-        expected_update_kwargs = \
-                _queue_utils.generate_claim_update_kwargs_for_queue.return_value
-        self.assertEqual(expected_qset.update.call_args,
-                         call(**expected_update_kwargs))
-        self.assertEqual(
-            _queue_utils.generate_claim_update_kwargs_for_queue.call_args,
-            call(queue=self.queue))
-
-class GenerateClaimUpdateKwargsForQueueTestCase(BaseTestCase):
-    @patch.multiple(_queue_utils, get_root_model_for_queue_spec=DEFAULT)
-    def test_sets_claimed_if_present_on_root_model(self, *mock_args,
-                                                   **mock_kwargs):
-        class MockRootModel:
-            claimed = True
-        _queue_utils.get_root_model_for_queue_spec.return_value = MockRootModel
-        update_kwargs = _queue_utils.generate_claim_update_kwargs_for_queue(
-            queue=self.queue)
-        self.assertEqual(_queue_utils.get_root_model_for_queue_spec.call_args,
-                         call(queue_spec=self.queue.queue_spec))
-        self.assertEqual(update_kwargs, {'claimed': True})
+        self.assertEqual(result, expected_base_qset.exclude.return_value)
+        self.assertEqual(expected_base_qset.exclude.call_args,
+                         call(_queue_utils.get_claimed_filter.return_value))
+        self.assertEqual(_queue_utils.claim_queryset_items.call_args,
+                         call(queryset=expected_base_qset))
 
 class GenerateBaseQuerySetForQueueSpecTestCase(BaseTestCase):
     @patch.multiple(_queue_utils, get_root_model_for_queue_spec=DEFAULT)

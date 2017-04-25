@@ -50,9 +50,11 @@ class QChemFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
         try:
             self.mc_client.flush_mc_db()
             self.a2g2_client.flush_a2g2_db()
+            job_queue = self.create_job_queue()
             self.create_flows()
             self.assertTrue(len(self.mc_client.fetch_tickable_flows()) > 0)
-            self.run_flows_to_completion(timeout=60, max_ticks=100)
+            self.run_flows_to_completion(timeout=60, max_ticks=100,
+                                         job_queue=job_queue)
             self.assert_domain_db_has_expected_state()
         except Exception as exception:
             flows = self.mc_client.fetch_flows()
@@ -67,10 +69,6 @@ class QChemFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
             self.dump_db_objects(db_objects=flows, label='flow')
             raise
 
-    def _pluck(self, _dict=None, keys=None):
-        keys_set = set(keys)
-        return {k:v for k,v in _dict.items() if k in keys_set}
-
     def create_flows(self):
         flow_spec = reaxys_flow_spec_generator.generate_flow_spec()
         flow_kwargs = {
@@ -79,6 +77,18 @@ class QChemFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
                 flow=FlowEngine.generate_flow(flow_spec=flow_spec))
         }
         self.mc_client.create_flow(flow_kwargs=flow_kwargs)
+
+    def create_job_queue(self):
+        return self.mc_client.create_queue({
+            'label': 'reaxys_job_queue',
+            'queue_spec': {
+                'root_model_spec': 'missions.Job'
+            }
+        })
+
+    def _pluck(self, _dict=None, keys=None):
+        keys_set = set(keys)
+        return {k:v for k,v in _dict.items() if k in keys_set}
 
     def assert_domain_db_has_expected_state(self):
         try:

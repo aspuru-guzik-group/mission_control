@@ -74,6 +74,9 @@ class RunnerSetupTestCase(BaseTestCase):
     def test_has_job_submission_factory(self):
         self.run_subcomponent_generator_fallback_test('job_submission_factory')
 
+    def test_has_job_client(self):
+        self.run_subcomponent_generator_fallback_test('job_client')
+
     def test_has_job_runner(self):
         self.run_subcomponent_generator_fallback_test('job_runner')
 
@@ -142,6 +145,11 @@ class GenerateJobSubmissionFactoryTestCase(BaseTestCase):
         self.assertEqual(result,
                          self.mocks['JobSubmissionFactory'].return_value)
 
+class GenerateJobClientTestCase(BaseTestCase):
+    def test_generates_job_runner(self):
+        job_client = self.mock_runner.call_real_method('generate_job_client')
+        self.assertTrue(job_client is not None)
+
 class GenerateJobRunnerTestCase(BaseTestCase):
     def decorate_patchers(self):
         self.patchers['JobRunner'] = patch.object(odyssey_push_runner,
@@ -152,7 +160,7 @@ class GenerateJobRunnerTestCase(BaseTestCase):
         self.assertEqual(job_runner, self.mocks['JobRunner'].return_value)
         self.assertEqual(
             self.mocks['JobRunner'].call_args,
-            call(job_client=self.mock_runner.mc_client,
+            call(job_client=self.mock_runner.job_client,
                  job_submission_factory=self.mock_runner.job_submission_factory,
                  ssh_client=self.mock_runner.ssh_client
             )

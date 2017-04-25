@@ -1,13 +1,15 @@
 from django.apps import apps as _apps
+from django.db.models import Q
 
 from ..serializers import missions_serializers
 
 
 def claim_queue_items(queue=None, query_params=None):
     qset = generate_base_queryset_for_queue_spec(queue_spec=queue.queue_spec)
-    update_kwargs = generate_claim_update_kwargs_for_queue(queue=queue)
-    if update_kwargs: qset.update(**update_kwargs)
-    return qset
+    to_claim = qset.exclude(get_claimed_filter())
+    to_return = list(to_claim)
+    claim_queryset_items(queryset=to_claim)
+    return to_return
 
 def serialize_queue_items(queue=None, queue_items=None):
     serializer = get_serializer_for_queue(queue=queue)
@@ -20,14 +22,17 @@ def get_serializer_for_queue(queue=None):
 def get_root_model_for_queue_spec(queue_spec=None):
     return _apps.get_model(queue_spec['root_model_spec'])
 
-def generate_claim_update_kwargs_for_queue(queue=None):
-    update_kwargs = {}
-    RootModel = get_root_model_for_queue_spec(queue_spec=queue.queue_spec)
-    if hasattr(RootModel, 'claimed'): update_kwargs['claimed'] = True
-    return update_kwargs
-
 def generate_base_queryset_for_queue_spec(queue_spec=None):
     RootModel = get_root_model_for_queue_spec(queue_spec=queue_spec)
     return RootModel.objects.filter()
 
+def exclude_claimed_items_from_queryset(queryset=None):
+    if hasattr(queryset.model, 'claimed'):
+        queryset = queryset.exclude(claimed=True)
+    return queryset
 
+def claim_queryset_items(queryset=None):
+    if hasattr(queryset.model, 'claimed'): queryset.update(claimed=True)
+
+def get_claimed_filter():
+    return Q(claimed=True)

@@ -172,10 +172,15 @@ class MissionControlClient(object):
 
     def claim_job_queue_items(self, queue_key=None, params=None):
         params = params or {}
-        url = '{queues_root}/{queue_key}/claim_items/'.format(
+        url = '{queues_root}{queue_key}/claim_items/'.format(
             queues_root=self.urls['queues'], queue_key=queue_key)
         response = self.request_client.post(url, data=json.dumps(params))
-        return self.json_raise_for_status(response=response)
+        result = self.json_raise_for_status(response=response)
+        return {
+            **result,
+            'items': [self.format_fetched_job(fetched_job=item)
+                      for item in result['items']]
+        }
 
     def create_queue(self, queue_kwargs=None):
         response = self.request_client.post(self.urls['queues'],

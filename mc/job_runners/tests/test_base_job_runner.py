@@ -46,10 +46,10 @@ class TickTestCase(BaseTestCase):
         self.runner.tick()
         self.assertEqual(self.runner.process_running_jobs.call_count, 1)
 
-    def test_fetches_jobs(self):
+    def test_claims_jobs(self):
         self.runner.tick()
         self.assertEqual(self.runner.claim_jobs.call_args,
-                         call(limit=self.runner.max_running_jobs))
+                         call(params={'limit': self.runner.max_running_jobs}))
 
     def test_processes_jobs(self):
         jobs = [{'uuid': i} for i in range(3)]
@@ -144,10 +144,10 @@ class UpdateJobTestCase(BaseTestCase):
 
 class ClaimJobsTestCase(BaseTestCase):
     def test_fetch_claimable_jobs(self):
-        limit = MagicMock()
-        self.runner.claim_jobs(limit=limit)
+        params = MagicMock()
+        self.runner.claim_jobs(params=params)
         self.assertEqual(self.job_client.claim_jobs.call_args,
-                         call(params={'limit': limit}))
+                         call(params=params))
 
 class ProcessJobTestCase(BaseTestCase):
     def setUp(self):
