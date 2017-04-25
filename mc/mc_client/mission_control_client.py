@@ -170,19 +170,27 @@ class MissionControlClient(object):
         response = self.request_client.get(url)
         return self.json_raise_for_status(response=response)
 
-    def claim_job_queue_items(self, queue_key=None, params=None):
+    def create_queue(self, queue_kwargs=None):
+        response = self.request_client.post(self.urls['queues'],
+                                            json=queue_kwargs)
+        return self.json_raise_for_status(response=response)
+
+    def claim_queue_items(self, queue_key=None, params=None,
+                          item_transform_fn=None):
         params = params or {}
         url = '{queues_root}{queue_key}/claim_items/'.format(
             queues_root=self.urls['queues'], queue_key=queue_key)
         response = self.request_client.post(url, data=json.dumps(params))
         result = self.json_raise_for_status(response=response)
-        return {
-            **result,
-            'items': [self.format_fetched_job(fetched_job=item)
-                      for item in result['items']]
-        }
+        if item_transform_fn:
+            result['items'] = [item_transform_fn(item)
+                               for item in result['items']]
+        return result
 
-    def create_queue(self, queue_kwargs=None):
-        response = self.request_client.post(self.urls['queues'],
-                                            json=queue_kwargs)
-        return self.json_raise_for_status(response=response)
+    def claim_job_queue_items(self, *args, **kwargs):
+        return self.claim_queue_items(
+            *args, item_transform_fn=self.format_fetched_job, **kwargs)
+
+    def claim_flow_queue_items(self, *args, **kwargs):
+        return self.claim_queue_items(
+            *args, item_transform_fn=self.format_fetched_flow, **kwargs)

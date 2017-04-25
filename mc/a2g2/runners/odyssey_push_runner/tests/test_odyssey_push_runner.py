@@ -86,6 +86,9 @@ class RunnerSetupTestCase(BaseTestCase):
         self.assertEqual(self.mock_runner.decorate_flow_ctx.call_args,
                          call(flow_ctx=flow_ctx))
 
+    def test_has_flow_client(self):
+        self.run_subcomponent_generator_fallback_test('flow_client')
+
     def test_has_flow_runner(self):
         self.run_subcomponent_generator_fallback_test('flow_runner')
 
@@ -210,7 +213,7 @@ class GenerateFlowRunnerTestCase(BaseTestCase):
         flow_runner = self.mock_runner.call_real_method('generate_flow_runner')
         self.assertEqual(flow_runner, self.mocks['FlowRunner'].return_value)
         self.assertEqual(self.mocks['FlowRunner'].call_args,
-                         call(flow_client=self.mock_runner.mc_client,
+                         call(flow_client=self.mock_runner.flow_client,
                               flow_engine=self.mock_runner.flow_engine,
                               flow_ctx=self.mock_runner.flow_ctx))
 

@@ -142,9 +142,10 @@ class E2E_Flow_BaseTestCase(unittest.TestCase):
         return ssh_client
 
     def run_flows_to_completion(self, max_ticks=50, tick_interval=0.5,
-                                timeout=30, job_queue=None):
+                                timeout=30, job_queue=None, flow_queue=None):
         start_time = time.time()
         self.combo_runner.job_queue_key = job_queue['uuid']
+        self.combo_runner.flow_queue_key = flow_queue['uuid']
         incomplete_flows = self.get_incomplete_flows()
         while len(incomplete_flows) > 0:
             self.combo_runner.tick()

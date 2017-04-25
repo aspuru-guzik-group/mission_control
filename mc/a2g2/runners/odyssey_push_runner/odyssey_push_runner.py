@@ -29,6 +29,7 @@ class OdysseyPushRunner(object):
               ssh_client=None,
               job_client=None,
               flow_ctx=None,
+              flow_client=None,
               flow_runner=None,
               flow_runner_kwargs=None,
               **kwargs
@@ -44,6 +45,7 @@ class OdysseyPushRunner(object):
         self.job_client = job_client or self.generate_job_client()
         self.job_runner = job_runner or self.generate_job_runner()
         self.flow_ctx = self.decorate_flow_ctx(flow_ctx=flow_ctx)
+        self.flow_client = flow_client or self.generate_flow_client()
         self.flow_runner = flow_runner or self.generate_flow_runner(
             flow_runner_kwargs=flow_runner_kwargs)
 
@@ -95,8 +97,20 @@ class OdysseyPushRunner(object):
         }
         return decorated_flow_ctx
 
+    def generate_flow_client(self):
+        # tmp hack: wrap mc_client as flow_client. Wraps claim_flows to
+        # specify queue.
+        class FlowClient(object):
+            def __init__(_self, mc_client=None):
+                _self.mc_client = mc_client
+            def __getattr__(_self, name): return getattr(self.mc_client, name)
+            def claim_jobs(_self, params=None):
+                return _self.mc_client.claim_flow_queue_items(
+                    queue_key=self.flow_queue_key, params=params)['items']
+        return FlowClient(mc_client=self.mc_client)
+
     def generate_flow_runner(self, flow_runner_kwargs=None):
-        return FlowRunner(flow_client=self.mc_client,
+        return FlowRunner(flow_client=self.flow_client,
                           flow_engine=self.flow_engine,
                           flow_ctx=self.flow_ctx,
                           **(flow_runner_kwargs or {}))

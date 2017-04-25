@@ -296,28 +296,6 @@ class FlushTestCase(BaseTestCase):
             result,
             self.mocks['requests'].get.return_value.json.return_value)
 
-class ClaimJobQueueItemsTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.mc_client.json_raise_for_status = MagicMock()
-        self.queue_key = 'queue_key'
-        self.params = {'param_%s' % i: 'value_%s' % i for i in range(3)}
-
-    @patch.object(mission_control_client, 'json')
-    def test_posts_to_expected_url(self, mock_json):
-        result = self.mc_client.claim_job_queue_items(queue_key=self.queue_key,
-                                                      params=self.params)
-        expected_url = '{queues_root}{queue_key}/claim_items/'.format(
-            queues_root=self.mc_client.urls['queues'], queue_key=self.queue_key)
-        self.assertEqual(self.mocks['requests'].post.call_args,
-                         call(expected_url, data=mock_json.dumps.return_value))
-        self.assertEqual(mock_json.dumps.call_args, call(self.params))
-        expected_json = self.mc_client.json_raise_for_status.return_value
-        self.assertEqual(result,
-                         {**expected_json,
-                          'items': [self.mc_client.format_fetched_job(item)
-                                    for item in expected_json['items']]})
-
 class CreateQueueTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
@@ -338,6 +316,68 @@ class CreateQueueTestCase(BaseTestCase):
         self.mocks['requests'].post.return_value.json.return_value = mock_result
         result = self._create_queue()
         self.assertEqual(result, mock_result)
+
+@patch.object(mission_control_client, 'json')
+class ClaimQueueItemsTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.expected_json = {'items': [MagicMock() for i in range(3)]}
+        self.mc_client.json_raise_for_status = MagicMock(
+            return_value=self.expected_json)
+        self.expected_json = self.mc_client.json_raise_for_status.return_value
+        self.queue_key = 'queue_key'
+        self.params = {'param_%s' % i: 'value_%s' % i for i in range(3)}
+
+    def _run_claim(self, **kwargs):
+        return self.mc_client.claim_queue_items(
+            queue_key=self.queue_key, params=self.params, **kwargs)
+
+    def test_posts_to_expected_url(self, mock_json):
+        self._run_claim()
+        expected_url = '{queues_root}{queue_key}/claim_items/'.format(
+            queues_root=self.mc_client.urls['queues'], queue_key=self.queue_key)
+        self.assertEqual(self.mocks['requests'].post.call_args,
+                         call(expected_url, data=mock_json.dumps.return_value))
+        self.assertEqual(mock_json.dumps.call_args, call(self.params))
+
+    def test_returns_plain_result_if_no_transform(self, mock_json):
+        result = self._run_claim()
+        self.assertEqual(result, self.expected_json)
+
+    def test_returns_result_with_transformed_items(self, mock_json):
+        item_transform_fn = MagicMock()
+        result = self._run_claim(item_transform_fn=item_transform_fn)
+        self.assertEqual(result,
+                         {**self.expected_json,
+                          'items': [item_transform_fn(item)
+                                    for item in self.expected_json['items']]})
+
+class ClaimQueueItemsBaseTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.mc_client.claim_queue_items = MagicMock()
+        self.args = [MagicMock() for i in range(3)]
+        self.kwargs = {i: MagicMock() for i in range(3)}
+        setattr(self.mc_client, self.item_transform_fn_name, MagicMock())
+
+    def run_claim_test(self):
+        claim_fn = getattr(self.mc_client, self.claim_fn_name)
+        result = claim_fn(*self.args, **self.kwargs)
+        self.assertEqual(result, self.mc_client.claim_queue_items.return_value)
+        self.assertEqual(
+            self.mc_client.claim_queue_items.call_args,
+            call(*self.args,
+                 transform_item_fn=getattr(self.mc_client,
+                                           self.item_transform_item_fn_name),
+                 **self.kwargs))
+
+class ClaimJobQueueItemsTestCase(ClaimQueueItemsBaseTestCase):
+    claim_fn_name = 'claim_job_queue_items'
+    item_transform_fn_name = 'format_fetched_job'
+
+class ClaimFlowQueueItemsTestCase(ClaimQueueItemsBaseTestCase):
+    claim_fn_name = 'claim_flow_queue_items'
+    item_transform_fn_name = 'format_fetched_flow'
 
 if __name__ == '__main__':
     unittest.main()

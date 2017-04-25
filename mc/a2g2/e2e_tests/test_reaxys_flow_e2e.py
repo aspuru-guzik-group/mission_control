@@ -51,10 +51,12 @@ class QChemFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
             self.mc_client.flush_mc_db()
             self.a2g2_client.flush_a2g2_db()
             job_queue = self.create_job_queue()
+            flow_queue = self.create_job_queue()
             self.create_flows()
             self.assertTrue(len(self.mc_client.fetch_tickable_flows()) > 0)
             self.run_flows_to_completion(timeout=60, max_ticks=100,
-                                         job_queue=job_queue)
+                                         job_queue=job_queue,
+                                         flow_queue=flow_queue)
             self.assert_domain_db_has_expected_state()
         except Exception as exception:
             flows = self.mc_client.fetch_flows()
@@ -83,6 +85,14 @@ class QChemFlow_E2E_TestCase(e2e_flow_test_utils.E2E_Flow_BaseTestCase):
             'label': 'reaxys_job_queue',
             'queue_spec': {
                 'root_model_spec': 'missions.Job'
+            }
+        })
+
+    def create_flow_queue(self):
+        return self.mc_client.create_queue({
+            'label': 'reaxys_job_queue',
+            'queue_spec': {
+                'root_model_spec': 'missions.Flow'
             }
         })
 
