@@ -17,6 +17,7 @@ class MissionControlClient(object):
             'jobs': self.base_url + 'jobs/',
             'claim_jobs': self.base_url + 'claim_jobs/',
             'flush': self.base_url + 'flush/',
+            'queues': self.base_url + 'queues/',
         }
 
     def create_flow(self, flow_kwargs=None):
@@ -167,4 +168,11 @@ class MissionControlClient(object):
     def flush_mc_db(self):
         url = self.urls['flush']
         response = self.request_client.get(url)
+        return self.json_raise_for_status(response=response)
+
+    def get_job_queue_items(self, queue_key=None, params=None):
+        params = params or {}
+        url = '{queues_root}/{queue_key}/items/'.format(
+            queues_root=self.urls['queues'], queue_key=queue_key)
+        response = self.request_client.post(url, data=json.dumps(params))
         return self.json_raise_for_status(response=response)
