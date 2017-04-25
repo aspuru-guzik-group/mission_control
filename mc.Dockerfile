@@ -23,9 +23,15 @@ RUN /tmp/miniconda.sh -b -p $CONDA_ROOT
 RUN rm /tmp/miniconda.sh
 RUN echo "export PATH=$CONDA_ROOT/bin:\$PATH" >> /root/.bashrc
 RUN $CONDA_ROOT/bin/conda install --yes conda-build
+
 ARG CONDA_ENV_FILE=a2g2_mc_conda_env.yml
 COPY $CONDA_ENV_FILE /$CONDA_ENV_FILE
 RUN $CONDA_ROOT/bin/conda env update -f /$CONDA_ENV_FILE --name=root
+
+ARG PIP_FILE=a2g2_mc_pip_requirements.txt
+ARG IMG_PIP_FILE=/pip-requirements.txt
+COPY $COMPOSE_ROOT/$PIP_FILE $IMG_PIP_FILE
+RUN /bin/bash -c "source $CONDA_ROOT/bin/activate root && pip install -r $IMG_PIP_FILE"
 
 RUN apt-get install -y openssh-client
 
