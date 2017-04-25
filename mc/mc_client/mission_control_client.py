@@ -176,3 +176,8 @@ class MissionControlClient(object):
             queues_root=self.urls['queues'], queue_key=queue_key)
         response = self.request_client.post(url, data=json.dumps(params))
         return self.json_raise_for_status(response=response)
+
+    def create_queue(self, queue_kwargs=None):
+        response = self.request_client.post(self.urls['queues'],
+                                            json=queue_kwargs)
+        return self.json_raise_for_status(response=response)

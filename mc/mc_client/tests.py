@@ -315,6 +315,27 @@ class GetJobQueueItemsTestCase(BaseTestCase):
         self.assertEqual(result,
                          self.mc_client.json_raise_for_status.return_value)
 
+class CreateQueueTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.queue_kwargs = {'data': 'some data'}
+        self.mocks['requests'].post.return_value.status_code = 200
+
+    def _create_queue(self):
+        return self.mc_client.create_queue(queue_kwargs=self.queue_kwargs)
+
+    def test_makes_post_call(self):
+        self._create_queue()
+        self.assertEqual(
+            self.mocks['requests'].post.call_args,
+            call(self.base_url + 'queues/', json=self.queue_kwargs))
+
+    def test_returns_post_result(self):
+        mock_result = {'some': 'result'}
+        self.mocks['requests'].post.return_value.json.return_value = mock_result
+        result = self._create_queue()
+        self.assertEqual(result, mock_result)
+
 if __name__ == '__main__':
     unittest.main()
 

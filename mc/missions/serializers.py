@@ -2,6 +2,9 @@ from rest_framework import serializers
 
 from .models import Flow, Job, Queue
 
+default_json_field_kwargs = {'required': False, 'allow_null': True,
+                             'default': dict}
+
 missions_serializers = {}
 
 class FlowSerializer(serializers.ModelSerializer):
@@ -21,6 +24,7 @@ class JobSerializer(serializers.ModelSerializer):
 missions_serializers[Job] = JobSerializer
 
 class QueueSerializer(serializers.ModelSerializer):
+    queue_spec = serializers.JSONField(**default_json_field_kwargs)
     class Meta:
         model = Queue
         fields = ['uuid', 'label', 'created', 'modified', 'queue_spec']
