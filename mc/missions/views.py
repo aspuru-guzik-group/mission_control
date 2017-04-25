@@ -4,10 +4,12 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework import viewsets
+from rest_framework.decorators import detail_route
 
 from .constants import JobStatuses
-from .models import Job, Flow, FlowStatuses, missions_models
-from .serializers import JobSerializer, FlowSerializer
+from .models import Job, Flow, FlowStatuses, Queue, missions_models
+from .serializers import JobSerializer, FlowSerializer, QueueSerializer
+from .utils import queue_utils as _queue_utils
 
 
 class FlowFilter(FilterSet):
@@ -84,3 +86,17 @@ def flush(request):
         flush_results[model.__name__] = 'flushed'
     return JsonResponse(flush_results)
 
+class QueueViewSet(viewsets.ModelViewSet):
+    queryset = Queue.objects.all()
+    serializer_class = QueueSerializer
+
+    @detail_route(methods=['post'])
+    def items(self, request, pk=None):
+        params = {}
+        if request.body: params = json.loads(request.body.decode())
+        queue = self.get_object()
+        result = {
+            'items': _queue_utils.get_serialized_queue_items(
+                queue=queue, query_params=params.get('query_params'))
+        }
+        return JsonResponse(result)

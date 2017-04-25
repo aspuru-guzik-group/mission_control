@@ -88,3 +88,5 @@ class Queue(TimeStampedModel):
                             editable=False, max_length=64)
     label = models.CharField(max_length=256, blank=True, null=True)
     queue_spec = JSONField(default=dict, blank=True, null=True)
+
+missions_models.append(Queue)

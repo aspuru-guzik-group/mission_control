@@ -1,13 +1,15 @@
 import json
+from unittest.mock import call, patch
+
 from django.conf.urls import url, include
-from django.test import TestCase
 from django.test.utils import override_settings
 from rest_framework.test import APITestCase
 
 from ..constants import JobStatuses
-from ..models import Flow, FlowStatuses, Job, missions_models
+from ..models import Flow, FlowStatuses, Job, missions_models, Queue
 from ..serializers import FlowSerializer, JobSerializer
 from .. import urls as _urls
+from .. import views as _views
 
 
 def key_by_uuid(items=None):
@@ -20,7 +22,9 @@ urlpatterns = [
 ]
 
 @override_settings(ROOT_URLCONF=__name__)
-class ListFlowsTestCase(APITestCase):
+class BaseTestCase(APITestCase): pass
+
+class ListFlowsTestCase(BaseTestCase):
     def test_list_flows(self):
         flows = [Flow.objects.create() for i in range(3)]
         response = self.client.get(BASE_URL + 'flows/')
@@ -51,8 +55,7 @@ class ListFlowsTestCase(APITestCase):
             self.assertEqual(key_by_uuid(response.data),
                              key_by_uuid(expected_data))
 
-@override_settings(ROOT_URLCONF=__name__)
-class TickableFlowsTestCase(APITestCase):
+class TickableFlowsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.flow_groups = self.generate_flow_groups()
@@ -80,8 +83,7 @@ class TickableFlowsTestCase(APITestCase):
         ]
         self.assertEqual(key_by_uuid(response.data), key_by_uuid(expected_data))
 
-@override_settings(ROOT_URLCONF=__name__)
-class PatchFlowTestCase(APITestCase):
+class PatchFlowTestCase(BaseTestCase):
     def setUp(self):
         self.flows = [Flow.objects.create() for i in range(1)]
 
@@ -101,8 +103,7 @@ class PatchFlowTestCase(APITestCase):
             BASE_URL + 'flows/%s/' % self.flows[0].uuid, {'status': 'BADDO!'})
         self.assertEqual(response.status_code, 400)
 
-@override_settings(ROOT_URLCONF=__name__)
-class ClaimFlowTestCase(TestCase):
+class ClaimFlowTestCase(BaseTestCase):
     def setUp(self):
         self.unclaimed_flows = [Flow.objects.create() for i in range(1)]
         self.claimed_flows = [Flow.objects.create(claimed=True)
@@ -141,8 +142,7 @@ class ClaimFlowTestCase(TestCase):
         self.assertEqual(claimed_values, expected_claimed_values)
 
 
-@override_settings(ROOT_URLCONF=__name__)
-class ListJobsTestCase(APITestCase):
+class ListJobsTestCase(BaseTestCase):
     def test_list_jobs(self):
         jobs = [Job.objects.create(name="job_%s" % i) for i in range(3)]
         response = self.client.get(BASE_URL + 'jobs/')
@@ -176,8 +176,7 @@ class ListJobsTestCase(APITestCase):
     def key_by_uuid(self, items=None):
         return {item['uuid']: item for item in items}
 
-@override_settings(ROOT_URLCONF=__name__)
-class PatchJobTestCase(APITestCase):
+class PatchJobTestCase(BaseTestCase):
     def setUp(self):
         self.jobs = [Job.objects.create(name="job_%s" % i)
                      for i in range(1)]
@@ -198,8 +197,7 @@ class PatchJobTestCase(APITestCase):
                                      {'status': 'BADDO!'})
         self.assertEqual(response.status_code, 400)
 
-@override_settings(ROOT_URLCONF=__name__)
-class ClaimJobTestCase(TestCase):
+class ClaimJobTestCase(BaseTestCase):
     def setUp(self):
         self.unclaimed_jobs = [Job.objects.create(name="job_%s" % i)
                                for i in range(1)]
@@ -235,8 +233,7 @@ class ClaimJobTestCase(TestCase):
             expected_statuses[str(job.uuid)] = expected_status
         self.assertEqual(statuses, expected_statuses)
 
-@override_settings(ROOT_URLCONF=__name__)
-class FlushTestCase(TestCase):
+class FlushTestCase(BaseTestCase):
     def setUp(self):
         self.create_models()
 
@@ -256,3 +253,30 @@ class FlushTestCase(TestCase):
                                   for model in missions_models}
         self.assertEqual(json.loads(response.content.decode()), 
                          expected_flush_results)
+
+class QueueItemsTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.queue = Queue.objects.create()
+        self.params = {
+            'query_params': {
+                'query_param_%s' % i: 'value_%s' % i for i in range(3)
+            }
+        }
+        self.mock_serialized_items = ['item_%s' % i for i in range(3)]
+
+    @patch.object(_views, '_queue_utils')
+    def test_returns_serialized_queue_items(self, mock_queue_utils):
+        mock_queue_utils.get_serialized_queue_items.return_value = \
+                self.mock_serialized_items
+        url = '{base_url}queues/{queue_key}/items/'.format(
+            base_url=BASE_URL, queue_key=self.queue.uuid)
+        response = self.client.post(url,
+                                    json.dumps(self.params),
+                                    content_type='application/json')
+        self.assertEqual(response.status_code, 200)
+        result = response.json()
+        self.assertEqual(result['items'], self.mock_serialized_items)
+        self.assertEqual(
+            mock_queue_utils.get_serialized_queue_items.call_args,
+            call(queue=self.queue, query_params=self.params['query_params']))

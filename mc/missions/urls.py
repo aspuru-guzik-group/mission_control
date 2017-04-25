@@ -7,6 +7,7 @@ from . import views
 router = DefaultRouter()
 router.register(r'flows', views.FlowViewSet)
 router.register(r'jobs', views.JobViewSet)
+router.register(r'queues', views.QueueViewSet)
 
 urlpatterns = [
     url(r'^', include(router.urls)),
