@@ -46,10 +46,14 @@ class MissionControlClient(object):
             response.raise_for_status()
             return response.json()
         except Exception as exception:
-            wrapped_exception = Exception("%s; %s" % (exception,
-                                                      response.content))
+            wrapped_exception = Exception("%s; %s" % (
+                exception, self._elide_string(response.content.decode())))
             self.logger.exception(wrapped_exception)
             raise wrapped_exception
+
+    def _elide_string(self, string=None, max_len=256):
+        if len(string) > max_len: return string[:max_len] + '...'
+        else: return string
 
     def fetch_flows(self, query_params=None):
         args = [self.urls['flows']]
