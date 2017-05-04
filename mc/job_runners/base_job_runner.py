@@ -12,8 +12,8 @@ class BaseJobRunner(object):
         self.tick_interval = tick_interval
         self.max_running_jobs = max_running_jobs
         self.task_handler = task_handler
-        if get_default_job_tasks:
-            self.get_default_job_tasks = get_default_job_tasks
+        self.get_default_job_tasks = get_default_job_tasks or \
+            self._get_default_job_tasks 
         self.logger = logger or logging
 
         self._ticking = False
@@ -21,14 +21,13 @@ class BaseJobRunner(object):
         self.jobs = {}
         self.running_jobs = {}
 
-    def get_default_job_tasks(self, job=None): return []
+    def _get_default_job_tasks(self, *args, **kwargs): return []
 
     def start(self):
         self._ticking = True
         self.run()
 
-    def stop(self):
-        self._ticking = False
+    def stop(self): self._ticking = False
 
     def run(self, ntimes=None, tick_interval=None):
         if ntimes:
@@ -47,21 +46,11 @@ class BaseJobRunner(object):
     def tick(self):
         self.tick_counter += 1
         self.logger.debug('%s, tick #%s' % (self, self.tick_counter))
-        self.process_running_jobs()
         num_job_slots = self.max_running_jobs - len(self.running_jobs)
         if num_job_slots <= 0: return
         for job in self.claim_jobs(params={'limit': num_job_slots}):
-            self.process_job(job=job)
-
-    def process_running_jobs(self):
-        completed_jobs = {}
-        for key, job in list(self.running_jobs.items()):
-            if self.job_is_running(job=job):
-                try: self.tick_job(job=job)
-                except Exception as error: self.fail_job(job=job, error=error)
-            else:
-                completed_jobs[key] = job
-        for key, job in completed_jobs.items(): self.complete_job(job=job)
+            self.start_job(job=job)
+        self.process_running_jobs()
 
     def job_is_running(self, job=None):
         return job['status'] == 'RUNNING'
@@ -69,30 +58,35 @@ class BaseJobRunner(object):
     def claim_jobs(self, *args, **kwargs):
         return self.job_client.claim_jobs(*args, **kwargs)
 
-    def process_job(self, job=None):
-        self.register_job(job=job)
-        try: self.start_job(job=job)
+    def start_job(self, job=None):
+        try:
+            self.register_job(job=job)
+            if 'tasks' not in job:
+                job['tasks'] = self.get_default_job_tasks(job=job)
+            self.running_jobs[job['uuid']] = job
         except Exception as exception:
-            self.logger.exception("Job failed")
+            self.logger.exception("Failed to start job")
             self.fail_job(job=job, error=traceback.format_exc())
 
     def register_job(self, job=None):
         self.jobs[job['uuid']] = job
 
+    def fail_job(self, job=None, error=None):
+        job.update({'status': 'FAILED', 'error': error})
+        self.unregister_job(job=job)
+
     def unregister_job(self, job=None):
         for registry in [self.jobs, self.running_jobs]:
             if job['uuid'] in registry: del registry[job['uuid']]
 
-    def fail_job(self, job=None, error=None):
-        self.update_job(job=job, updates={'status': 'FAILED',
-                                          'error': error})
-        self.unregister_job(job=job)
-
-    def start_job(self, job=None):
-        if 'tasks' not in job:
-            job['tasks'] = self.get_default_job_tasks(job=job)
-        self.running_jobs[job['uuid']] = job
-        self.tick_job(job=job)
+    def process_running_jobs(self):
+        keyed_running_jobs = list(self.running_jobs.items())
+        for key, job in keyed_running_jobs:
+            if self.job_is_running(job=job):
+                try: self.tick_job(job=job)
+                except Exception as error: self.fail_job(job=job, error=error)
+            else: self.unregister_job(job=job)
+        self.update_jobs(jobs=[job for key, job in keyed_running_jobs])
 
     def tick_job(self, job=None):
         try:
@@ -113,15 +107,10 @@ class BaseJobRunner(object):
         task_context = {'job': job}
         return task_context
 
-    def complete_job(self, job=None):
-        if job['status'] == 'FAILED':
-            self.fail_job(job=job, error=job.get('error', '<unknown error>'))
-        else:
-            self.update_job(job=job, updates={
-                'status': 'COMPLETED',
-                'data': job.get('data', {})
-            })
-            self.unregister_job(job=job)
-
-    def update_job(self, job=None, updates=None):
-        self.job_client.update_jobs(updates_by_uuid={job['uuid']: updates})
+    def update_jobs(self, jobs=None):
+        self.job_client.update_jobs(updates_by_uuid={
+            job['uuid']: {
+                attr: job.get(attr)
+                for attr in ['data', 'status', 'error']
+            } for job in jobs
+        })
