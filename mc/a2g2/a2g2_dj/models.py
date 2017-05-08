@@ -1,7 +1,8 @@
 import uuid
 from django.db import models
 from django_extensions.db.models import TimeStampedModel
-from django.contrib.postgres.fields import JSONField
+
+from jsonfield import JSONField
 
 import taggit.managers
 import taggit.models

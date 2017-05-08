@@ -1,1 +1,14 @@
-{"entrypoint": "job.sh", "inputs_dir": "inputs", "outputs_dir": "outputs", "std_log_files": {"stderr": "ODYSSEY_JOB.stderr", "stdout": "ODYSSEY_JOB.stdout"}, "checkpoint_files": {"completed": "ODYSSEY_JOB__COMPLETED", "failed": "ODYSSEY_JOB__FAILED"}}
+{
+    "entrypoint": "job.sh",
+    "inputs_dir": "inputs",
+    "outputs_dir": "outputs",
+    "std_log_files": {
+        "stderr": "ODYSSEY_JOB.stderr",
+        "stdout": "ODYSSEY_JOB.stdout",
+        "failure": "ODYSSEY_JOB__FAILED"
+    },
+    "checkpoint_files": {
+        "completed": "ODYSSEY_JOB__COMPLETED",
+        "failed": "ODYSSEY_JOB__FAILED"
+    }
+}

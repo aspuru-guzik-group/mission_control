@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/1.10/ref/settings/
 """
 
 import os
+import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -82,16 +83,25 @@ WSGI_APPLICATION = 'mc_dj.wsgi.application'
 # https://docs.djangoproject.com/en/1.10/ref/settings/#databases
 
 DATABASES = {
+    #'default': {
+        #'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        #'NAME': os.environ.get('MC_DB_NAME', 'postgres'),
+        #'USER': os.environ.get('MC_DB_USER', 'postgres'),
+        #'PASSWORD': os.environ.get('MC_DB_PASSWORD', 'postgres'),
+        #'HOST': os.environ.get('MC_DB_HOST', 'mc'),
+        #'PORT': '5432',
+    #},
     'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': os.environ["MC_DB_NAME"],
-        'USER': os.environ["MC_DB_USER"],
-        'PASSWORD': os.environ["MC_DB_PASSWORD"],
-        'HOST': os.environ["MC_DB_HOST"],
-        'PORT': '5432',
-    },
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'mc_dj_db',
+    }
 }
 
+if 'test' in sys.argv:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': 'mc_test',
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/1.10/ref/settings/#auth-password-validators

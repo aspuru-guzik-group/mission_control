@@ -11,9 +11,10 @@ class FlowEngine(object):
 
     class NodeError(Exception): pass
 
-    def __init__(self, task_handler=None, logger=None):
+    def __init__(self, task_handler=None, logger=None, max_msg_len=1024):
         self.logger = logger or logging
         self.task_handler = task_handler
+        self.max_msg_len = max_msg_len
 
     @classmethod
     def generate_flow(self, flow_spec=None):
@@ -132,7 +133,8 @@ class FlowEngine(object):
         flow.data.setdefault('errors', [])
         flow.data['errors'].append(self.elide_text(error))
 
-    def elide_text(self, text=None, max_len=1024):
+    def elide_text(self, text=None, max_len=None):
+        max_len = max_len or self.max_msg_len
         if len(text) > max_len: text = text[0:max_len] + '...'
         return text
 

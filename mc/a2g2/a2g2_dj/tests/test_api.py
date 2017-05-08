@@ -66,7 +66,10 @@ class QueryChemThingsTestCase(BaseAPITestCase):
         for i in range(num_chemthings):
             tags = [tags[(i + j) % len(tags)]
                     for j in range(tags_per_chemthing)]
-            chemthings.append(ChemThing.objects.create(tags=tags))
+            chemthing = ChemThing()
+            chemthing.tags = tags
+            chemthing.save()
+            chemthings.append(chemthing)
         return chemthings
 
 class PatchChemThingTestCase(BaseAPITestCase):

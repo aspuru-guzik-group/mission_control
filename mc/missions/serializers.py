@@ -16,6 +16,7 @@ class FlowSerializer(serializers.ModelSerializer):
 missions_serializers[Flow] = FlowSerializer
 
 class JobSerializer(serializers.ModelSerializer):
+    job_spec = serializers.JSONField(**default_json_field_kwargs)
     class Meta:
         model = Job
         fields = ('uuid', 'name', 'status', 'created', 'modified', 'job_spec',

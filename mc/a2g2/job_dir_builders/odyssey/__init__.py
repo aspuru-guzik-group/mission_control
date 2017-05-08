@@ -17,6 +17,7 @@ class OdysseyJobDirBuilder(object):
     std_log_files = {
         'stdout': 'ODYSSEY_JOB.stdout',
         'stderr': 'ODYSSEY_JOB.stderr',
+        'failure': checkpoint_files['failed'],
     }
 
     @classmethod
@@ -116,13 +117,13 @@ class OdysseyJobDirBuilder(object):
                 if [ $PREV_RETURN_CODE -eq 0 ]; then
                     touch {completed_checkpoint_file}
                 else
-                    touch {failed_checkpoint_file}
-                    echo "{summary_stdout_cmd}:" >> {failed_checkpoint_file}
-                    {summary_stdout_cmd} >> {failed_checkpoint_file}
-                    echo "{summary_stderr_cmd}:" >> {failed_checkpoint_file}
-                    {summary_stderr_cmd} >> {failed_checkpoint_file}
-                    echo "{ls_cmd}:" >> {failed_checkpoint_file}
-                    {ls_cmd} >> {failed_checkpoint_file}
+                    touch {failure_log_file}
+                    echo "{summary_stdout_cmd}:" >> {failure_log_file}
+                    {summary_stdout_cmd} >> {failure_log_file}
+                    echo "{summary_stderr_cmd}:" >> {failure_log_file}
+                    {summary_stderr_cmd} >> {failure_log_file}
+                    echo "{ls_cmd}:" >> {failure_log_file}
+                    {ls_cmd} >> {failure_log_file}
                 fi
                 popd > /dev/null
             }}
@@ -130,7 +131,7 @@ class OdysseyJobDirBuilder(object):
             '''
         ).strip().format(
             completed_checkpoint_file=cls.checkpoint_files['completed'],
-            failed_checkpoint_file=cls.checkpoint_files['failed'],
+            failure_log_file=cls.std_log_files['failure'],
             summary_stdout_cmd=generate_summary_cmd(std_log_files['stdout']),
             summary_stderr_cmd=generate_summary_cmd(std_log_files['stderr']),
             ls_cmd='ls -1'

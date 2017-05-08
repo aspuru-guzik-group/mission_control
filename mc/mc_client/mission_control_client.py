@@ -158,8 +158,9 @@ class MissionControlClient(object):
     def update_jobs(self, updates_by_uuid=None):
         results_by_uuid = {}
         for uuid, updates_for_uuid in updates_by_uuid.items():
-            results_by_uuid[uuid] = self.update_job(uuid=uuid,
-                                                    updates=updates_for_uuid)
+            try: result = self.update_job(uuid=uuid, updates=updates_for_uuid)
+            except Exception as exc: result = exc
+            results_by_uuid[uuid] = result
         return results_by_uuid
 
     def update_job(self, uuid=None, updates=None):
