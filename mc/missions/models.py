@@ -20,7 +20,7 @@ missions_models = []
 class Mission(TimeStampedModel):
     uuid = models.CharField(primary_key=True, default=str_uuid4,
                             editable=False, max_length=64)
-    name = models.CharField(null=True, max_length=1024)
+    label = models.CharField(null=True, max_length=1024)
 
     def __str__(self):
         return uuid_model_str(self)
@@ -40,7 +40,6 @@ class Flow(TimeStampedModel):
                             editable=False, max_length=64)
     label = models.CharField(max_length=256, blank=True, null=True)
     serialization = models.TextField(null=True)
-    spec = models.TextField(null=True)
     mission = models.ForeignKey('Mission', null=True, on_delete=models.CASCADE)
     status = models.CharField(null=True, max_length=32,
                               choices=[(status.name, status.value['label'])
@@ -48,15 +47,14 @@ class Flow(TimeStampedModel):
                               default=FlowStatuses.PENDING.name)
     claimed = models.NullBooleanField(null=True, default=False)
 
-    def __str__(self):
-        return uuid_model_str(self)
+    def __str__(self): return uuid_model_str(self)
 
 missions_models.append(Flow)
 
 class Job(TimeStampedModel):
     uuid = models.CharField(primary_key=True, default=str_uuid4,
                             editable=False, max_length=64)
-    name = models.CharField(null=True, max_length=1024)
+    label = models.CharField(max_length=256, blank=True, null=True)
     status = models.CharField(null=True, max_length=32,
                               choices=[(status.name, status.value['label'])
                                        for status in JobStatuses],
@@ -64,25 +62,8 @@ class Job(TimeStampedModel):
     claimed = models.NullBooleanField(null=True, default=False)
     job_spec = JSONField(default=dict, null=True, blank=True)
     data = models.TextField(null=True, default='{}')
-    error = models.TextField(null=True, blank=True)
 
 missions_models.append(Job)
-
-class FlowJob(TimeStampedModel):
-    uuid = models.CharField(primary_key=True, default=str_uuid4,
-                            editable=False, max_length=64)
-    flow = models.ForeignKey(Flow, on_delete=models.CASCADE,
-                                 related_name='flow_jobs')
-    job = models.ForeignKey('Job', on_delete=models.CASCADE)
-    finished = models.NullBooleanField(null=True, default=False)
-    meta = JSONField(default=dict)
-
-    def __str__(self):
-        return '<{class_name}: {{flow_id: {f_id}, job_id: {j_id}}}>'.format(
-            class_name=self.__class__.__name__,
-            f_id=self.flow_id,
-            j_id=self.job_id)
-
 
 class Queue(TimeStampedModel):
     uuid = models.CharField(primary_key=True, default=str_uuid4,

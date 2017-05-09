@@ -144,7 +144,7 @@ class ClaimFlowTestCase(BaseTestCase):
 
 class ListJobsTestCase(BaseTestCase):
     def test_list_jobs(self):
-        jobs = [Job.objects.create(name="job_%s" % i) for i in range(3)]
+        jobs = [Job.objects.create(label="job_%s" % i) for i in range(3)]
         response = self.client.get(BASE_URL + 'jobs/')
         expected_data = [JobSerializer(job).data for job in jobs]
         self.assertEqual(sorted(response.data, key=lambda j: j['uuid']),
@@ -153,7 +153,7 @@ class ListJobsTestCase(BaseTestCase):
     def test_status_filtering(self):
         statuses = [JobStatuses.PENDING.name, JobStatuses.RUNNING.name]
         jobs_by_status = {
-            status: [Job.objects.create(name="job_%s" % i, status=status)
+            status: [Job.objects.create(label="job_%s" % i, status=status)
                      for i in range(3)]
             for status in statuses
         }
@@ -178,12 +178,12 @@ class ListJobsTestCase(BaseTestCase):
 
 class PatchJobTestCase(BaseTestCase):
     def setUp(self):
-        self.jobs = [Job.objects.create(name="job_%s" % i)
+        self.jobs = [Job.objects.create(label="job_%s" % i)
                      for i in range(1)]
 
     def test_patch_job(self):
         job_to_patch = self.jobs[0]
-        new_values = {'name': 'new_name', 'data': json.dumps({'new': 'data'})}
+        new_values = {'label': 'new_label', 'data': json.dumps({'new': 'data'})}
         response = self.client.patch(BASE_URL + 'jobs/%s/' % job_to_patch.uuid,
                                      new_values)
         self.assertEqual(response.status_code, 200)
@@ -199,10 +199,10 @@ class PatchJobTestCase(BaseTestCase):
 
 class ClaimJobTestCase(BaseTestCase):
     def setUp(self):
-        self.unclaimed_jobs = [Job.objects.create(name="job_%s" % i)
+        self.unclaimed_jobs = [Job.objects.create(label="job_%s" % i)
                                for i in range(1)]
         self.claimed_jobs = [Job.objects.create(
-            name="job_%s" % i, status=JobStatuses.RUNNING.name)
+            label="job_%s" % i, status=JobStatuses.RUNNING.name)
             for i in range(1)]
         self.all_jobs = self.unclaimed_jobs + self.claimed_jobs
         self.jobs_to_claim = [j for j in self.unclaimed_jobs[:-1]] + [
