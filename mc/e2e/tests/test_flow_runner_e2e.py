@@ -9,7 +9,8 @@ from missions.models import Flow as FlowModel
 from mc.flow_engines.flow import Flow
 from mc.flow_runners.base_flow_runner import BaseFlowRunner
 from mc.flow_engines.flow_engine import FlowEngine
-from mc.mc_client.mission_control_client import MissionControlClient
+from mc.mc_client.mc_client import MissionControlClient
+from mc.mc_client.http_dao import HttpDao as McHttpDao
 
 
 BASE_PATH = 'test_api'
@@ -24,8 +25,7 @@ class FlowRunnerE2ETestCase(TestCase):
         test_utils.patch_request_client(request_client=self.client)
         self.flow_engine = self.generate_flow_engine()
         self.flow_client = MissionControlClient(
-            base_url='/%s' % BASE_PATH,
-            request_client=self.client
+            dao=McHttpDao(base_url='/%s' % BASE_PATH, requests=self.client)
         )
         self.flow_runner = self.generate_flow_runner(
             flow_client=self.flow_client,

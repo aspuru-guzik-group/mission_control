@@ -128,14 +128,18 @@ class GenerateMissionControlClientTestCase(BaseTestCase):
     def decorate_patchers(self):
         self.patchers['MissionControlClient'] = patch.object(
             odyssey_push_runner, 'MissionControlClient')
+        self.patchers['HttpDao'] = patch.object(
+            odyssey_push_runner, '_McHttpDao')
 
     def test_generates_mc_client(self):
         result = self.mock_runner.call_real_method('generate_mc_client')
+        self.assertEqual(self.mocks['HttpDao'].call_args,
+                         call(base_url=self.mock_runner.mc_server_url,
+                              requests=self.mock_runner.request_client))
+        self.assertEqual(self.mocks['MissionControlClient'].call_args,
+                         call(dao=self.mocks['HttpDao'].return_value))
         self.assertEqual(result,
                          self.mocks['MissionControlClient'].return_value)
-        self.assertEqual(self.mocks['MissionControlClient'].call_args,
-                         call(base_url=self.mock_runner.mc_server_url,
-                              request_client=self.mock_runner.request_client))
 
 class GenerateJobSubmissionFactoryTestCase(BaseTestCase):
     def decorate_patchers(self):

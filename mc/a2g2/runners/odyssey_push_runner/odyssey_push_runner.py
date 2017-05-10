@@ -2,7 +2,8 @@ import time
 
 import requests
 
-from mc.mc_client.mission_control_client import MissionControlClient
+from mc.mc_client.mc_client import MissionControlClient
+from mc.mc_client.http_dao import HttpDao as _McHttpDao
 from mc.flow_engines.flow_engine import FlowEngine
 from mc.flow_runners.base_flow_runner import BaseFlowRunner as FlowRunner
 from .odyssey_job_submission_factory import OdysseyJobSubmissionFactory as \
@@ -63,8 +64,9 @@ class OdysseyPushRunner(object):
         return flow_engine
 
     def generate_mc_client(self):
-        return MissionControlClient(base_url=self.mc_server_url,
-                                    request_client=self.request_client)
+        dao = _McHttpDao(base_url=self.mc_server_url,
+                         requests=self.request_client)
+        return MissionControlClient(dao=dao)
 
     def generate_job_submission_factory(self):
         return JobSubmissionFactory()
