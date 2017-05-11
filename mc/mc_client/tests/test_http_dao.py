@@ -17,10 +17,10 @@ class BaseTestCase(unittest.TestCase):
 
 class CreateFlowTestCase(BaseTestCase):
     def test_dispatches_to_requests(self):
-        flow = MagicMock()
-        result = self.dao.create_flow(flow=flow)
+        flow_kwargs = MagicMock()
+        result = self.dao.create_flow(flow_kwargs=flow_kwargs)
         self.assertEqual(self.requests.post.call_args,
-                         call(self.base_url + 'flows/', json=flow))
+                         call(self.base_url + 'flows/', json=flow_kwargs))
         self.assertEqual(result,
                          self.requests.post.return_value.json.return_value)
 
@@ -60,10 +60,10 @@ class PatchFlowTestCase(BaseTestCase):
 
 class CreateJobTestCase(BaseTestCase):
     def test_dispatches_to_requests(self):
-        job = MagicMock()
-        result = self.dao.create_job(job=job)
+        job_kwargs = MagicMock()
+        result = self.dao.create_job(job_kwargs=job_kwargs)
         self.assertEqual(self.requests.post.call_args,
-                         call(self.base_url + 'jobs/', json=job))
+                         call(self.base_url + 'jobs/', json=job_kwargs))
         self.assertEqual(result,
                          self.requests.post.return_value.json.return_value)
 
@@ -111,10 +111,10 @@ class FlushTestCase(BaseTestCase):
 
 class CreateQueueTestCase(BaseTestCase):
     def test_dispatches_to_requests(self):
-        queue = MagicMock()
-        result = self.dao.create_queue(queue=queue)
+        queue_kwargs = MagicMock()
+        result = self.dao.create_queue(queue_kwargs=queue_kwargs)
         self.assertEqual(self.requests.post.call_args,
-                         call(self.base_url + 'queues/', json=queue))
+                         call(self.base_url + 'queues/', json=queue_kwargs))
         self.assertEqual(result,
                          self.requests.post.return_value.json.return_value)
 

@@ -25,15 +25,16 @@ class RunFlowTaskHandler(BaseTaskHandler):
         flow_ctx = task_context['flow_ctx']
         flow = self.get_flow(task=task, flow_ctx=flow_ctx)
         assert flow is not None
-        if flow['status'] == 'COMPLETED':
+        if flow.status == 'COMPLETED':
             task['status'] = 'COMPLETED'
-            task['data']['flow_data'] = flow.get('data')
-        elif flow['status'] == 'FAILED':
-            try: error = str(flow['serialization']['data']['errors'])
-            except KeyError: error = '<unknown>'
+            task['data']['flow_data'] = flow.data
+        elif flow.status == 'FAILED':
+            error = str(flow.data.get('errors', '<unknown>'))
             raise Exception(error)
 
     def get_flow(self, task=None, flow_ctx=None):
-        return flow_ctx['get_flow'](uuid=task['data']['flow_uuid'])
+        flow_record = flow_ctx['get_flow'](uuid=task['data']['flow_uuid'])
+        return flow_engine.FlowEngine.deserialize_flow(
+            serialized_flow=flow_record.get('serialization'))
 
 TaskHandler = RunFlowTaskHandler

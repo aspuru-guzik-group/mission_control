@@ -34,7 +34,8 @@ class ProcessExecutedJobsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         for attr in ['get_executed_jobman_jobs', 'parse_jobman_jobs',
-                     'post_parsed_jobman_jobs', 'finalize_jobman_jobs']:
+                     'parsed_jobman_jobs_to_keyed_patches',
+                     'finalize_jobman_jobs']:
             setattr(self.job_runner, attr, MagicMock())
         self.job_runner.process_executed_jobs()
 
@@ -47,11 +48,17 @@ class ProcessExecutedJobsTestCase(BaseTestCase):
                  self.job_runner.get_executed_jobman_jobs.return_value)
         )
 
-    def test_posts_parsed_jobman_jobs(self):
+    def test_posts_keyed_patches(self):
+        expected_parsed_jobman_jobs = \
+                self.job_runner.parse_jobman_jobs.return_value
         self.assertEqual(
-            self.job_runner.post_parsed_jobman_jobs.call_args,
-            call(parsed_jobman_jobs=\
-                 self.job_runner.parse_jobman_jobs.return_value))
+            self.job_runner.parsed_jobman_jobs_to_keyed_patches.call_args,
+            call(parsed_jobman_jobs=expected_parsed_jobman_jobs)
+        )
+        expected_keyed_patches = \
+                self.job_runner.parsed_jobman_jobs_to_keyed_patches.return_value
+        self.assertEqual(self.job_runner.job_client.patch_jobs.call_args,
+                         call(keyed_patches=expected_keyed_patches))
 
     def test_finalizes_jobman_jobs(self):
         self.assertEqual(
@@ -152,52 +159,79 @@ class GenerateArtifactSpecForDirTestCase(BaseTestCase):
         }
         self.assertEqual(result, expected_result)
 
-class PostParsedJobmanJobsTestCase(BaseTestCase):
+class ParsedJobmanJobsToKeyedPatchesTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        def mock_to_update_dict(parsed_jobman_job=None):
-            return {parsed_jobman_job['source_meta']['mc_job']['uuid']: \
-                    parsed_jobman_job}
-        self.job_runner.parsed_jobman_job_to_update_dict = \
-                MagicMock(side_effect=mock_to_update_dict)
+        self.job_runner.parsed_jobman_job_to_patches = MagicMock()
         self.parsed_jobman_jobs = [MagicMock() for i in range(3)]
-        self.job_runner.post_parsed_jobman_jobs(
+
+    def test_keys_patches_by_mc_job_uuid(self):
+        result = self.job_runner.parsed_jobman_jobs_to_keyed_patches(
             parsed_jobman_jobs=self.parsed_jobman_jobs)
-
-    def test_posts_updates_by_uuid(self):
-        expected_updates_by_uuid = {}
+        expected_result = {}
         for parsed_jobman_job in self.parsed_jobman_jobs:
-            update_dict = self.job_runner.parsed_jobman_job_to_update_dict(
-                parsed_jobman_job=parsed_jobman_job)
-            expected_updates_by_uuid.update(update_dict)
-        self.assertEqual(self.job_runner.job_client.update_jobs.call_args,
-                         call(updates_by_uuid=expected_updates_by_uuid))
+            mc_job = parsed_jobman_job['jobman_job']['source_meta']['mc_job']
+            expected_result[mc_job['uuid']] = \
+                    self.job_runner.parsed_jobman_job_to_patches.return_value
+        self.assertEqual(result, expected_result)
 
-class ParsedJobmanJobToUpdateDict(BaseTestCase):
+class ParsedJobmanJobToPatches(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.parsed_jobman_job = MagicMock()
-        self.expected_mc_job = \
-                self.parsed_jobman_job['jobman_job']['source_meta']['mc_job']
-        self.expected_uuid = self.expected_mc_job['uuid']
-        self.update_dict = self.job_runner.parsed_jobman_job_to_update_dict(
+        self.job_runner.get_std_log_contents = MagicMock()
+        self.patches = self.job_runner.parsed_jobman_job_to_patches(
             parsed_jobman_job=self.parsed_jobman_job)
 
     def test_has_status(self):
-        self.assertEqual(self.update_dict[self.expected_uuid]['status'],
+        self.assertEqual(self.patches['status'],
                          self.parsed_jobman_job['status'])
 
     def test_has_artifact(self):
-        self.assertEqual(
-            self.update_dict[self.expected_uuid]['data']['artifact'],
-            self.parsed_jobman_job.get('artifact_spec'))
+        self.assertEqual(self.patches['data']['artifact'],
+                         self.parsed_jobman_job.get('artifact_spec'))
 
     def test_has_std_log_contents(self):
+        self.assertEqual(self.job_runner.get_std_log_contents.call_args,
+                         call(parsed_jobman_job=self.parsed_jobman_job))
         self.assertEqual(
-            self.update_dict[self.expected_uuid]['data']['std_log_contents'],
-            {std_log_name: \
-             self.parsed_jobman_job['std_log_contents'][std_log_name]
-             for std_log_name in self.expected_mc_job['std_logs_to_expose']})
+            self.patches['data']['std_log_contents'],
+            self.job_runner.get_std_log_contents.return_value
+        )
+
+class GetStdLogContentsTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.mc_job = {
+            'job_spec': {
+                'std_logs_to_expose': {}
+            }
+        }
+        self.parsed_jobman_job = {
+            'jobman_job': {
+                'source_meta': {'mc_job': self.mc_job}
+            },
+            'std_log_contents': MagicMock()
+        }
+
+    def _get_std_log_contents(self):
+        return self.job_runner.get_std_log_contents(
+            parsed_jobman_job=self.parsed_jobman_job)
+
+    def test_handles_all_arg(self):
+        self.mc_job['job_spec']['std_logs_to_expose'] = 'all'
+        result = self._get_std_log_contents()
+        self.assertEqual(result, self.parsed_jobman_job.get('std_log_contents'))
+
+    def test_handles_list_of_logs(self):
+        logs_to_expose = [MagicMock() for i in range(3)]
+        self.mc_job['job_spec']['std_logs_to_expose'] = logs_to_expose
+        result = self._get_std_log_contents()
+        expected_result = {
+            log_name: self.parsed_jobman_job['std_log_contents'].get(log_name)
+            for log_name in logs_to_expose
+        }
+        self.assertEqual(result, expected_result)
 
 class FinalizeJobmanJobsTestCase(BaseTestCase):
     def setUp(self):

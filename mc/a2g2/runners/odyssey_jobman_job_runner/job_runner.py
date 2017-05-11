@@ -39,7 +39,9 @@ class JobRunner(object):
         executed_jobman_jobs = self.get_executed_jobman_jobs()
         parsed_jobman_jobs = self.parse_jobman_jobs(
             jobman_jobs=executed_jobman_jobs)
-        self.post_parsed_jobman_jobs(parsed_jobman_jobs=parsed_jobman_jobs)
+        keyed_patches = self.parsed_jobman_jobs_to_keyed_patches(
+            parsed_jobman_jobs=parsed_jobman_jobs)
+        self.job_client.patch_jobs(keyed_patches=keyed_patches)
         self.finalize_jobman_jobs(jobman_jobs=executed_jobman_jobs)
 
     def get_executed_jobman_jobs(self):
@@ -84,30 +86,27 @@ class JobRunner(object):
         }
         return artifact_spec
 
-    def post_parsed_jobman_jobs(self, parsed_jobman_jobs=None):
-        updates_by_uuid = {}
+    def parsed_jobman_jobs_to_keyed_patches(self, parsed_jobman_jobs=None):
+        keyed_patches = {}
         for parsed_jobman_job in parsed_jobman_jobs:
-            update_dict = self.parsed_jobman_job_to_update_dict(
+            patches = self.parsed_jobman_job_to_patches(
                 parsed_jobman_job=parsed_jobman_job)
-            updates_by_uuid.update(update_dict)
-        self.job_client.update_jobs(updates_by_uuid=updates_by_uuid)
+            mc_job = parsed_jobman_job['jobman_job']['source_meta']['mc_job']
+            keyed_patches[mc_job['uuid']] = patches
+        return keyed_patches
 
-    def parsed_jobman_job_to_update_dict(self, parsed_jobman_job=None):
-        mc_job = parsed_jobman_job['jobman_job']['source_meta']['mc_job']
-        std_log_contents = self.get_std_log_contents_to_expose(
-            parsed_jobman_job=parsed_jobman_job)
-        update_dict = {
-            mc_job['uuid']: {
-                'status': parsed_jobman_job['status'],
-                'data': {
-                    'artifact': parsed_jobman_job.get('artifact_spec'),
-                    'std_log_contents': std_log_contents
-                }
+    def parsed_jobman_job_to_patches(self, parsed_jobman_job=None):
+        patches = {
+            'status': parsed_jobman_job['status'],
+            'data': {
+                'artifact': parsed_jobman_job.get('artifact_spec'),
+                'std_log_contents': self.get_std_log_contents(
+                    parsed_jobman_job=parsed_jobman_job)
             }
         }
-        return update_dict
+        return patches
 
-    def get_std_log_contents_to_expose(self, parsed_jobman_job=None):
+    def get_std_log_contents(self, parsed_jobman_job=None):
         mc_job = parsed_jobman_job['jobman_job']['source_meta']['mc_job']
         contents = parsed_jobman_job['std_log_contents']
         logs_to_expose = mc_job['job_spec'].get('std_logs_to_expose', [])

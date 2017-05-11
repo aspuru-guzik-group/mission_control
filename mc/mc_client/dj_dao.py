@@ -11,8 +11,8 @@ class DjDao(object):
         self.queue_utils = queue_utils or _queue_utils
         self.logger = logger or logging
 
-    def create_flow(self, flow=None):
-        flow_model = self.models['Flow'].objects.create(**flow)
+    def create_flow(self, flow_kwargs=None):
+        flow_model = self.models['Flow'].objects.create(**flow_kwargs)
         return self.serialize_flow_model(flow_model=flow_model)
 
     def serialize_flow_model(self, flow_model=None):
@@ -30,7 +30,7 @@ class DjDao(object):
         return flow_models
  
     def flow_query_to_queryset(self, query=None):
-        self.validate_query(query=query)
+        if query: self.validate_query(query=query)
         qs = self.models['Flow'].objects
         return qs.filter(**self.get_dj_filter_kwargs_for_query(query=query))
 
@@ -48,6 +48,7 @@ class DjDao(object):
 
     def get_dj_filter_kwargs_for_query(self, query=None):
         filter_kwargs = {}
+        if not query: return filter_kwargs
         for _filter in query.get('filters', []):
             filter_kwargs.update(
                 self.query_filter_to_dj_filter_kwargs(_filter=_filter))
@@ -63,11 +64,17 @@ class DjDao(object):
 
     def patch_flow(self, key=None, patches=None):
         flow_model = self.models['Flow'].objects.get(uuid=key)
-        flow_model.update(**patches)
+        self.patch_model(model=flow_model, patches=patches)
         return self.serialize_flow_model(flow_model=flow_model)
 
-    def create_job(self, job=None):
-        job_model = self.models['Job'].objects.create(**job)
+    def patch_model(self, model=None, patches=None):
+        patches = patches or {}
+        for k, v in patches.items():
+            setattr(model, k, v)
+        model.save()
+
+    def create_job(self, job_kwargs=None):
+        job_model = self.models['Job'].objects.create(**job_kwargs)
         return self.serialize_job_model(job_model=job_model)
 
     def serialize_job_model(self, job_model=None):
@@ -85,17 +92,17 @@ class DjDao(object):
         return job_models
  
     def job_query_to_queryset(self, query=None):
-        self.validate_query(query=query)
+        if query: self.validate_query(query=query)
         qs = self.models['Job'].objects
         return qs.filter(**self.get_dj_filter_kwargs_for_query(query=query))
 
     def patch_job(self, key=None, patches=None):
         job_model = self.models['Job'].objects.get(uuid=key)
-        job_model.update(**patches)
+        self.patch_model(model=job_model, patches=patches)
         return self.serialize_job_model(job_model=job_model)
 
-    def create_queue(self, queue=None):
-        queue_model = self.models['Queue'].objects.create(**queue)
+    def create_queue(self, queue_kwargs=None):
+        queue_model = self.models['Queue'].objects.create(**queue_kwargs)
         return self.serialize_queue_model(queue_model=queue_model)
 
     def serialize_queue_model(self, queue_model=None):
@@ -109,6 +116,8 @@ class DjDao(object):
         queue_model = self.models['Queue'].objects.get(uuid=queue_key)
         claimed_item_models = self.queue_utils.claim_queue_items(
             queue=queue_model, models=self.models)
-        return self.queue_utils.serialize_queue_items(
-            queue=queue_model, items=claimed_item_models,
-            serializers=self.serializers)
+        return {
+            'items': self.queue_utils.serialize_queue_items(
+                queue=queue_model, items=claimed_item_models,
+                serializers=self.serializers)
+        }

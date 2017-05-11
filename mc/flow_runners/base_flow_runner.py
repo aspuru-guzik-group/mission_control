@@ -1,5 +1,6 @@
 import logging
 import time
+import traceback
 
 
 class BaseFlowRunner(object):
@@ -39,52 +40,42 @@ class BaseFlowRunner(object):
     def tick(self):
         self.tick_counter += 1
         self.logger.debug('%s, tick #%s' % (self, self.tick_counter))
-        processed_counter = 0
-        for flow_record in self.fetch_tickable_flow_records():
-            did_process = self.process_flow_record(flow_record)
-            if did_process: processed_counter += 1
-            if processed_counter > self.max_flows_per_tick: break
+        self.tick_flow_records(flow_records=self.claim_flow_records())
 
-    def fetch_tickable_flow_records(self):
-        self.logger.debug('fetch_tickable_flow_records')
-        return self.flow_client.fetch_tickable_flows()
+    def claim_flow_records(self):
+        return self.flow_client.claim_flows()
 
-    def process_flow_record(self, flow_record=None):
-        self.logger.debug('process_claimable_flow')
-        processed = False
-        claimed_record = self.claim_flow_record(flow_record)
-        if claimed_record:
+    def tick_flow_records(self, flow_records=None):
+        common_patches = {'claimed': False}
+        for flow_record in flow_records:
             try:
-                updates = self.tick_flow_record(flow_record=claimed_record)
-                self.update_flow_record(
-                    flow_record=claimed_record,
-                    updates={**updates, 'claimed': False})
-                processed = True
+                patches = self.tick_flow_record(flow_record=flow_record)
+                self.patch_flow_record(
+                    flow_record=flow_record,
+                    patches={**common_patches, **patches}
+                )
             except Exception as exception:
                 self.logger.exception(exception)
-                self.update_flow_record(flow_record=claimed_record,
-                                        updates={'status': 'FAILED'})
-        return processed
-
-    def claim_flow_record(self, flow_record=None):
-        self.logger.debug('claim_flow')
-        claimed_records = self.flow_client.claim_flows(
-            uuids=[flow_record['uuid']])
-        return claimed_records.get(flow_record['uuid'], False)
+                self.patch_flow_record(
+                    flow_record=flow_record,
+                    patches={**common_patches,
+                             'status': 'FAILED',
+                             'error': traceback.format_exc()}
+                )
 
     def tick_flow_record(self, flow_record=None):
         self.logger.debug('tick_flow_record')
         flow = self.get_flow_for_flow_record(flow_record=flow_record)
         self.flow_engine.tick_flow(flow=flow, flow_ctx=self.flow_ctx)
         updated_serialization = self.flow_engine.serialize_flow(flow=flow)
-        updates = {'serialization': updated_serialization}
-        updates['status'] = updated_serialization['status']
-        return updates
+        patches = {
+            'serialization': updated_serialization,
+            'status': flow.status
+        }
+        return patches
 
     def get_flow_for_flow_record(self, flow_record=None):
         return self.flow_engine.deserialize_flow(flow_record['serialization'])
 
-    def update_flow_record(self, flow_record=None, updates=None):
-        self.flow_client.update_flows(updates_by_uuid={
-            flow_record['uuid']: updates})
-
+    def patch_flow_record(self, flow_record=None, patches=None):
+        self.flow_client.patch_flow(key=flow_record['uuid'], patches=patches)

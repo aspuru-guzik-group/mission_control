@@ -1,4 +1,5 @@
 from collections import defaultdict
+import json
 import unittest
 from unittest.mock import call, DEFAULT, patch, MagicMock
 from uuid import uuid4
@@ -45,17 +46,14 @@ class GenerateFlowTestCase(BaseTestCase):
 class DeserializationTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.setup_flow()
-
-    def setup_flow(self):
-        self.serialized_flow = {
+        self.flow_dict = {
             'data': 'some data',
-            'nodes': [
-                {'node_key': 'a', 'status': 'COMPLETED'},
-                {'node_key': 'b', 'status': 'COMPLETED'},
-                {'node_key': 'c', 'status': 'RUNNING'},
-                {'node_key': 'd', 'status': 'RUNNING'},
-            ],
+            'nodes': {
+                'a': {'node_key': 'a', 'status': 'COMPLETED'},
+                'b': {'node_key': 'b', 'status': 'COMPLETED'},
+                'c': {'node_key': 'c', 'status': 'RUNNING'},
+                'd': {'node_key': 'd', 'status': 'RUNNING'},
+            },
             'edges': [
                 {'src_key': 'ROOT', 'dest_key': 'a'},
                 {'src_key': 'a', 'dest_key': 'b'},
@@ -64,39 +62,44 @@ class DeserializationTestCase(BaseTestCase):
             ],
             'status': 'status',
         }
-        self.flow = self.engine.deserialize_flow(
-            serialized_flow=self.serialized_flow)
+
+    def _deserialize_flow(self):
+        return self.engine.deserialize_flow(
+            serialized_flow=json.dumps(self.flow_dict))
 
     def test_has_expected_data(self):
-        self.assertEqual(self.flow.data, self.serialized_flow['data'])
+        flow = self._deserialize_flow()
+        self.assertEqual(flow.data, self.flow_dict['data'])
 
     def test_has_expected_nodes(self):
-        self.assertEqual(
-            {k: node for k, node in self.flow.nodes.items()
-             if k != flow_engine.Flow.ROOT_NODE_KEY},
-            {node['node_key']: node for node in self.serialized_flow['nodes']}
-        )
+        flow = self._deserialize_flow()
+        expected_nodes = {node['node_key']: node
+                          for node in self.flow_dict['nodes'].values()}
+        expected_nodes[flow.ROOT_NODE_KEY] = flow.nodes[flow.ROOT_NODE_KEY]
+        self.assertEqual(set(flow.nodes.keys()), set(expected_nodes.keys()))
 
     def test_has_expected_edges(self):
+        flow = self._deserialize_flow()
         expected_edges = {}
-        for edge in self.serialized_flow['edges']:
+        for edge in self.flow_dict['edges']:
             edge_key = (edge['src_key'], edge['dest_key'])
             expected_edges[edge_key] = edge
-        self.assertEqual(self.flow.edges, expected_edges)
+        self.assertEqual(flow.edges, expected_edges)
 
     def test_has_expected_status(self):
-        self.assertEqual(
-            self.flow.status, self.serialized_flow['status'])
+        flow = self._deserialize_flow()
+        self.assertEqual(flow.status, self.flow_dict['status'])
 
     def test_data_defaults_to_dict(self):
-        flow = self.engine.deserialize_flow(serialized_flow={})
+        self.flow_dict = {}
+        flow = self._deserialize_flow()
         self.assertEqual(flow.data, {})
 
 class SerializationTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.flow = self.generate_flow()
-        self.serialization = self.engine.serialize_flow(self.flow)
+        self.flow_dict = json.loads(self.engine.serialize_flow(self.flow))
 
     def generate_flow(self):
         flow = flow_engine.Flow()
@@ -111,25 +114,21 @@ class SerializationTestCase(BaseTestCase):
 
     def test_serializes_basic_attrs(self):
         for attr in flow_engine.FlowEngine.simple_flow_serialization_attrs:
-            self.assertEqual(self.serialization[attr], getattr(self.flow, attr))
+            self.assertEqual(self.flow_dict[attr], getattr(self.flow, attr))
 
     def test_serializes_nodes(self):
-        def sorted_node_list(node_list):
-            return sorted(node_list, key=lambda node: node['node_key'])
-        self.assertEqual(
-            sorted_node_list(self.serialization['nodes']),
-            sorted_node_list([
-                node for node in self.flow.nodes.values()
-                if node['node_key'] != flow_engine.Flow.ROOT_NODE_KEY
-            ])
-        )
+        expected_serialized_nodes = {
+            node_key: node for node_key, node in self.flow.nodes.items()
+            if node_key != self.flow.ROOT_NODE_KEY
+        }
+        self.assertEqual(self.flow_dict['nodes'], expected_serialized_nodes)
 
     def test_serializes_edges(self):
         def sorted_edge_list(edge_list):
             def get_edge_key_str(edge):
                 return "%s,%s" % (edge['src_key'], edge['dest_key'])
             return sorted(edge_list, key=get_edge_key_str)
-        self.assertEqual(sorted_edge_list(self.serialization['edges']),
+        self.assertEqual(sorted_edge_list(self.flow_dict['edges']),
                          sorted_edge_list(self.flow.edges.values()))
 
 class RunFlowTestCase(BaseTestCase):

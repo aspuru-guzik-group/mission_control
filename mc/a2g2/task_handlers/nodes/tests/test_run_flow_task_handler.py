@@ -82,10 +82,11 @@ class GenerateFlowKwargsTestCase(BaseTestCase):
 class IntermediateTickMixin(object):
     def do_intermediate_tick(self, flow_state=None):
         if not flow_state: flow_state = {}
-        self.flow = self.generate_flow(**flow_state)
-        self.flow_ctx['get_flow'].return_value = self.flow
+        self.flow = MagicMock()
+        for attr, value in flow_state.items(): setattr(self.flow, attr, value)
+        self.task_handler.get_flow = MagicMock(return_value=self.flow)
         self.initial_task = {
-            'data': {'flow_uuid': self.flow['uuid']},
+            'data': {'flow_uuid': self.flow.uuid},
             'task_params': {'flow_spec': 'some flow spec'},
             'status': 'some_status'
         }
@@ -113,7 +114,7 @@ class CompletedFlowTestCase(BaseTestCase, IntermediateTickMixin):
         self.assertEqual(self.task['status'], 'COMPLETED')
 
     def test_has_expected_data(self):
-        self.assertEqual(self.task['data']['flow_data'], self.flow.get('data'))
+        self.assertEqual(self.task['data']['flow_data'], self.flow.data)
 
 class FailedFlowTestCase(BaseTestCase, IntermediateTickMixin):
     def test_throws_exception(self):

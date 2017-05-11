@@ -6,14 +6,14 @@ class MissionControlClient(object):
         self.dao = dao
         self.logger = logger or logging
 
-    def create_queue(self, queue=None):
-        return self.dao.create_queue(queue=queue)
+    def create_queue(self, queue_kwargs=None):
+        return self.dao.create_queue(queue_kwargs=queue_kwargs)
 
     def claim_queue_items(self, queue_key=None, params=None):
         return self.dao.claim_queue_items(queue_key=queue_key, params=params)
 
-    def create_flow(self, flow=None):
-        return self.dao.create_flow(flow=flow)
+    def create_flow(self, flow_kwargs=None):
+        return self.dao.create_flow(flow_kwargs=flow_kwargs)
 
     def get_flows(self, query=None):
         return self.dao.get_flows(query=query)
@@ -38,8 +38,8 @@ class MissionControlClient(object):
     def patch_flow(self, key=None, patches=None):
         return self.dao.patch_flow(key=key, patches=patches)
 
-    def create_job(self, job=None):
-        return self.dao.create_job(job=job)
+    def create_job(self, job_kwargs=None):
+        return self.dao.create_job(job_kwargs=job_kwargs)
 
     def get_jobs(self, query=None):
         return self.dao.get_jobs(query=query)

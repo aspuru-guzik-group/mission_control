@@ -19,8 +19,7 @@ class JobSubmissionFactory(object):
         return cls(cfg=cfg)
 
     def build_job_submission(self, job=None, submission_dir=None):
-        submission_dir = submission_dir or tempfile.mkdtemp(
-            prefix='sf.')
+        submission_dir = submission_dir or tempfile.mkdtemp(prefix='sf.')
         job_engine = a2g2_job_engine.A2G2JobEngine()
         submission_meta = job_engine.build_job_submission(
             job=job,
@@ -30,8 +29,5 @@ class JobSubmissionFactory(object):
         return submission_meta
 
     def generate_job_submission_cfg(self):  
-        cfg = {
-            'job_engine': {
-            }
-        }
+        cfg = {'job_engine': {}}
         return cfg

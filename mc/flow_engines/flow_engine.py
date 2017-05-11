@@ -1,3 +1,4 @@
+import json
 import logging
 import traceback
 
@@ -28,27 +29,28 @@ class FlowEngine(object):
     @classmethod
     def deserialize_flow(self, serialized_flow=None):
         flow = Flow()
+        flow_dict = json.loads(serialized_flow or '{}')
         for attr in self.simple_flow_serialization_attrs:
-            setattr(flow, attr, serialized_flow.get(attr, None))
+            setattr(flow, attr, flow_dict.get(attr, None))
         if flow.data is None: flow.data = {}
-        for node in serialized_flow.get('nodes', []):
-            if node['node_key'] == Flow.ROOT_NODE_KEY: continue
+        for node_key, node in flow_dict.get('nodes', {}).items():
+            if node_key == Flow.ROOT_NODE_KEY: continue
             flow.add_node(node=node)
-        for edge in serialized_flow.get('edges', []):
+        for edge in flow_dict.get('edges', []):
             flow.add_edge(edge=edge)
         return flow
 
 
     @classmethod
     def serialize_flow(self, flow=None):
-        serialized_flow = {
+        flow_dict = {
             **{attr: getattr(flow, attr, None)
                for attr in self.simple_flow_serialization_attrs},
-            'nodes': [node for node in flow.nodes.values()
-                      if node.get('node_key') != Flow.ROOT_NODE_KEY],
+            'nodes': {node_key: node for node_key, node in flow.nodes.items()
+                      if node_key != Flow.ROOT_NODE_KEY},
             'edges': [edge for edge in flow.edges.values()],
         }
-        return serialized_flow
+        return json.dumps(flow_dict)
 
     def run_flow(self, flow=None, flow_ctx=None):
         completed_statuses = set(['COMPLETED', 'FAILED'])

@@ -21,8 +21,8 @@ class HttpDao(object):
             'queues': self.base_url + 'queues/',
         }
 
-    def create_flow(self, flow=None):
-        response = self.requests.post(self.urls['flows'], json=flow)
+    def create_flow(self, flow_kwargs=None):
+        response = self.requests.post(self.urls['flows'], json=flow_kwargs)
         return self.json_raise_for_status(response=response)
 
     def json_raise_for_status(self, response=None):
@@ -78,8 +78,8 @@ class HttpDao(object):
         response = self.requests.patch(flow_url, json=patches)
         return self.json_raise_for_status(response=response)
 
-    def create_job(self, job=None):
-        response = self.requests.post(self.urls['jobs'], json=job)
+    def create_job(self, job_kwargs=None):
+        response = self.requests.post(self.urls['jobs'], json=job_kwargs)
         return self.json_raise_for_status(response=response)
 
     def get_jobs(self, query=None):
@@ -116,8 +116,8 @@ class HttpDao(object):
         response = self.requests.get(url)
         return self.json_raise_for_status(response=response)
 
-    def create_queue(self, queue=None):
-        response = self.requests.post(self.urls['queues'], json=queue)
+    def create_queue(self, queue_kwargs=None):
+        response = self.requests.post(self.urls['queues'], json=queue_kwargs)
         return self.json_raise_for_status(response=response)
 
     def claim_queue_items(self, queue_key=None, params=None):
