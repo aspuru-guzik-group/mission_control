@@ -1,4 +1,5 @@
-from collections import defaultdict
+from collections import defaultdict, OrderedDict
+import json
 import unittest
 from unittest.mock import call, MagicMock, patch
 
@@ -34,7 +35,7 @@ class ProcessExecutedJobsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         for attr in ['get_executed_jobman_jobs', 'parse_jobman_jobs',
-                     'parsed_jobman_jobs_to_keyed_patches',
+                     'parsed_jobman_jobs_to_keyed_patches', 'patch_jobs',
                      'finalize_jobman_jobs']:
             setattr(self.job_runner, attr, MagicMock())
         self.job_runner.process_executed_jobs()
@@ -57,7 +58,7 @@ class ProcessExecutedJobsTestCase(BaseTestCase):
         )
         expected_keyed_patches = \
                 self.job_runner.parsed_jobman_jobs_to_keyed_patches.return_value
-        self.assertEqual(self.job_runner.job_client.patch_jobs.call_args,
+        self.assertEqual(self.job_runner.patch_jobs.call_args,
                          call(keyed_patches=expected_keyed_patches))
 
     def test_finalizes_jobman_jobs(self):
@@ -162,7 +163,7 @@ class GenerateArtifactSpecForDirTestCase(BaseTestCase):
 class ParsedJobmanJobsToKeyedPatchesTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.job_runner.parsed_jobman_job_to_patches = MagicMock()
+        self.job_runner.parsed_jobman_job_to_patch = MagicMock()
         self.parsed_jobman_jobs = [MagicMock() for i in range(3)]
 
     def test_keys_patches_by_mc_job_uuid(self):
@@ -172,32 +173,29 @@ class ParsedJobmanJobsToKeyedPatchesTestCase(BaseTestCase):
         for parsed_jobman_job in self.parsed_jobman_jobs:
             mc_job = parsed_jobman_job['jobman_job']['source_meta']['mc_job']
             expected_result[mc_job['uuid']] = \
-                    self.job_runner.parsed_jobman_job_to_patches.return_value
+                    self.job_runner.parsed_jobman_job_to_patch.return_value
         self.assertEqual(result, expected_result)
 
-class ParsedJobmanJobToPatches(BaseTestCase):
+class ParsedJobmanJobToPatchTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.parsed_jobman_job = MagicMock()
         self.job_runner.get_std_log_contents = MagicMock()
-        self.patches = self.job_runner.parsed_jobman_job_to_patches(
+        self.patch = self.job_runner.parsed_jobman_job_to_patch(
             parsed_jobman_job=self.parsed_jobman_job)
 
     def test_has_status(self):
-        self.assertEqual(self.patches['status'],
-                         self.parsed_jobman_job['status'])
+        self.assertEqual(self.patch['status'], self.parsed_jobman_job['status'])
 
     def test_has_artifact(self):
-        self.assertEqual(self.patches['data']['artifact'],
+        self.assertEqual(self.patch['data']['artifact'],
                          self.parsed_jobman_job.get('artifact_spec'))
 
     def test_has_std_log_contents(self):
         self.assertEqual(self.job_runner.get_std_log_contents.call_args,
                          call(parsed_jobman_job=self.parsed_jobman_job))
-        self.assertEqual(
-            self.patches['data']['std_log_contents'],
-            self.job_runner.get_std_log_contents.return_value
-        )
+        self.assertEqual(self.patch['data']['std_log_contents'],
+                         self.job_runner.get_std_log_contents.return_value)
 
 class GetStdLogContentsTestCase(BaseTestCase):
     def setUp(self):
@@ -232,6 +230,33 @@ class GetStdLogContentsTestCase(BaseTestCase):
             for log_name in logs_to_expose
         }
         self.assertEqual(result, expected_result)
+
+class PatchJobsTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.job_runner.serialize_job_patch = MagicMock()
+        self.keyed_patches = OrderedDict()
+        for i in range(3): self.keyed_patches['key_%s' % i] = MagicMock()
+        self.job_runner.patch_jobs(keyed_patches=self.keyed_patches)
+
+    def test_dispatches_serialized_patches_to_job_client(self):
+        self.assertEqual(
+            self.job_runner.serialize_job_patch.call_args_list,
+            [call(patch=patch) for patch in self.keyed_patches.values()]
+        )
+        self.assertEqual(
+            self.job_runner.job_client.patch_jobs.call_args,
+            call(keyed_patches={
+                key: self.job_runner.serialize_job_patch.return_value
+                for  key in self.keyed_patches
+            })
+        )
+
+class SerializeJobPatchTestCase(BaseTestCase):
+    def test_serializes_data_field(self):
+        patch = {'data': {'some': 'data'}}
+        result = self.job_runner.serialize_job_patch(patch=patch)
+        self.assertEqual(result, {'data': json.dumps(patch['data'])})
 
 class FinalizeJobmanJobsTestCase(BaseTestCase):
     def setUp(self):

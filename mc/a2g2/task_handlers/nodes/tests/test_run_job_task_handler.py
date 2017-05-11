@@ -60,8 +60,9 @@ class InitialTickTestCase(BaseTestCase):
 class IntermediateTickMixin(object):
     def do_intermediate_tick(self, job_state=None):
         if not job_state: job_state = {}
-        self.job = self.generate_job(**job_state)
-        self.flow_ctx['get_job'].return_value = self.job
+        self.job = defaultdict(MagicMock)
+        for k, v in job_state.items(): self.job[k] = v
+        self.task_handler.get_job = MagicMock(return_value = self.job)
         self.initial_task = {
             'data': {'job_uuid': self.job['uuid']},
             'task_params': {'job_spec': 'some job spec'},

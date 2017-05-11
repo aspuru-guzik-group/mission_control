@@ -1,3 +1,4 @@
+import json
 import os
 import logging
 import tempfile
@@ -41,7 +42,7 @@ class JobRunner(object):
             jobman_jobs=executed_jobman_jobs)
         keyed_patches = self.parsed_jobman_jobs_to_keyed_patches(
             parsed_jobman_jobs=parsed_jobman_jobs)
-        self.job_client.patch_jobs(keyed_patches=keyed_patches)
+        self.patch_jobs(keyed_patches=keyed_patches)
         self.finalize_jobman_jobs(jobman_jobs=executed_jobman_jobs)
 
     def get_executed_jobman_jobs(self):
@@ -89,14 +90,14 @@ class JobRunner(object):
     def parsed_jobman_jobs_to_keyed_patches(self, parsed_jobman_jobs=None):
         keyed_patches = {}
         for parsed_jobman_job in parsed_jobman_jobs:
-            patches = self.parsed_jobman_job_to_patches(
+            patch = self.parsed_jobman_job_to_patch(
                 parsed_jobman_job=parsed_jobman_job)
             mc_job = parsed_jobman_job['jobman_job']['source_meta']['mc_job']
-            keyed_patches[mc_job['uuid']] = patches
+            keyed_patches[mc_job['uuid']] = patch
         return keyed_patches
 
-    def parsed_jobman_job_to_patches(self, parsed_jobman_job=None):
-        patches = {
+    def parsed_jobman_job_to_patch(self, parsed_jobman_job=None):
+        patch = {
             'status': parsed_jobman_job['status'],
             'data': {
                 'artifact': parsed_jobman_job.get('artifact_spec'),
@@ -104,7 +105,7 @@ class JobRunner(object):
                     parsed_jobman_job=parsed_jobman_job)
             }
         }
-        return patches
+        return patch
 
     def get_std_log_contents(self, parsed_jobman_job=None):
         mc_job = parsed_jobman_job['jobman_job']['source_meta']['mc_job']
@@ -118,6 +119,27 @@ class JobRunner(object):
                 for log_to_expose in logs_to_expose
             }
         return contents_to_expose
+
+    def deserialize_mc_job(self, mc_job=None):
+        deserialized_mc_job = {}
+        for k, v in mc_job.items():
+            if k == 'data': v = json.loads(v or '{}')
+            deserialized_mc_job[k] = v
+        return deserialized_mc_job
+
+    def patch_jobs(self, keyed_patches=None):
+        keyed_serialized_patches = {
+            key: self.serialize_job_patch(patch=patch)
+            for key, patch in keyed_patches.items()
+        }
+        self.job_client.patch_jobs(keyed_patches=keyed_serialized_patches)
+
+    def serialize_job_patch(self, patch=None):
+        serialized_patch = {}
+        for k, v in (patch or {}).items():
+            if k == 'data': v = json.dumps(v or '{}')
+            serialized_patch[k] = v
+        return serialized_patch
 
     def finalize_jobman_jobs(self, jobman_jobs=None):
         finalized_jobman_jobs = [{**jobman_job, 'status': 'COMPLETED'}

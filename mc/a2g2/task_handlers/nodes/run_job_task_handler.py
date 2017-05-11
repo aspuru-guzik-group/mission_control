@@ -1,3 +1,4 @@
+import json
 from mc.task_handlers.base_task_handler import BaseTaskHandler
 
 
@@ -23,6 +24,15 @@ class RunJobTaskHandler(BaseTaskHandler):
             raise Exception(error)
 
     def get_job(self, task=None, flow_ctx=None):
-        return flow_ctx['get_job'](uuid=task['data']['job_uuid'])
+        job_record = flow_ctx['get_job'](uuid=task['data']['job_uuid'])
+        return self.job_record_to_job(job_record=job_record)
+
+    def job_record_to_job(self, job_record=None):
+        if not job_record: return None
+        job = {}
+        for k, v in job_record.items():
+            if k == 'data': v = json.loads(v or '{}')
+            job[k] = v
+        return job
 
 TaskHandler = RunJobTaskHandler
