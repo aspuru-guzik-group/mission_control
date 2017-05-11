@@ -3,7 +3,7 @@ from uuid import uuid4
 
 
 class Flow(object):
-    ROOT_NODE_KEY = 'ROOT'
+    ROOT_TASK_KEY = 'ROOT'
 
     def __init__(self, *args, cfg=None, data=None, label=None, status=None,
                  **kwargs):
@@ -12,102 +12,99 @@ class Flow(object):
         self.label = label
         self.status = status or 'PENDING'
 
-        self.nodes = {}
+        self.tasks = {}
         self.edges = {}
-        self.edges_by_node_key = collections.defaultdict(
+        self.edges_by_key = collections.defaultdict(
             lambda: collections.defaultdict(dict))
 
-        self.add_root_node()
+        self.add_root_task()
 
-    def add_root_node(self):
-        self.add_node(node={'node_key': self.ROOT_NODE_KEY,
-                            'status': 'COMPLETED'})
+    def add_root_task(self):
+        self.add_task(task={'key': self.ROOT_TASK_KEY, 'status': 'COMPLETED'})
 
-    def add_node(self, node=None,  precursor_keys=None, successor_keys=None):
-        node.setdefault('node_tasks', [])
-        node.setdefault('node_key', self.generate_node_key())
-        node.setdefault('status', 'PENDING')
-        self.nodes[node['node_key']] = node
+    def add_task(self, task=None,  precursor_keys=None, successor_keys=None):
+        task.setdefault('key', self.generate_task_key())
+        task.setdefault('status', 'PENDING')
+        self.tasks[task['key']] = task
         for precursor_key in (precursor_keys or []):
             self.add_edge(edge={'src_key': precursor_key,
-                                'dest_key': node['node_key']})
+                                'dest_key': task['key']})
         for successor_key in (successor_keys or []):
-            self.add_edge(edge={'src_key': node['node_key'],
+            self.add_edge(edge={'src_key': task['key'],
                                 'dest_key': successor_key})
-        return node
+        return task
 
-    def generate_node_key(self):
-        return str(uuid4())
+    def generate_task_key(self): return str(uuid4())
 
     def add_edge(self, edge=None):
         src_key, dest_key = (edge['src_key'], edge['dest_key'])
-        if dest_key is self.ROOT_NODE_KEY:
-            raise Exception("Root node can not be an edge dest")
+        if dest_key is self.ROOT_TASK_KEY:
+            raise Exception("Root task can not be an edge dest")
         edge_key = (src_key, dest_key)
         self.edges[edge_key] = edge
-        self.edges_by_node_key[src_key]['outgoing'][edge_key] = edge
-        self.edges_by_node_key[dest_key]['incoming'][edge_key] = edge
+        self.edges_by_key[src_key]['outgoing'][edge_key] = edge
+        self.edges_by_key[dest_key]['incoming'][edge_key] = edge
 
     def has_edge(self, src_key=None, dest_key=None):
         return (src_key, dest_key) in self.edges
 
-    def get_precursors(self, node=None):
-        node_edges = self.edges_by_node_key[node['node_key']]
-        precursors = [self.nodes[edge['src_key']]
-                      for edge in node_edges['incoming'].values()]
+    def get_precursors(self, task=None):
+        task_edges = self.edges_by_key[task['key']]
+        precursors = [self.tasks[edge['src_key']]
+                      for edge in task_edges['incoming'].values()]
         return precursors
 
-    def get_successors(self, node=None):
-        node_edges = self.edges_by_node_key[node['node_key']]
-        successors = [self.nodes[edge['dest_key']] 
-                      for edge in node_edges['outgoing'].values()]
+    def get_successors(self, task=None):
+        task_edges = self.edges_by_key[task['key']]
+        successors = [self.tasks[edge['dest_key']] 
+                      for edge in task_edges['outgoing'].values()]
         return successors
 
-    def get_nearest_pending_nodes(self):
-        nearest_pending_nodes = []
-        cursors = [self.nodes[self.ROOT_NODE_KEY]]
+    def get_nearest_pending_tasks(self):
+        nearest_pending_tasks = []
+        cursors = [self.tasks[self.ROOT_TASK_KEY]]
         while len(cursors) > 0:
             next_cursors = []
             for cursor in cursors:
                 if cursor['status'] == 'PENDING':
-                    nearest_pending_nodes.append(cursor)
+                    nearest_pending_tasks.append(cursor)
                 elif cursor['status'] == 'COMPLETED':
-                    successors = self.get_successors(node=cursor)
+                    successors = self.get_successors(task=cursor)
                     next_cursors.extend(successors)
             cursors = next_cursors
-        return nearest_pending_nodes
+        return nearest_pending_tasks
 
-    def filter_nodes(self, filters=None, include_root_node=False):
+    def filter_tasks(self, filters=None, include_root_task=False):
         result = []
-        for node in self.nodes.values():
-            if not include_root_node and node['node_key'] == self.ROOT_NODE_KEY:
+        for task in self.tasks.values():
+            if not include_root_task and task['key'] == self.ROOT_TASK_KEY:
                 continue
             passes_filters = True
             for _filter in filters:
-                if not _filter(node):
+                if not _filter(task):
                     passes_filters = False
                     break
             if passes_filters:
-                result.append(node)
+                result.append(task)
         return result
 
-    def get_nodes_by_status(self, status=None):
-        status_filter = lambda node: node['status'] == status
-        return self.filter_nodes(filters=[status_filter])
+    def get_tasks_by_status(self, status=None):
+        status_filter = lambda task: task['status'] == status
+        return self.filter_tasks(filters=[status_filter])
 
-    def has_incomplete_nodes(self):
+    def has_incomplete_tasks(self):
         dead_statuses = ['COMPLETED', 'FAILED']
-        filter_fn = lambda node: node['status'] not in dead_statuses
-        incomplete_nodes = self.filter_nodes(filters=[filter_fn])
-        return len(incomplete_nodes) > 0
+        filter_fn = lambda task: task['status'] not in dead_statuses
+        incomplete_tasks = self.filter_tasks(filters=[filter_fn])
+        return len(incomplete_tasks) > 0
 
-    def get_tail_nodes(self):
-        if len(self.nodes) == 1 and self.ROOT_NODE_KEY in self.nodes:
-            tail_nodes = [self.nodes[self.ROOT_NODE_KEY]]
+    def get_tail_tasks(self):
+        if len(self.tasks) == 1 and self.ROOT_TASK_KEY in self.tasks:
+            tail_tasks = [self.tasks[self.ROOT_TASK_KEY]]
         else:
-            tail_nodes = [
-                self.nodes[node_key]
-                for node_key, node_edges in self.edges_by_node_key.items()
-                if len(node_edges['outgoing']) == 0
+            tail_tasks = [
+                self.tasks[key]
+                for key, task_edges in self.edges_by_key.items()
+                if len(task_edges['outgoing']) == 0
             ]
-        return tail_nodes
+        return tail_tasks

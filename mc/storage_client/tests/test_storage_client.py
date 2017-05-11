@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import call, Mock, patch
 
-from . import storage_client
+from .. import storage_client
 
 
 class BaseTestCase(unittest.TestCase):

@@ -2,15 +2,13 @@ import json
 import logging
 import traceback
 
-from mc.task_runners.base_task_runner import BaseTaskRunner
-
 from .flow import Flow
 
 
 class FlowEngine(object):
     simple_flow_serialization_attrs = ['data', 'label', 'status', 'cfg']
 
-    class NodeError(Exception): pass
+    class TaskError(Exception): pass
 
     def __init__(self, task_handler=None, logger=None, max_msg_len=1024):
         self.logger = logger or logging
@@ -22,8 +20,8 @@ class FlowEngine(object):
         flow_kwargs = {k:v for k, v in flow_spec.items()
                        if k in self.simple_flow_serialization_attrs}
         flow = Flow(**flow_kwargs)
-        for node_spec in flow_spec.get('node_specs', []):
-            flow.add_node(**node_spec)
+        for task_spec in flow_spec.get('task_specs', []):
+            flow.add_task(**task_spec)
         return flow
 
     @classmethod
@@ -33,21 +31,20 @@ class FlowEngine(object):
         for attr in self.simple_flow_serialization_attrs:
             setattr(flow, attr, flow_dict.get(attr, None))
         if flow.data is None: flow.data = {}
-        for node_key, node in flow_dict.get('nodes', {}).items():
-            if node_key == Flow.ROOT_NODE_KEY: continue
-            flow.add_node(node=node)
+        for key, task in flow_dict.get('tasks', {}).items():
+            if key == Flow.ROOT_TASK_KEY: continue
+            flow.add_task(task=task)
         for edge in flow_dict.get('edges', []):
             flow.add_edge(edge=edge)
         return flow
-
 
     @classmethod
     def serialize_flow(self, flow=None):
         flow_dict = {
             **{attr: getattr(flow, attr, None)
                for attr in self.simple_flow_serialization_attrs},
-            'nodes': {node_key: node for node_key, node in flow.nodes.items()
-                      if node_key != Flow.ROOT_NODE_KEY},
+            'tasks': {key: task for key, task in flow.tasks.items()
+                      if key != Flow.ROOT_TASK_KEY},
             'edges': [edge for edge in flow.edges.values()],
         }
         return json.dumps(flow_dict)
@@ -60,72 +57,56 @@ class FlowEngine(object):
     def tick_flow(self, flow=None, flow_ctx=None):
         try:
             if flow.status == 'PENDING': self.start_flow(flow=flow)
-            self.start_nearest_pending_nodes(flow=flow)
-            self.tick_running_nodes(flow=flow, flow_ctx=flow_ctx)
-            if not flow.has_incomplete_nodes(): self.complete_flow(flow=flow)
+            self.start_nearest_pending_tasks(flow=flow)
+            self.tick_running_tasks(flow=flow, flow_ctx=flow_ctx)
+            if not flow.has_incomplete_tasks(): self.complete_flow(flow=flow)
         except Exception as exception:
             fail_flow = True
             self.append_flow_error(flow=flow, error=traceback.format_exc())
-            if isinstance(exception, self.NodeError):
+            if isinstance(exception, self.TaskError):
                 if not flow.cfg.get('fail_fast', True): fail_flow = False
             if fail_flow: self.fail_flow(flow=flow)
 
     def start_flow(self, flow=None):
         flow.status = 'RUNNING'
 
-    def start_nearest_pending_nodes(self, flow=None):
-        for node in flow.get_nearest_pending_nodes():
-            try: self.start_node(flow=flow, node=node)
-            except: self.fail_node(node=node, error=traceback.format_exc())
+    def start_nearest_pending_tasks(self, flow=None):
+        for task in flow.get_nearest_pending_tasks():
+            try: self.start_task(flow=flow, task=task)
+            except: self.fail_task(task=task, error=traceback.format_exc())
 
-    def start_node(self, flow=None, node=None):
-        node['status'] = 'RUNNING'
+    def start_task(self, flow=None, task=None):
+        task['status'] = 'RUNNING'
 
-    def tick_running_nodes(self, flow=None, flow_ctx=None):
-        for node in flow.get_nodes_by_status(status='RUNNING'):
-            if self.node_is_running(node=node):
-                self.tick_node(node=node, flow=flow, flow_ctx=flow_ctx)
+    def tick_running_tasks(self, flow=None, flow_ctx=None):
+        for task in flow.get_tasks_by_status(status='RUNNING'):
+            if self.task_is_running(task=task):
+                self.tick_task(task=task, flow=flow, flow_ctx=flow_ctx)
             else:
-                self.complete_node(node=node)
+                self.complete_task(task=task)
 
-    def node_is_running(self, node=None):
-        return node['status'] == 'RUNNING'
+    def task_is_running(self, task=None):
+        return task['status'] == 'RUNNING'
 
-    def tick_node(self, node=None, flow=None, flow_ctx=None):
+    def tick_task(self, task=None, flow=None, flow_ctx=None):
         try:
-            task_runner = self.get_task_runner_for_node(
-                node=node, flow=flow, flow_ctx=flow_ctx)
-            tasks_status = task_runner.tick_tasks()
-            if tasks_status == 'COMPLETED':
-                self.complete_node(flow=flow, node=node)
-            else:
-                node['status'] = tasks_status
+            self.task_handler.tick_task(
+                task=task,
+                task_context={'task': task, 'flow': flow, 'flow_ctx': flow_ctx}
+            )
+            if task.get('status') == 'COMPLETED':
+                self.complete_task(flow=flow, task=task)
         except Exception as exception:
-            self.fail_node(node=node, error=traceback.format_exc())
+            self.fail_task(task=task, error=traceback.format_exc())
 
-    def get_task_runner_for_node(self, node=None, flow=None, flow_ctx=None):
-        task_runner = BaseTaskRunner(
-            get_tasks=(lambda: node.get('node_tasks', [])),
-            get_task_context=(
-                lambda: self.get_task_context(node=node, flow=flow,
-                                              flow_ctx=flow_ctx)
-            ),
-            task_handler=self.task_handler
-        )
-        return task_runner
-
-    def get_task_context(self, node=None, flow=None, flow_ctx=None):
-        task_context = {'node': node, 'flow': flow, 'flow_ctx': flow_ctx}
-        return task_context
-
-    def fail_node(self, node=None, error=None):
-        node['error'] = error
-        node['status'] = 'FAILED'
-        msg = "Node with key '{node_key}' failed, error: {error}".format(
-            node_key=node.get('node_key', '<unknown key>'),
+    def fail_task(self, task=None, error=None):
+        task['error'] = error
+        task['status'] = 'FAILED'
+        msg = "Task with key '{key}' failed, error: {error}".format(
+            key=task.get('key', '<unknown key>'),
             error=error
         )
-        raise self.NodeError(msg)
+        raise self.TaskError(msg)
 
     def fail_flow(self, flow=None, error=None):
         if error: self.append_flow_error(flow=flow, error=error)
@@ -140,8 +121,8 @@ class FlowEngine(object):
         if len(text) > max_len: text = text[0:max_len] + '...'
         return text
 
-    def complete_node(self, flow=None, node=None):
-        node['status'] = 'COMPLETED'
+    def complete_task(self, flow=None, task=None):
+        task['status'] = 'COMPLETED'
 
     def complete_flow(self, flow=None):
         if flow.data.get('errors'): self.fail_flow(flow=flow)

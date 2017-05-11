@@ -4,7 +4,6 @@ import os
 import tempfile
 import types
 
-from mc.job_runners.base_job_runner import BaseJobRunner
 from mc.task_handlers.jobs.execute_job_task_handler import ExecuteJobTaskHandler
 from mc.a2g2.task_handlers.a2g2_task_handler import A2G2TaskHandler
 
@@ -17,11 +16,7 @@ class OdysseyJobRunner(object):
         self.job_submission_factory = job_submission_factory
         self.execution_client = OdysseyExecutionClient(ssh_client=ssh_client)
         self.tasks_cfg = self.generate_tasks_cfg()
-        self.base_job_runner = BaseJobRunner(
-            task_handler=self.generate_task_handler(),
-            get_default_job_tasks=self.get_default_job_tasks,
-            **job_runner_kwargs,
-        )
+        self.base_job_runner = None
 
     def generate_tasks_cfg(self):
         task_defs = collections.OrderedDict()
