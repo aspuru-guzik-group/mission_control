@@ -8,11 +8,11 @@ from .. import job_runner
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.job_submission_factory = MagicMock()
+        self.submission_factory = MagicMock()
         self.jobman = MagicMock()
         self.job_runner = job_runner.JobRunner(
             job_client=MagicMock(),
-            job_submission_factory=MagicMock(),
+            submission_factory=MagicMock(),
             jobman=MagicMock(),
             jobman_source_name=MagicMock()
         )
@@ -104,7 +104,8 @@ class ParseJobmanJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.jobman_job = MagicMock()
-        for attr in ['generate_artifact_spec_for_dir']:
+        for attr in ['generate_artifact_spec_for_dir',
+                     'get_std_log_contents_for_jobman_job']:
             setattr(self.job_runner, attr, MagicMock())
 
     def _parse(self):
@@ -126,27 +127,29 @@ class ParseJobmanJobTestCase(BaseTestCase):
     def test_has_std_log_contents(self):
         result = self._parse()
         self.assertEqual(
-            self.job_runner.jobman.get_std_log_contents_for_job.call_args,
-            call(job=self.jobman_job))
+            self.job_runner.get_std_log_contents_for_jobman_job.call_args,
+            call(jobman_job=self.jobman_job)
+        )
         self.assertEqual(
             result['std_log_contents'],
-            self.job_runner.jobman.get_std_log_contents_for_job.return_value)
+            self.job_runner.get_std_log_contents_for_jobman_job.return_value
+        )
 
     def test_copies_failure_log_content_to_error_key(self):
         failure_msg = 'some_failure'
-        self.job_runner.jobman.get_std_log_contents_for_job.return_value = \
+        self.job_runner.get_std_log_contents_for_jobman_job.return_value = \
                 {'failure': failure_msg}
         result = self._parse()
         self.assertEqual(result['error'], failure_msg)
 
     def test_sets_status_to_failed_if_error(self):
-        self.job_runner.jobman.get_std_log_contents_for_job.return_value = \
+        self.job_runner.get_std_log_contents_for_jobman_job.return_value = \
                 {'failure': MagicMock()}
         result = self._parse()
         self.assertEqual(result['status'], 'FAILED')
 
     def test_sets_status_to_completed_if_no_error(self):
-        self.job_runner.jobman.get_std_log_contents_for_job.return_value = {}
+        self.job_runner.get_std_log_contents_for_jobman_job.return_value = {}
         result = self._parse()
         self.assertEqual(result['status'], 'COMPLETED')
 
@@ -159,6 +162,78 @@ class GenerateArtifactSpecForDirTestCase(BaseTestCase):
             'artifact_params': {'path': _dir}
         }
         self.assertEqual(result, expected_result)
+
+
+class GetJobStdLogFileContentsForJobmanJob(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.job_runner.read_submission_logs = MagicMock()
+        self.submission = defaultdict(MagicMock, **{
+            'std_log_files': {'log_%s' % i: MagicMock() for i in range(3)}
+        })
+        self.std_logs_to_expose = None
+
+    def _get_std_log_file_contents_for_jobman_job(self):
+        jobman_job = defaultdict(MagicMock, **{
+            'submission': self.submission,
+            'source_meta': {
+                'mc_job': {
+                    'job_spec': {'std_logs_to_expose': self.std_logs_to_expose}
+                }
+            }
+        })
+        return self.job_runner.get_std_log_contents_for_jobman_job(
+            jobman_job=jobman_job)
+
+    def test_handles_all_keyword(self):
+        self.std_logs_to_expose = 'all'
+        result = self._get_std_log_file_contents_for_jobman_job()
+        self.assertEqual(
+            self.job_runner.read_submission_logs.call_args,
+            call(submission=self.submission,
+                 logs=self.submission['std_log_files'].keys())
+        )
+        self.assertEqual(result,
+                         self.job_runner.read_submission_logs.return_value)
+
+    def test_reads_specified_logs(self):
+        self.std_logs_to_expose = \
+                list(self.submission['std_log_files'].keys())[:-1]
+        result = self._get_std_log_file_contents_for_jobman_job()
+        self.assertEqual(
+            self.job_runner.read_submission_logs.call_args,
+            call(submission=self.submission, logs=self.std_logs_to_expose)
+        )
+        self.assertEqual(result,
+                         self.job_runner.read_submission_logs.return_value)
+
+class ReadSubmissionLogsTestCase(BaseTestCase):
+    def test_dispatches_to_read_submission_log_file(self):
+        self.job_runner.read_submission_log = MagicMock()
+        submission = MagicMock()
+        logs = [MagicMock() for i in range(3)]
+        result = self.job_runner.read_submission_logs(submission=submission,
+                                                      logs=logs)
+        expected_call_args_list = [call(submission=submission, log=log)
+                                   for log in logs]
+        self.assertEqual(self.job_runner.read_submission_log.call_args_list,
+                         expected_call_args_list)
+        expected_result = {
+            log: self.job_runner.read_submission_log.return_value
+            for log in logs
+        }
+        self.assertEqual(result, expected_result)
+
+class ReadSubmissionLogTestCase(BaseTestCase):
+    @patch.object(job_runner, 'os')
+    @patch.object(job_runner, 'open')
+    def test_reads_log_file(self, mock_open, mock_os):
+        submission = MagicMock()
+        log = MagicMock()
+        self.job_runner.read_submission_log(submission=submission, log=log)
+        expected_job_file_path = mock_os.path.join(
+            submission['dir'], submission['std_log_files'][log])
+        self.assertEqual(mock_open.call_args, call(expected_job_file_path))
 
 class ParsedJobmanJobsToKeyedPatchesTestCase(BaseTestCase):
     def setUp(self):
@@ -192,44 +267,9 @@ class ParsedJobmanJobToPatchTestCase(BaseTestCase):
                          self.parsed_jobman_job.get('artifact_spec'))
 
     def test_has_std_log_contents(self):
-        self.assertEqual(self.job_runner.get_std_log_contents.call_args,
-                         call(parsed_jobman_job=self.parsed_jobman_job))
         self.assertEqual(self.patch['data']['std_log_contents'],
-                         self.job_runner.get_std_log_contents.return_value)
+                         self.parsed_jobman_job.get('std_log_contents'))
 
-class GetStdLogContentsTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.mc_job = {
-            'job_spec': {
-                'std_logs_to_expose': {}
-            }
-        }
-        self.parsed_jobman_job = {
-            'jobman_job': {
-                'source_meta': {'mc_job': self.mc_job}
-            },
-            'std_log_contents': MagicMock()
-        }
-
-    def _get_std_log_contents(self):
-        return self.job_runner.get_std_log_contents(
-            parsed_jobman_job=self.parsed_jobman_job)
-
-    def test_handles_all_arg(self):
-        self.mc_job['job_spec']['std_logs_to_expose'] = 'all'
-        result = self._get_std_log_contents()
-        self.assertEqual(result, self.parsed_jobman_job.get('std_log_contents'))
-
-    def test_handles_list_of_logs(self):
-        logs_to_expose = [MagicMock() for i in range(3)]
-        self.mc_job['job_spec']['std_logs_to_expose'] = logs_to_expose
-        result = self._get_std_log_contents()
-        expected_result = {
-            log_name: self.parsed_jobman_job['std_log_contents'].get(log_name)
-            for log_name in logs_to_expose
-        }
-        self.assertEqual(result, expected_result)
 
 class PatchJobsTestCase(BaseTestCase):
     def setUp(self):
@@ -325,12 +365,12 @@ class BuildSubmissionTestCase(BaseTestCase):
                  submission_dir=job_runner.tempfile.mkdtemp.return_value)
         )
 
-    def test_dispatches_to_job_submission_factory(self):
-        submission_factory = self.job_runner.job_submission_factory
+    def test_dispatches_to_submission_factory(self):
+        submission_factory = self.job_runner.submission_factory
         self.assertEqual(
-            submission_factory.build_job_submission.call_args,
+            submission_factory.build_submission.call_args,
             call(job=self.mc_job,
-                 submission_dir=job_runner.tempfile.mkdtemp.return_value)
+                 output_dir=job_runner.tempfile.mkdtemp.return_value)
         )
 
 class PrepareJobInputsTestCase(BaseTestCase):

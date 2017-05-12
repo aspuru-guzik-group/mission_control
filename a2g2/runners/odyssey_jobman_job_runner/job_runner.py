@@ -70,8 +70,8 @@ class JobRunner(object):
             'jobman_job': jobman_job,
             'artifact_spec': self.generate_artifact_spec_for_dir(
                 _dir=jobman_job['submission']['dir']),
-            'std_log_contents': self.jobman.get_std_log_contents_for_job(
-                job=jobman_job),
+            'std_log_contents': self.get_std_log_contents_for_jobman_job(
+                jobman_job=jobman_job),
         }
         parsed_jobman_job['error'] = \
                 parsed_jobman_job['std_log_contents'].get('failure')
@@ -79,6 +79,29 @@ class JobRunner(object):
         if parsed_jobman_job['jobman_job']['status'] == 'FAILED' or \
            parsed_jobman_job['error']: parsed_jobman_job['status'] = 'FAILED'
         return parsed_jobman_job
+
+    def get_std_log_contents_for_jobman_job(self, jobman_job=None):
+        submission = jobman_job['submission']
+        mc_job = jobman_job['source_meta']['mc_job']
+        logs_to_expose = mc_job['job_spec'].get('std_logs_to_expose', [])
+        if logs_to_expose == 'all':
+            logs_to_expose = submission['std_log_files'].keys()
+        std_log_contents = self.read_submission_logs(submission=submission,
+                                                     logs=logs_to_expose)
+        return std_log_contents
+
+    def read_submission_logs(self, submission=None, logs=None):
+        logs = logs or []
+        return {
+            log: self.read_submission_log(submission=submission, log=log)
+            for log in logs
+        }
+
+    def read_submission_log(self, submission=None, log=None):
+        rel_log_path = submission['std_log_files'][log]
+        abs_log_path = os.path.join(submission['dir'], rel_log_path)
+        if os.path.exists(abs_log_path):
+            with open(abs_log_path) as f: return f.read()
 
     def generate_artifact_spec_for_dir(self, _dir=None):
         artifact_spec = {
@@ -101,24 +124,10 @@ class JobRunner(object):
             'status': parsed_jobman_job['status'],
             'data': {
                 'artifact': parsed_jobman_job.get('artifact_spec'),
-                'std_log_contents': self.get_std_log_contents(
-                    parsed_jobman_job=parsed_jobman_job)
+                'std_log_contents': parsed_jobman_job.get('std_log_contents')
             }
         }
         return patch
-
-    def get_std_log_contents(self, parsed_jobman_job=None):
-        mc_job = parsed_jobman_job['jobman_job']['source_meta']['mc_job']
-        contents = parsed_jobman_job['std_log_contents']
-        logs_to_expose = mc_job['job_spec'].get('std_logs_to_expose', [])
-        if logs_to_expose == 'all':
-            contents_to_expose = contents
-        else:
-            contents_to_expose = {
-                log_to_expose: contents.get(log_to_expose)
-                for log_to_expose in logs_to_expose
-            }
-        return contents_to_expose
 
     def deserialize_mc_job(self, mc_job=None):
         deserialized_mc_job = {}

@@ -5,7 +5,7 @@ import tempfile
 import types
 
 from mc.task_handlers.jobs.execute_job_task_handler import ExecuteJobTaskHandler
-from mc.a2g2.task_handlers.a2g2_task_handler import A2G2TaskHandler
+from a2g2.task_handlers.a2g2_task_handler import A2G2TaskHandler
 
 from .odyssey_execution_client import OdysseyExecutionClient
 

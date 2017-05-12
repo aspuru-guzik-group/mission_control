@@ -5,7 +5,8 @@ import requests
 from mc.mc_client.mc_client import MissionControlClient
 from mc.mc_client.http_dao import HttpDao as _McHttpDao
 from mc.flow_engines.flow_engine import FlowEngine
-from mc.flow_runners.base_flow_runner import BaseFlowRunner as FlowRunner
+
+from ..flow_runner.base_flow_runner import BaseFlowRunner as FlowRunner
 from .odyssey_job_submission_factory import OdysseyJobSubmissionFactory as \
         JobSubmissionFactory
 from .odyssey_job_runner import OdysseyJobRunner as JobRunner

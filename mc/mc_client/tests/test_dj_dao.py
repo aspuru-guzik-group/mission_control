@@ -203,9 +203,11 @@ class PatchJobTestCase(BaseTestCase):
 class FlushTestCase(BaseTestCase):
     def test_dispatches_to_model_deletes(self):
         self.dao.flush_mc_db()
-        self.assertEqual(self.models['Flow'].objects.delete.call_args, call())
-        self.assertEqual(self.models['Job'].objects.delete.call_args, call())
-        self.assertEqual(self.models['Queue'].objects.delete.call_args, call())
+        for model_name in ['Flow', 'Job', 'Queue']:
+            self.assertEqual(
+                self.models[model_name].objects.all().delete.call_args,
+                call()
+            )
 
 class CreateQueueTestCase(BaseTestCase):
     def setUp(self):

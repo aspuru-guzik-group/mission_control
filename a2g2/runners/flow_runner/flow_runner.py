@@ -1,7 +1,7 @@
 from mc.flow_engines.flow_engine import FlowEngine
-from mc.flow_runners.base_flow_runner import BaseFlowRunner
+from .base_flow_runner import BaseFlowRunner
 
-from mc.a2g2.task_handlers import a2g2_task_handler
+from a2g2.task_handlers import a2g2_task_handler
 
 
 class FlowRunner(object):

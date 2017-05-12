@@ -13,11 +13,12 @@ class JobEngine(object):
         return handler(*args, **kwargs)
 
     def build_submission(self, *args, job=None, cfg=None, output_dir=None, 
-                             **kwargs):
+                         **kwargs):
+        os.makedirs(output_dir, exist_ok=True)
         job_module = self.get_job_module(job=job, cfg=cfg)
         submission_meta_from_module = job_module.build_submission(
             *args, job=job, cfg=cfg, output_dir=output_dir, **kwargs)
-        submission_meta = {'job': job, 'cfg': cfg,
+        submission_meta = {'job': job, 'cfg': cfg, 'dir': output_dir,
                            **submission_meta_from_module}
         self.write_submission_meta(submission_meta=submission_meta,
                                    _dir=output_dir)

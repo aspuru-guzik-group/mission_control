@@ -110,7 +110,7 @@ class DjDao(object):
 
     def flush_mc_db(self):
         for model_name in ['Job', 'Flow', 'Queue']:
-            self.models[model_name].objects.delete()
+            self.models[model_name].objects.all().delete()
 
     def claim_queue_items(self, queue_key=None, params=None):
         queue_model = self.models['Queue'].objects.get(uuid=queue_key)
