@@ -5,11 +5,11 @@ import tempfile
 
 
 class JobRunner(object):
-    def __init__(self, job_client=None, job_submission_factory=None,
+    def __init__(self, job_client=None, submission_factory=None,
                  jobman=None, logging_cfg=None, max_claims_per_tick=None,
                  jobman_source_name=None, **job_runner_kwargs):
         self.job_client = job_client
-        self.job_submission_factory = job_submission_factory
+        self.submission_factory = submission_factory
         self.jobman = jobman
         self.max_claims_per_tick = max_claims_per_tick or 3
         self.logger = self._generate_logger(logging_cfg=logging_cfg)
@@ -162,8 +162,8 @@ class JobRunner(object):
     def build_submission(self, mc_job=None):
         submission_dir = tempfile.mkdtemp(prefix='sf.')
         self.prepare_job_inputs(mc_job=mc_job, submission_dir=submission_dir)
-        submission = self.job_submission_factory.build_job_submission(
-            job=mc_job, submission_dir=submission_dir)
+        submission = self.submission_factory.build_submission(
+            job=mc_job, output_dir=submission_dir)
         return submission
 
     def prepare_job_inputs(self, mc_job=None, submission_dir=None):
