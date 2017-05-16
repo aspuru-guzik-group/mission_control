@@ -1,11 +1,8 @@
 import os
 
-from .artifact_processor import ArtifactProcessor
+from .base_artifact_processor import BaseArtifactProcessor
 
-class OdysseyArtifactProcessor(object):
-    def __init__(self):
-        self.artifact_processor = ArtifactProcessor()
-
+class OdysseyArtifactProcessor(BaseArtifactProcessor):
     def dir_to_artifact(self, _dir=None):
         return {
             'artifact_type': 'a2g2.artifacts.odyssey',
@@ -15,6 +12,4 @@ class OdysseyArtifactProcessor(object):
     def artifact_to_dir(self, artifact=None, dest=None):
         if artifact['artifact_type'] == 'a2g2.artifacts.odyssey':
             os.symlink(artifact['artifact_params']['path'], dest)
-        else:
-            self.artifact_processor.artifact_to_dir(
-                artifact=artifact, dest=dest)
+        else: raise self.UnknownArtifactTypeError()
