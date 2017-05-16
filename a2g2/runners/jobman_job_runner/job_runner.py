@@ -3,20 +3,19 @@ import os
 import logging
 import tempfile
 
-from .artifact_processor import ArtifactProcessor
-
 
 class JobRunner(object):
-    def __init__(self, job_client=None, submission_factory=None,
-                 jobman=None, logging_cfg=None, max_claims_per_tick=None,
-                 jobman_source_name=None, artifact_processor=None, **kwargs):
-        self.job_client = job_client
-        self.submission_factory = submission_factory
-        self.jobman = jobman
-        self.max_claims_per_tick = max_claims_per_tick or 3
-        self.logger = self._generate_logger(logging_cfg=logging_cfg)
-        self.jobman_source_name = jobman_source_name or 'mc'
-        self.artifact_processor = artifact_processor or ArtifactProcessor()
+    def __init__(self, cfg=None, **kwargs):
+        self.cfg = cfg
+        self.job_client = cfg.get('job_client')
+        self.submission_factory = cfg.get('submission_factory')
+        self.jobman = cfg.get('jobman')
+        self.max_claims_per_tick = cfg.get('max_claims_per_tick') or 3
+        self.logger = self._generate_logger(logging_cfg=cfg.get('logging_cfg'))
+        self.jobman_source_name = cfg.get('jobman_source_name') or 'mc'
+        self.artifact_processor = cfg.get('artifact_processor')
+        self.get_cfg_for_mc_job = cfg.get('get_cfg_for_mc_job')  or \
+                self._default_get_cfg_for_mc_job
 
     def _generate_logger(self, logging_cfg=None):
         logging_cfg = logging_cfg or {}
@@ -33,6 +32,8 @@ class JobRunner(object):
         formatter = logging.Formatter(fmt)
         for handler in logger.handlers: handler.setFormatter(formatter)
         return logger
+    
+    def _default_get_cfg_for_mc_job(*args, **kwargs): return {}
 
     def tick(self):
         self.logger.info("tick")
@@ -166,12 +167,14 @@ class JobRunner(object):
 
     def build_submission(self, mc_job=None):
         submission_dir = tempfile.mkdtemp(prefix='sf.')
-        self.prepare_job_inputs(mc_job=mc_job, submission_dir=submission_dir)
+        cfg_for_mc_job = self.get_cfg_for_mc_job(mc_job=mc_job)
+        self.prepare_job_inputs(mc_job=mc_job, cfg=cfg_for_mc_job,
+                                submission_dir=submission_dir)
         submission = self.submission_factory.build_submission(
-            job=mc_job, output_dir=submission_dir)
+            job=mc_job, cfg=cfg_for_mc_job, output_dir=submission_dir)
         return submission
 
-    def prepare_job_inputs(self, mc_job=None, submission_dir=None):
+    def prepare_job_inputs(self, mc_job=None, cfg=None, submission_dir=None):
         inputs_dir = os.path.join(submission_dir, 'inputs')
         os.makedirs(inputs_dir, exist_ok=True)
         artifacts = mc_job['job_spec'].get('inputs', {}).get('artifacts', {})
