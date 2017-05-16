@@ -3,17 +3,20 @@ import os
 import logging
 import tempfile
 
+from .artifact_processor import ArtifactProcessor
+
 
 class JobRunner(object):
     def __init__(self, job_client=None, submission_factory=None,
                  jobman=None, logging_cfg=None, max_claims_per_tick=None,
-                 jobman_source_name=None, **job_runner_kwargs):
+                 jobman_source_name=None, artifact_processor=None, **kwargs):
         self.job_client = job_client
         self.submission_factory = submission_factory
         self.jobman = jobman
         self.max_claims_per_tick = max_claims_per_tick or 3
         self.logger = self._generate_logger(logging_cfg=logging_cfg)
         self.jobman_source_name = jobman_source_name or 'mc'
+        self.artifact_processor = artifact_processor or ArtifactProcessor()
 
     def _generate_logger(self, logging_cfg=None):
         logging_cfg = logging_cfg or {}
@@ -68,7 +71,7 @@ class JobRunner(object):
     def parse_jobman_job(self, jobman_job=None):
         parsed_jobman_job = {
             'jobman_job': jobman_job,
-            'artifact_spec': self.generate_artifact_spec_for_dir(
+            'artifact': self.artifact_processor.dir_to_artifact(
                 _dir=jobman_job['submission']['dir']),
             'std_log_contents': self.get_std_log_contents_for_jobman_job(
                 jobman_job=jobman_job),
@@ -103,13 +106,6 @@ class JobRunner(object):
         if os.path.exists(abs_log_path):
             with open(abs_log_path) as f: return f.read()
 
-    def generate_artifact_spec_for_dir(self, _dir=None):
-        artifact_spec = {
-            'artifact_type': 'a2g2.artifacts.odyssey',
-            'artifact_params': {'path': _dir}
-        }
-        return artifact_spec
-
     def parsed_jobman_jobs_to_keyed_patches(self, parsed_jobman_jobs=None):
         keyed_patches = {}
         for parsed_jobman_job in parsed_jobman_jobs:
@@ -123,7 +119,7 @@ class JobRunner(object):
         patch = {
             'status': parsed_jobman_job['status'],
             'data': {
-                'artifact': parsed_jobman_job.get('artifact_spec'),
+                'artifact': parsed_jobman_job.get('artifact'),
                 'std_log_contents': parsed_jobman_job.get('std_log_contents')
             }
         }
@@ -180,12 +176,6 @@ class JobRunner(object):
         os.makedirs(inputs_dir, exist_ok=True)
         artifacts = mc_job['job_spec'].get('inputs', {}).get('artifacts', {})
         for artifact_key, artifact in artifacts.items():
-            self.prepare_input_artifact(artifact_key=artifact_key,
-                                        artifact=artifact,
-                                        inputs_dir=inputs_dir)
-
-    def prepare_input_artifact(self, artifact_key=None, artifact=None,
-                               inputs_dir=None):
-        if artifact['artifact_type'] == 'a2g2.artifacts.odyssey':
-            os.symlink(artifact['artifact_params']['path'],
-                       os.path.join(inputs_dir, artifact_key))
+            dest = os.path.join(inputs_dir, artifact_key)
+            self.artifact_processor.artifact_to_dir(
+                artifact=artifact, dest=dest)

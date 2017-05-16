@@ -6,6 +6,6 @@ class BaseSubmissionBuilder(object):
             setattr(self, attr, self.kwargs.get(attr))
 
     def get_target_env_from_cfg(self):
-        return self.cfg['job_engine']['target_env']
+        return self.cfg.get('job_engine', {}).get('target_env')
 
     def build_submission(self): raise NotImplementedError
