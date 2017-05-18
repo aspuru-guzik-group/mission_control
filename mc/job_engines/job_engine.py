@@ -1,5 +1,6 @@
 import json
 import importlib
+import logging
 import os
 
 
@@ -7,6 +8,9 @@ class JobEngine(object):
     class JobModuleImportError(Exception): pass
 
     SUBMISSION_META_NAME = 'MC_JOB_ENGINE__SUBMISSION_META.json'
+
+    def __init__(self, logger=None):
+        self.logger = logger or logging
 
     def execute_command(self, *args, command=None, **kwargs):
         handler = getattr(self, command)
@@ -33,8 +37,8 @@ class JobEngine(object):
             job_module_name = self.get_job_module_name(job=job, cfg=cfg)
             return importlib.import_module(job_module_name)
         except Exception as exc:
-            raise self.JobModuleImportError(
-                "Could not load module for job") from exc
+            msg = "Could not load module for job"
+            raise self.JobModuleImportError(msg) from exc
 
     def get_job_module_name(self, job=None, cfg=None):
         module_name = job['job_spec']['job_type']

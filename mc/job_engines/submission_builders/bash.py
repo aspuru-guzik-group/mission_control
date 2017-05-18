@@ -17,15 +17,20 @@ class BashSubmissionBuilder(object):
 
     io_dirs = {'inputs': 'inputs', 'outputs': 'outputs'}
 
-    std_log_files = {
+    std_log_filenames = {
         'stdout': '_JOB.stdout',
         'stderr': '_JOB.stderr',
         'failure': checkpoint_files['failed'],
     }
 
-    def build_submission(self, submission_spec=None, output_dir=None):
+    def build_submission(self, submission_spec=None, cfg=None, output_dir=None):
         self.spec = submission_spec
-        self.output_dir = output_dir or tempfile.mkdtemp(prefix='ody.sub.')
+        self.cfg = cfg
+        self.output_dir = output_dir or tempfile.mkdtemp(prefix='bash.sub.')
+        self.std_log_files = {
+            logname: os.path.join(self.output_dir, filename)
+            for logname, filename in self.std_log_filenames.items()
+        }
         self.ensure_dir(output_dir)
         self.setup_io_dirs()
         self.write_entrypoint()
@@ -51,6 +56,7 @@ class BashSubmissionBuilder(object):
         entrypoint_path = os.path.join(self.output_dir, self.entrypoint_name)
         with open(entrypoint_path, 'w') as f:
             f.write(self.generate_entrypoint_content())
+        os.chmod(entrypoint_path, 0o755)
 
     def generate_entrypoint_content(self):
         content = textwrap.dedent(
@@ -115,7 +121,19 @@ class BashSubmissionBuilder(object):
         for k, v in kvp_list: squashed[k] = v
         return squashed.items()
 
-    def generate_body_section(self): return self.spec.get('entrypoint_body', '')
+    def generate_body_section(self):
+        job_engine_cfg = self.cfg.get('job_engine', {})
+        body_section = textwrap.dedent(
+            """
+            {job_engine_preamble}
+            {job_engine_exe}  run_submission --submission_dir={output_dir}
+            """
+        ).strip().format(
+            job_engine_preamble=job_engine_cfg.get('entrypoint_preamble', ''),
+            job_engine_exe=job_engine_cfg['job_engine_exe'],
+            output_dir=self.output_dir
+        )
+        return body_section
 
     def write_templates(self):
         templates = self.spec.get('templates', {})
