@@ -1,6 +1,6 @@
 from mc.mc_utils import dot_spec_loader
 
-from .set_value_task_handler import SetValueTaskHandler
+from .wire_task_handler import WireTaskHandler
 
 
 class ModuleDispatchTaskHandler(object):
@@ -25,7 +25,7 @@ class ModuleDispatchTaskHandler(object):
         task_type = task['task_type']
         if task_type == 'noop': return NoOpTaskHandler()
         if task_type == 'print': return PrintTaskHandler()
-        if task_type == 'set_value': return SetValueTaskHandler()
+        if task_type == 'wire': return WireTaskHandler()
         handler_dot_spec = task_type
         if ':' not in handler_dot_spec: handler_dot_spec += ':TaskHandler'
         handler_cls = dot_spec_loader.DotSpecLoader.load_from_dot_spec(
