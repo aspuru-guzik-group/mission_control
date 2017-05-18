@@ -12,8 +12,13 @@ class FlowEngine(object):
 
     def __init__(self, task_handler=None, logger=None, max_msg_len=1024):
         self.logger = logger or logging
-        self.task_handler = task_handler
+        self.task_handler = task_handler or self.get_default_task_handler()
         self.max_msg_len = max_msg_len
+
+    def get_default_task_handler(self):
+        from mc.task_handlers.module_dispatch_task_handler import \
+                ModuleDispatchTaskHandler
+        return ModuleDispatchTaskHandler()
 
     @classmethod
     def generate_flow(self, flow_spec=None):

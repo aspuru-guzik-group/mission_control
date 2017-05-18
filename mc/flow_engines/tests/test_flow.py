@@ -50,7 +50,7 @@ class AddTaskTestCase(BaseTestCase):
                       for i in range(1)]
         self.flow.add_task(
             task=self.task,
-            precursor_keys=[precursor['key'] for precursor in precursors])
+            precursors=[precursor['key'] for precursor in precursors])
         for precursor in precursors:
             self.assertTrue(self.flow.has_edge(src_key=precursor['key'],
                                                dest_key=self.task['key']))
@@ -60,7 +60,7 @@ class AddTaskTestCase(BaseTestCase):
                       for i in range(3)]
         self.flow.add_task(
             task=self.task,
-            successor_keys=[successor['key'] for successor in successors])
+            successors=[successor['key'] for successor in successors])
         for successor in successors:
             self.assertTrue(self.flow.has_edge(src_key=self.task['key'],
                                                dest_key=successor['key']))
@@ -116,7 +116,7 @@ class GetNearestPendingTasksTestCase(BaseTestCase):
     def add_linear_branch_to_flow(self, flow=None, branch_tasks=None):
         tail = flow.tasks[flow.ROOT_TASK_KEY]
         for task in branch_tasks:
-            tail = flow.add_task(task=task, precursor_keys=[tail['key']])
+            tail = flow.add_task(task=task, precursors=[tail['key']])
 
     def test_get_nearest_pending_tasks(self):
         expected_nearest_pending_tasks = [self.linear_branches['1'][1],
@@ -131,11 +131,11 @@ class GetSuccessorsTestCase(BaseTestCase):
 
     def setup_flow(self, flow=None):
         task_1 = self.generate_task(key='1')
-        self.flow.add_task(task=task_1, precursor_keys=[flow.ROOT_TASK_KEY])
+        self.flow.add_task(task=task_1, precursors=[flow.ROOT_TASK_KEY])
         task_1_1 = self.generate_task(key='1_1')
-        self.flow.add_task(task=task_1_1, precursor_keys=[task_1['key']])
+        self.flow.add_task(task=task_1_1, precursors=[task_1['key']])
         task_1_2 = self.generate_task(key='1_2')
-        self.flow.add_task(task=task_1_2, precursor_keys=[task_1['key']])
+        self.flow.add_task(task=task_1_2, precursors=[task_1['key']])
 
     def test_gets_successors(self):
         successors = self.flow.get_successors(task=self.flow.tasks['1'])
@@ -189,7 +189,7 @@ class GetTailTasksTestCase(BaseTestCase):
     def test_gets_tail_tasks(self):
         tail_tasks = [
             self.flow.add_task(task=self.generate_task(),
-                               precursor_keys=[self.flow.ROOT_TASK_KEY])
+                               precursors=[self.flow.ROOT_TASK_KEY])
             for i in range(3)]
         self.assertTrue(self.flow.get_tail_tasks(), tail_tasks)
 
