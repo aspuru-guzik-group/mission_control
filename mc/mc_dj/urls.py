@@ -19,7 +19,7 @@ from django.contrib import admin
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^storage/', include('storage.urls', namespace='storage')),
-    url(r'^missions/', include('missions.urls', namespace='missions')),
+    url(r'^storage/', include('mc.storage.urls', namespace='mc_storage')),
+    url(r'^missions/', include('mc.missions.urls', namespace='mc_missions')),
     url(r'^a2g2/', include('a2g2.a2g2_dj.urls', namespace='a2g2')),
 ]

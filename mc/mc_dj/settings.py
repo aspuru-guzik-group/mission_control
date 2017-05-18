@@ -42,9 +42,9 @@ INSTALLED_APPS = [
     'django_filters',
     'rest_framework',
     'taggit',
-    'missions',
+    'mc.missions',
     'a2g2.a2g2_dj.apps.A2G2_DJ_Config',
-    'storage',
+    'mc.storage',
 ]
 
 MIDDLEWARE = [
