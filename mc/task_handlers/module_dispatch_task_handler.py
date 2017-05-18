@@ -4,6 +4,16 @@ from .wire_task_handler import WireTaskHandler
 
 
 class ModuleDispatchTaskHandler(object):
+
+    def __init__(self, task_type_to_handler_dot_spec_fn=None):
+        self.task_type_to_handler_dot_spec = task_type_to_handler_dot_spec_fn \
+                or self.default_task_type_to_handler_dot_spec
+
+    def default_task_type_to_handler_dot_spec(self, task_type=None):
+        handler_dot_spec = task_type.replace('task', 'task_handler')
+        if ':' not in handler_dot_spec: handler_dot_spec += ':TaskHandler'
+        return handler_dot_spec
+
     @classmethod
     def tick_task(cls, *args, **kwargs):
         return cls()._tick_task(*args, **kwargs)
@@ -26,7 +36,7 @@ class ModuleDispatchTaskHandler(object):
         if task_type == 'noop': return NoOpTaskHandler()
         if task_type == 'print': return PrintTaskHandler()
         if task_type == 'wire': return WireTaskHandler()
-        handler_dot_spec = task_type
+        handler_dot_spec = self.task_type_to_handler_dot_spec(task_type)
         if ':' not in handler_dot_spec: handler_dot_spec += ':TaskHandler'
         handler_cls = dot_spec_loader.DotSpecLoader.load_from_dot_spec(
             dot_spec=handler_dot_spec)

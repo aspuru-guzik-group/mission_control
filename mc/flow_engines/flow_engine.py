@@ -8,9 +8,14 @@ from .flow import Flow
 class FlowEngine(object):
     simple_flow_serialization_attrs = ['data', 'label', 'status', 'cfg']
 
+    class FlowError(Exception):
+        def __init__(self, *args, flow=None, **kwargs):
+            self.flow = flow
+            super().__init__(*args, **kwargs)
+
     class TaskError(Exception): pass
 
-    def __init__(self, task_handler=None, logger=None, max_msg_len=1024):
+    def __init__(self, task_handler=None, logger=None, max_msg_len=None):
         self.logger = logger or logging
         self.task_handler = task_handler or self.get_default_task_handler()
         self.max_msg_len = max_msg_len
@@ -54,10 +59,12 @@ class FlowEngine(object):
         }
         return json.dumps(flow_dict)
 
-    def run_flow(self, flow=None, flow_ctx=None):
+    def run_flow(self, flow=None, flow_ctx=None, check=False):
         completed_statuses = set(['COMPLETED', 'FAILED'])
         while flow.status not in completed_statuses:
             self.tick_flow(flow=flow, flow_ctx=flow_ctx)
+        if check and flow.status == 'FAILED':
+            raise self.FlowError(flow=flow)
 
     def tick_flow(self, flow=None, flow_ctx=None):
         try:
@@ -123,7 +130,8 @@ class FlowEngine(object):
 
     def elide_text(self, text=None, max_len=None):
         max_len = max_len or self.max_msg_len
-        if len(text) > max_len: text = text[0:max_len] + '...'
+        if max_len is not None and len(text) > max_len:
+            text = text[0:max_len] + '...'
         return text
 
     def complete_task(self, flow=None, task=None):

@@ -1,0 +1,5 @@
+- explain custom task
+- explain how tasks are located
+- explain how you could define a custom task resolver
+- explain task testing
+- explain task context
