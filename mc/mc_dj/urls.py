@@ -1,25 +1,17 @@
-"""mc URL Configuration
+from django.conf.urls import url, include
+from rest_framework.routers import DefaultRouter
 
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/1.10/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  url(r'^$', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  url(r'^$', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.conf.urls import url, include
-    2. Add a URL to urlpatterns:  url(r'^blog/', include('blog.urls'))
-"""
-from django.conf.urls import include, url
-from django.contrib import admin
+from mc_dj import views
 
+
+router = DefaultRouter()
+router.register(r'flows', views.FlowViewSet)
+router.register(r'jobs', views.JobViewSet)
+router.register(r'queues', views.QueueViewSet)
 
 urlpatterns = [
-    url(r'^admin/', admin.site.urls),
-    url(r'^storage/', include('mc.storage.urls', namespace='mc_storage')),
-    url(r'^missions/', include('mc.missions.urls', namespace='mc_missions')),
-    url(r'^a2g2/', include('a2g2.a2g2_dj.urls', namespace='a2g2')),
+    url(r'^', include(router.urls)),
+    url(r'^claim_flows/', views.claim_flows, name='claim_flows'),
+    url(r'^claim_jobs/', views.claim_jobs, name='claim_jobs'),
+    url(r'^flush/', views.flush, name='flush'),
 ]

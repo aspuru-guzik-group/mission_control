@@ -6,10 +6,10 @@ from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework import viewsets
 from rest_framework.decorators import detail_route
 
-from .constants import JobStatuses
-from . import models as _models
-from . import serializers as _serializers
-from .utils import queue_utils as _queue_utils
+from mc_dj.constants import JobStatuses
+from mc_dj import models as _models
+from mc_dj import serializers as _serializers
+from mc_dj.utils import queue_utils as _queue_utils
 
 
 class FlowFilter(FilterSet):
@@ -82,7 +82,7 @@ def claim_jobs(request):
 @require_http_methods(["GET"])
 def flush(request):
     flush_results = {}
-    for model in _models.missions_models:
+    for model in _models.mc_models:
         model.objects.all().delete()
         flush_results[model.__name__] = 'flushed'
     return JsonResponse(flush_results)
