@@ -1,28 +1,7 @@
-import collections
 from django.db import models as _dj_models
 import sqlalchemy.types as _sa_types
 
 from mc.orm import sqlalchemy as _mc_sa
-
-
-def generate_models_from_sa_schema(sa_schema=None):
-    sa_schema = sa_schema or _mc_sa.generate_schema()
-    models = collections.OrderedDict()
-    for table_key, sa_table in sa_schema['tables'].items():
-        fields = {
-            sa_column.name: sa_column_to_dj_field(sa_column)
-            for sa_column in sa_table.columns
-        }
-        meta_cls = type('Meta', (), {
-            'app_label': 'mc.mc_dj',
-            'db_table': sa_table.name
-        })
-        model = type(
-            table_key.title(), (object,),
-            {**fields, 'Meta': meta_cls, '__module__': __name__}
-        )
-        models[model.__name__] = model
-    return models
 
 def sa_column_to_dj_field(sa_column=None):
     field_kwargs = {
@@ -32,17 +11,60 @@ def sa_column_to_dj_field(sa_column=None):
     if sa_column.default:
         field_kwargs['default'] = getattr(sa_column.default.arg, '__wrapped__',
                                           sa_column.default.arg)
-    if isinstance(sa_column.type, _sa_types.String):
+    if type(sa_column.type) is _sa_types.String:
         field_cls = _dj_models.CharField
-        field_kwargs.update({'max_length': sa_column.type.length})
-    elif isinstance(sa_column.type, _sa_types.Text):
+        field_kwargs['max_length'] = sa_column.type.length
+    elif type(sa_column.type) is _sa_types.Text:
         field_cls = _dj_models.TextField
-    elif isinstance(sa_column.type, _sa_types.Boolean):
+    elif type(sa_column.type) is _sa_types.Boolean:
         field_cls = _dj_models.NullBooleanField
+    elif type(sa_column.type) is _sa_types.DateTime:
+        field_cls = _dj_models.DateTimeField
+        if sa_column.onupdate: field_kwargs['auto_now'] = True
     return field_cls(**field_kwargs)
 
-models = generate_models_from_sa_schema()
-Mission = models['Mission']
-Flow = models['Flow']
-Job = models['Job']
-Queue = models['Queue']
+sa_schema = _mc_sa.generate_schema()
+
+mission_table = sa_schema['tables']['mission']
+class Mission(_dj_models.Model):
+    uuid = sa_column_to_dj_field(mission_table.columns['uuid'])
+    label = sa_column_to_dj_field(mission_table.columns['label'])
+    created = sa_column_to_dj_field(mission_table.columns['created'])
+    modified = sa_column_to_dj_field(mission_table.columns['modified'])
+    class Meta:
+        db_table = mission_table.name
+
+
+flow_table = sa_schema['tables']['flow']
+class Flow(_dj_models.Model):
+    uuid = sa_column_to_dj_field(flow_table.columns['uuid'])
+    label = sa_column_to_dj_field(flow_table.columns['label'])
+    serialization = sa_column_to_dj_field(flow_table.columns['serialization'])
+    status = sa_column_to_dj_field(flow_table.columns['status'])
+    claimed = sa_column_to_dj_field(flow_table.columns['claimed'])
+    created = sa_column_to_dj_field(flow_table.columns['created'])
+    modified = sa_column_to_dj_field(flow_table.columns['modified'])
+    class Meta:
+        db_table = flow_table.name
+
+job_table = sa_schema['tables']['job']
+class Job(_dj_models.Model):
+    uuid = sa_column_to_dj_field(job_table.columns['uuid'])
+    label = sa_column_to_dj_field(job_table.columns['label'])
+    serialization = sa_column_to_dj_field(job_table.columns['serialization'])
+    status = sa_column_to_dj_field(job_table.columns['status'])
+    claimed = sa_column_to_dj_field(job_table.columns['claimed'])
+    created = sa_column_to_dj_field(job_table.columns['created'])
+    modified = sa_column_to_dj_field(job_table.columns['modified'])
+    class Meta:
+        db_table = job_table.name
+
+queue_table = sa_schema['tables']['queue']
+class Queue(_dj_models.Model):
+    uuid = sa_column_to_dj_field(queue_table.columns['uuid'])
+    label = sa_column_to_dj_field(queue_table.columns['label'])
+    serialization = sa_column_to_dj_field(queue_table.columns['serialization'])
+    created = sa_column_to_dj_field(queue_table.columns['created'])
+    modified = sa_column_to_dj_field(queue_table.columns['modified'])
+    class Meta:
+        db_table = queue_table.name

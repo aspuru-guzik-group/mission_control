@@ -1,4 +1,5 @@
 import collections
+import datetime
 import uuid
 
 from sqlalchemy import Column, MetaData, Table
@@ -11,6 +12,7 @@ def generate_schema():
         generate_table_name('mission'), metadata,
         generate_uuid_column(),
         generate_label_column(),
+        *generate_timestamp_columns()
     )
     tables['flow'] = Table(
         generate_table_name('flow'), metadata,
@@ -19,6 +21,7 @@ def generate_schema():
         generate_serialization_column(),
         generate_status_column(),
         generate_claimed_column(),
+        *generate_timestamp_columns()
     )
     tables['job'] = Table(
         generate_table_name('job'), metadata,
@@ -27,12 +30,14 @@ def generate_schema():
         generate_serialization_column(),
         generate_status_column(),
         generate_claimed_column(),
+        *generate_timestamp_columns()
     )
     tables['queue'] = Table(
         generate_table_name('queue'), metadata,
         generate_uuid_column(),
         generate_label_column(),
         generate_serialization_column(),
+        *generate_timestamp_columns()
     )
     schema = {
         'metadata': metadata,
@@ -52,6 +57,17 @@ def generate_uuid_column(column_name='uuid', **kwargs):
 def generate_label_column(column_name='label', **kwargs):
     return Column(column_name, _sa_types.String(length=1024),
                   **{'nullable': True}, **kwargs)
+
+def generate_timestamp_columns():
+    return [generate_created_column(), generate_modified_column()]
+
+def generate_created_column(column_name='created', **kwargs):
+    return Column(column_name, _sa_types.DateTime(),
+                  **{'default': datetime.datetime, **kwargs})
+
+def generate_modified_column(column_name='modified', **kwargs):
+    return Column(column_name, _sa_types.DateTime(),
+                  **{'onupdate': datetime.datetime.now, **kwargs})
 
 def generate_serialization_column(column_name='serialization', **kwargs):
     return Column(column_name, _sa_types.Text(), **{'nullable': True, **kwargs})
