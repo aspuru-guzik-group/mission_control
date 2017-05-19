@@ -1,20 +1,22 @@
 import contextlib
 import importlib
 import logging
+import sys
+from unittest.mock import patch
+import time
 
 
 class DjDao(object):
     DEFAULT_DB_CFG = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': ':memory:'
-        }
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:'
     }
     MC_APP = 'mc.missions'
     INSTALLED_APPS_CFG = [MC_APP]
 
     def __init__(self, db_cfg=None, mc_modules=None, logger=None):
         self.logger = logger or logging
+        self._db_id = 'mc_db_%s' % time.time()
         self.db_cfg = db_cfg or self.DEFAULT_DB_CFG
         self._mc_modules = mc_modules
 
@@ -47,31 +49,40 @@ class DjDao(object):
         """ This is some hackiness to setup a temporary django environment.
         It patches django internals just enough to call django.setup().
         """
-        from unittest.mock import patch
-        import sys
+        exit_stack = contextlib.ExitStack()
+        exit_stack.enter_context(patch.object(
+            sys, 'modules',
+            new={k: v for k, v in sys.modules.items() if 'django' not in k}
+        ))
         from django.apps import registry as _dj_apps_registry
         from django.conf import LazySettings
-        with patch.dict(sys.modules, {_dj_apps_registry.__name__: None}):
-            _apps = _dj_apps_registry.Apps(installed_apps=None)
-        _settings = LazySettings()
-        exit_stack = contextlib.ExitStack()
+        sys.modules[_dj_apps_registry.__name__] = None
         for ctx_mgr in [
-            patch('django.conf.settings', new=_settings),
-            patch('django.apps.apps', new=_apps)
+            patch('django.conf.settings', new=LazySettings()),
+            patch('django.apps.apps', new=_dj_apps_registry.Apps(
+                installed_apps=None)),
         ]: exit_stack.enter_context(ctx_mgr)
         from django.conf import settings
         settings.configure(
-            DATABASES=self.db_cfg,
+            DATABASES={self._db_id: self.db_cfg},
             INSTALLED_APPS=self.INSTALLED_APPS_CFG
         )
+        from django.db import ConnectionHandler
+        ch = ConnectionHandler()
+        exit_stack.enter_context(patch('django.db.connections', new=ch))
+        exit_stack.enter_context(patch('django.db.transaction.connections',
+                                       new=ch))
+        from django.db import DefaultConnectionProxy
+        exit_stack.enter_context(patch('django.db.connection',
+                                       new=DefaultConnectionProxy()))
         import django
         django.setup(set_prefix=False)
         return exit_stack
 
     def create_flow(self, flow_kwargs=None):
         with self.get_mc_modules_ctx():
-            flow_model = self.mc_modules['models'].Flow.objects.create(
-                **flow_kwargs)
+            flow_model = self.mc_modules['models'].Flow.objects\
+                    .db_manager(self.db_id).create(**flow_kwargs)
             return self.serialize_flow_model(flow_model=flow_model)
 
     def serialize_flow_model(self, flow_model=None):
@@ -93,7 +104,7 @@ class DjDao(object):
     def flow_query_to_queryset(self, query=None):
         with self.get_mc_modules_ctx():
             if query: self.validate_query(query=query)
-            qs = self.mc_modules['models'].Flow.objects
+            qs = self.mc_modules['models'].Flow.objects.using(self._db_id)
             return qs.filter(**self.get_dj_filter_kwargs_for_query(query=query))
 
     def validate_query(self, query=None):
@@ -126,7 +137,8 @@ class DjDao(object):
 
     def patch_flow(self, key=None, patches=None):
         with self.get_mc_modules_ctx():
-            flow_model = self.mc_modules['models'].Flow.objects.get(uuid=key)
+            flow_model = self.mc_modules['models'].Flow.objects\
+                    .using(self._db_id).get(uuid=key)
             self.patch_model(model=flow_model, patches=patches)
             return self.serialize_flow_model(flow_model=flow_model)
 
@@ -137,8 +149,8 @@ class DjDao(object):
 
     def create_job(self, job_kwargs=None):
         with self.get_mc_modules_ctx():
-            job_model = self.mc_modules['models'].Job.objects.create(
-                **job_kwargs)
+            job_model = self.mc_modules['models'].Job.objects\
+                    .db_manager.using(self._db_id).create(**job_kwargs)
             return self.serialize_job_model(job_model=job_model)
 
     def serialize_job_model(self, job_model=None):
@@ -159,19 +171,20 @@ class DjDao(object):
     def job_query_to_queryset(self, query=None):
         with self.get_mc_modules_ctx():
             if query: self.validate_query(query=query)
-            qs = self.mc_modules['models'].Job.objects
+            qs = self.mc_modules['models'].Job.objects.using(self._db_id)
             return qs.filter(**self.get_dj_filter_kwargs_for_query(query=query))
 
     def patch_job(self, key=None, patches=None):
         with self.get_mc_modules_ctx():
-            job_model = self.mc_modules['models'].Job.objects.get(uuid=key)
+            job_model = self.mc_modules['models'].Job.objects\
+                    .using(self._db_id).get(uuid=key)
             self.patch_model(model=job_model, patches=patches)
             return self.serialize_job_model(job_model=job_model)
 
     def create_queue(self, queue_kwargs=None):
         with self.get_mc_modules_ctx():
-            queue_model = self.mc_modules['models'].Queue.objects.create(
-                **queue_kwargs)
+            queue_model = self.mc_modules['models'].Queue.objects\
+                    .db_manager(self._db_id).create(**queue_kwargs)
             return self.serialize_queue_model(queue_model=queue_model)
 
     def serialize_queue_model(self, queue_model=None):
@@ -181,11 +194,12 @@ class DjDao(object):
 
     def claim_queue_items(self, queue_key=None, params=None):
         with self.get_mc_modules_ctx():
-            queue_model = self.mc_modules['models'].Queue.objects.get(
-                uuid=queue_key)
+            queue_model = self.mc_modules['models'].Queue.objects\
+                    .using(self._db_id).get(uuid=queue_key)
             queue_utils = self.mc_modules['queue_utils']
             claimed_item_models = queue_utils.claim_queue_items(
-                queue=queue_model, models=self.mc_modules['models'])
+                queue=queue_model, models=self.mc_modules['models'],
+                db_id=self._db_id)
             return {
                 'items': queue_utils.serialize_queue_items(
                     queue=queue_model, items=claimed_item_models,
@@ -196,4 +210,4 @@ class DjDao(object):
         with self.get_mc_modules_ctx():
             for model_name in ['Job', 'Flow', 'Queue']:
                 ModelCls = getattr(self.mc_modules['models'], model_name)
-                ModelCls.objects.all().delete()
+                ModelCls.objects.using(self._db_id).all().delete()

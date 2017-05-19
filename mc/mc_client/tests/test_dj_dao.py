@@ -6,15 +6,10 @@ from .. import dj_dao
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.models = MagicMock()
-        self.serializers = MagicMock()
-        self.queue_utils = MagicMock()
-        self.dao = dj_dao.DjDao(models=self.models,
-                                serializers=self.serializers,
-                                queue_utils=self.queue_utils)
+        self.mc_modules = MagicMock()
+        self.dao = dj_dao.DjDao(mc_modules=self.mc_modules)
 
-    def generate_mocks(self, n=3):
-        return [MagicMock() for i in range(n)]
+    def generate_mocks(self, n=3): return [MagicMock() for i in range(n)]
 
 class CreateFlowTestCase(BaseTestCase):
     def setUp(self):
@@ -27,14 +22,16 @@ class CreateFlowTestCase(BaseTestCase):
 
     def test_dispatches_to_flow_model_create(self):
         self._create_flow()
-        self.assertEqual(self.models['Flow'].objects.create.call_args,
+        self.assertEqual(self.mc_modules['models'].Flow.objects.create.call_args,
                          call(**self.flow_kwargs))
 
     def test_returns_serialized_result(self):
         result = self._create_flow()
         self.assertEqual(
             self.dao.serialize_flow_model.call_args,
-            call(flow_model=self.models['Flow'].objects.create.return_value))
+            call(flow_model=\
+                 self.mc_modules['models'].Flow.objects.create.return_value)
+        )
         self.assertEqual(result, self.dao.serialize_flow_model.return_value)
 
 class GetFlowsTestCase(BaseTestCase):
@@ -92,11 +89,11 @@ class PatchFlowTestCase(BaseTestCase):
 
     def test_updates_flow_model(self):
         self._patch_flow()
-        self.assertEqual(self.models['Flow'].objects.get.call_args,
+        self.assertEqual(self.mc_modules['models'].Flow.objects.get.call_args,
                          call(uuid=self.key))
         self.assertEqual(
             self.dao.patch_model.call_args,
-            call(model=self.models['Flow'].objects.get.return_value,
+            call(model=self.mc_modules['models'].Flow.objects.get.return_value,
                  patches=self.patches)
         )
 
@@ -104,7 +101,8 @@ class PatchFlowTestCase(BaseTestCase):
         result = self._patch_flow()
         self.assertEqual(
             self.dao.serialize_flow_model.call_args,
-            call(flow_model=self.models['Flow'].objects.get.return_value)
+            call(flow_model=\
+                 self.mc_modules['models'].Flow.objects.get.return_value)
         )
         self.assertEqual(result, self.dao.serialize_flow_model.return_value)
 
@@ -119,14 +117,16 @@ class CreateJobTestCase(BaseTestCase):
 
     def test_dispatches_to_job_model_create(self):
         self._create_job()
-        self.assertEqual(self.models['Job'].objects.create.call_args,
+        self.assertEqual(self.mc_modules['models'].Job.objects.create.call_args,
                          call(**self.job_kwargs))
 
     def test_returns_serialized_result(self):
         result = self._create_job()
         self.assertEqual(
             self.dao.serialize_job_model.call_args,
-            call(job_model=self.models['Job'].objects.create.return_value))
+            call(job_model=
+                 self.mc_modules['models'].Job.objects.create.return_value)
+        )
         self.assertEqual(result, self.dao.serialize_job_model.return_value)
 
 class GetJobsTestCase(BaseTestCase):
@@ -184,11 +184,11 @@ class PatchJobTestCase(BaseTestCase):
 
     def test_updates_job_model(self):
         self._patch_job()
-        self.assertEqual(self.models['Job'].objects.get.call_args,
+        self.assertEqual(self.mc_modules['models'].Job.objects.get.call_args,
                          call(uuid=self.key))
         self.assertEqual(
             self.dao.patch_model.call_args,
-            call(model=self.models['Job'].objects.get.return_value,
+            call(model=self.mc_modules['models'].Job.objects.get.return_value,
                  patches=self.patches)
         )
 
@@ -196,7 +196,8 @@ class PatchJobTestCase(BaseTestCase):
         result = self._patch_job()
         self.assertEqual(
             self.dao.serialize_job_model.call_args,
-            call(job_model=self.models['Job'].objects.get.return_value)
+            call(job_model=\
+                 self.mc_modules['models'].Job.objects.get.return_value)
         )
         self.assertEqual(result, self.dao.serialize_job_model.return_value)
 
@@ -204,10 +205,9 @@ class FlushTestCase(BaseTestCase):
     def test_dispatches_to_model_deletes(self):
         self.dao.flush_mc_db()
         for model_name in ['Flow', 'Job', 'Queue']:
-            self.assertEqual(
-                self.models[model_name].objects.all().delete.call_args,
-                call()
-            )
+            expected_model_cls = getattr(self.mc_modules['models'], model_name)
+            self.assertEqual(expected_model_cls.objects.all().delete.call_args,
+                             call())
 
 class CreateQueueTestCase(BaseTestCase):
     def setUp(self):
@@ -220,14 +220,18 @@ class CreateQueueTestCase(BaseTestCase):
 
     def test_dispatches_to_queue_model_create(self):
         self._create_queue()
-        self.assertEqual(self.models['Queue'].objects.create.call_args,
-                         call(**self.queue_kwargs))
+        self.assertEqual(
+            self.mc_modules['models'].Queue.objects.create.call_args,
+            call(**self.queue_kwargs)
+        )
 
     def test_returns_serialized_result(self):
         result = self._create_queue()
         self.assertEqual(
             self.dao.serialize_queue_model.call_args,
-            call(queue_model=self.models['Queue'].objects.create.return_value))
+            call(queue_model=\
+                 self.mc_modules['models'].Queue.objects.create.return_value)
+        )
         self.assertEqual(result, self.dao.serialize_queue_model.return_value)
 
 class ClaimQueueItemsTestCase(BaseTestCase):
@@ -235,32 +239,36 @@ class ClaimQueueItemsTestCase(BaseTestCase):
         super().setUp()
         self.queue_key = 'some_key'
         self.queue = MagicMock()
-        self.models['Queue'].objects.get.return_value = self.queue
+        self.mc_modules['models'].Queue.objects.get.return_value = self.queue
 
     def _claim_queue_items(self):
         return self.dao.claim_queue_items(queue_key=self.queue_key)
 
     def test_gets_queue(self):
         self._claim_queue_items()
-        self.assertEqual(self.models['Queue'].objects.get.call_args,
+        self.assertEqual(self.mc_modules['models'].Queue.objects.get.call_args,
                          call(uuid=self.queue_key))
 
     def test_claims_items(self):
         self._claim_queue_items()
-        self.assertEqual(self.queue_utils.claim_queue_items.call_args,
-                         call(queue=self.queue, models=self.models))
+        self.assertEqual(
+            self.mc_modules['queue_utils'].claim_queue_items.call_args,
+            call(queue=self.queue, models=self.mc_modules['models'])
+        )
 
     def test_returns_serialized_items(self):
         result = self._claim_queue_items()
         self.assertEqual(
-            self.queue_utils.serialize_queue_items.call_args,
+            self.mc_modules['queue_utils'].serialize_queue_items.call_args,
             call(queue=self.queue,
-                 items=self.queue_utils.claim_queue_items.return_value,
-                 serializers=self.serializers)
+                 items=\
+                 self.mc_modules['queue_utils'].claim_queue_items.return_value,
+                 serializers=self.mc_modules['serializers'])
         )
         self.assertEqual(
             result,
-            {'items': self.queue_utils.serialize_queue_items.return_value}
+            {'items': self.mc_modules['queue_utils'].serialize_queue_items\
+             .return_value}
         )
 
 if __name__ == '__main__':
