@@ -10,13 +10,13 @@ def generate_schema():
     tables = collections.OrderedDict()
     tables['mission'] = Table(
         generate_table_name('mission'), metadata,
-        generate_uuid_column(),
+        generate_key_column(),
         generate_label_column(),
         *generate_timestamp_columns()
     )
     tables['flow'] = Table(
         generate_table_name('flow'), metadata,
-        generate_uuid_column(),
+        generate_key_column(),
         generate_label_column(),
         generate_serialization_column(),
         generate_status_column(),
@@ -25,7 +25,7 @@ def generate_schema():
     )
     tables['job'] = Table(
         generate_table_name('job'), metadata,
-        generate_uuid_column(),
+        generate_key_column(),
         generate_label_column(),
         generate_serialization_column(),
         generate_status_column(),
@@ -34,7 +34,7 @@ def generate_schema():
     )
     tables['queue'] = Table(
         generate_table_name('queue'), metadata,
-        generate_uuid_column(),
+        generate_key_column(),
         generate_label_column(),
         generate_serialization_column(column_name='queue_spec'),
         *generate_timestamp_columns()
@@ -50,7 +50,7 @@ def generate_table_name(table_name=None):
                                             table_name=table_name)
 
 def str_uuid(): return str(uuid.uuid4())
-def generate_uuid_column(column_name='uuid', **kwargs):
+def generate_key_column(column_name='key', **kwargs):
     return Column(column_name, _sa_types.String(length=16),
                   **{'primary_key': True, 'default': str_uuid, **kwargs})
 

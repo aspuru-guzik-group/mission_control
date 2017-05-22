@@ -10,7 +10,7 @@ mc_models = []
 
 mission_table = sa_schema['tables']['mission']
 class Mission(_dj_models.Model):
-    uuid = sa_column_to_dj_field(mission_table.columns['uuid'])
+    key = sa_column_to_dj_field(mission_table.columns['key'])
     label = sa_column_to_dj_field(mission_table.columns['label'])
     created = sa_column_to_dj_field(mission_table.columns['created'])
     modified = sa_column_to_dj_field(mission_table.columns['modified'])
@@ -20,7 +20,7 @@ mc_models.append(Mission)
 
 flow_table = sa_schema['tables']['flow']
 class Flow(_dj_models.Model):
-    uuid = sa_column_to_dj_field(flow_table.columns['uuid'])
+    key = sa_column_to_dj_field(flow_table.columns['key'])
     label = sa_column_to_dj_field(flow_table.columns['label'])
     serialization = sa_column_to_dj_field(flow_table.columns['serialization'])
     status = sa_column_to_dj_field(flow_table.columns['status'])
@@ -33,7 +33,7 @@ mc_models.append(Flow)
 
 job_table = sa_schema['tables']['job']
 class Job(_dj_models.Model):
-    uuid = sa_column_to_dj_field(job_table.columns['uuid'])
+    key = sa_column_to_dj_field(job_table.columns['key'])
     label = sa_column_to_dj_field(job_table.columns['label'])
     serialization = sa_column_to_dj_field(job_table.columns['serialization'])
     status = sa_column_to_dj_field(job_table.columns['status'])
@@ -46,7 +46,7 @@ mc_models.append(Job)
 
 queue_table = sa_schema['tables']['queue']
 class Queue(_dj_models.Model):
-    uuid = sa_column_to_dj_field(queue_table.columns['uuid'])
+    key = sa_column_to_dj_field(queue_table.columns['key'])
     label = sa_column_to_dj_field(queue_table.columns['label'])
     queue_spec = sa_column_to_dj_field(queue_table.columns['queue_spec'])
     created = sa_column_to_dj_field(queue_table.columns['created'])

@@ -9,7 +9,7 @@ common_read_only_fields = ['created', 'modified']
 
 flow_table = sa_schema['tables']['flow']
 class FlowSerializer(_serializers.Serializer):
-    uuid = sa_column_to_serializer_field(flow_table.columns['uuid'])
+    key = sa_column_to_serializer_field(flow_table.columns['key'])
     label = sa_column_to_serializer_field(flow_table.columns['label'])
     serialization = sa_column_to_serializer_field(
         flow_table.columns['serialization'])
@@ -19,13 +19,13 @@ class FlowSerializer(_serializers.Serializer):
     modified = sa_column_to_serializer_field(flow_table.columns['modified'])
 
     class Meta:
-        fields = ['uuid', 'label', 'serialization', 'status', 'claimed',
+        fields = ['key', 'label', 'serialization', 'status', 'claimed',
                   'created', 'modified']
         read_only_fields = common_read_only_fields
 
 job_table = sa_schema['tables']['job']
 class JobSerializer(_serializers.Serializer):
-    uuid = sa_column_to_serializer_field(job_table.columns['uuid'])
+    key = sa_column_to_serializer_field(job_table.columns['key'])
     label = sa_column_to_serializer_field(job_table.columns['label'])
     serialization = sa_column_to_serializer_field(job_table.columns['serialization'])
     status = sa_column_to_serializer_field(job_table.columns['status'])
@@ -34,13 +34,13 @@ class JobSerializer(_serializers.Serializer):
     modified = sa_column_to_serializer_field(job_table.columns['modified'])
 
     class Meta:
-        fields = ['uuid', 'label', 'serialization', 'status', 'claimed',
+        fields = ['key', 'label', 'serialization', 'status', 'claimed',
                   'created', 'modified']
         read_only_fields = common_read_only_fields
 
 queue_table = sa_schema['tables']['queue']
 class QueueSerializer(_serializers.Serializer):
-    uuid = sa_column_to_serializer_field(queue_table.columns['uuid'])
+    key = sa_column_to_serializer_field(queue_table.columns['key'])
     label = sa_column_to_serializer_field(queue_table.columns['label'])
     queue_spec = sa_column_to_serializer_field(
         queue_table.columns['queue_spec'])
@@ -48,7 +48,7 @@ class QueueSerializer(_serializers.Serializer):
     modified = sa_column_to_serializer_field(queue_table.columns['modified'])
 
     class Meta:
-        fields = ['uuid', 'label', 'queue_spec', 'created', 'modified']
+        fields = ['key', 'label', 'queue_spec', 'created', 'modified']
         read_only_fields = common_read_only_fields
 
 def get_model_serializers():

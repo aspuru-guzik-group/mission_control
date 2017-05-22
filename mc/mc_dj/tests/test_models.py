@@ -11,7 +11,7 @@ class MissionTestCase(TestCase):
         }
         mission = Mission.objects.create(**mission_kwargs)
         self.assertEqual(mission.label, mission_kwargs['label'])
-        self.assertTrue(mission.uuid is not None)
+        self.assertTrue(mission.key is not None)
         self.assertTrue(mission.created is not None)
         self.assertTrue(mission.modified is not None)
 
@@ -21,7 +21,7 @@ class FlowTestCase(TestCase):
         flow = Flow.objects.create(**kwargs)
         for kwarg, value in kwargs.items():
             self.assertEqual(getattr(flow, kwarg), value)
-        self.assertTrue(flow.uuid is not None)
+        self.assertTrue(flow.key is not None)
         self.assertTrue(flow.created is not None)
         self.assertTrue(flow.modified is not None)
         self.assertEqual(flow.status, Statuses.PENDING)
@@ -33,7 +33,7 @@ class JobTestCase(TestCase):
         job = Job.objects.create(**kwargs)
         self.assertEqual(job.label, kwargs['label'])
         self.assertEqual(job.status, Statuses.PENDING)
-        expected_attrs = ['uuid', 'created', 'modified', 'claimed',
+        expected_attrs = ['key', 'created', 'modified', 'claimed',
                           'serialization']
         for attr in expected_attrs: self.assertTrue(hasattr(job, attr))
 
@@ -46,6 +46,6 @@ class QueueTestCase(TestCase):
         queue = Queue.objects.create(**kwargs)
         self.assertEqual(queue.label, kwargs['label'])
         self.assertEqual(queue.queue_spec, kwargs['queue_spec'])
-        expected_attrs = ['uuid', 'created', 'modified']
+        expected_attrs = ['key', 'created', 'modified']
         for attr in expected_attrs:
             self.assertTrue(hasattr(queue, attr))

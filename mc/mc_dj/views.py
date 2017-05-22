@@ -16,7 +16,7 @@ model_serializers = _serializers.get_model_serializers()
 class FlowFilter(FilterSet):
     class Meta:
         model = _models.Flow
-        fields = ['uuid', 'status']
+        fields = ['key', 'status']
 
     @property
     def qs(self):
@@ -44,39 +44,39 @@ class FlowViewSet(viewsets.ModelViewSet):
 def claim_flows(request):
     result = {}
     post_data = json.loads(request.body.decode())
-    uuids = post_data.get('uuids', [])
-    if uuids:
-        flows = _models.Flow.objects.filter(uuid__in=uuids)
+    keys = post_data.get('keys', [])
+    if keys:
+        flows = _models.Flow.objects.filter(key__in=keys)
         for flow in flows:
             if flow.claimed:
-                result[flow.uuid] = None
+                result[flow.key] = None
             else:
                 flow.claimed = True
                 flow.save()
-                result[flow.uuid] = _serializers.FlowSerializer(flow).data
+                result[flow.key] = _serializers.FlowSerializer(flow).data
     return JsonResponse(result)
 
 class JobViewSet(viewsets.ModelViewSet):
     queryset = _models.Job.objects.all()
     serializer_class = model_serializers['Job']
     filter_backends = (DjangoFilterBackend,)
-    filter_fields = ('status', 'uuid',)
+    filter_fields = ('status', 'key',)
 
 @require_http_methods(["POST"])
 @csrf_exempt
 def claim_jobs(request):
     result = {}
     post_data = json.loads(request.body.decode())
-    uuids = post_data.get('uuids', [])
-    if uuids:
-        jobs = _models.Job.objects.filter(uuid__in=uuids)
+    keys = post_data.get('keys', [])
+    if keys:
+        jobs = _models.Job.objects.filter(key__in=keys)
         for job in jobs:
             if job.status == Statuses.PENDING:
                 job.status = Statuses.RUNNING
                 job.save()
-                result[job.uuid] = _serializers.JobSerializer(job).data
+                result[job.key] = _serializers.JobSerializer(job).data
             else:
-                result[job.uuid] = None
+                result[job.key] = None
     return JsonResponse(result)
 
 @require_http_methods(["GET"])
