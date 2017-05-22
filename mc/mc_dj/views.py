@@ -11,6 +11,7 @@ from .constants import Statuses
 from . import models as _models
 from . import serializers as _serializers
 
+model_serializers = _serializers.get_model_serializers()
 
 class FlowFilter(FilterSet):
     class Meta:
@@ -34,7 +35,7 @@ class FlowFilter(FilterSet):
 
 class FlowViewSet(viewsets.ModelViewSet):
     queryset = _models.Flow.objects.all()
-    serializer_class = _serializers.FlowSerializer
+    serializer_class = model_serializers['Flow']
     filter_backends = (DjangoFilterBackend,)
     filter_class = FlowFilter
 
@@ -57,7 +58,7 @@ def claim_flows(request):
 
 class JobViewSet(viewsets.ModelViewSet):
     queryset = _models.Job.objects.all()
-    serializer_class = _serializers.JobSerializer
+    serializer_class = model_serializers['Job']
     filter_backends = (DjangoFilterBackend,)
     filter_fields = ('status', 'uuid',)
 
@@ -88,20 +89,23 @@ def flush(request):
 
 class QueueViewSet(viewsets.ModelViewSet):
     queryset = _models.Queue.objects.all()
-    serializer_class = _serializers.QueueSerializer
+    serializer_class = model_serializers['Queue']
 
     @detail_route(methods=['get', 'post'])
     def claim_items(self, request, pk=None):
-        item_types = ['Flow', 'Job', 'Queue']
-        dao = DjDao(
-            models={
-                item_type: getattr(_models, item_type)
-                for item_type in item_types
-            },
-            serializers={
-                item_type: getattr(_serializers, item_type + 'Serializer')
-                for item_type in item_types
-            }
-        )
+        dao = get_dj_dao()
         result = {'items': dao.claim_queue_items(queue_key=pk)}
         return JsonResponse(result)
+
+def get_dj_dao():
+    item_types = ['Flow', 'Job', 'Queue']
+    return DjDao(
+        models={
+            item_type: getattr(_models, item_type)
+            for item_type in item_types
+        },
+        serializers={
+            item_type: getattr(_serializers, item_type + 'Serializer')
+            for item_type in item_types
+        }
+    )
