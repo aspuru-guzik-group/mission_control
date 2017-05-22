@@ -2,34 +2,45 @@ import logging
 
 
 class DjDao(object):
-    def __init__(self, db_id=None, mc_dj_modules=None, logger=None):
+    ITEM_TYPES = ['Job', 'Flow', 'Queue']
+
+    def __init__(self, db_id=None, models=None, serializers=None, logger=None):
         self.logger = logger or logging
         self.db_id = db_id or 'default'
-        self.mc_dj_modules = mc_dj_modules
+        self.models = models
+        self.serializers = serializers
 
-    def create_flow(self, flow_kwargs=None):
-        flow_model = self.mc_dj_modules['models'].Flow.objects\
-                .db_manager(self.db_id).create(**flow_kwargs)
-        return self.serialize_flow_model(flow_model=flow_model)
+    def create_item(self, item_type=None, kwargs=None):
+        model_cls = self.get_item_model_cls(item_type=item_type)
+        model = model_cls.objects.db_manager(self.db_id).create(**kwargs)
+        return self.serialize_item_models(item_type=item_type,
+                                          item_models=[model])[0]
 
-    def serialize_flow_model(self, flow_model=None):
-        return self.mc_dj_modules['serializers'].FlowSerializer(
-            flow_model).data
+    def get_item_model_cls(self, item_type=None):
+        return self.models[item_type]
 
-    def get_flows(self, query=None):
-        flow_models = self.get_flow_models(query=query)
-        return [self.serialize_flow_model(flow_model=flow_model)
-                for flow_model in flow_models]
+    def serialize_item_models(self, item_type=None, item_models=None):
+        serializer = self.get_item_serializer(item_type=item_type)
+        return [serializer(item_model).data for item_model in item_models]
 
-    def get_flow_models(self, query=None):
-        flow_models = []
-        queryset = self.flow_query_to_queryset(query=query)
-        if queryset: flow_models = queryset.all()
-        return flow_models
- 
-    def flow_query_to_queryset(self, query=None):
+    def get_item_serializer(self, item_type=None):
+        return self.serializers[item_type]
+
+    def get_items(self, item_type=None, query=None):
+        item_models = self.get_item_models(item_type=item_type, query=query)
+        return self.serialize_item_models(item_type=item_type,
+                                          item_models=item_models)
+
+    def get_item_models(self, item_type=None, query=None):
+        item_models = []
+        queryset = self.item_query_to_queryset(item_type=item_type, query=query)
+        if queryset: item_models = queryset.all()
+        return item_models
+
+    def item_query_to_queryset(self, item_type=None, query=None):
         if query: self.validate_query(query=query)
-        qs = self.mc_dj_modules['models'].Flow.objects.using(self.db_id)
+        item_model_cls = self.get_item_model_cls(item_type=item_type)
+        qs = item_model_cls.objects.using(self.db_id)
         return qs.filter(**self.get_dj_filter_kwargs_for_query(query=query))
 
     def validate_query(self, query=None):
@@ -60,68 +71,53 @@ class DjDao(object):
         dj_filter_kwargs[kwarg_name] = _filter['value']
         return dj_filter_kwargs
 
-    def patch_flow(self, key=None, patches=None):
-        flow_model = self.mc_dj_modules['models'].Flow.objects\
-                .using(self.db_id).get(uuid=key)
-        self.patch_model(model=flow_model, patches=patches)
-        return self.serialize_flow_model(flow_model=flow_model)
+    def patch_item(self, item_type=None, key=None, patches=None):
+        model = self.get_item_model_by_key(item_type=item_type, key=key)
+        patched_model = self.patch_model(model=model, patches=patches)
+        return self.serialize_item_models(item_type=item_type,
+                                          item_models=[patched_model])[0]
+
+    def patch_items(self, item_type=None, keyed_patches=None):
+        return {
+            key: self.patch_item(item_type=item_type, patches=patches)
+            for key, patches in keyed_patches.items()
+        }
+
+    def get_item_model_by_key(self, item_type=None, key=None):
+        return self.get_item_models(
+            item_type=item_type,
+            query={
+                'filters': [
+                    {'field': 'key', 'operator': '=', 'value': key}
+                ]
+            }
+        )[0]
 
     def patch_model(self, model=None, patches=None):
         patches = patches or {}
         for k, v in patches.items(): setattr(model, k, v)
         model.save()
+        return model
 
-    def create_job(self, job_kwargs=None):
-        job_model = self.mc_dj_modules['models'].Job.objects\
-                .db_manager(self.db_id).create(**job_kwargs)
-        return self.serialize_job_model(job_model=job_model)
+    def flush_mc_db(self, item_types=None):
+        for item_type in (item_types or self.ITEM_TYPES):
+            model_cls = self.get_item_model_cls(item_type=item_type)
+            model_cls.objects.using(self.db_id).all().delete()
 
-    def serialize_job_model(self, job_model=None):
-        return self.mc_dj_modules['serializers'].JobSerializer(job_model).data
-
-    def get_jobs(self, query=None):
-        job_models = self.get_job_models(query=query)
-        return [self.serialize_job_model(job_model=job_model)
-                for job_model in job_models]
-
-    def get_job_models(self, query=None):
-        job_models = []
-        queryset = self.job_query_to_queryset(query=query)
-        if queryset: job_models = queryset.all()
-        return job_models
- 
-    def job_query_to_queryset(self, query=None):
-        if query: self.validate_query(query=query)
-        qs = self.mc_dj_modules['models'].Job.objects.using(self.db_id)
-        return qs.filter(**self.get_dj_filter_kwargs_for_query(query=query))
-
-    def patch_job(self, key=None, patches=None):
-        job_model = self.mc_dj_modules['models'].Job.objects\
-                .using(self.db_id).get(uuid=key)
-        self.patch_model(model=job_model, patches=patches)
-        return self.serialize_job_model(job_model=job_model)
-
-    def create_queue(self, queue_kwargs=None):
-        queue_model = self.mc_dj_modules['models'].Queue.objects\
-                .db_manager(self.db_id).create(**queue_kwargs)
-        return self.serialize_queue_model(queue_model=queue_model)
-
-    def serialize_queue_model(self, queue_model=None):
-        return self.mc_dj_modules['serializers'].QueueSerializer(
-            queue_model).data
-
-    def claim_queue_items(self, queue_key=None, params=None):
-        queue_model = self.mc_dj_modules['models'].Queue.objects\
-                .using(self.db_id).get(uuid=queue_key)
-        queue_utils = self.mc_dj_modules['queue_utils']
-        claimed_item_models = queue_utils.claim_queue_items(queue=queue_model,
-                                                            dao=self)
-        return {
-            'items': queue_utils.serialize_queue_items(
-                queue=queue_model, items=claimed_item_models, dao=self)
-        }
-
-    def flush_mc_db(self):
-        for model_name in ['Job', 'Flow', 'Queue']:
-            ModelCls = getattr(self.mc_dj_modules['models'], model_name)
-            ModelCls.objects.using(self.db_id).all().delete()
+    def claim_queue_items(self, queue_key=None):
+        queue_model = self.get_item_model_by_key(item_type='Queue',
+                                                 key=queue_key)
+        queue_item_type = queue_model.queue_spec['item_type']
+        items_to_claim = self.get_items(
+            item_type=queue_item_type,
+            query={
+                'filters': [
+                    {'field': 'claimed', 'operator': '=', 'value': False}
+                ]
+            }
+        )
+        claimed_items = self.patch_items(
+            item_type=queue_item_type,
+            keyed_patches={item['uuid']: {'claimed': True}
+                           for item in items_to_claim})
+        return claimed_items

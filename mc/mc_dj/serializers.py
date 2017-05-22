@@ -9,15 +9,14 @@ class FlowSerializer(serializers.ModelSerializer):
     class Meta:
         model = Flow
         fields = ('uuid', 'serialization', 'status',
-                  'created', 'modified', 'mission', 'claimed', 'label')
+                  'created', 'modified', 'claimed', 'label')
         read_only_fields = ('uuid', 'created', 'modified')
 
 class JobSerializer(serializers.ModelSerializer):
-    job_spec = serializers.JSONField(**default_json_field_kwargs)
     class Meta:
         model = Job
-        fields = ('uuid', 'label', 'status', 'created', 'modified', 'job_spec',
-                  'data', 'claimed')
+        fields = ('uuid', 'serialization', 'status',
+                  'created', 'modified', 'claimed', 'label')
         read_only_fields = ('uuid', 'created', 'modified',)
 
 class QueueSerializer(serializers.ModelSerializer):

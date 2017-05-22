@@ -36,7 +36,7 @@ def generate_schema():
         generate_table_name('queue'), metadata,
         generate_uuid_column(),
         generate_label_column(),
-        generate_serialization_column(),
+        generate_serialization_column(column_name='queue_spec'),
         *generate_timestamp_columns()
     )
     schema = {
@@ -49,10 +49,10 @@ def generate_table_name(table_name=None):
     return '{table_ns}_{table_name}'.format(table_ns='mc_models',
                                             table_name=table_name)
 
+def str_uuid(): return str(uuid.uuid4())
 def generate_uuid_column(column_name='uuid', **kwargs):
     return Column(column_name, _sa_types.String(length=16),
-                  **{'primary_key': True, 'default': lambda: str(uuid.uuid4()),
-                     **kwargs})
+                  **{'primary_key': True, 'default': str_uuid, **kwargs})
 
 def generate_label_column(column_name='label', **kwargs):
     return Column(column_name, _sa_types.String(length=1024),
@@ -63,7 +63,7 @@ def generate_timestamp_columns():
 
 def generate_created_column(column_name='created', **kwargs):
     return Column(column_name, _sa_types.DateTime(),
-                  **{'default': datetime.datetime, **kwargs})
+                  **{'default': datetime.datetime.now, **kwargs})
 
 def generate_modified_column(column_name='modified', **kwargs):
     return Column(column_name, _sa_types.DateTime(),

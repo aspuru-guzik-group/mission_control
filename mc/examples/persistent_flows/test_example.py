@@ -4,6 +4,7 @@ import textwrap
 import unittest
 
 
+@unittest.skip('fo')
 class TestExample(unittest.TestCase):
     def test_example(self):
         cmd = 'cd {this_dir} && python entrypoint.py'.format(

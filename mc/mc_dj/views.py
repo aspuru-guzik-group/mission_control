@@ -6,10 +6,10 @@ from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework import viewsets
 from rest_framework.decorators import detail_route
 
-from mc_dj.constants import JobStatuses
-from mc_dj import models as _models
-from mc_dj import serializers as _serializers
-from mc_dj.utils import queue_utils as _queue_utils
+from mc.mc_client.dj_dao import DjDao
+from .constants import Statuses
+from . import models as _models
+from . import serializers as _serializers
 
 
 class FlowFilter(FilterSet):
@@ -28,8 +28,7 @@ class FlowFilter(FilterSet):
         return hasattr(self.request, 'GET') and ('tickable' in request.GET)
 
     def filter_for_tickable(self, qs=None):
-        tickable_statuses = [s.name
-                             for s in _models.FlowStatuses.tickable_statuses]
+        tickable_statuses = [s for s in Statuses.tickable_statuses]
         modified_qs = qs.filter(status__in=tickable_statuses)
         return modified_qs
 
@@ -71,8 +70,8 @@ def claim_jobs(request):
     if uuids:
         jobs = _models.Job.objects.filter(uuid__in=uuids)
         for job in jobs:
-            if job.status == JobStatuses.PENDING.name:
-                job.status = JobStatuses.RUNNING.name
+            if job.status == Statuses.PENDING:
+                job.status = Statuses.RUNNING
                 job.save()
                 result[job.uuid] = _serializers.JobSerializer(job).data
             else:
@@ -93,16 +92,16 @@ class QueueViewSet(viewsets.ModelViewSet):
 
     @detail_route(methods=['get', 'post'])
     def claim_items(self, request, pk=None):
-        queue = self.get_object()
-        models = {}
-        serializers = {}
-        for item_type in ['Job', 'Flow']:
-            models[item_type] = getattr(_models, item_type)
-            serializers[item_type] = getattr(_serializers,
-                                             '%sSerializer' % item_type)
-        claimed_items = _queue_utils.claim_queue_items(queue=queue,
-                                                       models=models)
-        serialized_items = _queue_utils.serialize_queue_items(
-            queue=queue, items=claimed_items, serializers=serializers)
-        result = {'items': serialized_items}
+        item_types = ['Flow', 'Job', 'Queue']
+        dao = DjDao(
+            models={
+                item_type: getattr(_models, item_type)
+                for item_type in item_types
+            },
+            serializers={
+                item_type: getattr(_serializers, item_type + 'Serializer')
+                for item_type in item_types
+            }
+        )
+        result = {'items': dao.claim_queue_items(queue_key=pk)}
         return JsonResponse(result)
