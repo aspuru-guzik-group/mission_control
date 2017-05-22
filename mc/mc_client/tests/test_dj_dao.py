@@ -210,45 +210,6 @@ class FlushTestCase(BaseTestCase):
                 call()
             )
 
-class ClaimQueueItemsTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.queue_key = MagicMock()
-        self.dao.get_item_model_by_key = MagicMock()
-        self.dao.get_items = MagicMock(return_value=self.generate_mocks())
-        self.dao.patch_items = MagicMock()
-        self.expected_queue = self.dao.get_item_model_by_key.return_value
-        self.expected_items = self.dao.get_items.return_value
-        self.result = self.dao.claim_queue_items(queue_key=self.queue_key)
-
-    def test_gets_queue_model(self):
-        self.assertEqual(self.dao.get_item_model_by_key.call_args,
-                         call(item_type='Queue', key=self.queue_key))
-
-    def test_gets_items_to_claim(self):
-        self.assertEqual(
-            self.dao.get_items.call_args,
-            call(item_type=self.expected_queue.queue_spec['item_type'],
-                 query={
-                    'filters': [
-                        {'field': 'claimed', 'operator': '=', 'value': False}
-                    ]
-                 }
-                )
-        )
-
-    def test_patches_claimed_items(self):
-        self.assertEqual(
-            self.dao.patch_items.call_args,
-            call(item_type=self.expected_queue.queue_spec['item_type'],
-                 keyed_patches={item['key']: {'claimed': True}
-                                for item in self.expected_items}
-                )
-        )
-
-    def test_returns_claimed_items(self):
-        self.assertEqual(self.result, self.dao.patch_items.return_value)
-
 if __name__ == '__main__':
     unittest.main()
 

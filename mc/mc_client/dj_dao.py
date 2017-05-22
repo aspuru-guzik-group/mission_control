@@ -1,9 +1,8 @@
 import logging
 
+from .base_dao import BaseDao
 
-class DjDao(object):
-    ITEM_TYPES = ['Job', 'Flow', 'Queue']
-
+class DjDao(BaseDao):
     def __init__(self, db_id=None, models=None, serializers=None, logger=None):
         self.logger = logger or logging
         self.db_id = db_id or 'default'
@@ -43,18 +42,6 @@ class DjDao(object):
         qs = item_model_cls.objects.using(self.db_id)
         return qs.filter(**self.get_dj_filter_kwargs_for_query(query=query))
 
-    def validate_query(self, query=None):
-        for _filter in query.get('filters' or []):
-            self.validate_query_filter(_filter=_filter)
-
-    def validate_query_filter(self, _filter=None):
-        valid_operators = ['=', 'IN']
-        if _filter['operator'] not in valid_operators:
-            raise Exception(("Invalid operator '{operator}',"
-                             " valid operators are: {valid_operators}").format(
-                                 operator=_filter['operator'],
-                                 valid_operators=valid_operators))
-
     def get_dj_filter_kwargs_for_query(self, query=None):
         filter_kwargs = {}
         if not query: return filter_kwargs
@@ -77,12 +64,6 @@ class DjDao(object):
         return self.serialize_item_models(item_type=item_type,
                                           item_models=[patched_model])[0]
 
-    def patch_items(self, item_type=None, keyed_patches=None):
-        return {
-            key: self.patch_item(item_type=item_type, patches=patches)
-            for key, patches in keyed_patches.items()
-        }
-
     def get_item_model_by_key(self, item_type=None, key=None):
         return self.get_item_models(
             item_type=item_type,
@@ -104,20 +85,6 @@ class DjDao(object):
             model_cls = self.get_item_model_cls(item_type=item_type)
             model_cls.objects.using(self.db_id).all().delete()
 
-    def claim_queue_items(self, queue_key=None):
-        queue_model = self.get_item_model_by_key(item_type='Queue',
-                                                 key=queue_key)
-        queue_item_type = queue_model.queue_spec['item_type']
-        items_to_claim = self.get_items(
-            item_type=queue_item_type,
-            query={
-                'filters': [
-                    {'field': 'claimed', 'operator': '=', 'value': False}
-                ]
-            }
-        )
-        claimed_items = self.patch_items(
-            item_type=queue_item_type,
-            keyed_patches={item['uuid']: {'claimed': True}
-                           for item in items_to_claim})
-        return claimed_items
+    def get_queue_spec_for_queue_key(self, queue_key=None):
+        queue = self.get_item_by_key(item_type='Queue', key=queue_key)
+        return self.deserialize_value(queue.queue_spec)
