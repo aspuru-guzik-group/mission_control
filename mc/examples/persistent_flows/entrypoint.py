@@ -2,48 +2,69 @@ import os
 import tempfile
 
 from mc.flow_engines.flow_engine import FlowEngine
-from mc.mc_client.mc_client import MissionControlClient
-from mc.mc_client.dao.dj_dao import DjDao
+from mc.mc_daos.sa_dao import SaDao
 
 _DIR = os.path.dirname(__file__)
 
 def main():
     db_file = tempfile.mkstemp(suffix='.sqlite.db')[1]
-    db_params = {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': db_file
-    }
-    mc_client = MissionControlClient(dao=DjDao())
+    db_uri = 'sqlite:///{db_file}'.format(db_file=db_file)
+    dao = SaDao(db_uri=db_uri)
+    dao.create_tables()
+
     flow_spec = generate_flow_spec()
     flow_engine = FlowEngine()
     flow = flow_engine.generate_flow(flow_spec=flow_spec)
-    flow_record = mc_client.create_flow(flow_kwargs={
+
+    flow_record = dao.create_item(item_type='Flow', kwargs={
         'serialization': flow_engine.serialize_flow(flow=flow)
     })
-    flow_key = flow_record['uuid']
+    flow_key = flow_record['key']
 
-    fetched_flow_record_1 = mc_client.get_flow(flow_key=flow_key)
+    fetched_flow_record_1 = dao.get_item_by_key(item_type='Flow', key=flow_key)
     reconstituted_flow_1 = flow_engine.deserialize_flow(
         serialized_flow=fetched_flow_record_1['serialization'])
     flow_engine.run_flow(flow=reconstituted_flow_1, check=True)
-    mc_client.patch_flow(
-        flow_key=flow_key,
-        patches={
-            'serialization': flow_engine.serialize_flow(reconstituted_flow_1),
-            'status': reconstituted_flow_1['status']
-        }
-    )
+    dao.patch_item(item_type='Flow', key=flow_key, patches={
+        'serialization': flow_engine.serialize_flow(reconstituted_flow_1),
+        'status': reconstituted_flow_1.status
+    })
 
-    fetched_flow_record_2 = mc_client.get_flow(flow_key=flow_key)
+    fetched_flow_record_2 = dao.get_item_by_key(item_type='Flow', key=flow_key)
     reconstituted_flow_2 = flow_engine.deserialize_flow(
         serialized_flow=fetched_flow_record_2['serialization'])
-    fetched_flow_record_2 = mc_client.get_flow(flow_key=flow_key)
     print(reconstituted_flow_2.status)
 
-def generate_mc_client(mc_db_params=None):
-    pass
-
 def generate_flow_spec():
-    pass
+    flow_spec = {
+        'label': 'example_flow',
+        'task_specs': [
+            {
+                'task' : {
+                    'key': 'task_1',
+                    'task_type': 'print',
+                    'task_params': {'message': 'I am task_1.'},
+                },
+                'precursors': ['ROOT'],
+            },
+            {
+                'task' : {
+                    'key': 'task_2',
+                    'task_type': 'print',
+                    'task_params': {'message': 'I am task_2.'},
+                },
+                'precursors': ['task_1'],
+            },
+            {
+                'task' : {
+                    'key': 'task_3',
+                    'task_type': 'print',
+                    'task_params': {'message': 'I am task_3.'},
+                },
+                'precursors': ['task_2'],
+            }
+        ]
+    }
+    return flow_spec
 
 if __name__ == '__main__': main()

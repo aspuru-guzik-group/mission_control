@@ -4,7 +4,6 @@ import textwrap
 import unittest
 
 
-@unittest.skip('fo')
 class TestExample(unittest.TestCase):
     def test_example(self):
         cmd = 'cd {this_dir} && python entrypoint.py'.format(
@@ -16,6 +15,7 @@ class TestExample(unittest.TestCase):
             I am task_1.
             I am task_2.
             I am task_3.
+            COMPLETED
             '''
         ).lstrip()
         self.assertEqual(stdout, expected_stdout)

@@ -1,6 +1,7 @@
-- explain mc service
+- explain mc_daos
   - db
-  - code to query/update db
-- explain mc_client
-- explain flow runner
+  - http
+  - create
+  - get
+  - patch
 
