@@ -7,7 +7,7 @@ sa_schema = _mc_sa.generate_schema()
 
 common_read_only_fields = ['created', 'modified']
 
-flow_table = sa_schema['tables']['flow']
+flow_table = sa_schema['tables']['Flow']
 class FlowSerializer(_serializers.Serializer):
     key = sa_column_to_serializer_field(flow_table.columns['key'])
     label = sa_column_to_serializer_field(flow_table.columns['label'])
@@ -23,7 +23,7 @@ class FlowSerializer(_serializers.Serializer):
                   'created', 'modified']
         read_only_fields = common_read_only_fields
 
-job_table = sa_schema['tables']['job']
+job_table = sa_schema['tables']['Job']
 class JobSerializer(_serializers.Serializer):
     key = sa_column_to_serializer_field(job_table.columns['key'])
     label = sa_column_to_serializer_field(job_table.columns['label'])
@@ -38,7 +38,7 @@ class JobSerializer(_serializers.Serializer):
                   'created', 'modified']
         read_only_fields = common_read_only_fields
 
-queue_table = sa_schema['tables']['queue']
+queue_table = sa_schema['tables']['Queue']
 class QueueSerializer(_serializers.Serializer):
     key = sa_column_to_serializer_field(queue_table.columns['key'])
     label = sa_column_to_serializer_field(queue_table.columns['label'])

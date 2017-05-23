@@ -6,8 +6,22 @@ class DjDao(BaseDao):
     def __init__(self, db_id=None, models=None, serializers=None, logger=None):
         self.logger = logger or logging
         self.db_id = db_id or 'default'
-        self.models = models
-        self.serializers = serializers
+        self.models = models or self.get_default_models()
+        self.serializers = serializers or self.get_default_serializers()
+
+    def get_default_models(self):
+        from mc.mc_dj import models
+        return {
+            item_type: getattr(models, item_type)
+            for item_type in self.ITEM_TYPES
+        }
+
+    def get_default_serializers(self):
+        from mc.mc_dj import serializers
+        return {
+            item_type: getattr(serializers, item_type + 'Serializer')
+            for item_type in self.ITEM_TYPES
+        }
 
     def create_item(self, item_type=None, kwargs=None):
         model_cls = self.get_item_model_cls(item_type=item_type)
@@ -86,5 +100,6 @@ class DjDao(BaseDao):
             model_cls.objects.using(self.db_id).all().delete()
 
     def get_queue_spec_for_queue_key(self, queue_key=None):
-        queue = self.get_item_by_key(item_type='Queue', key=queue_key)
-        return self.deserialize_value(queue.queue_spec)
+        queue_model = self.get_item_model_by_key(item_type='Queue',
+                                                 key=queue_key)
+        return self.deserialize_value(queue_model.queue_spec)

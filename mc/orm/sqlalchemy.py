@@ -8,13 +8,13 @@ import sqlalchemy.types as _sa_types
 def generate_schema():
     metadata = MetaData()
     tables = collections.OrderedDict()
-    tables['mission'] = Table(
+    tables['Mission'] = Table(
         generate_table_name('mission'), metadata,
         generate_key_column(),
         generate_label_column(),
         *generate_timestamp_columns()
     )
-    tables['flow'] = Table(
+    tables['Flow'] = Table(
         generate_table_name('flow'), metadata,
         generate_key_column(),
         generate_label_column(),
@@ -23,7 +23,7 @@ def generate_schema():
         generate_claimed_column(),
         *generate_timestamp_columns()
     )
-    tables['job'] = Table(
+    tables['Job'] = Table(
         generate_table_name('job'), metadata,
         generate_key_column(),
         generate_label_column(),
@@ -32,7 +32,7 @@ def generate_schema():
         generate_claimed_column(),
         *generate_timestamp_columns()
     )
-    tables['queue'] = Table(
+    tables['Queue'] = Table(
         generate_table_name('queue'), metadata,
         generate_key_column(),
         generate_label_column(),

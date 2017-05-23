@@ -1,12 +1,15 @@
 import json
-import django.test
+import unittest
 
-from mc.mc_client import dj_dao
+from mc.mc_client import sa_dao
 
 
-class BaseTestCase(django.test.TestCase):
+class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.dao = dj_dao.DjDao()
+        #from sqlalchemy import create_engine
+        #engine = create_engine('sqlite:///:memory:', echo=True)
+        self.dao = sa_dao.SaDao(db_uri='sqlite:///:memory:')
+        self.dao.create_tables()
 
 class FlowTestCase(BaseTestCase):
     def setUp(self):

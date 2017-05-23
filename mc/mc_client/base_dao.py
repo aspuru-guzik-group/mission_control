@@ -15,9 +15,16 @@ class BaseDao(object):
                                  operator=_filter['operator'],
                                  valid_operators=valid_operators))
 
+    def get_item_by_key(self, item_type=None, key=None):
+        return self.get_items(item_type=item_type, query={
+            'filters': [
+                {'field': 'key', 'operator': '=', 'value': key}
+            ]
+        })[0]
+
     def patch_items(self, item_type=None, keyed_patches=None):
         return {
-            key: self.patch_item(item_type=item_type, patches=patches)
+            key: self.patch_item(item_type=item_type, key=key, patches=patches)
             for key, patches in keyed_patches.items()
         }
 
@@ -40,6 +47,6 @@ class BaseDao(object):
         )
         claimed_items = self.patch_items(
             item_type=queue_item_type,
-            keyed_patches={item['uuid']: {'claimed': True}
+            keyed_patches={item['key']: {'claimed': True}
                            for item in items_to_claim})
-        return claimed_items
+        return {'items': claimed_items.values()}

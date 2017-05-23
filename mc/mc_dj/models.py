@@ -8,7 +8,7 @@ sa_schema = _mc_sa.generate_schema()
 
 mc_models = []
 
-mission_table = sa_schema['tables']['mission']
+mission_table = sa_schema['tables']['Mission']
 class Mission(_dj_models.Model):
     key = sa_column_to_dj_field(mission_table.columns['key'])
     label = sa_column_to_dj_field(mission_table.columns['label'])
@@ -18,7 +18,7 @@ class Mission(_dj_models.Model):
         db_table = mission_table.name
 mc_models.append(Mission)
 
-flow_table = sa_schema['tables']['flow']
+flow_table = sa_schema['tables']['Flow']
 class Flow(_dj_models.Model):
     key = sa_column_to_dj_field(flow_table.columns['key'])
     label = sa_column_to_dj_field(flow_table.columns['label'])
@@ -31,7 +31,7 @@ class Flow(_dj_models.Model):
         db_table = flow_table.name
 mc_models.append(Flow)
 
-job_table = sa_schema['tables']['job']
+job_table = sa_schema['tables']['Job']
 class Job(_dj_models.Model):
     key = sa_column_to_dj_field(job_table.columns['key'])
     label = sa_column_to_dj_field(job_table.columns['label'])
@@ -44,7 +44,7 @@ class Job(_dj_models.Model):
         db_table = job_table.name
 mc_models.append(Job)
 
-queue_table = sa_schema['tables']['queue']
+queue_table = sa_schema['tables']['Queue']
 class Queue(_dj_models.Model):
     key = sa_column_to_dj_field(queue_table.columns['key'])
     label = sa_column_to_dj_field(queue_table.columns['label'])
