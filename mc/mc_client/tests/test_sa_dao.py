@@ -10,7 +10,8 @@ class BaseTestCase(unittest.TestCase):
         self.query = MagicMock()
         self.dao = sa_dao.SaDao(
             db_uri=MagicMock(),
-            schema=MagicMock(),
+            sa_schema=MagicMock(),
+            marsh_schemas=MagicMock(),
             engine=MagicMock(),
         )
 
@@ -20,6 +21,7 @@ class CreateItemTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.dao.get_item_table = MagicMock()
+        self.dao.get_item_by_key = MagicMock()
         self.dao.execute = MagicMock()
         self.expected_table = self.dao.get_item_table.return_value
         self.kwargs = MagicMock()
@@ -42,16 +44,17 @@ class CreateItemTestCase(BaseTestCase):
         self.assertEqual(self.dao.engine.execute.call_args,
                          call(expected_statement))
 
-    def test_returns_execution_result(self):
-        self.assertEqual(
-            self.result,
-            {**self.kwargs, **self.dao.execute.return_value.returned_defaults}
-        )
+    def test_returns_fetched_item(self):
+        expected_key = \
+                self.dao.engine.execute.return_value.inserted_primary_key[0]
+        self.assertEqual(self.dao.get_item_by_key.call_args,
+                         call(item_type=self.item_type, key=expected_key))
+        self.assertEqual(self.result, self.dao.get_item_by_key.return_value)
 
 class GetItemTableTestCase(BaseTestCase):
     def test_gets_table_from_dict(self):
         result = self.dao.get_item_table(item_type=self.item_type)
-        self.assertEqual(result, self.dao.schema['tables'][self.item_type])
+        self.assertEqual(result, self.dao.sa_schema['tables'][self.item_type])
 
 class EngineTestCase(BaseTestCase):
     def test_gets_engine_if_set(self):
@@ -72,6 +75,7 @@ class GetItemsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.dao.get_items_statement = MagicMock()
+        self.dao.serialize_items = MagicMock()
         self.result = self.dao.get_items(item_type=self.item_type,
                                          query=self.query)
 
@@ -79,12 +83,18 @@ class GetItemsTestCase(BaseTestCase):
         self.assertEqual(self.dao.get_items_statement.call_args,
                          call(item_type=self.item_type, query=self.query))
 
-    def test_returns_statement_results(self):
+    def test_returns_serialized_results(self):
         self.assertEqual(
             self.dao.engine.execute.call_args,
             call(self.dao.get_items_statement.return_value)
         )
-        self.assertEqual(self.result, self.dao.engine.execute().fetchall())
+        expected_items = [
+            self.dao.row_to_dict(row)
+            for row in self.dao.engine.execute.return_value.fetchall()
+        ]
+        self.assertEqual(self.dao.serialize_items.call_args,
+                         call(item_type=self.item_type, items=expected_items))
+        self.assertEqual(self.result, self.dao.serialize_items.return_value)
 
 class GetItemsStatementTestCase(BaseTestCase):
     def setUp(self):
@@ -99,10 +109,12 @@ class GetItemsStatementTestCase(BaseTestCase):
                          call(item_type=self.item_type))
 
     def test_returns_statement_with_wheres(self):
+        expected_table = self.dao.get_item_table.return_value
         self.assertEqual(
             self.dao.add_wheres_to_statement.call_args,
-            call(statement=self.dao.get_item_table.return_value.select(),
-                 query=self.query)
+            call(statement=expected_table.select(),
+                 query=self.query,
+                 columns=expected_table.columns)
         )
         self.assertEqual(self.result,
                          self.dao.add_wheres_to_statement.return_value)
@@ -129,30 +141,15 @@ class PatchItemTestCase(BaseTestCase):
             expected_table.update().where.return_value.values.call_args,
             call(self.patches)
         )
+        self.assertEqual(
+            self.dao.engine.execute.call_args,
+            call(expected_table.update().where.return_value.values.return_value)
+        )
 
     def test_returns_updated_row(self):
         self.assertEqual(self.dao.get_item_by_key.call_args,
-                         call(key=self.key))
+                         call(item_type=self.item_type, key=self.key))
         self.assertEqual(self.result, self.dao.get_item_by_key.return_value)
-
-class GetItemByKeyTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.dao.get_item_table = MagicMock()
-        self.key = MagicMock()
-        self.result = self.dao.get_item_by_key(item_type=self.item_type,
-                                               key=self.key)
-
-    def test_gets_table(self):
-        self.assertEqual(self.dao.get_item_table.call_args,
-                         call(item_type=self.item_type))
-
-    def test_returns_executed_select_statement(self):
-        expected_table = self.dao.get_item_table.return_value
-        expected_statement = expected_table.select('*').where(
-            expected_table.columns.key == self.key)
-        self.assertEqual(self.result,
-                         self.dao.engine.execute(expected_statement).fetchone())
 
 class FlushTestCase(BaseTestCase):
     def setUp(self):

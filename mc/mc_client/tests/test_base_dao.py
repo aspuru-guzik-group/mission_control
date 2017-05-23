@@ -49,7 +49,8 @@ class ClaimQueueItemsTestCase(BaseTestCase):
         )
 
     def test_returns_claimed_items(self):
-        self.assertEqual(self.result, self.dao.patch_items.return_value)
+        self.assertEqual(self.result,
+                         {'items': self.dao.patch_items.return_value.values()})
 
 if __name__ == '__main__':
     unittest.main()

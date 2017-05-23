@@ -2,6 +2,8 @@ from django.db import models as _dj_models
 import sqlalchemy.types as _sa_types
 from rest_framework import serializers as _serializers
 
+from mc import constants as _mc_constants
+
 
 def sa_column_to_dj_field(sa_column=None):
     field_kwargs = {
@@ -37,5 +39,6 @@ def sa_column_to_serializer_field(sa_column=None):
     elif type(sa_column.type) is _sa_types.Boolean:
         field_cls = _serializers.NullBooleanField
     elif type(sa_column.type) is _sa_types.DateTime:
+        field_kwargs['format'] = _mc_constants.DATETIME_FORMAT
         field_cls = _serializers.DateTimeField
     return field_cls(**field_kwargs)
