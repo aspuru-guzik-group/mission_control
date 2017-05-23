@@ -1,7 +1,7 @@
 import json
 import unittest
 
-from mc.mc_client import sa_dao
+from .. import sa_dao
 
 
 class BaseTestCase(unittest.TestCase):

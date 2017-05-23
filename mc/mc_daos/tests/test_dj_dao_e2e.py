@@ -1,7 +1,7 @@
 import json
 import django.test
 
-from mc.mc_client import dj_dao
+from .. import dj_dao
 
 
 class BaseTestCase(django.test.TestCase):
