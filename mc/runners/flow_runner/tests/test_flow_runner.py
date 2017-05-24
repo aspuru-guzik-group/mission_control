@@ -1,3 +1,4 @@
+from collections import defaultdict
 import logging
 import unittest
 from unittest.mock import call, DEFAULT, MagicMock, patch
@@ -30,7 +31,7 @@ class TickTestCase(BaseTestCase):
         super().setUp()
         self.runner.claim_flow_records = MagicMock()
         self.runner.tick_flow_records = MagicMock()
-        self.runner.tick()
+        self.result = self.runner.tick()
 
     def test_claims_flow_records(self):
         self.assertEqual(self.runner.claim_flow_records.call_args, call())
@@ -40,6 +41,13 @@ class TickTestCase(BaseTestCase):
             self.runner.tick_flow_records.call_args,
             call(flow_records=self.runner.claim_flow_records.return_value)
         )
+
+    def test_returns_tick_stats(self):
+        expected_tick_stats = {
+            'claimed': len(self.runner.claim_flow_records),
+            **self.runner.tick_flow_records.return_value
+        }
+        self.assertEqual(self.result, expected_tick_stats)
 
 class ClaimFlowRecordsTestCase(BaseTestCase):
     def test_dispatches_to_flow_client(self):
@@ -59,7 +67,7 @@ class TickFlowRecordsTestCase(BaseTestCase):
         logging.disable(logging.NOTSET)
 
     def _tick_flow_records(self):
-        self.runner.tick_flow_records(flow_records=self.flow_records)
+        return self.runner.tick_flow_records(flow_records=self.flow_records)
 
     def test_ticks_flow_records(self):
         self._tick_flow_records()
@@ -78,6 +86,15 @@ class TickFlowRecordsTestCase(BaseTestCase):
                 for flow_record in self.flow_records
             ]
         )
+
+    def test_returns_tick_stats(self):
+        result = self._tick_flow_records()
+        expected_tick_stats = defaultdict(int)
+        for i, flow_record in enumerate(self.flow_records):
+            expected_status = \
+                    self.runner.tick_flow_record.return_value.get('status')
+            expected_tick_stats[expected_status] += 1
+        self.assertEqual(result, expected_tick_stats)
 
     @patch.object(flow_runner, 'traceback')
     def test_patches_with_failed_status_for_tick_error(self, mock_traceback):
@@ -138,6 +155,43 @@ class PatchAndReleaseFlowRecordTestCase(BaseTestCase):
             self.runner.flow_client.patch_and_release_flow.call_args, 
             call(flow=flow_record, patches=patches)
         )
+
+class GenerateFlowClientFromMcDaoTestCase(BaseTestCase):
+    @patch.object(flow_runner, 'McDaoFlowClient')
+    def test_returns_flow_client_instance(self, _McDaoFlowClient):
+        dao = MagicMock()
+        queue_key = MagicMock()
+        result = flow_runner.FlowRunner.generate_flow_client_from_mc_dao(
+            dao=dao, queue_key=queue_key)
+        self.assertEqual(_McDaoFlowClient.call_args,
+                         call(dao=dao, queue_key=queue_key))
+        self.assertEqual(result, _McDaoFlowClient.return_value)
+
+class McDaoFlowClientTestCase(unittest.TestCase):
+    def setUp(self):
+        self.flow_client = flow_runner.McDaoFlowClient(
+            dao=MagicMock(), queue_key=MagicMock())
+
+    def test_client_claim_flows(self):
+        result = self.flow_client.claim_flows()
+        self.assertEqual(self.flow_client.dao.claim_queue_items.call_args,
+                         call(queue_key=self.flow_client.queue_key))
+        self.assertEqual(
+            result,
+            self.flow_client.dao.claim_queue_items.return_value['items'])
+
+    def test_client_patch_and_release_flow(self):
+        flow = MagicMock()
+        patches = MagicMock()
+        result = self.flow_client.patch_and_release_flow(
+            flow=flow, patches=patches)
+        self.assertEqual(
+            self.flow_client.dao.patch_item.call_args,
+            call(item_type='Flow', key=flow['key'],
+                 patches={'claimed': False, **patches})
+        )
+        self.assertEqual(result,
+                         self.flow_client.dao.patch_item.return_value)
 
 if __name__ == '__main__':
     unittest.main()

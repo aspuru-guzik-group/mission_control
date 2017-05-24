@@ -1,3 +1,4 @@
+from collections import defaultdict
 import logging
 import time
 import traceback
@@ -45,22 +46,29 @@ class FlowRunner(object):
     def tick(self):
         self.tick_counter += 1
         self.logger.debug('%s, tick #%s' % (self, self.tick_counter))
-        self.tick_flow_records(flow_records=self.claim_flow_records())
+        claimed_flow_records = self.claim_flow_records()
+        tick_stats = {
+            'claimed': len(claimed_flow_records),
+            **self.tick_flow_records(flow_records=claimed_flow_records)
+        }
+        return tick_stats
 
     def claim_flow_records(self): return self.flow_client.claim_flows()
 
     def tick_flow_records(self, flow_records=None):
+        tick_stats = defaultdict(int)
         for flow_record in flow_records:
             try:
                 patches = self.tick_flow_record(flow_record=flow_record)
-                self.patch_and_release_flow_record(flow_record=flow_record,
-                                                   patches=patches)
+                status = patches.get('status')
             except Exception as exception:
                 self.logger.exception(exception)
-                failure_patches = {'status': 'FAILED',
-                                   'error': traceback.format_exc()}
-                self.patch_and_release_flow_record(flow_record=flow_record,
-                                                   patches=failure_patches)
+                status = 'FAILED'
+                patches = {'status': status, 'error': traceback.format_exc()}
+            self.patch_and_release_flow_record(flow_record=flow_record,
+                                               patches=patches)
+            tick_stats[status] += 1
+        return tick_stats
 
     def tick_flow_record(self, flow_record=None):
         self.logger.debug('tick_flow_record')
@@ -77,3 +85,20 @@ class FlowRunner(object):
     def patch_and_release_flow_record(self, flow_record=None, patches=None):
         self.flow_client.patch_and_release_flow(flow=flow_record,
                                                 patches=patches)
+
+
+    @staticmethod
+    def generate_flow_client_from_mc_dao(dao=None, queue_key=None):
+        return McDaoFlowClient(dao=dao, queue_key=queue_key)
+
+class McDaoFlowClient(object):
+    def __init__(self, dao=None, queue_key=None):
+        self.dao = dao
+        self.queue_key = queue_key
+
+    def claim_flows(self):
+        return self.dao.claim_queue_items(queue_key=self.queue_key)['items']
+
+    def patch_and_release_flow(self, flow=None, patches=None):
+        return self.dao.patch_item(item_type='Flow', key=flow['key'],
+                                   patches={'claimed': False, **patches})
