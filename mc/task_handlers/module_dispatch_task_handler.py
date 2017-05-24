@@ -10,8 +10,12 @@ class ModuleDispatchTaskHandler(object):
                 or self.default_task_type_to_handler_dot_spec
 
     def default_task_type_to_handler_dot_spec(self, task_type=None):
-        handler_dot_spec = task_type.replace('task', 'task_handler')
-        if ':' not in handler_dot_spec: handler_dot_spec += ':TaskHandler'
+        handler_dot_spec = task_type
+        if ':' not in handler_dot_spec:
+            handler_dot_spec = task_type.replace('task', 'task_handler')
+            if not handler_dot_spec.endswith('_task_handler'):
+                handler_dot_spec += '_task_handler'
+            handler_dot_spec += ':TaskHandler'
         return handler_dot_spec
 
     @classmethod

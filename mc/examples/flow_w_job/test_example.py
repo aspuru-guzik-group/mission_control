@@ -4,7 +4,6 @@ import textwrap
 import unittest
 
 
-@unittest.skip('skippo')
 class TestExample(unittest.TestCase):
     def test_example(self):
         cmd = 'cd {this_dir} && python entrypoint.py'.format(
@@ -14,8 +13,8 @@ class TestExample(unittest.TestCase):
         expected_stdout = textwrap.dedent(
             '''
             I am task_1.
-            I am task_2.
-            I am task_3.
+            creating job, args: (), kwargs: {'job_kwargs': {'job_spec': 'some job spec'}}
+            getting job, job_meta: {'key': 'some_key'}
             '''
         ).lstrip()
         self.assertEqual(stdout, expected_stdout)

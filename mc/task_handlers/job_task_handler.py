@@ -9,13 +9,13 @@ class JobTaskHandler(BaseTaskHandler):
     def intermediate_tick(self, task=None, task_context=None):
         job = self.get_job(task=task, task_context=task_context)
         assert job is not None
+        job_data = job.get('data', {})
         if job['status'] == 'COMPLETED':
-            task['data']['artifact'] = job['data'].get('artifact')
-            task['data']['stdout'] = job['data'].get('stdout')
+            task['data']['artifact'] = job_data.get('artifact')
+            task['data']['std_logs'] = job_data.get('std_logs')
             task['status'] = 'COMPLETED'
         elif job['status'] == 'FAILED':
-            try: error = job['data']['error']
-            except KeyError: error = '<unknown>'
+            error = job_data.get('error', '<unknown job error>')
             raise Exception(error)
 
     def create_job(self, task=None, task_context=None):
