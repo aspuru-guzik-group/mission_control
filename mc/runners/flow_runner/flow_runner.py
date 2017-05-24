@@ -4,13 +4,11 @@ import time
 import traceback
 
 class FlowRunner(object):
-    def __init__(self, flow_client=None, flow_engine=None, task_handler=None,
-                 task_context=None, tick_interval=120, max_flows_per_tick=3,
-                 logger=None):
+    def __init__(self, flow_client=None, flow_engine=None, task_context=None,
+                 tick_interval=120, max_flows_per_tick=3, logger=None):
         self.logger = logger or logging
         self.flow_client = flow_client
-        self.flow_engine = flow_engine or self.get_default_flow_engine(
-            task_handler=task_handler)
+        self.flow_engine = flow_engine or self.get_default_flow_engine()
         self.task_context = task_context
         self.tick_interval = tick_interval
         self.max_flows_per_tick = max_flows_per_tick
@@ -18,14 +16,8 @@ class FlowRunner(object):
         self._ticking = False
 
     def get_default_flow_engine(self, task_handler=None):
-        task_handler = task_handler or self.get_default_task_handler()
         from mc.flow_engines.flow_engine import FlowEngine
-        return FlowEngine(task_handler=self.task_handler)
-
-    def get_default_task_handler(self):
-        from mc.task_handlers.module_dispatch_task_handler import \
-                ModuleDispatchTaskHandler
-        return ModuleDispatchTaskHandler()
+        return FlowEngine()
 
     def run(self, ntimes=None, tick_interval=None):
         self._ticking = True

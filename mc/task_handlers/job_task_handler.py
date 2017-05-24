@@ -20,7 +20,7 @@ class JobTaskHandler(BaseTaskHandler):
 
     def create_job(self, task=None, task_context=None):
         create_job_fn = task_context['mc.tasks.job.create_job']
-        job_kwargs = {'job_spec': task['task_params']['job_spec']}
+        job_kwargs = {'job_spec': task['task_params'].get('job_spec')}
         job_meta = create_job_fn(job_kwargs=job_kwargs)
         return job_meta
 
