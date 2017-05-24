@@ -5,13 +5,13 @@ import traceback
 
 class FlowRunner(object):
     def __init__(self, flow_client=None, flow_engine=None, task_handler=None,
-                 flow_ctx=None, tick_interval=120, max_flows_per_tick=3,
+                 task_context=None, tick_interval=120, max_flows_per_tick=3,
                  logger=None):
         self.logger = logger or logging
         self.flow_client = flow_client
         self.flow_engine = flow_engine or self.get_default_flow_engine(
             task_handler=task_handler)
-        self.flow_ctx = flow_ctx
+        self.task_context = task_context
         self.tick_interval = tick_interval
         self.max_flows_per_tick = max_flows_per_tick
         self.tick_counter = 0
@@ -73,7 +73,7 @@ class FlowRunner(object):
     def tick_flow_record(self, flow_record=None):
         self.logger.debug('tick_flow_record')
         flow = self.get_flow_for_flow_record(flow_record=flow_record)
-        self.flow_engine.tick_flow(flow=flow, flow_ctx=self.flow_ctx)
+        self.flow_engine.tick_flow(flow=flow, task_context=self.task_context)
         updated_serialization = self.flow_engine.serialize_flow(flow=flow)
         patches = {'serialization': updated_serialization,
                    'status': flow.status}

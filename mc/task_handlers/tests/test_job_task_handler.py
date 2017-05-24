@@ -1,61 +1,68 @@
 from collections import defaultdict
 import unittest
 from unittest.mock import call, MagicMock
-from uuid import uuid4
+import uuid
 
-from ..run_job_task_handler import RunJobTaskHandler
+from ..job_task_handler import JobTaskHandler
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.task = MagicMock()
-        self.flow_ctx = {
-            'create_job': MagicMock(),
-            'get_job': MagicMock()
+        self.job_context = {
+            'mc.tasks.job.create_job': MagicMock(),
+            'mc.tasks.job.get_job': MagicMock()
         }
-        self.task_handler = RunJobTaskHandler()
+        self.task_handler = JobTaskHandler()
 
-    def generate_job(self, uuid=None, status='PENDING', **job_state):
+    def generate_job(self, key=None, status='PENDING', **job_state):
         job = defaultdict(MagicMock)
-        if not uuid: uuid = str(uuid4())
-        job.update({'uuid': uuid, 'status': status, **job_state})
+        if not key: key = str(uuid.uuid4())
+        job.update({'key': key, 'status': status, **job_state})
         return job
 
     def generate_task_context(self, **kwargs):
-        task_context = {
-            'task': self.task,
-            'flow_ctx': self.flow_ctx,
-            **kwargs
-        }
-        return task_context
+        return {'task': self.task, **self.job_context, **kwargs}
 
 class InitialTickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.initial_task = {
-            'data': {},
-            'task_params': {
-                'job_spec': 'some job_spec'
-            }
-        }
+        self.initial_task = {'data': {}}
         self.task = {**self.initial_task}
-        self.task_handler.initial_tick(
-            task=self.task,
-            task_context=self.generate_task_context()
-        )
+        self.task_context = self.generate_task_context()
+        self.task_handler.create_job = MagicMock()
+        self.task_handler.initial_tick(task=self.task,
+                                       task_context=self.task_context)
 
-    def test_initial_tick_creates_job(self):
+    def test_creates_job(self):
+        self.assertEqual(self.task_handler.create_job.call_args,
+                         call(task=self.task, task_context=self.task_context))
+
+    def test_task_stores_job_meta(self):
+        self.assertEqual(self.task['data']['_job_meta'],
+                         self.task_handler.create_job.return_value)
+
+class CreateJobTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.task = {
+            'data': {},
+            'task_params': {'job_spec': 'some job_spec'}
+        }
+        self.task_context = self.generate_task_context()
+        self.result = self.task_handler.create_job(
+            task=self.task, task_context=self.task_context)
+
+    def test_dispatches_to_ctx_fn(self):
         self.assertEqual(
-            self.flow_ctx['create_job'].call_args,
-            call(job_kwargs={
-                'job_spec': self.initial_task['task_params']['job_spec'],
-            })
+            self.task_context['mc.tasks.job.create_job'].call_args,
+            call(job_kwargs={'job_spec': self.task['task_params']['job_spec']})
         )
-
-    def test_has_job_uuid(self):
-        self.assertEqual(self.task['data']['job_uuid'],
-                         self.flow_ctx['create_job'].return_value['uuid'])
+        self.assertEqual(
+            self.result,
+            self.task_context['mc.tasks.job.create_job'].return_value
+        )
 
 class IntermediateTickMixin(object):
     def do_intermediate_tick(self, job_state=None):
@@ -64,7 +71,7 @@ class IntermediateTickMixin(object):
         for k, v in job_state.items(): self.job[k] = v
         self.task_handler.get_job = MagicMock(return_value = self.job)
         self.initial_task = {
-            'data': {'job_uuid': self.job['uuid']},
+            'data': {'_job_meta': self.job['key']},
             'task_params': {'job_spec': 'some job spec'},
             'status': 'some_status'
         }

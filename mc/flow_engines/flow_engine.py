@@ -59,18 +59,18 @@ class FlowEngine(object):
         }
         return json.dumps(flow_dict)
 
-    def run_flow(self, flow=None, flow_ctx=None, check=False):
+    def run_flow(self, flow=None, task_context=None, check=False):
         completed_statuses = set(['COMPLETED', 'FAILED'])
         while flow.status not in completed_statuses:
-            self.tick_flow(flow=flow, flow_ctx=flow_ctx)
+            self.tick_flow(flow=flow, task_context=task_context)
         if check and flow.status == 'FAILED':
             raise self.FlowError(flow=flow)
 
-    def tick_flow(self, flow=None, flow_ctx=None):
+    def tick_flow(self, flow=None, task_context=None):
         try:
             if flow.status == 'PENDING': self.start_flow(flow=flow)
             self.start_nearest_pending_tasks(flow=flow)
-            self.tick_running_tasks(flow=flow, flow_ctx=flow_ctx)
+            self.tick_running_tasks(flow=flow, task_context=task_context)
             if not flow.has_incomplete_tasks(): self.complete_flow(flow=flow)
         except Exception as exception:
             fail_flow = True
@@ -90,21 +90,22 @@ class FlowEngine(object):
     def start_task(self, flow=None, task=None):
         task['status'] = 'RUNNING'
 
-    def tick_running_tasks(self, flow=None, flow_ctx=None):
+    def tick_running_tasks(self, flow=None, task_context=None):
         for task in flow.get_tasks_by_status(status='RUNNING'):
             if self.task_is_running(task=task):
-                self.tick_task(task=task, flow=flow, flow_ctx=flow_ctx)
+                self.tick_task(task=task, flow=flow, task_context=task_context)
             else:
                 self.complete_task(task=task)
 
     def task_is_running(self, task=None):
         return task['status'] == 'RUNNING'
 
-    def tick_task(self, task=None, flow=None, flow_ctx=None):
+    def tick_task(self, task=None, flow=None, task_context=None):
+        task_context = task_context or {}
         try:
             self.task_handler.tick_task(
                 task=task,
-                task_context={'task': task, 'flow': flow, 'flow_ctx': flow_ctx}
+                task_context={'task': task, 'flow': flow, **task_context}
             )
             if task.get('status') == 'COMPLETED':
                 self.complete_task(flow=flow, task=task)

@@ -162,7 +162,7 @@ class TickTestCase(BaseTestCase):
         self.patchers = {'engine': patch.multiple(
             self.engine, start_task=DEFAULT, complete_flow=DEFAULT)}
         self.mocks = self.start_patchers(patchers=self.patchers)
-        def mock_tick_task(*args, flow=None, task=None, flow_ctx=None):
+        def mock_tick_task(*args, flow=None, task=None, task_context=None):
             task.setdefault('tick_count', 0)
             task['tick_count'] += 1
         self.engine.tick_task = mock_tick_task
@@ -253,7 +253,7 @@ class TickTaskTestCase(BaseTestCase):
         super().setUp()
         self.flow = flow_engine.Flow()
         self.task = self.flow.add_task(task={})
-        self.flow_ctx = MagicMock()
+        self.task_context = MagicMock()
 
     def test_calls_complete_task_if_task_completes(self):
         self.engine.complete_task = MagicMock()
@@ -262,7 +262,7 @@ class TickTaskTestCase(BaseTestCase):
         self.engine.task_handler.tick_task.side_effect = \
                 set_task_status_to_completed
         self.engine.tick_task(flow=self.flow, task=self.task,
-                              flow_ctx=self.flow_ctx)
+                              task_context=self.task_context)
         self.assertEqual(self.engine.complete_task.call_args,
                          call(flow=self.flow, task=self.task))
 
