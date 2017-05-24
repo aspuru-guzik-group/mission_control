@@ -1,27 +1,29 @@
 import logging
 import unittest
 from unittest.mock import call, DEFAULT, MagicMock, patch
-from .. import base_flow_runner
+from .. import flow_runner
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.flow_client = MagicMock()
-        self.flow_engine = MagicMock()
-        self.runner = base_flow_runner.BaseFlowRunner(
-            flow_client=self.flow_client, flow_engine=self.flow_engine)
+        self.runner = flow_runner.FlowRunner(
+            flow_client=MagicMock(),
+            flow_engine=MagicMock(),
+            flow_ctx=MagicMock()
+        )
 
 class RunTestCase(BaseTestCase):
-    @patch.object(base_flow_runner, 'time')
-    def test_run(self, mock_time):
+    @patch.object(flow_runner, 'time')
+    def test_run(self, _time):
         tick_intervals = [1, 2]
         self.runner.tick_interval = 10
         for tick_interval in tick_intervals:
             self.runner.tick_interval = tick_interval
             self.runner.run(ntimes=1)
         self.assertEqual(
-            mock_time.sleep.call_args_list,
-            [call(tick_interval) for tick_interval in tick_intervals])
+            _time.sleep.call_args_list,
+            [call(tick_interval) for tick_interval in tick_intervals]
+        )
 
 class TickTestCase(BaseTestCase):
     def setUp(self):
@@ -42,7 +44,7 @@ class TickTestCase(BaseTestCase):
 class ClaimFlowRecordsTestCase(BaseTestCase):
     def test_dispatches_to_flow_client(self):
         self.runner.claim_flow_records()
-        self.assertEqual(self.flow_client.claim_flows.call_args, call())
+        self.assertEqual(self.runner.flow_client.claim_flows.call_args, call())
 
 class TickFlowRecordsTestCase(BaseTestCase):
     def setUp(self):
@@ -78,7 +80,7 @@ class TickFlowRecordsTestCase(BaseTestCase):
             ]
         )
 
-    @patch.object(base_flow_runner, 'traceback')
+    @patch.object(flow_runner, 'traceback')
     def test_patches_with_failed_status_for_tick_error(self, mock_traceback):
         self.runner.tick_flow_record.side_effect = Exception()
         self._tick_flow_records()
@@ -107,19 +109,19 @@ class TickFlowRecordTestCase(BaseTestCase):
         self.runner.tick_flow_record(self.flow_record)
         expected_flow = self.runner.get_flow_for_flow_record.return_value
         self.assertEqual(
-            self.flow_engine.tick_flow.call_args,
+            self.runner.flow_engine.tick_flow.call_args,
             call(flow=expected_flow, flow_ctx=self.runner.flow_ctx))
 
     def test_includes_status_in_return(self):
         serialization = {'status': 'COMPLETED'}
-        self.flow_engine.serialize_flow.return_value = serialization
+        self.runner.flow_engine.serialize_flow.return_value = serialization
         result = self.runner.tick_flow_record(self.flow_record)
         self.assertEqual(result['status'], self.flow.status)
 
     def test_includes_serialization_in_return(self):
         result = self.runner.tick_flow_record(self.flow_record)
         self.assertEqual(result['serialization'],
-                         self.flow_engine.serialize_flow.return_value)
+                         self.runner.flow_engine.serialize_flow.return_value)
 
 class GetFlowForFlowRecordTestCase(BaseTestCase):
     def test_deserializes(self):
@@ -133,8 +135,8 @@ class PatchFlowRecordTestCase(BaseTestCase):
         flow_record = MagicMock()
         patches = MagicMock()
         self.runner.patch_flow_record(flow_record=flow_record, patches=patches)
-        self.assertEqual(self.flow_client.patch_flow.call_args, 
-                         call(key=flow_record['uuid'], patches=patches))
+        self.assertEqual(self.runner.flow_client.patch_flow.call_args, 
+                         call(key=flow_record['key'], patches=patches))
 
 if __name__ == '__main__':
     unittest.main()
