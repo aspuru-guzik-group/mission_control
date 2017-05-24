@@ -1,2 +1,2 @@
-from . import flow_runner
-assert flow_runner
+from .flow_runner import FlowRunner
+assert FlowRunner
