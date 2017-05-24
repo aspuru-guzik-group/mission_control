@@ -51,7 +51,7 @@ class TickFlowRecordsTestCase(BaseTestCase):
         super().setUp()
         self.flow_records = [MagicMock() for i in range(3)]
         self.runner.tick_flow_record = MagicMock()
-        self.runner.patch_flow_record = MagicMock()
+        self.runner.patch_and_release_flow_record = MagicMock()
         logging.disable(logging.CRITICAL)
 
     def tearDown(self):
@@ -68,14 +68,13 @@ class TickFlowRecordsTestCase(BaseTestCase):
             [call(flow_record=flow_record) for flow_record in self.flow_records]
         )
 
-    def test_patches_flow_records(self):
+    def test_patches_and_releases_flow_records(self):
         self._tick_flow_records()
         self.assertEqual(
-            self.runner.patch_flow_record.call_args_list,
+            self.runner.patch_and_release_flow_record.call_args_list,
             [
                 call(flow_record=flow_record,
-                     patches={'claimed': False,
-                              **self.runner.tick_flow_record.return_value})
+                     patches=self.runner.tick_flow_record.return_value)
                 for flow_record in self.flow_records
             ]
         )
@@ -85,11 +84,10 @@ class TickFlowRecordsTestCase(BaseTestCase):
         self.runner.tick_flow_record.side_effect = Exception()
         self._tick_flow_records()
         self.assertEqual(
-            self.runner.patch_flow_record.call_args_list,
+            self.runner.patch_and_release_flow_record.call_args_list,
             [
                 call(flow_record=flow_record,
-                     patches={'claimed': False,
-                              'status': 'FAILED',
+                     patches={'status': 'FAILED',
                               'error': mock_traceback.format_exc.return_value})
                 for flow_record in self.flow_records
             ]
@@ -130,13 +128,16 @@ class GetFlowForFlowRecordTestCase(BaseTestCase):
         self.assertEqual(flow,
                          self.runner.flow_engine.deserialize_flow.return_value)
         
-class PatchFlowRecordTestCase(BaseTestCase):
+class PatchAndReleaseFlowRecordTestCase(BaseTestCase):
     def test_patch_flow_record(self):
         flow_record = MagicMock()
         patches = MagicMock()
-        self.runner.patch_flow_record(flow_record=flow_record, patches=patches)
-        self.assertEqual(self.runner.flow_client.patch_flow.call_args, 
-                         call(key=flow_record['key'], patches=patches))
+        self.runner.patch_and_release_flow_record(flow_record=flow_record,
+                                                  patches=patches)
+        self.assertEqual(
+            self.runner.flow_client.patch_and_release_flow.call_args, 
+            call(flow=flow_record, patches=patches)
+        )
 
 if __name__ == '__main__':
     unittest.main()

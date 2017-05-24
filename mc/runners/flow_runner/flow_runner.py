@@ -50,22 +50,17 @@ class FlowRunner(object):
     def claim_flow_records(self): return self.flow_client.claim_flows()
 
     def tick_flow_records(self, flow_records=None):
-        release_claim_patches = {'claimed': False}
         for flow_record in flow_records:
             try:
-                tick_patches = self.tick_flow_record(flow_record=flow_record)
-                self.patch_flow_record(
-                    flow_record=flow_record,
-                    patches={**release_claim_patches, **tick_patches}
-                )
+                patches = self.tick_flow_record(flow_record=flow_record)
+                self.patch_and_release_flow_record(flow_record=flow_record,
+                                                   patches=patches)
             except Exception as exception:
                 self.logger.exception(exception)
                 failure_patches = {'status': 'FAILED',
                                    'error': traceback.format_exc()}
-                self.patch_flow_record(
-                    flow_record=flow_record,
-                    patches={**release_claim_patches, **failure_patches}
-                )
+                self.patch_and_release_flow_record(flow_record=flow_record,
+                                                   patches=failure_patches)
 
     def tick_flow_record(self, flow_record=None):
         self.logger.debug('tick_flow_record')
@@ -79,5 +74,6 @@ class FlowRunner(object):
     def get_flow_for_flow_record(self, flow_record=None):
         return self.flow_engine.deserialize_flow(flow_record['serialization'])
 
-    def patch_flow_record(self, flow_record=None, patches=None):
-        self.flow_client.patch_flow(key=flow_record['key'], patches=patches)
+    def patch_and_release_flow_record(self, flow_record=None, patches=None):
+        self.flow_client.patch_and_release_flow(flow=flow_record,
+                                                patches=patches)
