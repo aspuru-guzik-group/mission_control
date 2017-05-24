@@ -70,7 +70,10 @@ class SaDao(BaseDao):
                                 columns=None):
         for _filter in query.get('filters', []):
             col = columns[_filter['field']]
-            clause = col.op(_filter['operator'])(_filter['value'])
+            operator = _filter['operator']
+            if operator == 'IN': op_fn = col.in_
+            else: op_fn = col.op(operator)
+            clause = op_fn(_filter['value'])
             statement = statement.where(clause)
         return statement
 

@@ -68,7 +68,7 @@ class DjDao(BaseDao):
         dj_filter_kwargs = {}
         kwarg_name = _filter['field']
         if _filter['operator'] != '=':
-            kwarg_name += _filter['operator'].lower()
+            kwarg_name += '__' + _filter['operator'].lower()
         dj_filter_kwargs[kwarg_name] = _filter['value']
         return dj_filter_kwargs
 

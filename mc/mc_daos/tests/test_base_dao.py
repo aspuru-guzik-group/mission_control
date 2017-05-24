@@ -33,7 +33,9 @@ class ClaimQueueItemsTestCase(BaseTestCase):
             call(item_type=self.expected_queue_spec['item_type'],
                  query={
                     'filters': [
-                        {'field': 'claimed', 'operator': '=', 'value': False}
+                        {'field': 'claimed', 'operator': '=', 'value': False},
+                        {'field': 'status', 'operator': 'IN',
+                         'value': ['PENDING', 'RUNNING']}
                     ]
                  }
                 )

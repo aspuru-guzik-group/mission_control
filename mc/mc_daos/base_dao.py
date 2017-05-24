@@ -29,6 +29,7 @@ class BaseDao(object):
         }
 
     def deserialize_value(self, serialized_value=None):
+        if serialized_value is None: return None
         return json.loads(serialized_value)
 
     def serialize_value(self, value=None):
@@ -41,7 +42,9 @@ class BaseDao(object):
             item_type=queue_item_type,
             query={
                 'filters': [
-                    {'field': 'claimed', 'operator': '=', 'value': False}
+                    {'field': 'claimed', 'operator': '=', 'value': False},
+                    {'field': 'status', 'operator': 'IN',
+                     'value': ['PENDING', 'RUNNING']}
                 ]
             }
         )
