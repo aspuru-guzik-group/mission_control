@@ -1,3 +1,4 @@
+import os
 import sys
 import mc.job_engines.cli
 from mc.job_engines.submission_builders.bash import BashSubmissionBuilder
@@ -21,5 +22,9 @@ def build_submission(*args, output_dir=None, **kwargs):
 
 def run_submission(*args, submission_meta=None, **kwargs):
     for log_name in ['stdout', 'stderr']:
-        with open(submission_meta['std_log_files'][log_name], 'w') as log:
+        log_path = os.path.join(
+            submission_meta['dir'],
+            submission_meta['std_log_file_names'][log_name]
+        )
+        with open(log_path, 'w') as log:
             log.write("run_submission:%s" % log_name)

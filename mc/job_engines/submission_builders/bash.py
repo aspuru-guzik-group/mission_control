@@ -7,41 +7,41 @@ from jinja2 import Template
 
 
 class BashSubmissionBuilder(object):
-
-    checkpoint_files = {
-        'completed': 'MC_JOB__COMPLETED',
-        'failed': 'MC_JOB__FAILED',
-    }
-
-    entrypoint_name = 'job.sh'
-
-    io_dirs = {'inputs': 'inputs', 'outputs': 'outputs'}
-
-    std_log_filenames = {
-        'stdout': 'MC_JOB.stdout',
-        'stderr': 'MC_JOB.stderr',
-        'failure': checkpoint_files['failed'],
-    }
+    def __init__(self, *args, checkpoint_file_names=None,
+                 entrypoint_file_name=None, io_dir_names=None,
+                 std_log_file_names=None, **kwargs):
+        self.checkpoint_file_names = {
+            'completed': 'MC_JOB__COMPLETED',
+            'failed': 'MC_JOB__FAILED',
+            **(checkpoint_file_names or {})
+        }
+        self.entrypoint_file_name = entrypoint_file_name or 'job.sh'
+        self.io_dir_names = {
+            'inputs': 'inputs',
+            'outputs': 'outputs',
+            **(io_dir_names or {})
+        }
+        self.std_log_file_names = {
+            'stdout': 'MC_JOB.stdout',
+            'stderr': 'MC_JOB.stderr',
+            'failure': self.checkpoint_file_names['failed'],
+            **(std_log_file_names or {})
+        }
 
     def build_submission(self, submission_spec=None, cfg=None, output_dir=None):
-        self.spec = submission_spec
-        self.cfg = cfg
-        self.output_dir = output_dir or tempfile.mkdtemp(prefix='bash.sub.')
-        self.std_log_files = {
-            logname: os.path.join(self.output_dir, filename)
-            for logname, filename in self.std_log_filenames.items()
-        }
-        self.ensure_dir(output_dir)
+        self._spec = submission_spec
+        self._cfg = cfg
+        self._output_dir = output_dir or tempfile.mkdtemp(prefix='bash.sub.')
+        self.ensure_dir(self._output_dir)
         self.setup_io_dirs()
         self.write_entrypoint()
         self.write_templates()
         submission_meta = {
-            'dir': self.output_dir,
-            'checkpoint_files': self.checkpoint_files,
-            'entrypoint': self.entrypoint_name,
-            'std_log_files': self.std_log_files,
-            'inputs_dir': 'inputs',
-            'outputs_dir': 'outputs',
+            'dir': self._output_dir,
+            'checkpoint_file_names': self.checkpoint_file_names,
+            'entrypoint_file_name': self.entrypoint_file_name,
+            'std_log_file_names': self.std_log_file_names,
+            'io_dir_names': self.io_dir_names,
         }
         return submission_meta
 
@@ -49,11 +49,12 @@ class BashSubmissionBuilder(object):
         if not os.path.exists(dir_path): os.makedirs(dir_path)
 
     def setup_io_dirs(self):
-        for dir_name, rel_path in self.io_dirs.items():
-            os.makedirs(os.path.join(self.output_dir, rel_path), exist_ok=True)
+        for dir_name, rel_path in self.io_dir_names.items():
+            os.makedirs(os.path.join(self._output_dir, rel_path), exist_ok=True)
 
     def write_entrypoint(self):
-        entrypoint_path = os.path.join(self.output_dir, self.entrypoint_name)
+        entrypoint_path = os.path.join(self._output_dir,
+                                       self.entrypoint_file_name)
         with open(entrypoint_path, 'w') as f:
             f.write(self.generate_entrypoint_content())
         os.chmod(entrypoint_path, 0o755)
@@ -61,7 +62,8 @@ class BashSubmissionBuilder(object):
     def generate_entrypoint_content(self):
         content = textwrap.dedent(
             """
-            #!/bin/bash
+            {shebang_line}
+            {header}
             {checkpoint_file_section}
 
             {env_section}
@@ -69,6 +71,8 @@ class BashSubmissionBuilder(object):
             {body_section}
             """
         ).format(
+            shebang_line=(self._spec.get('shebang_line') or '#!/bin/bash'),
+            header=(self._spec.get('header') or ''),
             checkpoint_file_section=self.generate_checkpoint_file_section(),
             env_section=self.generate_env_section(),
             body_section=self.generate_body_section()
@@ -100,7 +104,7 @@ class BashSubmissionBuilder(object):
             trap "output_status_file" EXIT
             '''
         ).strip().format(
-            completed_checkpoint_file=self.checkpoint_files['completed'],
+            completed_checkpoint_file=self.checkpoint_file_names['completed'],
             failure_log_file=std_log_files['failure'],
             summary_stdout_cmd=generate_summary_cmd(std_log_files['stdout']),
             summary_stderr_cmd=generate_summary_cmd(std_log_files['stderr']),
@@ -108,10 +112,16 @@ class BashSubmissionBuilder(object):
         )
 
     def get_std_log_files(self):
-        return {**self.std_log_files, **self.spec.get('std_log_files', {})}
+        return {
+            **{
+                log_name: os.path.join(self._output_dir, log_file_name)
+                for log_name, log_file_name in self.std_log_file_names.items()
+            },
+            **self._spec.get('std_log_files', {})
+        }
 
     def generate_env_section(self):
-        env_vars = self.squash_kvp_list(self.spec.get('env_vars', []))
+        env_vars = self.squash_kvp_list(self._spec.get('env_vars', []))
         env_lines = ["export {key}={value}".format(key=key, value=value)
                      for key, value in env_vars]
         return "\n".join(env_lines)
@@ -122,7 +132,7 @@ class BashSubmissionBuilder(object):
         return squashed.items()
 
     def generate_body_section(self):
-        job_engine_cfg = self.cfg.get('job_engine', {})
+        job_engine_cfg = self._cfg.get('job_engine', {})
         body_section = textwrap.dedent(
             """
             {job_engine_preamble}
@@ -131,19 +141,19 @@ class BashSubmissionBuilder(object):
         ).strip().format(
             job_engine_preamble=job_engine_cfg.get('entrypoint_preamble', ''),
             job_engine_exe=job_engine_cfg['job_engine_exe'],
-            output_dir=self.output_dir
+            output_dir=self._output_dir
         )
         return body_section
 
     def write_templates(self):
-        templates = self.spec.get('templates', {})
+        templates = self._spec.get('templates', {})
         if not templates.get('specs', None): return
         ctx = templates.get('ctx', {})
         for template_spec in templates.get('specs', []):
             self.write_template_spec(template_spec=template_spec, ctx=ctx)
 
     def write_template_spec(self, template_spec=None, ctx=None):
-        target_path = os.path.join(self.output_dir, template_spec['target'])
+        target_path = os.path.join(self._output_dir, template_spec['target'])
         self.ensure_dir(dir_path=os.path.dirname(target_path))
         rendered = self.render_template_spec(
             template_spec=template_spec, ctx=ctx)
