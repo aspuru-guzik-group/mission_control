@@ -63,16 +63,18 @@ class BuildSubmissionTestCase(BaseTestCase):
         )
         self.assertEqual(result, expected_submission_meta)
 
-class GetJobModuleCase(BaseTestCase):
-    @patch.object(job_engine, 'importlib')
-    def test_imports_expected_module(self, patched_importlib):
-        self.job_engine.get_job_module_name = MagicMock()
+class GetJobModuleTestCase(BaseTestCase):
+    def test_dispatches_to_job_module_loader(self):
+        self.job_engine.job_module_loader = MagicMock()
         result = self.job_engine.get_job_module(job=self.job, cfg=self.cfg)
         self.assertEqual(
-            patched_importlib.import_module.call_args,
-            call(self.job_engine.get_job_module_name.return_value)
+            self.job_engine.job_module_loader.load_job_module.call_args,
+            call(job=self.job, cfg=self.cfg)
         )
-        self.assertEqual(result, patched_importlib.import_module.return_value)
+        self.assertEqual(
+            result,
+            self.job_engine.job_module_loader.load_job_module.return_value
+        )
 
 class RunSubmissionTestCase(BaseTestCase):
     def setUp(self):
@@ -97,3 +99,18 @@ class RunSubmissionTestCase(BaseTestCase):
         )
         self.assertEqual(self.job_module.run_submission.call_args,
                          call(submission_meta=self.submission_meta))
+
+class DefaultJobModuleLoaderCase(BaseTestCase):
+    @patch.object(job_engine, 'importlib')
+    def test_imports_expected_module(self, patched_importlib):
+        loader = job_engine.DefaultJobModuleLoader()
+        loader.get_job_module_name = MagicMock()
+        result = loader.load_job_module(job=self.job, cfg=self.cfg)
+        self.assertEqual(patched_importlib.import_module.call_args,
+                         call(loader.get_job_module_name.return_value))
+        self.assertEqual(result, patched_importlib.import_module.return_value)
+
+    def test_gets_job_module_name_from_job_spec(self):
+        loader = job_engine.DefaultJobModuleLoader()
+        result = loader.get_job_module_name(job=self.job)
+        self.assertEqual(result, self.job['job_spec']['job_type'])

@@ -93,18 +93,19 @@ class IncompleteJobTestCase(BaseTestCase, IntermediateTickMixin):
 class CompletedJobTestCase(BaseTestCase, IntermediateTickMixin):
     def setUp(self):
         super().setUp()
-        self.do_intermediate_tick(job_state={'status': 'COMPLETED'})
+        self.do_intermediate_tick(job_state={'status': 'COMPLETED',
+                                             'data': MagicMock()})
 
     def test_has_expected_status(self):
         self.assertEqual(self.task['status'], 'COMPLETED')
 
     def test_has_expected_artifact(self):
         self.assertEqual(self.task['data']['artifact'],
-                         self.job['data'].get('artifact'))
+                         self.job.get('data').get('artifact'))
 
     def test_has_expected_stdout(self):
-        self.assertEqual(self.task['data']['stdout'],
-                         self.job['data'].get('stdout'))
+        self.assertEqual(self.task['data']['std_logs'],
+                         self.job.get('data').get('std_logs'))
 
 class FailedJobTestCase(BaseTestCase, IntermediateTickMixin):
     def test_throws_exception(self):
