@@ -1,8 +1,4 @@
-import os
-
 from mc.job_engines.job_engine import JobEngine
-
-_DIR = os.path.dirname(__file__)
 
 def main():
     job_module = setup_job_module()
