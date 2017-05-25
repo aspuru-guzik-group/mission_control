@@ -9,8 +9,8 @@ from jinja2 import Template
 class BashSubmissionBuilder(object):
 
     checkpoint_files = {
-        'completed': '_JOB__COMPLETED',
-        'failed': '_JOB__FAILED',
+        'completed': 'MC_JOB__COMPLETED',
+        'failed': 'MC_JOB__FAILED',
     }
 
     entrypoint_name = 'job.sh'
@@ -18,8 +18,8 @@ class BashSubmissionBuilder(object):
     io_dirs = {'inputs': 'inputs', 'outputs': 'outputs'}
 
     std_log_filenames = {
-        'stdout': '_JOB.stdout',
-        'stderr': '_JOB.stderr',
+        'stdout': 'MC_JOB.stdout',
+        'stderr': 'MC_JOB.stderr',
         'failure': checkpoint_files['failed'],
     }
 
@@ -112,7 +112,7 @@ class BashSubmissionBuilder(object):
 
     def generate_env_section(self):
         env_vars = self.squash_kvp_list(self.spec.get('env_vars', []))
-        env_lines = ["{key}={value}".format(key=key, value=value)
+        env_lines = ["export {key}={value}".format(key=key, value=value)
                      for key, value in env_vars]
         return "\n".join(env_lines)
 
