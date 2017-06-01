@@ -51,7 +51,7 @@ def generate_table_name(table_name=None):
 
 def str_uuid(): return str(uuid.uuid4())
 def generate_key_column(column_name='key', **kwargs):
-    return Column(column_name, _sa_types.String(length=16),
+    return Column(column_name, _sa_types.String(length=36),
                   **{'primary_key': True, 'default': str_uuid, **kwargs})
 
 def generate_label_column(column_name='label', **kwargs):
