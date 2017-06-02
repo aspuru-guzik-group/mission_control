@@ -2,7 +2,7 @@ import os
 import tempfile
 
 from mc.flow_engines.flow_engine import FlowEngine
-from mc.mc_daos.sa_dao import SaDao
+from mc.daos.sa_dao import SaDao
 
 _DIR = os.path.dirname(__file__)
 
@@ -49,23 +49,19 @@ def generate_flow_spec():
 
 def setup_task_context(dao=None):
     def create_job(*args, job_kwargs=None, **kwargs):
-        job = {**job_kwargs, 'data': {}, 'status': 'PENDING'}
-        job_record = dao.create_item(item_type='Job', kwargs={
-            'serialization': dao.serialize_value(job),
-            'status': job['status'],
-        })
+        job_kwargs = {**(job_kwargs or {}), 'data': {}, 'status': 'PENDING'}
+        job_record = dao.create_item(item_type='Job', kwargs=job_kwargs)
         job_meta = {'key': job_record['key']}
         return job_meta
 
     def get_job(*args, job_meta=None, **kwargs):
-        job_record = dao.get_item_by_key(item_type='Job', key=job_meta['key'])
-        job = dao.deserialize_value(job_record['serialization'])
+        job = dao.get_item_by_key(item_type='Job', key=job_meta['key'])
         # Normally the job would be run by an external runner, but we're faking
         # it here.
         tick_job(job=job)
         dao.patch_item(item_type='Job', key=job_meta['key'], patches={
-            'serialization': dao.serialize_value(job),
-            'status': job['status']
+            'data': job['data'],
+            'status': job['status'],
         })
         return job
 

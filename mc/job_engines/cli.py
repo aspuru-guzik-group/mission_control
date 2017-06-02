@@ -33,7 +33,8 @@ class JobEngineCommand(object):
         self.add_build_submission_subparser(subparsers=subparsers)
         self.add_run_submission_subparser(subparsers=subparsers)
 
-    def _json_file(self, file_path): return json.load(open(file_path))
+    def _json_file(self, file_path):
+        with open(file_path) as f: return json.load(f)
 
     def add_build_submission_subparser(self, subparsers=None):
         subparser = subparsers.add_parser('build_submission')

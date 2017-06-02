@@ -1,6 +1,6 @@
 import logging
 
-from mc.dao.base_dao import BaseDao
+from mc.daos.base_dao import BaseDao
 
 class DjDao(BaseDao):
     def __init__(self, db_id=None, models=None, serializers=None, logger=None):

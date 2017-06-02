@@ -2,7 +2,7 @@ import os
 import tempfile
 
 from mc.flow_engines.flow_engine import FlowEngine
-from mc.mc_daos.sa_dao import SaDao
+from mc.daos.sa_dao import SaDao
 from mc.runners.flow_runner import FlowRunner
 
 _DIR = os.path.dirname(__file__)

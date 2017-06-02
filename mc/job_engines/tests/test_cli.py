@@ -50,10 +50,11 @@ class BuildSubmissionTestCase(BaseTestCase):
         self.cmd.execute(argv=self.argv)
         expected_command_kwargs = { 
             'command': self.job_command,
-            **{arg_name: json.load(open(arg_file_path))
-               for arg_name, arg_file_path in self.arg_files.items()},
             'output_dir': self.output_dir,
         }
+        for arg_name, arg_file_path in self.arg_files.items():
+            with open(arg_file_path) as f:
+                expected_command_kwargs[arg_name] = json.load(f)
         self.assertEqual(self.job_engine.execute_command.call_args,
                          call(**expected_command_kwargs))
 

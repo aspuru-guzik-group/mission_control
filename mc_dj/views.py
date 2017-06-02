@@ -6,7 +6,7 @@ from django_filters.rest_framework import DjangoFilterBackend, FilterSet
 from rest_framework import viewsets
 from rest_framework.decorators import detail_route
 
-from mc.mc_daos.dj_dao import DjDao
+from mc.daos.dj_dao import DjDao
 from .constants import Statuses
 from . import models as _models
 from . import serializers as _serializers

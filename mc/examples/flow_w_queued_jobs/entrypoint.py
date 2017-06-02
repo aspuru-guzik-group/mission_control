@@ -3,7 +3,7 @@ import os
 import tempfile
 
 from mc.flow_engines.flow_engine import FlowEngine
-from mc.mc_daos.sa_dao import SaDao
+from mc.daos.sa_dao import SaDao
 from mc.runners.flow_runner import FlowRunner
 
 _DIR = os.path.dirname(__file__)
@@ -29,10 +29,8 @@ def main():
     tick_stats = flow_runner.tick()
     while tick_stats['claimed'] > 0:
         tick_stats = flow_runner.tick()
-        claimed_job_records = dao.claim_queue_items(
-            queue_key=job_queue_key)['items']
-        for job_record in claimed_job_records:
-            run_job_record(job_record=job_record, dao=dao)
+        claimed_jobs = dao.claim_queue_items(queue_key=job_queue_key)['items']
+        for job in claimed_jobs: run_job(job=job, dao=dao)
     print("No more flows to claim.")
 
 def setup_dao():
@@ -68,17 +66,13 @@ def generate_flow_spec():
 
 def setup_task_context(dao=None):
     def create_job(*args, job_kwargs=None, **kwargs):
-        job = {**job_kwargs, 'data': {}, 'status': 'PENDING'}
-        job_record = dao.create_item(item_type='Job', kwargs={
-            'serialization': dao.serialize_value(job),
-            'status': job['status'],
-        })
-        job_meta = {'key': job_record['key']}
+        job_kwargs = {**(job_kwargs or {}), 'data': {}, 'status': 'PENDING'}
+        job = dao.create_item(item_type='Job', kwargs=job_kwargs)
+        job_meta = {'key': job['key']}
         return job_meta
 
     def get_job(*args, job_meta=None, **kwargs):
-        job_record = dao.get_item_by_key(item_type='Job', key=job_meta['key'])
-        job = dao.deserialize_value(job_record['serialization'])
+        job = dao.get_item_by_key(item_type='Job', key=job_meta['key'])
         return job
 
     task_context = {
@@ -87,13 +81,12 @@ def setup_task_context(dao=None):
     }
     return task_context
 
-def run_job_record(job_record=None, dao=None):
-    job = dao.deserialize_value(job_record['serialization'])
+def run_job(job=None, dao=None):
     print("running job '{job_id}'".format(job_id=job['job_spec']['job_id']))
     job['status'] = 'COMPLETED'
-    dao.patch_item(item_type='Job', key=job_record['key'], patches={
-        'serialization': dao.serialize_value(job),
-        'status': job['status']
+    dao.patch_item(item_type='Job', key=job['key'], patches={
+        'data': job['data'],
+        'status': job['status'],
     })
 
 if __name__ == '__main__': main()
