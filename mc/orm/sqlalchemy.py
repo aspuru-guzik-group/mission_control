@@ -5,6 +5,8 @@ import uuid
 from sqlalchemy import Column, MetaData, Table
 import sqlalchemy.types as _sa_types
 
+from . import custom_sa_types as _custom_sa_types
+
 def generate_schema():
     metadata = MetaData()
     tables = collections.OrderedDict()
@@ -27,7 +29,8 @@ def generate_schema():
         generate_table_name('job'), metadata,
         generate_key_column(),
         generate_label_column(),
-        generate_serialization_column(),
+        generate_json_column('job_spec'),
+        generate_json_column('data'),
         generate_status_column(),
         generate_claimed_column(),
         *generate_timestamp_columns()
@@ -79,3 +82,7 @@ def generate_status_column(column_name='status', **kwargs):
 def generate_claimed_column(column_name='claimed', **kwargs):
     return Column(column_name, _sa_types.Boolean(),
                   **{'default': False, **kwargs})
+
+def generate_json_column(column_name='json', **kwargs):
+    return Column(column_name, _custom_sa_types.JSONEncodedDict(),
+                  **{'nullable': True, **kwargs})

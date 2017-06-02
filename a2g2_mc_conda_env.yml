@@ -1,9 +1,0 @@
-dependencies:
-  - python=3.5
-  - rdkit::rdkit=2016.03.4=np111py35_1
-  - openbabel::openbabel=2.4.1=py35_1
-  - conda-forge::xorg-libxrender=0.9.10
-  - pkgw::modern-xorg-stack=2016.03
-  - postgresql=9.5.4
-  - psycopg2=2.6.2
-  - pip

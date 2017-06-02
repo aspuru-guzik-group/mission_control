@@ -2,6 +2,7 @@ import marshmallow
 import sqlalchemy.types as _sa_types
 
 from mc import constants as _mc_constants
+from . import custom_sa_types as _custom_sa_types
 
 def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
                                fields=marshmallow.fields):
@@ -19,6 +20,8 @@ def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
         elif type(sa_column.type) is _sa_types.DateTime:
             field_cls = fields.DateTime
             field_kwargs['format'] = _mc_constants.DATETIME_FORMAT
+        elif type(sa_column.type) is _custom_sa_types.JSONEncodedDict:
+            field_cls = fields.Dict
         return field_cls(**field_kwargs)
 
     common_dump_only_fields = ['created', 'modified']
@@ -43,8 +46,8 @@ def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
     class JobSchema(Schema):
         key = sa_column_to_marshmallow_field(job_table.columns['key'])
         label = sa_column_to_marshmallow_field(job_table.columns['label'])
-        serialization = sa_column_to_marshmallow_field(
-            job_table.columns['serialization'])
+        job_spec = sa_column_to_marshmallow_field(job_table.columns['job_spec'])
+        data = sa_column_to_marshmallow_field(job_table.columns['data'])
         status = sa_column_to_marshmallow_field(job_table.columns['status'])
         claimed = sa_column_to_marshmallow_field(job_table.columns['claimed'])
         created = sa_column_to_marshmallow_field(job_table.columns['created'])
