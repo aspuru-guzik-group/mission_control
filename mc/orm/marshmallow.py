@@ -53,7 +53,7 @@ def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
         created = sa_column_to_marshmallow_field(job_table.columns['created'])
         modified = sa_column_to_marshmallow_field(job_table.columns['modified'])
         class Meta:
-            fields = ['key', 'label', 'serialization', 'status', 'claimed',
+            fields = ['key', 'label', 'job_spec', 'data', 'status', 'claimed',
                       'created', 'modified']
             dump_only_fields = common_dump_only_fields
     marshmallow_schemas['Job'] = JobSchema()

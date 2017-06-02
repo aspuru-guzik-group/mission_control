@@ -36,24 +36,30 @@ class FlowTestCase(BaseTestCase):
 class JobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.job_kwargs = {'label': 'initial_label'}
+        self.job_kwargs = {
+            'label': 'initial_label',
+            'data': {'some': 'data'},
+            'job_spec': {'some': 'job_spec'}
+        }
 
     def _create_job(self):
         return self.dao.create_item(item_type='Job', kwargs=self.job_kwargs)
 
     def test_create_job(self):
         created_job = self._create_job()
-        self.assertEqual(created_job['label'], self.job_kwargs['label'])
+        for k, v in self.job_kwargs.items(): self.assertEqual(created_job[k], v)
         self.assertTrue(created_job['key'] is not None)
 
     def test_patch_job(self):
         created_job = self._create_job()
+        patches = {
+            'label': 'label2',
+            'data': {'some': 'data2'},
+            'job_spec': {'some': 'job_spec2'},
+        }
         patched_job = self.dao.patch_item(
-            item_type='Job',
-            key=created_job['key'],
-            patches={'label': 'label2'}
-        )
-        self.assertEqual(patched_job['label'], 'label2')
+            item_type='Job', key=created_job['key'], patches=patches)
+        for k, v in patches.items(): self.assertEqual(patched_job[k], v)
 
 class QueueTestCase(BaseTestCase):
     def setUp(self):
