@@ -28,8 +28,9 @@ class BashSubmissionBuilder(object):
             **(std_log_file_names or {})
         }
 
-    def build_submission(self, submission_spec=None, cfg=None, output_dir=None):
-        self._spec = submission_spec
+    def build_submission(self, *args, submission_spec=None, cfg=None,
+                         output_dir=None, **kwargs):
+        self._spec = submission_spec or {}
         self._cfg = cfg
         self._output_dir = output_dir or tempfile.mkdtemp(prefix='bash.sub.')
         self.ensure_dir(self._output_dir)
@@ -136,7 +137,7 @@ class BashSubmissionBuilder(object):
         body_section = textwrap.dedent(
             """
             {job_engine_preamble}
-            {job_engine_exe}  run_submission --submission_dir={output_dir}
+            {job_engine_exe} run_submission --submission_dir={output_dir}
             """
         ).strip().format(
             job_engine_preamble=job_engine_cfg.get('entrypoint_preamble', ''),
