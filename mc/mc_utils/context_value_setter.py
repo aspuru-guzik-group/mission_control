@@ -6,19 +6,24 @@ from . import dot_spec_loader
 
 
 class ContextValueSetter(object):
+    class UnknownTransformError(Exception): pass
+
     def set_context_values(self, value_specs=None, context=None):
         for value_spec in (value_specs or []):
             self.set_context_value(value_spec=value_spec, context=context)
 
     def set_context_value(self, value_spec=None, context=None):
         try:
+            value = self.get_value_for_value_spec(
+                value_spec=value_spec,
+                context=context
+            )
+            transformed_value = self.transform_value_for_value_spec(
+                value=value, value_spec=value_spec, context=context)
             self.set_context_dest_value(
                 context=context,
                 dest=value_spec['dest'],
-                value=self.get_value_for_value_spec(
-                    value_spec=value_spec,
-                    context=context
-                )
+                value=transformed_value
             )
         except Exception as exception:
             raise Exception("Unable to set_context_value:\n"
@@ -56,6 +61,14 @@ class ContextValueSetter(object):
     def render_template(self, template=None, context=None):
         return jinja2.Template(
             template, undefined=jinja2.StrictUndefined).render(ctx=context)
+
+
+    def transform_value_for_value_spec(self, value=None, value_spec=None,
+                                       context=None):
+        transform = value_spec.get('transform')
+        if not transform: return value
+        if transform == 'json.dumps': return json.dumps(value)
+        raise self.UnkownTransformError(transform)
 
     def set_context_dest_value(self, context=None, dest=None, value=None):
         self.set_value_from_dot_spec(obj={'ctx': context}, dot_spec=dest,

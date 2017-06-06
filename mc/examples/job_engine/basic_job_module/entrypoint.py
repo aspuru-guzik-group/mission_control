@@ -5,13 +5,15 @@ def main():
     job_module_loader = setup_job_module_loader(job_module=job_module)
     job_engine = JobEngine(job_module_loader=job_module_loader)
     job = {'key': 'some_job'}
-    submission_meta = job_engine.build_submission(job=job)
-    job_engine.run_submission(submission_dir=submission_meta['dir'])
+    submission_meta = job_engine.build_job_submission(job=job)
+    job_engine.run_job_submission(submission_dir=submission_meta['dir'])
 
 def setup_job_module():
     class MyJobModule:
-        def build_submission(self, *args, **kwargs): print("build_submission")
-        def run_submission(self, *args, **kwargs): print("run_submission")
+        def build_job_submission(self, *args, **kwargs): 
+            print("build_job_submission")
+        def run_job_submission(self, *args, **kwargs):
+            print("run_job_submission")
     return MyJobModule()
 
 def setup_job_module_loader(job_module=None):

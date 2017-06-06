@@ -159,26 +159,26 @@ class PatchAndReleaseFlowRecordTestCase(BaseTestCase):
 class GenerateFlowClientFromMcDaoTestCase(BaseTestCase):
     @patch.object(flow_runner, 'McDaoFlowClient')
     def test_returns_flow_client_instance(self, _McDaoFlowClient):
-        dao = MagicMock()
+        mc_dao = MagicMock()
         queue_key = MagicMock()
         result = flow_runner.FlowRunner.generate_flow_client_from_mc_dao(
-            dao=dao, queue_key=queue_key)
+            mc_dao=mc_dao, queue_key=queue_key)
         self.assertEqual(_McDaoFlowClient.call_args,
-                         call(dao=dao, queue_key=queue_key))
+                         call(mc_dao=mc_dao, queue_key=queue_key))
         self.assertEqual(result, _McDaoFlowClient.return_value)
 
 class McDaoFlowClientTestCase(unittest.TestCase):
     def setUp(self):
         self.flow_client = flow_runner.McDaoFlowClient(
-            dao=MagicMock(), queue_key=MagicMock())
+            mc_dao=MagicMock(), queue_key=MagicMock())
 
     def test_client_claim_flows(self):
         result = self.flow_client.claim_flows()
-        self.assertEqual(self.flow_client.dao.claim_queue_items.call_args,
+        self.assertEqual(self.flow_client.mc_dao.claim_queue_items.call_args,
                          call(queue_key=self.flow_client.queue_key))
         self.assertEqual(
             result,
-            self.flow_client.dao.claim_queue_items.return_value['items'])
+            self.flow_client.mc_dao.claim_queue_items.return_value['items'])
 
     def test_client_patch_and_release_flow(self):
         flow = MagicMock()
@@ -186,12 +186,12 @@ class McDaoFlowClientTestCase(unittest.TestCase):
         result = self.flow_client.patch_and_release_flow(
             flow=flow, patches=patches)
         self.assertEqual(
-            self.flow_client.dao.patch_item.call_args,
+            self.flow_client.mc_dao.patch_item.call_args,
             call(item_type='Flow', key=flow['key'],
                  patches={'claimed': False, **patches})
         )
         self.assertEqual(result,
-                         self.flow_client.dao.patch_item.return_value)
+                         self.flow_client.mc_dao.patch_item.return_value)
 
 if __name__ == '__main__':
     unittest.main()

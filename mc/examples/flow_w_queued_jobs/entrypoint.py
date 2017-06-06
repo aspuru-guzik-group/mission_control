@@ -9,41 +9,42 @@ from mc.runners.flow_runner import FlowRunner
 _DIR = os.path.dirname(__file__)
 
 def main():
-    dao = setup_dao()
+    mc_dao = setup_mc_dao()
     flow_engine = FlowEngine()
-    create_flow(dao=dao, flow_engine=flow_engine)
+    create_flow(mc_dao=mc_dao, flow_engine=flow_engine)
 
-    flow_queue_key = dao.create_item(item_type='Queue', kwargs={
+    flow_queue_key = mc_dao.create_item(item_type='Queue', kwargs={
         'queue_spec': json.dumps({'item_type': 'Flow'})
     })['key']
-    job_queue_key = dao.create_item(item_type='Queue', kwargs={
+    job_queue_key = mc_dao.create_item(item_type='Queue', kwargs={
         'queue_spec': json.dumps({'item_type': 'Job'})
     })['key']
 
     flow_runner = FlowRunner(
         flow_client=FlowRunner.generate_flow_client_from_mc_dao(
-            dao=dao, queue_key=flow_queue_key),
-        task_context=setup_task_context(dao=dao)
+            mc_dao=mc_dao, queue_key=flow_queue_key),
+        task_context=setup_task_context(mc_dao=mc_dao)
     )
 
     tick_stats = flow_runner.tick()
     while tick_stats['claimed'] > 0:
         tick_stats = flow_runner.tick()
-        claimed_jobs = dao.claim_queue_items(queue_key=job_queue_key)['items']
-        for job in claimed_jobs: run_job(job=job, dao=dao)
+        claimed_jobs = mc_dao.claim_queue_items(
+            queue_key=job_queue_key)['items']
+        for job in claimed_jobs: run_job(job=job, mc_dao=mc_dao)
     print("No more flows to claim.")
 
-def setup_dao():
+def setup_mc_dao():
     db_file = tempfile.mkstemp(suffix='.sqlite.db')[1]
     db_uri = 'sqlite:///{db_file}'.format(db_file=db_file)
-    dao = SaDao(db_uri=db_uri)
-    dao.create_tables()
-    return dao
+    mc_dao = SaDao(db_uri=db_uri)
+    mc_dao.create_tables()
+    return mc_dao
 
-def create_flow(dao=None, flow_engine=None):
+def create_flow(mc_dao=None, flow_engine=None):
     flow_spec = generate_flow_spec()
     flow = flow_engine.generate_flow(flow_spec=flow_spec)
-    dao.create_item(item_type='Flow', kwargs={
+    mc_dao.create_item(item_type='Flow', kwargs={
         'serialization': flow_engine.serialize_flow(flow=flow)
     })
 
@@ -64,15 +65,15 @@ def generate_flow_spec():
         })
     return flow_spec
 
-def setup_task_context(dao=None):
+def setup_task_context(mc_dao=None):
     def create_job(*args, job_kwargs=None, **kwargs):
         job_kwargs = {**(job_kwargs or {}), 'data': {}, 'status': 'PENDING'}
-        job = dao.create_item(item_type='Job', kwargs=job_kwargs)
+        job = mc_dao.create_item(item_type='Job', kwargs=job_kwargs)
         job_meta = {'key': job['key']}
         return job_meta
 
     def get_job(*args, job_meta=None, **kwargs):
-        job = dao.get_item_by_key(item_type='Job', key=job_meta['key'])
+        job = mc_dao.get_item_by_key(item_type='Job', key=job_meta['key'])
         return job
 
     task_context = {
@@ -81,10 +82,10 @@ def setup_task_context(dao=None):
     }
     return task_context
 
-def run_job(job=None, dao=None):
+def run_job(job=None, mc_dao=None):
     print("running job '{job_id}'".format(job_id=job['job_spec']['job_id']))
     job['status'] = 'COMPLETED'
-    dao.patch_item(item_type='Job', key=job['key'], patches={
+    mc_dao.patch_item(item_type='Job', key=job['key'], patches={
         'data': job['data'],
         'status': job['status'],
     })

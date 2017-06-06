@@ -80,17 +80,17 @@ class FlowRunner(object):
 
 
     @staticmethod
-    def generate_flow_client_from_mc_dao(dao=None, queue_key=None):
-        return McDaoFlowClient(dao=dao, queue_key=queue_key)
+    def generate_flow_client_from_mc_dao(mc_dao=None, queue_key=None):
+        return McDaoFlowClient(mc_dao=mc_dao, queue_key=queue_key)
 
 class McDaoFlowClient(object):
-    def __init__(self, dao=None, queue_key=None):
-        self.dao = dao
+    def __init__(self, mc_dao=None, queue_key=None):
+        self.mc_dao = mc_dao
         self.queue_key = queue_key
 
     def claim_flows(self):
-        return self.dao.claim_queue_items(queue_key=self.queue_key)['items']
+        return self.mc_dao.claim_queue_items(queue_key=self.queue_key)['items']
 
     def patch_and_release_flow(self, flow=None, patches=None):
-        return self.dao.patch_item(item_type='Flow', key=flow['key'],
-                                   patches={'claimed': False, **patches})
+        return self.mc_dao.patch_item(item_type='Flow', key=flow['key'],
+                                      patches={'claimed': False, **patches})

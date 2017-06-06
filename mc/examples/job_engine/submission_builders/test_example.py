@@ -12,9 +12,9 @@ class TestExample(unittest.TestCase):
         stdout = subprocess.check_output(cmd, shell=True).decode()
         expected_stdout = textwrap.dedent(
             '''
-            build_submission
-            run_submission:stdout
-            run_submission:stderr
+            build_job_submission
+            run_job_submission:stdout
+            run_job_submission:stderr
             job_dir contents:
             inputs
             job.sh

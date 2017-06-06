@@ -8,41 +8,41 @@ from mc.runners.flow_runner import FlowRunner
 _DIR = os.path.dirname(__file__)
 
 def main():
-    dao = setup_dao()
+    mc_dao = setup_mc_dao()
     flow_engine = FlowEngine()
-    queue_record = create_queue(dao=dao)
-    create_flows(dao=dao, flow_engine=flow_engine)
+    queue_record = create_queue(mc_dao=mc_dao)
+    create_flows(mc_dao=mc_dao, flow_engine=flow_engine)
     flow_runner = FlowRunner(
         flow_engine=flow_engine,
         flow_client=FlowRunner.generate_flow_client_from_mc_dao(
-            dao=dao, queue_key=queue_record['key'])
+            mc_dao=mc_dao, queue_key=queue_record['key'])
     )
     tick_stats = flow_runner.tick()
     while tick_stats['claimed'] > 0: tick_stats = flow_runner.tick()
     print("No more flows to claimed.")
 
-def setup_dao():
+def setup_mc_dao():
     db_file = tempfile.mkstemp(suffix='.sqlite.db')[1]
     db_uri = 'sqlite:///{db_file}'.format(db_file=db_file)
-    dao = SaDao(db_uri=db_uri)
-    dao.create_tables()
-    return dao
+    mc_dao = SaDao(db_uri=db_uri)
+    mc_dao.create_tables()
+    return mc_dao
 
-def create_queue(dao=None):
+def create_queue(mc_dao=None):
     queue_spec = {'item_type': 'Flow'}
-    queue_record = dao.create_item(item_type='Queue', kwargs={
-        'queue_spec': dao.serialize_value(queue_spec)
+    queue_record = mc_dao.create_item(item_type='Queue', kwargs={
+        'queue_spec': mc_dao.serialize_value(queue_spec)
     })
     return queue_record
 
-def create_flows(dao=None, flow_engine=None, n=3):
+def create_flows(mc_dao=None, flow_engine=None, n=3):
     for i in range(n):
         flow_spec = generate_flow_spec(params={
             'flow_id': 'flow_%s' % i,
             'num_tasks': 3
         })
         flow = flow_engine.generate_flow(flow_spec=flow_spec)
-        dao.create_item(item_type='Flow', kwargs={
+        mc_dao.create_item(item_type='Flow', kwargs={
             'serialization': flow_engine.serialize_flow(flow=flow)
         })
 

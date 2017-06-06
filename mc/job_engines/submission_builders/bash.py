@@ -105,7 +105,8 @@ class BashSubmissionBuilder(object):
             trap "output_status_file" EXIT
             '''
         ).strip().format(
-            completed_checkpoint_file=self.checkpoint_file_names['completed'],
+            completed_checkpoint_file=os.path.join(
+                self._output_dir, self.checkpoint_file_names['completed']),
             failure_log_file=std_log_files['failure'],
             summary_stdout_cmd=generate_summary_cmd(std_log_files['stdout']),
             summary_stderr_cmd=generate_summary_cmd(std_log_files['stderr']),
@@ -133,16 +134,20 @@ class BashSubmissionBuilder(object):
         return squashed.items()
 
     def generate_body_section(self):
+        std_log_files = self.get_std_log_files()
         job_engine_cfg = self._cfg.get('job_engine', {})
         body_section = textwrap.dedent(
             """
             {job_engine_preamble}
-            {job_engine_exe} run_submission --submission_dir={output_dir}
+            {job_engine_exe} run_job_submission --submission_dir={output_dir} \\
+                >>"{stdout_log_file}" 2>>"{stderr_log_file}"
             """
         ).strip().format(
             job_engine_preamble=job_engine_cfg.get('entrypoint_preamble', ''),
             job_engine_exe=job_engine_cfg['job_engine_exe'],
-            output_dir=self._output_dir
+            output_dir=self._output_dir,
+            stdout_log_file=std_log_files['stdout'],
+            stderr_log_file=std_log_files['stderr'],
         )
         return body_section
 

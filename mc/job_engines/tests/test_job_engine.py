@@ -13,8 +13,8 @@ class BaseTestCase(unittest.TestCase):
         self.output_dir = 'some_output_dir'
 
 class ExecuteCommandTestCase(BaseTestCase):
-    def test_build_submission_command(self):
-        self.assert_handles_command(command='build_submission')
+    def test_build_job_submission_command(self):
+        self.assert_handles_command(command='build_job_submission')
 
     def assert_handles_command(self, command=None):
         mock_handler = MagicMock()
@@ -24,8 +24,8 @@ class ExecuteCommandTestCase(BaseTestCase):
         self.assertEqual(mock_handler.call_args, call(**kwargs))
         self.assertEqual(result, mock_handler.return_value)
 
-    def test_run_submission_command(self):
-        self.assert_handles_command(command='run_submission')
+    def test_run_job_submission_command(self):
+        self.assert_handles_command(command='run_job_submission')
 
 @patch.object(job_engine, 'os')
 class BuildSubmissionTestCase(BaseTestCase):
@@ -36,26 +36,26 @@ class BuildSubmissionTestCase(BaseTestCase):
         self.job_engine.write_submission_meta = MagicMock()
         self.expected_module = self.job_engine.get_job_module.return_value
 
-    def _build_submission(self):
-        return self.job_engine.build_submission(
+    def _build_job_submission(self):
+        return self.job_engine.build_job_submission(
             job=self.job, cfg=self.cfg, output_dir=self.output_dir)
 
     def test_dispatches_to_job_module(self, *args):
-        self._build_submission()
+        self._build_job_submission()
         self.assertEqual(
             self.job_engine.get_job_module.call_args,
             call(job=self.job, cfg=self.cfg)
         )
         self.assertEqual(
-            self.expected_module.build_submission.call_args,
+            self.expected_module.build_job_submission.call_args,
             call(job=self.job, cfg=self.cfg, output_dir=self.output_dir)
         )
 
     def test_writes_and_returns_submission_meta(self, mock_os):
-        result = self._build_submission()
+        result = self._build_job_submission()
         expected_submission_meta = {
             'job': self.job, 'cfg': self.cfg, 'dir': self.output_dir,
-            **self.expected_module.build_submission.return_value
+            **self.expected_module.build_job_submission.return_value
         }
         self.assertEqual(
             self.job_engine.write_submission_meta.call_args,
@@ -85,7 +85,7 @@ class RunSubmissionTestCase(BaseTestCase):
                 MagicMock(return_value=self.submission_meta)
         self.job_module = MagicMock()
         self.job_engine.get_job_module = MagicMock(return_value=self.job_module)
-        self.job_engine.run_submission(submission_dir=self.submission_dir)
+        self.job_engine.run_job_submission(submission_dir=self.submission_dir)
 
     def test_reads_submission_meta(self):
         self.assertEqual(self.job_engine.read_submission_meta.call_args,
@@ -97,7 +97,7 @@ class RunSubmissionTestCase(BaseTestCase):
             call(job=self.submission_meta['job'],
                  cfg=self.submission_meta['cfg'])
         )
-        self.assertEqual(self.job_module.run_submission.call_args,
+        self.assertEqual(self.job_module.run_job_submission.call_args,
                          call(submission_meta=self.submission_meta))
 
 class DefaultJobModuleLoaderCase(BaseTestCase):

@@ -47,13 +47,13 @@ class JobEngineCommand(object):
         with open(file_path) as f: return json.load(f)
 
     def add_build_submission_subparser(self, subparsers=None):
-        subparser = subparsers.add_parser('build_submission')
+        subparser = subparsers.add_parser('build_job_submission')
         subparser.add_argument('--job', type=self._json_file)
         subparser.add_argument('--cfg', type=self._json_file, default={})
         subparser.add_argument('--output_dir')
 
     def add_run_submission_subparser(self, subparsers=None):
-        subparser = subparsers.add_parser('run_submission')
+        subparser = subparsers.add_parser('run_job_submission')
         subparser.add_argument('--submission_dir')
 
     def handle(self, *args, command=None, **kwargs):

@@ -8,8 +8,8 @@ def main():
     job_engine = JobEngine()
     import my_job_module
     job = {'job_spec': {'job_type': my_job_module.__name__}}
-    submission_meta = job_engine.build_submission(job=job)
-    job_engine.run_submission(submission_dir=submission_meta['dir'])
+    submission_meta = job_engine.build_job_submission(job=job)
+    job_engine.run_job_submission(submission_dir=submission_meta['dir'])
 
 if __name__ == '__main__':
     this_dir = os.path.dirname(__file__)

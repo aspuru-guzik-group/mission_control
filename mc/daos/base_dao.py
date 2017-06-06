@@ -3,6 +3,8 @@ import json
 class BaseDao(object):
     ITEM_TYPES = ['Job', 'Flow', 'Queue']
 
+    class ItemNotFoundError(Exception): pass
+
     def validate_query(self, query=None):
         for _filter in query.get('filters' or []):
             self.validate_query_filter(_filter=_filter)
@@ -16,11 +18,15 @@ class BaseDao(object):
                                  valid_operators=valid_operators))
 
     def get_item_by_key(self, item_type=None, key=None):
-        return self.get_items(item_type=item_type, query={
-            'filters': [
-                {'field': 'key', 'operator': '=', 'value': key}
-            ]
-        })[0]
+        try:
+            return self.get_items(item_type=item_type, query={
+                'filters': [
+                    {'field': 'key', 'operator': '=', 'value': key}
+                ]
+            })[0]
+        except IndexError as exc:
+            raise self.ItemNotFoundError(
+                f"item_type '{item_type}', key '{key}'") from exc
 
     def patch_items(self, item_type=None, keyed_patches=None):
         return {

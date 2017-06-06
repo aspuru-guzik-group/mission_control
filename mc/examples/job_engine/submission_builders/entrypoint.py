@@ -10,7 +10,7 @@ def main():
     job_engine = JobEngine()
     import my_job_module
     job = {'job_spec': {'job_type': my_job_module.__name__}}
-    submission_meta = job_engine.build_submission(job=job)
+    submission_meta = job_engine.build_job_submission(job=job)
     subprocess.run(
         ('cd {dir} && bash {entrypoint_file_name}').format(**submission_meta),
         shell=True, check=True

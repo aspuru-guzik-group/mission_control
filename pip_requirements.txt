@@ -9,3 +9,5 @@ jinja2
 pyyaml
 jsonfield
 dill
+sqlalchemy
+marshmallow

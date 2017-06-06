@@ -21,7 +21,7 @@ class BaseTestCase(unittest.TestCase):
             argv.append(arg_value)
         return argv
 
-class BuildSubmissionTestCase(BaseTestCase):
+class BuildJobSubmissionTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.tmp_dir = tempfile.mkdtemp()
@@ -31,7 +31,7 @@ class BuildSubmissionTestCase(BaseTestCase):
         self.arg_files = self.generate_arg_files(arg_names=['job', 'cfg'])
         self.arg_tuples = [*self.arg_files.items(),
                            ('output_dir', self.output_dir)]
-        self.job_command = 'build_submission'
+        self.job_command = 'build_job_submission'
         self.argv = self.generate_argv(job_command=self.job_command,
                                        arg_tuples=self.arg_tuples)
     def tearDown(self):
@@ -51,6 +51,8 @@ class BuildSubmissionTestCase(BaseTestCase):
         expected_command_kwargs = { 
             'command': self.job_command,
             'output_dir': self.output_dir,
+            'engine_config': None,
+            'engine_config_type': None,
         }
         for arg_name, arg_file_path in self.arg_files.items():
             with open(arg_file_path) as f:
@@ -58,12 +60,12 @@ class BuildSubmissionTestCase(BaseTestCase):
         self.assertEqual(self.job_engine.execute_command.call_args,
                          call(**expected_command_kwargs))
 
-class RunSubmissionTestCase(BaseTestCase):
+class RunJobSubmissionTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.submission_dir = 'some_submission_dir'
         self.arg_tuples = [('submission_dir', self.submission_dir)]
-        self.job_command = 'run_submission'
+        self.job_command = 'run_job_submission'
         self.argv = self.generate_argv(job_command=self.job_command,
                                        arg_tuples=self.arg_tuples)
 
@@ -71,7 +73,9 @@ class RunSubmissionTestCase(BaseTestCase):
         self.cmd.execute(argv=self.argv)
         expected_command_kwargs = {
             'command': self.job_command,
-            'submission_dir': self.submission_dir
+            'submission_dir': self.submission_dir,
+            'engine_config': None,
+            'engine_config_type': None,
         }
         self.assertEqual(self.job_engine.execute_command.call_args,
                          call(**expected_command_kwargs))
