@@ -1,14 +1,16 @@
 class BaseJobSubmissionBuilder(object):
-
-    class UnknownTargetError(Exception): pass
-
     def __init__(self, *args, **kwargs):
         self.args = args
         self.kwargs = kwargs or {}
-        for attr in ['job', 'cfg', 'output_dir']:
-            setattr(self, attr, self.kwargs.get(attr))
+        for attr in ['job', 'cfg']:
+            setattr(self, attr, self.kwargs.get(attr, {}))
+        self.output_dir = self.kwargs.get('output_dir')
 
-    def get_target_env_from_cfg(self):
-        return self.cfg.get('job_engine', {}).get('target_env')
+    @classmethod
+    def build_job_submission(cls, *args, job=None, cfg=None, output_dir=None,
+                             **kwargs):
+        builder = cls(*args, job=job, cfg=cfg, output_dir=output_dir, **kwargs)
+        return builder._build_job_submission()
 
-    def build_job_submission(self): raise NotImplementedError
+    def _build_job_submission(self): raise NotImplementedError
+    
