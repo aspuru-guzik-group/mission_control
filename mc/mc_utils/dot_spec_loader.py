@@ -1,3 +1,4 @@
+import collections
 import importlib
 
 
@@ -36,9 +37,8 @@ class DotSpecLoader(object):
 
     @classmethod
     def get_attr_or_item(self, obj=None, key=None):
-        if hasattr(obj, key):
-            return getattr(obj, key)
-        else:
-            try: return obj[key]
-            except: return None
-
+        try:
+            if isinstance(obj, collections.abc.Sequence): return obj[int(key)]
+            elif isinstance(obj, collections.abc.Mapping): return obj[key]
+            elif hasattr(obj, key): return getattr(obj, key)
+        except: return None
