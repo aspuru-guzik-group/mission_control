@@ -59,7 +59,7 @@ class BuildSubmissionTestCase(BaseTestCase):
         }
         self.assertEqual(
             self.job_engine.write_submission_meta.call_args,
-            call(submission_meta=expected_submission_meta, _dir=self.output_dir)
+            call(submission_meta=expected_submission_meta, dir_=self.output_dir)
         )
         self.assertEqual(result, expected_submission_meta)
 
@@ -89,7 +89,7 @@ class RunSubmissionTestCase(BaseTestCase):
 
     def test_reads_submission_meta(self):
         self.assertEqual(self.job_engine.read_submission_meta.call_args,
-                         call(_dir=self.submission_dir))
+                         call(dir_=self.submission_dir))
 
     def test_dispatches_to_job_module(self):
         self.assertEqual(
