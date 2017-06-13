@@ -1,5 +1,5 @@
 import collections
-import jinja2
+import copy
 import json
 
 from . import dot_spec_loader
@@ -43,32 +43,39 @@ class ContextValueSetter(object):
 
     def get_value_for_value_spec(self, value_spec=None, context=None):
         if 'value' in value_spec: value = value_spec['value']
-        elif 'template' in value_spec:
-            value = self.render_template(template=value_spec['template'],
-                                         context=context)
-        else:
+        elif 'source' in value_spec:
             value = self.get_value_from_dot_spec(obj={'ctx': context},
                                                  dot_spec=value_spec['source'])
-        if 'from_json' in value_spec:
-            try: value = json.loads(value)
-            except Exception as exception:
-                msg = ("from_json error: {exception}\n"
-                       "value was: '{value}'").format(
-                           exception=exception, value=value)
-                raise Exception(msg)
+        else: 
+            raise Exception("Can't handle value_spec '{value_spec}'".format(
+                value_spec=value_spec))
         return value
-
-    def render_template(self, template=None, context=None):
-        return jinja2.Template(
-            template, undefined=jinja2.StrictUndefined).render(ctx=context)
-
 
     def transform_value_for_value_spec(self, value=None, value_spec=None,
                                        context=None):
         transform = value_spec.get('transform')
         if not transform: return value
-        if transform == 'json.dumps': return json.dumps(value)
-        raise self.UnkownTransformError(transform)
+        elif transform == 'json.dumps': return json.dumps(value)
+        elif transform == 'json.loads': return json.loads(value)
+        elif transform == 'mapping':
+            return self.execute_mapping_transform(value=value,
+                                                  mapping=value_spec['mapping'],
+                                                  context=context)
+        raise self.UnknownTransformError(transform)
+
+    def execute_mapping_transform(self, value=None, mapping=None, context=None):
+        return [self.map_item(item=item, idx=idx, items=value, mapping=mapping,
+                              context=context)
+                for idx, item in enumerate(value)]
+
+    def map_item(self, item=None, idx=None, items=None, mapping=None,
+                 context=None):
+        skeleton_copy = copy.deepcopy(mapping.get('skeleton', {}))
+        self.set_context_values(
+            value_specs=mapping.get('wirings', []),
+            context={**context, 'item': item, 'idx': idx, 'items': items,
+                     'skeleton': skeleton_copy})
+        return skeleton_copy
 
     def set_context_dest_value(self, context=None, dest=None, value=None):
         self.set_value_from_dot_spec(obj={'ctx': context}, dot_spec=dest,

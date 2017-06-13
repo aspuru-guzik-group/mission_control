@@ -1,4 +1,4 @@
-from mc.mc_utils import context_value_setter
+from mc.utils import context_value_setter
 from .base_task_handler import BaseTaskHandler
 
 

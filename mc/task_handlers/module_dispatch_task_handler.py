@@ -1,4 +1,4 @@
-from mc.mc_utils import dot_spec_loader
+from mc.utils import dot_spec_loader
 
 from .wire_task_handler import WireTaskHandler
 
