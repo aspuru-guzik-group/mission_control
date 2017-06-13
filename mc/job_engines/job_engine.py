@@ -7,11 +7,14 @@ import tempfile
 
 import dill
 
+from . import constants as _job_engine_constants
+from . import utils as _job_engine_utils
+
 
 class JobEngine(object):
     class JobModuleImportError(Exception): pass
 
-    SUBMISSION_META_NAME = 'MC_JOB_ENGINE__SUBMISSION_META.json'
+    SUBMISSION_META_NAME = _job_engine_constants.SUBMISSION_META_NAME
 
     def __init__(self, job_module_loader=None, logger=None):
         self.logger = logger or logging
@@ -35,11 +38,11 @@ class JobEngine(object):
         submission_meta = {'job': job, 'cfg': cfg, 'dir': output_dir,
                            **submission_meta_from_module}
         self.write_submission_meta(submission_meta=submission_meta,
-                                   _dir=output_dir)
+                                   dir_=output_dir)
         return submission_meta
 
-    def write_submission_meta(self, submission_meta=None, _dir=None):
-        submission_meta_path = os.path.join(_dir, self.SUBMISSION_META_NAME)
+    def write_submission_meta(self, submission_meta=None, dir_=None):
+        submission_meta_path = os.path.join(dir_, self.SUBMISSION_META_NAME)
         with open(submission_meta_path, 'w') as f: json.dump(submission_meta, f)
 
     def get_job_module(self, job=None, cfg=None):
@@ -50,15 +53,15 @@ class JobEngine(object):
             raise self.JobModuleImportError(msg) from exc
 
     def run_job_submission(self, *args, submission_dir=None, **kwargs):
-        submission_meta = self.read_submission_meta(_dir=submission_dir)
+        submission_meta = self.read_submission_meta(dir_=submission_dir)
         job_module = self.get_job_module(job=submission_meta['job'],
                                          cfg=submission_meta['cfg'])
         return job_module.run_job_submission(
             *args, submission_meta=submission_meta, **kwargs)
 
-    def read_submission_meta(self, _dir=None):
-        submission_meta_path = os.path.join(_dir, self.SUBMISSION_META_NAME)
-        with open(submission_meta_path) as f: return json.load(f)
+    def read_submission_meta(self, dir_=None):
+        return _job_engine_utils.read_submission_meta(
+            submission_dir=dir_, submission_meta_name=self.SUBMISSION_META_NAME)
 
 class DefaultJobModuleLoader(object):
     def __init__(self):

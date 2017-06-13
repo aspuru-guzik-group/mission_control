@@ -76,7 +76,10 @@ class JobEngineCommand(object):
             return self.load_module_from_file_path(file_path=file_path)
         elif file_type == '.dill':
             with open(file_path, 'rb') as f: return dill.load(f)
-        else: raise Exception(f"unknown file_type '{file_type}'")
+        else:
+            error = "unknown file_type '{file_type}'".format(
+                file_type=file_type)
+            raise Exception(error)
 
     def load_module_from_file_path(self, file_path=None, module_name=None):
         module_name = module_name or 'random_%s' % random.randint(1, int(1e4))

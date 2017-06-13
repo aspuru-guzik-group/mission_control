@@ -62,6 +62,7 @@ class SaDao(BaseDao):
     def row_to_dict(self, row): return dict(zip(row.keys(), row))
 
     def get_items_statement(self, item_type=None, query=None):
+        query = query or {}
         table = self.get_item_table(item_type=item_type)
         statement = table.select()
         statement = self.add_wheres_to_statement(query=query,

@@ -25,8 +25,9 @@ class BaseDao(object):
                 ]
             })[0]
         except IndexError as exc:
-            raise self.ItemNotFoundError(
-                f"item_type '{item_type}', key '{key}'") from exc
+            error_details = "item_type '{item_type}', key '{key}'".format(
+                item_type=item_type, key=key)
+            raise self.ItemNotFoundError(error_details)
 
     def patch_items(self, item_type=None, keyed_patches=None):
         return {

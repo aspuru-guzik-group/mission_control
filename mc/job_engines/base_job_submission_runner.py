@@ -1,6 +1,5 @@
 import os
 import tempfile
-import time
 import shutil
 
 
@@ -15,15 +14,12 @@ class BaseJobSubmissionRunner(object):
 
     def _run_job_submission(self): raise NotImplementedError
 
-    def generate_tmp_dir(self, prefix=None, use_time_suffix=True):
-        if prefix is None: prefix = 'sr'
-        time_suffix = ''
-        if use_time_suffix: time_suffix = '.' + str(time.time())
-        scratch_dir = self.submission_meta.get('scratch_dir') \
-                or tempfile.mkdtemp()
-        tmp_dir = os.path.join(scratch_dir, prefix + time_suffix)
-        os.makedirs(tmp_dir)
-        return tmp_dir
+    def generate_tmp_dir(self, prefix=None, suffix=None):
+        scratch_dir = self.submission_meta.get('scratch_dir')
+        if not scratch_dir:
+            scratch_dir = tempfile.mkdtemp(prefix='MC_SCRATCH.',
+                                           dir=self.submission_meta['dir'])
+        return tempfile.mkdtemp(prefix=prefix, suffix=suffix, dir=scratch_dir)
 
     def move_to_outputs(self, src=None, outputs_key=None):
         outputs_dir = os.path.join(
@@ -33,3 +29,13 @@ class BaseJobSubmissionRunner(object):
         )
         outputs_dest = os.path.join(outputs_dir, outputs_key)
         shutil.move(src, outputs_dest)
+
+    @property
+    def job_params(self):
+        if not hasattr(self, '_job_params'):
+            self.job_params = \
+                    self.submission_meta['job']['job_spec']['job_params']
+        return self._job_params
+
+    @job_params.setter
+    def job_params(self, value): self._job_params = value

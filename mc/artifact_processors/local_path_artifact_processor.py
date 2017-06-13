@@ -13,5 +13,5 @@ class LocalPathArtifactProcessor(BaseArtifactProcessor):
 
     def artifact_to_dir(self, artifact=None, dest=None, **kwargs):
         if artifact['artifact_type'] == self.ARTIFACT_TYPE:
-            os.symlink(artifact['params']['path'], dest)
+            os.symlink(artifact['artifact_params']['path'], dest)
         else: raise self.UnknownArtifactTypeError()
