@@ -1,4 +1,4 @@
-from collections import defaultdict
+import collections
 import unittest
 from unittest.mock import call, MagicMock, patch
 
@@ -97,7 +97,8 @@ class CompileValueSpecTestCase(BaseTestCase):
 class GetValueForValueSpecTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.value_spec = defaultdict(MagicMock, **{'dest': MagicMock()})
+        self.value_spec = collections.defaultdict(MagicMock,
+                                                  **{'dest': MagicMock()})
         self.context = MagicMock()
 
     def _get_value_for_value_spec(self):
@@ -123,7 +124,7 @@ class TransformValueForValueSpecTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.value = MagicMock()
-        self.value_spec = defaultdict(MagicMock)
+        self.value_spec = collections.defaultdict(MagicMock)
         self.context = MagicMock()
 
     def _transform(self, value=None, value_spec_updates=None):
@@ -165,20 +166,33 @@ class ExecuteMappingTransformTestCase(BaseTestCase):
         self.value = [MagicMock() for i in range(3)]
         self.transform = MagicMock()
         self.context = MagicMock()
-        self.setup_setter_mocks(attrs=['map_item'])
+        self.setup_setter_mocks(attrs=['map_item',
+                                       'get_iterator_for_mapping_source'])
+        self.expected_iterator = list(enumerate(self.value))
+        self.setter.get_iterator_for_mapping_source.return_value = \
+                self.expected_iterator
         self.result = self.setter.execute_mapping_transform(
             value=self.value, transform=self.transform, context=self.context)
+
+    def test_gets_iterator(self):
+        self.assertEqual(self.setter.get_iterator_for_mapping_source.call_args,
+                         call(mapping_source=self.value))
 
     def test_returns_mapped_items(self):
         self.assertEqual(
             self.setter.map_item.call_args_list,
-            [call(item=item, idx=idx, items=self.value,
-                  mapping_params=self.transform['params'], context=self.context)
-             for idx, item in enumerate(self.value)]
+            [
+                call(item={'key': key, 'value': value, 'idx': idx},
+                     items=self.value,
+                     mapping_params=self.transform['params'],
+                     context=self.context)
+                for idx, (key, value) in enumerate(self.expected_iterator)
+            ]
         )
         self.assertEqual(
-            self.result,
-            [self.setter.map_item.return_value for item in self.value]
+            self.result, 
+            [self.setter.map_item.return_value
+             for item in self.expected_iterator]
         )
 
 class MapItemTestCase(BaseTestCase):
@@ -186,19 +200,17 @@ class MapItemTestCase(BaseTestCase):
         super().setUp()
         self.item = MagicMock()
         self.items = MagicMock()
-        self.idx = MagicMock()
-        self.mapping_params = defaultdict(MagicMock, **{'skeleton': MagicMock(),
-                                                        'wirings': MagicMock()})
-        self.context = defaultdict(MagicMock)
+        self.mapping_params = collections.defaultdict(
+            MagicMock, **{'skeleton': MagicMock(), 'wirings': MagicMock()})
+        self.context = collections.defaultdict(MagicMock)
         self.setup_setter_mocks(attrs=['set_context_values'])
         self.mocks = self.setup_mocks(attrs=['copy'])
         self.expected_copy = self.mocks['copy'].deepcopy.return_value
         self.expected_context = {
             **self.context, 'item': self.item, 'items': self.items,
-            'idx': self.idx, 'skeleton': self.expected_copy
+            'skeleton': self.expected_copy
         }
-        self.result = self.setter.map_item(item=self.item, idx=self.idx,
-                                           items=self.items,
+        self.result = self.setter.map_item(item=self.item, items=self.items,
                                            mapping_params=self.mapping_params,
                                            context=self.context)
 
@@ -221,11 +233,6 @@ class ExecuteMappingTransformE2ETestCase(BaseTestCase):
         super().setUp()
         self.context = {'ctx_prop_{i}'.format(i=i): 'ctx_{i}_val'.format(i=i)
                         for i in range(3)}
-        self.items = [
-            {'prop_{i}'.format(i=i): 'item_{idx}_val_{i}'.format(idx=idx, i=i)
-             for i in range(3)}
-            for idx in range(3)
-        ]
         self.skeleton = {'prop_{i}'.format(i=i): 'skel_{i}_val'.format(i=i)
                          for i in range(4)}
         self.transform = {
@@ -233,27 +240,58 @@ class ExecuteMappingTransformE2ETestCase(BaseTestCase):
             'params': {
                 'skeleton': self.skeleton,
                 'wirings': [
-                    {'source': 'ctx.idx', 'dest': 'ctx.skeleton.idx'},
-                    {'source': 'ctx.item.prop_0', 'dest': 'ctx.skeleton.prop_0'},
+                    {'source': 'ctx.item.idx', 'dest': 'ctx.skeleton.idx'},
+                    {'source': 'ctx.item.key', 'dest': 'ctx.skeleton.key'},
+                    {'source': 'ctx.item.value.prop_0',
+                     'dest': 'ctx.skeleton.prop_0'},
                     {'value': 'new_prop_1_val', 'dest': 'ctx.skeleton.prop_1'},
                     {'source': 'ctx.ctx_prop_2', 'dest': 'ctx.skeleton.prop_2'},
                 ]
             }
         }
-        self.result = self.setter.execute_mapping_transform(
+
+    def _execute(self):
+        return self.setter.execute_mapping_transform(
             value=self.items, transform=self.transform, context=self.context)
 
-    def test_produces_expected_items(self):
+    def test_sequence_mapping_source(self):
+        self.items = [
+            {'prop_{i}'.format(i=i): 'item_{idx}_val_{i}'.format(idx=idx, i=i)
+             for i in range(3)}
+            for idx in range(3)
+        ]
+        result = self._execute()
         expected_result = [
             {
                 'idx': idx,
-                'prop_0': item['prop_0'],
+                'key': key,
+                'prop_0': value['prop_0'],
                 'prop_1': 'new_prop_1_val',
                 'prop_2': 'ctx_2_val',
                 'prop_3': 'skel_3_val',
             }
-            for idx, item in enumerate(self.items)
+            for idx, (key, value) in enumerate(enumerate(self.items))
         ]
-        self.assertEqual(self.result, expected_result)
+        self.assertEqual(result, expected_result)
 
-
+    def test_mapping_mapping_source(self):
+        self.items = collections.OrderedDict()
+        for idx in range(3):
+            self.items['item_{}'.format(idx)] = {
+                'prop_{i}'.format(i=i): 'item_{idx}_val_{i}'.format(
+                    idx=idx, i=i)
+                for i in range(3)
+            } 
+        result = self._execute()
+        expected_result = [
+            {
+                'idx': idx,
+                'key': key,
+                'prop_0': value['prop_0'],
+                'prop_1': 'new_prop_1_val',
+                'prop_2': 'ctx_2_val',
+                'prop_3': 'skel_3_val',
+            }
+            for idx, (key,value) in enumerate(self.items.items())
+        ]
+        self.assertEqual(result, expected_result)

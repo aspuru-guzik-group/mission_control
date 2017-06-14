@@ -8,6 +8,10 @@ from . import dot_spec_loader
 class ContextValueSetter(object):
     class UnknownTransformError(Exception): pass
     class InvalidValueSpecError(Exception): pass
+    class InvalidMappingSourceError(Exception):
+        def __init__(self, *args, mapping_source=None, **kwargs):
+            error = "invalid mapping_source '{}'".format(mapping_source)
+            super().__init__(error, *args, **kwargs)
 
     def set_context_values(self, value_specs=None, context=None):
         for value_spec in (value_specs or []):
@@ -71,19 +75,30 @@ class ContextValueSetter(object):
 
     def execute_mapping_transform(self, value=None, transform=None,
                                   context=None):
+        iterator = self.get_iterator_for_mapping_source(mapping_source=value)
         return [
-            self.map_item(item=item, idx=idx, items=value,
-                          mapping_params=transform['params'], context=context)
-            for idx, item in enumerate(value)
+            self.map_item(
+                item={'key': item_key, 'value': item_value, 'idx': item_idx},
+                items=value, mapping_params=transform['params'],
+                context=context
+            ) for item_idx, (item_key, item_value) in enumerate(iterator)
         ]
 
-    def map_item(self, item=None, idx=None, items=None, mapping_params=None,
-                 context=None):
+    def get_iterator_for_mapping_source(self, mapping_source=None):
+        iterator = None
+        if isinstance(mapping_source, collections.abc.Mapping):
+            iterator = mapping_source.items()
+        elif isinstance(mapping_source, collections.abc.Sequence):
+            iterator = enumerate(mapping_source)
+        if not iterator: raise self.InvalidMappingSourceError(mapping_source)
+        return iterator
+
+    def map_item(self, item=None, items=None, mapping_params=None, context=None):
         skeleton_copy = copy.deepcopy(mapping_params.get('skeleton', {}))
         self.set_context_values(
             value_specs=mapping_params.get('wirings', []),
-            context={**context, 'item': item, 'idx': idx, 'items': items,
-                     'skeleton': skeleton_copy})
+            context={**context, 'item': item,
+                     'items': items, 'skeleton': skeleton_copy})
         return skeleton_copy
 
     def set_context_dest_value(self, context=None, dest=None, value=None):
