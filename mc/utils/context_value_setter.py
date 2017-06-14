@@ -55,24 +55,27 @@ class ContextValueSetter(object):
                                        context=None):
         transform = value_spec.get('transform')
         if not transform: return value
-        elif transform == 'json.dumps': return json.dumps(value)
-        elif transform == 'json.loads': return json.loads(value)
-        elif transform == 'mapping':
-            return self.execute_mapping_transform(value=value,
-                                                  mapping=value_spec['mapping'],
-                                                  context=context)
+        if type(transform) is str: transform = {'type': transform}
+        if transform['type'] == 'json.dumps': return json.dumps(value)
+        elif transform['type'] == 'json.loads': return json.loads(value)
+        elif transform['type'] == 'mapping':
+            return self.execute_mapping_transform(
+                value=value, transform=transform, context=context)
         raise self.UnknownTransformError(transform)
 
-    def execute_mapping_transform(self, value=None, mapping=None, context=None):
-        return [self.map_item(item=item, idx=idx, items=value, mapping=mapping,
-                              context=context)
-                for idx, item in enumerate(value)]
+    def execute_mapping_transform(self, value=None, transform=None,
+                                  context=None):
+        return [
+            self.map_item(item=item, idx=idx, items=value,
+                          mapping_params=transform['params'], context=context)
+            for idx, item in enumerate(value)
+        ]
 
-    def map_item(self, item=None, idx=None, items=None, mapping=None,
+    def map_item(self, item=None, idx=None, items=None, mapping_params=None,
                  context=None):
-        skeleton_copy = copy.deepcopy(mapping.get('skeleton', {}))
+        skeleton_copy = copy.deepcopy(mapping_params.get('skeleton', {}))
         self.set_context_values(
-            value_specs=mapping.get('wirings', []),
+            value_specs=mapping_params.get('wirings', []),
             context={**context, 'item': item, 'idx': idx, 'items': items,
                      'skeleton': skeleton_copy})
         return skeleton_copy

@@ -107,11 +107,11 @@ class TransformValueForValueSpecTestCase(BaseTestCase):
 
     def test_mapping_transform(self):
         self.setter.execute_mapping_transform = MagicMock()
-        result = self._transform(value_spec_updates={'transform': 'mapping'})
+        transform = {'type': 'mapping'}
+        result = self._transform(value_spec_updates={'transform': transform})
         self.assertEqual(
             self.setter.execute_mapping_transform.call_args,
-            call(value=self.value, mapping=self.value_spec['mapping'],
-                 context=self.context)
+            call(value=self.value, transform=transform, context=self.context)
         )
         self.assertEqual(result,
                          self.setter.execute_mapping_transform.return_value)
@@ -120,17 +120,17 @@ class ExecuteMappingTransformTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.value = [MagicMock() for i in range(3)]
-        self.mapping = MagicMock()
+        self.transform = MagicMock()
         self.context = MagicMock()
         self.setup_setter_mocks(attrs=['map_item'])
         self.result = self.setter.execute_mapping_transform(
-            value=self.value, mapping=self.mapping, context=self.context)
+            value=self.value, transform=self.transform, context=self.context)
 
     def test_returns_mapped_items(self):
         self.assertEqual(
             self.setter.map_item.call_args_list,
-            [call(item=item, idx=idx, items=self.value, mapping=self.mapping,
-                  context=self.context)
+            [call(item=item, idx=idx, items=self.value,
+                  mapping_params=self.transform['params'], context=self.context)
              for idx, item in enumerate(self.value)]
         )
         self.assertEqual(
@@ -144,8 +144,8 @@ class MapItemTestCase(BaseTestCase):
         self.item = MagicMock()
         self.items = MagicMock()
         self.idx = MagicMock()
-        self.mapping = defaultdict(MagicMock, **{'skeleton': MagicMock(),
-                                                 'wirings': MagicMock()})
+        self.mapping_params = defaultdict(MagicMock, **{'skeleton': MagicMock(),
+                                                        'wirings': MagicMock()})
         self.context = defaultdict(MagicMock)
         self.setup_setter_mocks(attrs=['set_context_values'])
         self.mocks = self.setup_mocks(attrs=['copy'])
@@ -156,17 +156,17 @@ class MapItemTestCase(BaseTestCase):
         }
         self.result = self.setter.map_item(item=self.item, idx=self.idx,
                                            items=self.items,
-                                           mapping=self.mapping,
+                                           mapping_params=self.mapping_params,
                                            context=self.context)
 
     def test_makes_deep_copy_of_the_skeleton(self):
         self.assertEqual(self.mocks['copy'].deepcopy.call_args,
-                         call(self.mapping.get('skeleton')))
+                         call(self.mapping_params.get('skeleton')))
 
     def test_applies_wirings_with_expected_context(self):
         self.assertEqual(
             self.setter.set_context_values.call_args,
-            call(value_specs=self.mapping.get('wirings'),
+            call(value_specs=self.mapping_params.get('wirings'),
                  context=self.expected_context)
         )
 
@@ -185,17 +185,20 @@ class ExecuteMappingTransformE2ETestCase(BaseTestCase):
         ]
         self.skeleton = {'prop_{i}'.format(i=i): 'skel_{i}_val'.format(i=i)
                          for i in range(4)}
-        self.mapping = {
-            'skeleton': self.skeleton,
-            'wirings': [
-                {'source': 'ctx.idx', 'dest': 'ctx.skeleton.idx'},
-                {'source': 'ctx.item.prop_0', 'dest': 'ctx.skeleton.prop_0'},
-                {'value': 'new_prop_1_val', 'dest': 'ctx.skeleton.prop_1'},
-                {'source': 'ctx.ctx_prop_2', 'dest': 'ctx.skeleton.prop_2'},
-            ]
+        self.transform = {
+            'type': 'mapping',
+            'params': {
+                'skeleton': self.skeleton,
+                'wirings': [
+                    {'source': 'ctx.idx', 'dest': 'ctx.skeleton.idx'},
+                    {'source': 'ctx.item.prop_0', 'dest': 'ctx.skeleton.prop_0'},
+                    {'value': 'new_prop_1_val', 'dest': 'ctx.skeleton.prop_1'},
+                    {'source': 'ctx.ctx_prop_2', 'dest': 'ctx.skeleton.prop_2'},
+                ]
+            }
         }
         self.result = self.setter.execute_mapping_transform(
-            value=self.items, mapping=self.mapping, context=self.context)
+            value=self.items, transform=self.transform, context=self.context)
 
     def test_produces_expected_items(self):
         expected_result = [
