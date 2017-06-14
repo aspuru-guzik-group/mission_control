@@ -51,16 +51,14 @@ def create_flow(mc_dao=None, flow_engine=None):
 def generate_flow_spec():
     flow_spec = {
         'label': 'example_flow',
-        'task_specs': []
+        'tasks': []
     }
     for i in range(3):
         job_id = 'job_%s' % i
-        flow_spec['task_specs'].append({
-            'task' : {
-                'key': 'job_{job_id}_task'.format(job_id=job_id),
-                'task_type': 'mc.tasks.job',
-                'task_params': {'job_spec': {'job_id': job_id}},
-            },
+        flow_spec['tasks'].append({
+            'key': 'job_{job_id}_task'.format(job_id=job_id),
+            'task_type': 'mc.tasks.job',
+            'task_params': {'job_spec': {'job_id': job_id}},
             'precursors': ['ROOT'],
         })
     return flow_spec

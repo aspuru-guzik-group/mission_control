@@ -24,22 +24,18 @@ def setup_dao():
 def generate_flow_spec():
     flow_spec = {
         'label': 'example_flow',
-        'task_specs': [
+        'tasks': [
             {
-                'task' : {
-                    'key': 'task_1',
-                    'task_type': 'print',
-                    'task_params': {'message': 'I am task_1.'},
-                },
+                'key': 'task_1',
+                'task_type': 'print',
+                'task_params': {'message': 'I am task_1.'},
                 'precursors': ['ROOT'],
             },
             {
-                'task' : {
-                    'key': 'task_2',
-                    'task_type': 'mc.tasks.job',
-                    'task_params': {
-                        'job_spec': 'some job spec'
-                    },
+                'key': 'task_2',
+                'task_type': 'mc.tasks.job',
+                'task_params': {
+                    'job_spec': 'some job spec'
                 },
                 'precursors': ['task_1'],
             },

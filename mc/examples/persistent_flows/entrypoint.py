@@ -38,29 +38,23 @@ def main():
 def generate_flow_spec():
     flow_spec = {
         'label': 'example_flow',
-        'task_specs': [
+        'tasks': [
             {
-                'task' : {
-                    'key': 'task_1',
-                    'task_type': 'print',
-                    'task_params': {'message': 'I am task_1.'},
-                },
+                'key': 'task_1',
+                'task_type': 'print',
+                'task_params': {'message': 'I am task_1.'},
                 'precursors': ['ROOT'],
             },
             {
-                'task' : {
-                    'key': 'task_2',
-                    'task_type': 'print',
-                    'task_params': {'message': 'I am task_2.'},
-                },
+                'key': 'task_2',
+                'task_type': 'print',
+                'task_params': {'message': 'I am task_2.'},
                 'precursors': ['task_1'],
             },
             {
-                'task' : {
-                    'key': 'task_3',
-                    'task_type': 'print',
-                    'task_params': {'message': 'I am task_3.'},
-                },
+                'key': 'task_3',
+                'task_type': 'print',
+                'task_params': {'message': 'I am task_3.'},
                 'precursors': ['task_2'],
             }
         ]

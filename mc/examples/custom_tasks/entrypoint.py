@@ -9,18 +9,16 @@ def main():
     sys.path.insert(1, _DIR)
     flow_spec = {
         'label': 'test_flow',
-        'task_specs': [
+        'tasks': [
             {
-                'task' : {
-                    'key': 'task_1',
-                    'task_type': 'my_custom_task',
-                    'task_params': {
-                        'param1': 'value1',
-                        'param2': 'value2',
-                    },
+                'key': 'task_1',
+                'task_type': 'my_custom_task',
+                'task_params': {
+                    'param1': 'value1',
+                    'param2': 'value2',
                 },
                 'precursors': ['ROOT'],
-            },
+            }
         ]
     }
     flow_engine = FlowEngine()

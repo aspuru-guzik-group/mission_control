@@ -59,22 +59,20 @@ def generate_flow_spec(params=None):
     flow_id = params['flow_id']
     num_tasks = params['num_tasks']
     flow_spec = {'label': flow_id}
-    task_specs = []
+    tasks = []
     for i in range(num_tasks):
         task_id = 'task_%s' % i
         if i == 0: precursor = 'ROOT'
-        else: precursor = task_specs[i-1]['task']['key']
-        task_specs.append({
-            'task' : {
-                'key': task_id,
-                'task_type': 'print',
-                'task_params': {
-                    'message': msg_tpl.format(task_id=task_id, flow_id=flow_id)
-                },
+        else: precursor = tasks[i-1]['key']
+        tasks.append({
+            'key': task_id,
+            'task_type': 'print',
+            'task_params': {
+                'message': msg_tpl.format(task_id=task_id, flow_id=flow_id)
             },
             'precursors': [precursor]
         })
-    flow_spec['task_specs'] = task_specs
+    flow_spec['tasks'] = tasks
     return flow_spec
 
 def claim_flow_records(dao=None, queue_key=None):

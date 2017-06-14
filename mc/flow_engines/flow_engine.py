@@ -30,8 +30,7 @@ class FlowEngine(object):
         flow_kwargs = {k:v for k, v in flow_spec.items()
                        if k in self.simple_flow_serialization_attrs}
         flow = Flow(**flow_kwargs)
-        for task_spec in flow_spec.get('task_specs', []):
-            flow.add_task(**task_spec)
+        for task in flow_spec.get('tasks', []): flow.add_task(task=task)
         return flow
 
     @classmethod

@@ -22,14 +22,14 @@ class Flow(object):
     def add_root_task(self):
         self.add_task(task={'key': self.ROOT_TASK_KEY, 'status': 'COMPLETED'})
 
-    def add_task(self, task=None,  precursors=None, successors=None):
+    def add_task(self, task=None):
         task.setdefault('key', self.generate_task_key())
         task.setdefault('status', 'PENDING')
         self.tasks[task['key']] = task
-        for precursor_key in (precursors or []):
+        for precursor_key in task.get('precursors', []):
             self.add_edge(edge={'src_key': precursor_key,
                                 'dest_key': task['key']})
-        for successor_key in (successors or []):
+        for successor_key in task.get('successors', []):
             self.add_edge(edge={'src_key': task['key'],
                                 'dest_key': successor_key})
         return task

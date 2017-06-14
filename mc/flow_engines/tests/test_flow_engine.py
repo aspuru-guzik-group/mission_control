@@ -192,17 +192,16 @@ class TickTestCase(BaseTestCase):
         return flow
 
     def _add_branch_with_pending_leaf_to_flow(self, flow, depth=3):
-        branch_root = flow.add_task(task={'status': 'COMPLETED'},
-                                    precursors=[flow.ROOT_TASK_KEY])
+        branch_root = flow.add_task(task={'status': 'COMPLETED',
+                                          'precursors': [flow.ROOT_TASK_KEY]})
         for i in range(depth):
             child_task = flow.add_task(
                 task={'key': str(uuid4()), 'status': 'COMPLETED',
-                      'depth': depth},
-                precursors=[branch_root['key']]
+                      'precursors': [branch_root['key']], 'depth': depth}
             )
             branch_root = child_task
-        flow.add_task(task={'status': 'PENDING'},
-                      precursors=[branch_root['key']])
+            flow.add_task(task={'status': 'PENDING',
+                                'precursors': [branch_root['key']]})
 
     def test_ticks_running_tasks(self):
         self.maxDiff = None
@@ -227,8 +226,8 @@ class TickTestCase(BaseTestCase):
     def _generate_flow_with_running_tasks(self):
         flow = flow_engine.Flow()
         for i in range(3):
-            flow.add_task(task={'key': i, 'status': 'RUNNING'},
-                          precursors=[flow.ROOT_TASK_KEY])
+            flow.add_task(task={'key': i, 'status': 'RUNNING',
+                                'precursors': [flow.ROOT_TASK_KEY]})
         return flow
 
     def summarize_tasks(self, tasks):
