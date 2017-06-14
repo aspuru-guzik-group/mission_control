@@ -7,6 +7,7 @@ from . import dot_spec_loader
 
 class ContextValueSetter(object):
     class UnknownTransformError(Exception): pass
+    class InvalidValueSpecError(Exception): pass
 
     def set_context_values(self, value_specs=None, context=None):
         for value_spec in (value_specs or []):
@@ -14,17 +15,14 @@ class ContextValueSetter(object):
 
     def set_context_value(self, value_spec=None, context=None):
         try:
+            value_spec = self.compile_value_spec(value_spec=value_spec)
             value = self.get_value_for_value_spec(
-                value_spec=value_spec,
-                context=context
-            )
+                value_spec=value_spec, context=context)
             transformed_value = self.transform_value_for_value_spec(
                 value=value, value_spec=value_spec, context=context)
             self.set_context_dest_value(
-                context=context,
-                dest=value_spec['dest'],
-                value=transformed_value
-            )
+                context=context, dest=value_spec['dest'], 
+                value=transformed_value)
         except Exception as exception:
             raise Exception("Unable to set_context_value:\n"
                             "  exception: {exception}\n"
@@ -34,6 +32,14 @@ class ContextValueSetter(object):
                                 value_spec=value_spec,
                                 context=self.elide_string(str(context))
                             ))
+
+    def compile_value_spec(self, value_spec):
+        if type(value_spec) is str:
+            try:
+                source, dest = value_spec.split('=>')
+                value_spec = {'source': source.strip(), 'dest': dest.strip()}
+            except: raise self.InvalidValueSpecError(value_spec)
+        return value_spec
 
     def elide_string(self, string=None, max_len=100):
         elided_string = string

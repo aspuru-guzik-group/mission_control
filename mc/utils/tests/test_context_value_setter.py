@@ -40,16 +40,59 @@ class SeContextValuesTestCase(BaseTestCase):
 class SetContextValueTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.dest_dot_spec = 'ctx.foo.bar'
-        self.context = {}
-        self.value_spec = {'dest': self.dest_dot_spec}
-        self.setup_setter_mocks(attrs=['get_value_for_value_spec'])
-
-    def test_sets_dest_value_on_context(self):
+        self.context = MagicMock()
+        self.value_spec = MagicMock()
+        self.setup_setter_mocks(attrs=[
+            'compile_value_spec', 'get_value_for_value_spec',
+            'transform_value_for_value_spec', 'set_context_dest_value'])
         self.setter.set_context_value(value_spec=self.value_spec,
                                       context=self.context)
-        self.assertEqual(self.context['foo']['bar'],
-                         self.setter.get_value_for_value_spec.return_value)
+        self.expected_compiled_value_spec = (self.setter.compile_value_spec
+                                             .return_value)
+
+    def test_compiles_value_spec(self):
+        self.assertEqual(self.setter.compile_value_spec.call_args,
+                         call(value_spec=self.value_spec))
+
+    def test_gets_source_value(self):
+        self.assertEqual(
+            self.setter.get_value_for_value_spec.call_args,
+            call(value_spec=self.expected_compiled_value_spec,
+                 context=self.context)
+        )
+
+    def test_transforms_value(self):
+        self.assertEqual(
+            self.setter.transform_value_for_value_spec.call_args,
+            call(value=self.setter.get_value_for_value_spec.return_value,
+                 value_spec=self.expected_compiled_value_spec,
+                 context=self.context)
+        )
+
+    def test_sets_dest_value_on_context(self):
+        self.assertEqual(
+            self.setter.set_context_dest_value.call_args,
+            call(context=self.context,
+                 dest=self.expected_compiled_value_spec['dest'],
+                 value=self.setter.transform_value_for_value_spec.return_value)
+        )
+
+class CompileValueSpecTestCase(BaseTestCase):
+    def test_parses_str_value_spec(self):
+        value_spec = 'my.source => my.dest'
+        result = self.setter.compile_value_spec(value_spec=value_spec)
+        expected_result = {'source': 'my.source', 'dest': 'my.dest'}
+        self.assertEqual(result,  expected_result)
+
+    def test_raises_exception_if_cant_parse_str(self):
+        bad_value_spec = 'foogobble'
+        with self.assertRaises(self.setter.InvalidValueSpecError):
+            self.setter.compile_value_spec(value_spec=bad_value_spec)
+
+    def test_passes_through_non_str_value_specs(self):
+        value_spec = MagicMock()
+        result = self.setter.compile_value_spec(value_spec=value_spec)
+        self.assertEqual(result, value_spec)
 
 class GetValueForValueSpecTestCase(BaseTestCase):
     def setUp(self):
