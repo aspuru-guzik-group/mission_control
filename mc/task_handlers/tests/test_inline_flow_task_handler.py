@@ -10,7 +10,7 @@ class BaseTestCase(unittest.TestCase):
         super().setUp()
         self.task = defaultdict(MagicMock, **{'data': {}})
         self.flow_engine = MagicMock()
-        self.task_ctx = self.generate_task_ctx(flow_engine=self.flow_engine)
+        self.task_ctx = self.generate_task_ctx()
         self.task_handler = inline_flow_task_handler.InlineFlowTaskHandler(
             task_ctx=self.task_ctx)
 
@@ -20,7 +20,9 @@ class BaseTestCase(unittest.TestCase):
         return flow
 
     def generate_task_ctx(self, **kwargs):
-        task_ctx = defaultdict(MagicMock, **{'task': self.task, **kwargs})
+        task_ctx = defaultdict(
+            MagicMock,
+            **{'task': self.task, 'flow_engine': self.flow_engine, **kwargs})
         return task_ctx
 
     def setup_mocks(self, attrs=None):
@@ -67,7 +69,7 @@ class TickFlowUntilHasNoPendingTestCase(BaseTestCase):
         super().setUp()
         self.flow = MagicMock()
         self.setup_task_handler_mocks(attrs=['persist_flow',
-                                             'handle_completed_flow'])
+                                             'handle_flow_status'])
 
     def _tick(self):
         self.task_handler.tick_flow_until_has_no_pending(flow=self.flow)
@@ -93,7 +95,7 @@ class TickFlowUntilHasNoPendingTestCase(BaseTestCase):
         self.flow_engine.tick_flow_until_has_no_pending.side_effect = \
                 mock_tick_flow
         self._tick()
-        self.assertEqual(self.task_handler.handle_completed_flow.call_args,
+        self.assertEqual(self.task_handler.handle_flow_status.call_args,
                          call(flow=self.flow))
 
 class PersistFlowTestCase(BaseTestCase):
@@ -113,27 +115,6 @@ class PersistFlowTestCase(BaseTestCase):
             
     def test_sets_task_status(self):
         self.assertEqual(self.task_handler.task['status'], 'RUNNING')
-
-class HandleCompletedFlowTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.flow = MagicMock()
-
-    def _handle(self):
-        self.task_handler.handle_completed_flow(flow=self.flow)
-
-    def test_sets_status_and_data_for_completed_flow(self):
-        self.flow.status = 'COMPLETED'
-        self._handle()
-        self.assertEqual(self.task_handler.task['status'], 'COMPLETED')
-        self.assertEqual(self.task_handler.task['data']['flow_data'],
-                         self.flow.data)
-
-    def test_sets_errors_for_failed_flow_and_raises(self):
-        self.flow.status = 'FAILED'
-        expected_msg = str(self.flow.data.get('errors', '<unknown>'))
-        with self.assertRaises(Exception, msg=expected_msg):
-            self._handle()
 
 if __name__ == '__main__':
     unittest.main()
