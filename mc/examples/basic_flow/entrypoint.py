@@ -11,19 +11,19 @@ def main():
             {
                 'key': 'task_1',
                 'task_type': 'print',
-                'task_params': {'message': 'I am task_1.'},
+                'task_params': {'msg': 'I am task_1.'},
                 'precursors': ['ROOT'],
             },
             {
                 'key': 'task_2',
                 'task_type': 'print',
-                'task_params': {'message': 'I am task_2.'},
+                'task_params': {'msg': 'I am task_2.'},
                 'precursors': ['task_1'],
             },
             {
                 'key': 'task_3',
                 'task_type': 'print',
-                'task_params': {'message': 'I am task_3.'},
+                'task_params': {'msg': 'I am task_3.'},
                 'precursors': ['task_2'],
             }
         ]

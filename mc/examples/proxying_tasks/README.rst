@@ -1,0 +1,2 @@
+- explain use case for proxying task: to abstract complex logic in task setup, by allowing a simpler task to create a more complex spec.
+- idea is proxying task sets a key on itself, 'proxied_task', which points to the real task to run. the 'status' and 'data' attributes are forward up to the parent task after each tick.

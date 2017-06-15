@@ -11,7 +11,8 @@ class FlowEngine(object):
     class FlowError(Exception):
         def __init__(self, *args, flow=None, **kwargs):
             self.flow = flow
-            super().__init__(*args, **kwargs)
+            err = "\n".join([str(err) for err in flow.data.get('errors', [])])
+            super().__init__(err, *args, **kwargs)
 
     class TaskError(Exception): pass
 
@@ -107,14 +108,24 @@ class FlowEngine(object):
     def tick_task(self, task=None, flow=None, task_context=None):
         task_context = task_context or {}
         try:
-            self.task_handler.tick_task(
-                task=task,
-                task_context={**task_context, 'task': task, 'flow': flow}
-            )
+            if 'proxied_task' in task:
+                self.tick_proxying_task(proxying_task=task, flow=flow,
+                                        task_context=task_context)
+            else:
+                self.task_handler.tick_task(
+                    task=task, task_context={**task_context, 'task': task,
+                                             'flow': flow})
             if task.get('status') == 'COMPLETED':
                 self.complete_task(flow=flow, task=task)
         except Exception as exception:
             self.fail_task(task=task, error=traceback.format_exc())
+
+    def tick_proxying_task(self, proxying_task=None, flow=None,
+                           task_context=None):
+        proxied_task = proxying_task['proxied_task']
+        self.tick_task(task=proxied_task, flow=flow, task_context=task_context)
+        keys_to_copy = ['data', 'status']
+        for key in keys_to_copy: proxying_task[key] = proxied_task.get(key)
 
     def fail_task(self, task=None, error=None):
         task['error'] = error

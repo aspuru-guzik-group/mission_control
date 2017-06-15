@@ -11,7 +11,7 @@ def main():
             {
                 'key': 'task_1',
                 'task_type': 'print',
-                'task_params': {'message': 'I am task_1.'},
+                'task_params': {'msg': 'I am task_1.'},
                 'precursors': ['ROOT'],
             },
             {

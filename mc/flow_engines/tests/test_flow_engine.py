@@ -1,4 +1,4 @@
-from collections import defaultdict
+import collections
 import json
 import unittest
 from unittest.mock import call, DEFAULT, patch, MagicMock
@@ -26,7 +26,7 @@ class BaseTestCase(unittest.TestCase):
 class GenerateFlowTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.flow_spec = defaultdict(MagicMock, **{
+        self.flow_spec = collections.defaultdict(MagicMock, **{
             'data': MagicMock(),
             'task': [MagicMock() for i in range(3)],
         })
@@ -251,19 +251,66 @@ class TickTaskTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.flow = flow_engine.Flow()
-        self.task = self.flow.add_task(task={})
+        self.task = collections.defaultdict(MagicMock)
         self.task_context = MagicMock()
+        self.engine.complete_task = MagicMock()
+        self.engine.tick_proxying_task = MagicMock()
+
+    def _tick_task(self):
+        self.engine.tick_task(flow=self.flow, task=self.task,
+                              task_context=self.task_context)
+
+    def test_calls_tick_proxying_task_if_task_is_proxy_task(self):
+        self.task['proxied_task'] = MagicMock()
+        self._tick_task()
+        self.assertEqual(self.engine.tick_proxying_task.call_args,
+                         call(proxying_task=self.task, flow=self.flow,
+                              task_context=self.task_context))
+
+    def test_calls_task_handler(self):
+        self._tick_task()
+        expected_task_context = {**self.task_context, 'task': self.task,
+                                 'flow': self.flow}
+        self.assertEqual(
+            self.engine.task_handler.tick_task.call_args,
+            call(task=self.task, task_context=expected_task_context)
+        )
 
     def test_calls_complete_task_if_task_completes(self):
-        self.engine.complete_task = MagicMock()
         def set_task_status_to_completed(task, *args, **kwargs):
             task['status'] = 'COMPLETED'
         self.engine.task_handler.tick_task.side_effect = \
                 set_task_status_to_completed
-        self.engine.tick_task(flow=self.flow, task=self.task,
-                              task_context=self.task_context)
+        self._tick_task()
         self.assertEqual(self.engine.complete_task.call_args,
                          call(flow=self.flow, task=self.task))
+
+class TickProxyingTaskTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.proxied_task = MagicMock()
+        self.proxying_task = collections.defaultdict(MagicMock, {
+            'proxied_task': self.proxied_task
+        })
+        self.flow = MagicMock()
+        self.task_context = MagicMock()
+        self.engine.tick_task = MagicMock()
+        self.engine.tick_proxying_task(
+            proxying_task=self.proxying_task, flow=self.flow,
+            task_context=self.task_context)
+
+    def test_calls_tick_task_on_proxied_task(self):
+        self.assertEqual(self.engine.tick_task.call_args,
+                         call(task=self.proxied_task, flow=self.flow,
+                              task_context=self.task_context))
+
+    def test_copies_values_to_proxying_task(self):
+        expected_keys_to_copy = ['status', 'data']
+        expected_values = {key: self.proxied_task.get(key)
+                           for key in expected_keys_to_copy}
+        actual_values = {key: self.proxying_task.get(key)
+                           for key in expected_keys_to_copy}
+        self.assertEqual(actual_values, expected_values)
 
 class CompleteTaskTestCase(BaseTestCase):
     def setUp(self):
