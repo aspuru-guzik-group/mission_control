@@ -68,7 +68,7 @@ def generate_flow_spec(params=None):
             'key': task_id,
             'task_type': 'print',
             'task_params': {
-                'message': msg_tpl.format(task_id=task_id, flow_id=flow_id)
+                'msg': msg_tpl.format(task_id=task_id, flow_id=flow_id)
             },
             'precursors': [precursor]
         })

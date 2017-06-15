@@ -15,7 +15,7 @@ def main():
                     'wirings': [
                         {
                             'dest': (
-                                'ctx.flow.tasks.task_2.task_params.message'
+                                'ctx.flow.tasks.task_2.task_params.msg'
                             ),
                             'value': 'message set by task_1'
                         }
@@ -26,7 +26,7 @@ def main():
             {
                 'key': 'task_2',
                 'task_type': 'print',
-                'task_params': {'message': 'I will be set from task_1'},
+                'task_params': {'msg': 'I will be set from task_1'},
                 'precursors': ['task_1'],
             }
         ]

@@ -23,7 +23,7 @@ def main():
     flow_runner = FlowRunner(
         flow_client=FlowRunner.generate_flow_client_from_mc_dao(
             mc_dao=mc_dao, queue_key=flow_queue_key),
-        task_context=setup_task_context(mc_dao=mc_dao)
+        task_ctx=setup_task_ctx(mc_dao=mc_dao)
     )
 
     tick_stats = flow_runner.tick()
@@ -63,7 +63,7 @@ def generate_flow_spec():
         })
     return flow_spec
 
-def setup_task_context(mc_dao=None):
+def setup_task_ctx(mc_dao=None):
     def create_job(*args, job_kwargs=None, **kwargs):
         job_kwargs = {**(job_kwargs or {}), 'data': {}, 'status': 'PENDING'}
         job = mc_dao.create_item(item_type='Job', kwargs=job_kwargs)
@@ -74,11 +74,11 @@ def setup_task_context(mc_dao=None):
         job = mc_dao.get_item_by_key(item_type='Job', key=job_meta['key'])
         return job
 
-    task_context = {
+    task_ctx = {
         'mc.tasks.job.create_job': create_job,
         'mc.tasks.job.get_job': get_job,
     }
-    return task_context
+    return task_ctx
 
 def run_job(job=None, mc_dao=None):
     print("running job '{job_id}'".format(job_id=job['job_spec']['job_id']))

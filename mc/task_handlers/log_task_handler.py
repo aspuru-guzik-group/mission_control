@@ -6,8 +6,8 @@ from .base_task_handler import BaseTaskHandler
 
 
 class LogTaskHandler(BaseTaskHandler):
-    def initial_tick(self, task=None, task_context=None):
-        task_params = task.get('task_params', {})
+    def initial_tick(self):
+        task_params = self.task.get('task_params', {})
         log_level_name = task_params.get('log_level', 'INFO')
         log_level = getattr(logging, log_level_name)
         use_print = task_params.get('use_print')
@@ -23,21 +23,21 @@ class LogTaskHandler(BaseTaskHandler):
         if 'msg' in task_params: _log(task_params['msg'])
 
         dump_task_params = task_params.get('dump_task')
-        if dump_task_params: _log(label='TASK', obj=task, **dump_task_params)
+        if dump_task_params: _log(label='TASK', obj=self.task,
+                                  **dump_task_params)
 
-        dump_task_context_params = task_params.get('dump_task_context')
-        if dump_task_context_params:
-            _log(label='TASK_CONTEXT', obj=task_context,
-                 **dump_task_context_params)
+        dump_task_ctx_params = task_params.get('dump_task_ctx')
+        if dump_task_ctx_params: _log(label='TASK_CONTEXT', obj=self.task_ctx,
+                                      **dump_task_ctx_params)
 
         dump_flow_params = task_params.get('dump_flow')
         if dump_flow_params:
-            flow = task_context.get('flow')
+            flow = self.task_ctx.get('flow')
             if flow: flow_dict = flow.to_dict()
             else: flow_dict = None
             _log(obj=flow_dict, label='FLOW', **dump_flow_params)
 
-        task['status'] = 'COMPLETED'
+        self.task['status'] = 'COMPLETED'
 
     def dump_obj(self, obj=None, pprint_kwargs=None):
         return pprint.pformat(obj, **(pprint_kwargs or {}))

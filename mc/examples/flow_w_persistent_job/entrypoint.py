@@ -11,8 +11,8 @@ def main():
     flow_engine = FlowEngine()
     flow_spec = generate_flow_spec()
     flow = flow_engine.generate_flow(flow_spec=flow_spec)
-    task_context = setup_task_context(dao=dao)
-    flow_engine.run_flow(flow=flow, task_context=task_context)
+    task_ctx = setup_task_ctx(dao=dao)
+    flow_engine.run_flow(flow=flow, task_ctx=task_ctx)
 
 def setup_dao():
     db_file = tempfile.mkstemp(suffix='.sqlite.db')[1]
@@ -43,7 +43,7 @@ def generate_flow_spec():
     }
     return flow_spec
 
-def setup_task_context(dao=None):
+def setup_task_ctx(dao=None):
     def create_job(*args, job_kwargs=None, **kwargs):
         job_kwargs = {**(job_kwargs or {}), 'data': {}, 'status': 'PENDING'}
         job_record = dao.create_item(item_type='Job', kwargs=job_kwargs)
@@ -71,10 +71,10 @@ def setup_task_context(dao=None):
             print("Completing job.")
             job['status'] = 'COMPLETED'
 
-    task_context = {
+    task_ctx = {
         'mc.tasks.job.create_job': create_job,
         'mc.tasks.job.get_job': get_job,
     }
-    return task_context
+    return task_ctx
 
 if __name__ == '__main__': main()

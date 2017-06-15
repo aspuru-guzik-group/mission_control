@@ -2,11 +2,11 @@ from mc.task_handlers.base_task_handler import BaseTaskHandler
 
 
 class MyCustomTaskHandler(BaseTaskHandler):
-    def initial_tick(self, task=None, task_context=None, **kwargs):
+    def initial_tick(self, *args, **kwargs):
         print("MyCustomTaskHandler.initial_tick")
 
-    def intermediate_tick(self, task=None, task_context=None, **kwargs):
+    def intermediate_tick(self, *args, **kwargs):
         print("MyCustomTaskHandler.intermediate_tick")
-        task['status'] = 'COMPLETED'
+        self.task['status'] = 'COMPLETED'
 
 TaskHandler = MyCustomTaskHandler

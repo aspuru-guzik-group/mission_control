@@ -59,18 +59,18 @@ class FlowEngine(object):
         }
         return json.dumps(flow_dict)
 
-    def run_flow(self, flow=None, task_context=None, check=False):
+    def run_flow(self, flow=None, task_ctx=None, check=False):
         completed_statuses = {'COMPLETED', 'FAILED'}
         while flow.status not in completed_statuses:
-            self.tick_flow(flow=flow, task_context=task_context)
+            self.tick_flow(flow=flow, task_ctx=task_ctx)
         if check and flow.status == 'FAILED':
             raise self.FlowError(flow=flow)
 
-    def tick_flow(self, flow=None, task_context=None):
+    def tick_flow(self, flow=None, task_ctx=None):
         try:
             if flow.status == 'PENDING': self.start_flow(flow=flow)
             self.start_nearest_pending_tasks(flow=flow)
-            self.tick_running_tasks(flow=flow, task_context=task_context)
+            self.tick_running_tasks(flow=flow, task_ctx=task_ctx)
             if not flow.has_incomplete_tasks(): self.complete_flow(flow=flow)
         except Exception as exception:
             fail_flow = True
@@ -79,11 +79,11 @@ class FlowEngine(object):
                 if not flow.cfg.get('fail_fast', True): fail_flow = False
             if fail_flow: self.fail_flow(flow=flow)
 
-    def tick_flow_until_has_no_pending(self, flow=None, task_context=None):
-        self.tick_flow(flow=flow, task_context=task_context)
+    def tick_flow_until_has_no_pending(self, flow=None, task_ctx=None):
+        self.tick_flow(flow=flow, task_ctx=task_ctx)
         while (flow.status in {'PENDING', 'RUNNING'}
                and len(flow.get_nearest_pending_tasks()) > 0):
-            self.tick_flow(flow=flow, task_context=task_context)
+            self.tick_flow(flow=flow, task_ctx=task_ctx)
 
     def start_flow(self, flow=None):
         flow.status = 'RUNNING'
@@ -96,34 +96,33 @@ class FlowEngine(object):
     def start_task(self, flow=None, task=None):
         task['status'] = 'RUNNING'
 
-    def tick_running_tasks(self, flow=None, task_context=None):
+    def tick_running_tasks(self, flow=None, task_ctx=None):
         for task in flow.get_tasks_by_status(status='RUNNING'):
             if self.task_is_running(task=task):
-                self.tick_task(task=task, flow=flow, task_context=task_context)
+                self.tick_task(task=task, flow=flow, task_ctx=task_ctx)
             else: self.complete_task(task=task)
 
     def task_is_running(self, task=None):
         return task['status'] == 'RUNNING'
 
-    def tick_task(self, task=None, flow=None, task_context=None):
-        task_context = task_context or {}
+    def tick_task(self, task=None, flow=None, task_ctx=None):
+        task_ctx = task_ctx or {}
         try:
             if 'proxied_task' in task:
                 self.tick_proxying_task(proxying_task=task, flow=flow,
-                                        task_context=task_context)
+                                        task_ctx=task_ctx)
             else:
-                self.task_handler.tick_task(
-                    task=task, task_context={**task_context, 'task': task,
-                                             'flow': flow})
+                self.task_handler.tick_task(task_ctx={**task_ctx, 'task': task,
+                                                      'flow': flow})
             if task.get('status') == 'COMPLETED':
                 self.complete_task(flow=flow, task=task)
         except Exception as exception:
             self.fail_task(task=task, error=traceback.format_exc())
 
     def tick_proxying_task(self, proxying_task=None, flow=None,
-                           task_context=None):
+                           task_ctx=None):
         proxied_task = proxying_task['proxied_task']
-        self.tick_task(task=proxied_task, flow=flow, task_context=task_context)
+        self.tick_task(task=proxied_task, flow=flow, task_ctx=task_ctx)
         keys_to_copy = ['data', 'status']
         for key in keys_to_copy: proxying_task[key] = proxied_task.get(key)
 

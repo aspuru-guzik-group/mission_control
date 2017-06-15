@@ -26,10 +26,10 @@ def main():
     }
     flow_engine = FlowEngine()
     flow = flow_engine.generate_flow(flow_spec=flow_spec)
-    task_context = setup_task_context()
-    flow_engine.run_flow(flow=flow, task_context=task_context)
+    task_ctx = setup_task_ctx()
+    flow_engine.run_flow(flow=flow, task_ctx=task_ctx)
 
-def setup_task_context():
+def setup_task_ctx():
     def create_job(*args, **kwargs):
         print("creating job, args: {args}, kwargs: {kwargs}".format(
             args=args, kwargs=kwargs))
@@ -47,10 +47,10 @@ def setup_task_context():
         }
         return fake_job
 
-    task_context = {
+    task_ctx = {
         'mc.tasks.job.create_job': create_job,
         'mc.tasks.job.get_job': get_job,
     }
-    return task_context
+    return task_ctx
 
 if __name__ == '__main__': main()

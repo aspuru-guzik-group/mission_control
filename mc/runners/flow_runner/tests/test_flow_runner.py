@@ -10,7 +10,7 @@ class BaseTestCase(unittest.TestCase):
         self.runner = flow_runner.FlowRunner(
             flow_client=MagicMock(),
             flow_engine=MagicMock(),
-            task_context=MagicMock()
+            task_ctx=MagicMock()
         )
 
 class RunTestCase(BaseTestCase):
@@ -125,7 +125,7 @@ class TickFlowRecordTestCase(BaseTestCase):
         expected_flow = self.runner.get_flow_for_flow_record.return_value
         self.assertEqual(
             self.runner.flow_engine.tick_flow.call_args,
-            call(flow=expected_flow, task_context=self.runner.task_context))
+            call(flow=expected_flow, task_ctx=self.runner.task_ctx))
 
     def test_includes_status_in_return(self):
         serialization = {'status': 'COMPLETED'}
