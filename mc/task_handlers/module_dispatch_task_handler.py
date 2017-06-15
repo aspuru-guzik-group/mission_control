@@ -1,6 +1,7 @@
 from mc.utils import dot_spec_loader
 
 from .wire_task_handler import WireTaskHandler
+from .log_task_handler import LogTaskHandler
 
 
 class ModuleDispatchTaskHandler(object):
@@ -37,6 +38,7 @@ class ModuleDispatchTaskHandler(object):
 
     def get_handler(self, task=None):
         task_type = task['task_type']
+        if task_type == 'log': return LogTaskHandler()
         if task_type == 'noop': return NoOpTaskHandler()
         if task_type == 'print': return PrintTaskHandler()
         if task_type == 'wire': return WireTaskHandler()
@@ -81,5 +83,5 @@ class NoOpTaskHandler(object):
 
 class PrintTaskHandler(object):
     def tick_task(self, task=None, **kwargs):
-        print(task['task_params']['message'])
+        print(task['task_params']['msg'])
         task['status'] = 'COMPLETED'

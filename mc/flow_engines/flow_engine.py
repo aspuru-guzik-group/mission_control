@@ -59,7 +59,7 @@ class FlowEngine(object):
         return json.dumps(flow_dict)
 
     def run_flow(self, flow=None, task_context=None, check=False):
-        completed_statuses = set(['COMPLETED', 'FAILED'])
+        completed_statuses = {'COMPLETED', 'FAILED'}
         while flow.status not in completed_statuses:
             self.tick_flow(flow=flow, task_context=task_context)
         if check and flow.status == 'FAILED':
@@ -78,6 +78,12 @@ class FlowEngine(object):
                 if not flow.cfg.get('fail_fast', True): fail_flow = False
             if fail_flow: self.fail_flow(flow=flow)
 
+    def tick_flow_until_has_no_pending(self, flow=None, task_context=None):
+        self.tick_flow(flow=flow, task_context=task_context)
+        while (flow.status in {'PENDING', 'RUNNING'}
+               and len(flow.get_nearest_pending_tasks()) > 0):
+            self.tick_flow(flow=flow, task_context=task_context)
+
     def start_flow(self, flow=None):
         flow.status = 'RUNNING'
 
@@ -93,8 +99,7 @@ class FlowEngine(object):
         for task in flow.get_tasks_by_status(status='RUNNING'):
             if self.task_is_running(task=task):
                 self.tick_task(task=task, flow=flow, task_context=task_context)
-            else:
-                self.complete_task(task=task)
+            else: self.complete_task(task=task)
 
     def task_is_running(self, task=None):
         return task['status'] == 'RUNNING'
@@ -104,7 +109,7 @@ class FlowEngine(object):
         try:
             self.task_handler.tick_task(
                 task=task,
-                task_context={'task': task, 'flow': flow, **task_context}
+                task_context={**task_context, 'task': task, 'flow': flow}
             )
             if task.get('status') == 'COMPLETED':
                 self.complete_task(flow=flow, task=task)

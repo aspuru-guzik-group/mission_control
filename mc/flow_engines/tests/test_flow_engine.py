@@ -28,7 +28,7 @@ class GenerateFlowTestCase(BaseTestCase):
         super().setUp()
         self.flow_spec = defaultdict(MagicMock, **{
             'data': MagicMock(),
-            'task_spec': [MagicMock() for i in range(3)],
+            'task': [MagicMock() for i in range(3)],
         })
 
     @patch.object(flow_engine, 'Flow')
@@ -38,7 +38,7 @@ class GenerateFlowTestCase(BaseTestCase):
         self.assertEqual(MockFlow.call_args,
                          call(data=self.flow_spec['data']))
         expected_add_task_call_args_list = [
-            call(**task_spec) for task_spec in self.flow_spec['task_specs']
+            call(task=task) for task in self.flow_spec['tasks']
         ]
         self.assertEqual(flow.add_task.call_args_list,
                          expected_add_task_call_args_list)

@@ -19,6 +19,12 @@ class Flow(object):
 
         self.add_root_task()
 
+    def to_dict(self):
+        return {
+            attr: getattr(self, attr, None)
+            for attr in ['cfg', 'data', 'label', 'status', 'tasks', 'edges']
+        }
+
     def add_root_task(self):
         self.add_task(task={'key': self.ROOT_TASK_KEY, 'status': 'COMPLETED'})
 

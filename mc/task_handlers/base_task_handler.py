@@ -1,8 +1,11 @@
 import logging
 import traceback
 
+from . import constants
 
 class BaseTaskHandler(object):
+    TaskStatuses = constants.TaskStatuses
+
     def __init__(self, *args, logger=None, **kwargs):
         self.logger = logger or logging
 

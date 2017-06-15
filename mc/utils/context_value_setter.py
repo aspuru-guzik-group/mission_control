@@ -76,13 +76,14 @@ class ContextValueSetter(object):
     def execute_mapping_transform(self, value=None, transform=None,
                                   context=None):
         iterator = self.get_iterator_for_mapping_source(mapping_source=value)
-        return [
+        mapped_items = [
             self.map_item(
                 item={'key': item_key, 'value': item_value, 'idx': item_idx},
                 items=value, mapping_params=transform['params'],
                 context=context
             ) for item_idx, (item_key, item_value) in enumerate(iterator)
         ]
+        return mapped_items
 
     def get_iterator_for_mapping_source(self, mapping_source=None):
         iterator = None

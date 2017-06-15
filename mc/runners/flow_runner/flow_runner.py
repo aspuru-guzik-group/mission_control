@@ -9,15 +9,22 @@ class FlowRunner(object):
         self.logger = logger or logging
         self.flow_client = flow_client
         self.flow_engine = flow_engine or self.get_default_flow_engine()
-        self.task_context = task_context
+        self.task_context = task_context or {}
+        self.fill_in_task_context()
         self.tick_interval = tick_interval
         self.max_flows_per_tick = max_flows_per_tick
         self.tick_counter = 0
         self._ticking = False
 
+
     def get_default_flow_engine(self, task_handler=None):
         from mc.flow_engines.flow_engine import FlowEngine
         return FlowEngine()
+
+    def fill_in_task_context(self):
+        self.task_context.setdefault('flow_ctx', {})
+        self.task_context['flow_ctx'].setdefault('flow_engine',
+                                                 self.flow_engine)
 
     def run(self, ntimes=None, tick_interval=None):
         self._ticking = True
