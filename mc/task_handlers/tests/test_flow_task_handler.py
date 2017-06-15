@@ -47,8 +47,8 @@ class CreateFlowTestCase(BaseTestCase):
     def test_calls_create_flow_record_ctx_fn(self):
         self.assertEqual(
             self.task_ctx['mc.tasks.flow.create_flow_record'].call_args,
-            call(kwargs=(self.task_handler.generate_flow_record_kwargs
-                         .return_value))
+            call(flow_kwargs=(self.task_handler.generate_flow_record_kwargs
+                              .return_value))
         )
 
     def test_returns_flow_record_meta(self):
@@ -113,14 +113,14 @@ class GetFlowTestCase(BaseTestCase):
 
     def test_calls_get_flow_ctx_fn(self):
         self.assertEqual(
-            self.task_ctx['mc.tasks.flow.get_flow'].call_args,
+            self.task_ctx['mc.tasks.flow.get_flow_record'].call_args,
             call(flow_meta=self.task['data']['_flow_task_flow_meta'])
         )
 
     def test_deserializes_ctx_fn_result(self):
         self.assertEqual(
             self.task_handler.deserialize_flow_record.call_args,
-            call(flow_record=(self.task_ctx['mc.tasks.flow.get_flow']
+            call(flow_record=(self.task_ctx['mc.tasks.flow.get_flow_record']
                               .return_value))
         )
         self.assertEqual(self.result,

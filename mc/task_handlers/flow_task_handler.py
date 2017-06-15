@@ -10,8 +10,8 @@ class FlowTaskHandler(BaseFlowTaskHandler):
         create_flow_record_fn = \
                 self.task_ctx['mc.tasks.flow.create_flow_record']
         flow_record_kwargs = self.generate_flow_record_kwargs()
-        flow_record = create_flow_record_fn(kwargs=flow_record_kwargs)
-        flow_meta = {'key': flow_record['uuid']}
+        flow_record = create_flow_record_fn(flow_kwargs=flow_record_kwargs)
+        flow_meta = {'key': flow_record['key']}
         return flow_meta
 
     def generate_flow_record_kwargs(self):
@@ -32,7 +32,7 @@ class FlowTaskHandler(BaseFlowTaskHandler):
         self.handle_flow_status(flow=flow)
 
     def get_flow(self):
-        get_flow_fn = self.task_ctx['mc.tasks.flow.get_flow']
+        get_flow_fn = self.task_ctx['mc.tasks.flow.get_flow_record']
         flow_record = get_flow_fn(
             flow_meta=self.task['data']['_flow_task_flow_meta'])
         return self.deserialize_flow_record(flow_record=flow_record)

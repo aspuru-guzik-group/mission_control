@@ -70,6 +70,8 @@ class FlowRunner(object):
     def tick_flow_record(self, flow_record=None):
         self.logger.debug('tick_flow_record')
         flow = self.get_flow_for_flow_record(flow_record=flow_record)
+        flow.data.setdefault('_tick_counter', 0)
+        flow.data['_tick_counter'] += 1
         self.flow_engine.tick_flow(flow=flow, task_ctx=self.task_ctx)
         updated_serialization = self.flow_engine.serialize_flow(flow=flow)
         patches = {'serialization': updated_serialization,
