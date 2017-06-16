@@ -22,9 +22,9 @@ class FlowEngine(object):
         self.max_msg_len = max_msg_len
 
     def get_default_task_handler(self):
-        from mc.task_handlers.module_dispatch_task_handler import \
-                ModuleDispatchTaskHandler
-        return ModuleDispatchTaskHandler()
+        from mc.task_handlers.mc_default_task_handler import \
+                McDefaultTaskHandler
+        return McDefaultTaskHandler()
 
     @classmethod
     def generate_flow(self, flow_spec=None):
