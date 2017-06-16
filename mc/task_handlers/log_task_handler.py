@@ -1,3 +1,4 @@
+import collections
 import logging
 import pprint
 import textwrap
@@ -8,7 +9,7 @@ from .base_task_handler import BaseTaskHandler
 class LogTaskHandler(BaseTaskHandler):
     def initial_tick(self):
         task_params = self.task.get('task_params', {})
-        log_level_name = task_params.get('log_level', 'INFO')
+        log_level_name = task_params.get('log_level', 'WARNING')
         log_level = getattr(logging, log_level_name)
         use_print = task_params.get('use_print')
 
@@ -35,7 +36,10 @@ class LogTaskHandler(BaseTaskHandler):
             flow = self.task_ctx.get('flow')
             if flow: flow_dict = flow.to_dict()
             else: flow_dict = None
-            _log(obj=flow_dict, label='FLOW', **dump_flow_params)
+            extra_log_params = {}
+            if isinstance(dump_flow_params, collections.abc.Mapping):
+                extra_log_params = dump_flow_params
+            _log(obj=flow_dict, label='FLOW', **extra_log_params)
 
         self.task['status'] = 'COMPLETED'
 

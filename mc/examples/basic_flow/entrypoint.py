@@ -24,7 +24,6 @@ def main():
                 'key': 'task_3',
                 'task_type': 'print',
                 'task_params': {'msg': 'I am task_3.'},
-                'precursors': ['task_2'],
             }
         ]
     }

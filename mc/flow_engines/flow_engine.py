@@ -31,7 +31,12 @@ class FlowEngine(object):
         flow_kwargs = {k:v for k, v in flow_spec.items()
                        if k in self.simple_flow_serialization_attrs}
         flow = Flow(**flow_kwargs)
-        for task in flow_spec.get('tasks', []): flow.add_task(task=task)
+        for i, task in enumerate(flow_spec.get('tasks', [])):
+            if 'precursors' not in task and 'sucessors' not in task:
+                if i == 0: precursor = 'ROOT'
+                else: precursor = flow_spec['tasks'][i - 1]['key']
+                task['precursors'] = [precursor]
+            flow.add_task(task=task)
         return flow
 
     @classmethod
