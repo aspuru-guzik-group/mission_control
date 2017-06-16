@@ -3,3 +3,5 @@ class TaskStatuses:
     RUNNING = 'RUNNING'
     COMPLETED = 'COMPLETED'
     FAILED = 'FAILED'
+
+NO_INTERPOLATE_KEY = '_mc_no_interpolate'

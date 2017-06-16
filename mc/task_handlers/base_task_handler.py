@@ -16,7 +16,12 @@ class BaseTaskHandler(object):
     @task.setter
     def task(self, value): self.task_ctx['task'] = value
 
-    def tick_task(self, *args, **kwargs):
+    @classmethod
+    def tick_task(cls, *args, task_ctx=None, logger=None, **kwargs):
+        cls(*args, task_ctx=task_ctx, logger=logger, **kwargs)._tick_task(
+            *args, **kwargs)
+
+    def _tick_task(self, *args, **kwargs):
         try:
             self._ensure_task()
             self.increment_tick_counter()

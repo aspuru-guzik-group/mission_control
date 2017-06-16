@@ -24,12 +24,18 @@ class LogTaskHandler(BaseTaskHandler):
         if 'msg' in task_params: _log(task_params['msg'])
 
         dump_task_params = task_params.get('dump_task')
-        if dump_task_params: _log(label='TASK', obj=self.task,
-                                  **dump_task_params)
+        if dump_task_params:
+            extra_log_params = {}
+            if isinstance(dump_task_params, collections.abc.Mapping):
+                extra_log_params = dump_task_params
+            _log(label='TASK', obj=self.task, **extra_log_params)
 
         dump_task_ctx_params = task_params.get('dump_task_ctx')
-        if dump_task_ctx_params: _log(label='TASK_CONTEXT', obj=self.task_ctx,
-                                      **dump_task_ctx_params)
+        if dump_task_ctx_params: 
+            extra_log_params = {}
+            if isinstance(dump_task_ctx_params, collections.abc.Mapping):
+                extra_log_params = dump_task_ctx_params
+            _log(label='TASK_CONTEXT', obj=self.task_ctx, **extra_log_params)
 
         dump_flow_params = task_params.get('dump_flow')
         if dump_flow_params:

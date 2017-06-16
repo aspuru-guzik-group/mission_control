@@ -1,6 +1,5 @@
 import collections
 import copy
-import logging
 import re
 
 from mc.utils import dot_spec_loader
@@ -8,11 +7,14 @@ from mc.utils import dot_spec_loader
 from .base_task_handler import BaseTaskHandler
 from .wire_task_handler import WireTaskHandler
 from .log_task_handler import LogTaskHandler
+from . import constants
 
 
-class McDefaultTaskHandler(object):
-    def __init__(self, task_type_to_handler_dot_spec_fn=None, logger=None):
-        self.logger = logger or logging
+class McDefaultTaskHandler(BaseTaskHandler):
+    NO_INTERPOLATE_KEY = constants.NO_INTERPOLATE_KEY
+
+    def __init__(self, *args, task_type_to_handler_dot_spec_fn=None, **kwargs):
+        super().__init__(self, *args, **kwargs)
         self.task_type_to_handler_dot_spec = task_type_to_handler_dot_spec_fn \
                 or self.default_task_type_to_handler_dot_spec
 
@@ -26,53 +28,58 @@ class McDefaultTaskHandler(object):
             handler_dot_spec += ':TaskHandler'
         return handler_dot_spec
 
-    @classmethod
-    def tick_task(cls, *args, **kwargs):
-        return cls()._tick_task(*args, **kwargs)
+    def _tick_task(self, *args, **kwargs):
+        if self.should_interpolate_task_ctx():
+            self.interpolate_and_tick_task_ctx(*args, **kwargs)
+        else: self.tick_task_ctx(*args, task_ctx=self.task_ctx, **kwargs)
 
-    def _tick_task(self, *args, task_ctx=None, **kwargs):
-        interpolated_task_ctx = self.get_interpolated_task_ctx(
-            task_ctx=task_ctx)
-        handler = self.get_handler_for_task_ctx(task_ctx=interpolated_task_ctx)
-        handler.tick_task(*args, **kwargs)
-        self.propagate_task_ctx_changes(
-            orig_task_ctx=task_ctx, interpolated_task_ctx=interpolated_task_ctx)
+    def interpolate_and_tick_task_ctx(self, *args, **kwargs):
+        interpolated_task_ctx = self.get_interpolated_task_ctx()
+        self.tick_task_ctx(*args, task_ctx=interpolated_task_ctx, **kwargs)
+        self.task.update(interpolated_task_ctx['task'])
+
+    def tick_task_ctx(self, *args, task_ctx=None, **kwargs):
+        handler = self.get_handler_for_task_ctx(task_ctx=task_ctx)
+        handler.tick_task(*args, task_ctx=task_ctx, **kwargs)
 
     def get_handler_for_task_ctx(self, task_ctx=None):
-        handler_cls = self.get_handler_cls_for_task_ctx(task_ctx=task_ctx)
-        return handler_cls(task_ctx=task_ctx)
-
-    def get_handler_cls_for_task_ctx(self, task_ctx=None):
         task_type = task_ctx['task']['task_type']
-        if task_type == 'log': handler_cls = LogTaskHandler
-        elif task_type == 'noop': handler_cls = NoOpTaskHandler
-        elif task_type == 'print': handler_cls = PrintTaskHandler
-        elif task_type == 'wire': handler_cls = WireTaskHandler
+        if task_type == 'log': handler = LogTaskHandler
+        elif task_type == 'noop': handler = NoOpTaskHandler
+        elif task_type == 'print': handler = PrintTaskHandler
+        elif task_type == 'wire': handler = WireTaskHandler
         else:
             handler_dot_spec = self.task_type_to_handler_dot_spec(task_type)
-            handler_cls = self.load_from_dot_spec(dot_spec=handler_dot_spec)
-        return handler_cls
+            handler = self.load_from_dot_spec(dot_spec=handler_dot_spec)
+        return handler
 
-    def get_interpolated_task_ctx(self, task_ctx=None):
-        interpolated_task_ctx = {
-            **task_ctx,
-            'task': self.get_interpolated_task(task=task_ctx['task'],
-                                               task_ctx=task_ctx)
-        }
+    def should_interpolate_task_ctx(self):
+        if self.NO_INTERPOLATE_KEY in self.task: return False
+        if self.task['task_type'] == 'mc.tasks.flow': return False
+        return True
+
+    def get_interpolated_task_ctx(self):
+        interpolated_task_ctx = {**self.task_ctx,
+                                 'task': self.get_interpolated_task()}
         return interpolated_task_ctx
 
-    def get_interpolated_task(self, task=None, task_ctx=None):
-        interpolated_task = copy.deepcopy(task)
+    def get_interpolated_task(self):
+        interpolated_task = copy.deepcopy(self.task)
         for parent, key, value in self.traverse_obj(interpolated_task):
             if self.value_has_interpolations(value=value):
-                parent[key] = self.interpolate_value(value=value, ctx=task_ctx)
+                parent[key] = self.interpolate_value(
+                    value=value, ctx=self.task_ctx)
+        interpolated_task[self.NO_INTERPOLATE_KEY] = True
         return interpolated_task
 
-    def traverse_obj(self, obj=None):
+    def traverse_obj(self, obj=None, exclude_keys=None):
+        exclude_keys = exclude_keys or {}
         parent = obj
         for key, value in self.get_kv_iterator_for_obj(obj=obj):
+            if key in exclude_keys: continue
             if self.is_traversable(obj=value):
-                yield from self.traverse_obj(obj=value)
+                yield from self.traverse_obj(
+                    obj=value, exclude_keys=exclude_keys)
             else: yield parent, key, value
 
     def is_traversable(self, obj=None):
@@ -106,15 +113,11 @@ class McDefaultTaskHandler(object):
         return dot_spec_loader.DotSpecLoader.load_from_dot_spec(
             dot_spec=dot_spec)
 
-    def propagate_task_ctx_changes(self, orig_task_ctx=None,
-                                   interpolated_task_ctx=None):
-        for k, v in interpolated_task_ctx['task'].items():
-            if k != 'task_params': orig_task_ctx['task'][k] = v
-
 class NoOpTaskHandler(BaseTaskHandler):
-    def tick_task(self, **kwargs): self.task['status'] = 'COMPLETED'
+    def initial_tick(self, *args, **kwargs):
+        self.task['status'] = 'COMPLETED'
 
 class PrintTaskHandler(BaseTaskHandler):
-    def tick_task(self, **kwargs):
+    def initial_tick(self, *args, **kwargs):
         print(self.task['task_params']['msg'])
         self.task['status'] = 'COMPLETED'

@@ -8,7 +8,12 @@ from .. import mc_default_task_handler
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
-        self.task_handler = mc_default_task_handler.McDefaultTaskHandler()
+        self.task = collections.defaultdict(MagicMock)
+        self.task_ctx = collections.defaultdict(MagicMock, {'task': self.task})
+        self.task_handler = mc_default_task_handler.McDefaultTaskHandler(
+            task_ctx=self.task_ctx)
+        self.args = [MagicMock() for i in range(3)]
+        self.kwargs = {'kwargs_%s' % i: MagicMock() for i in range(3)}
 
     def setup_mocks(self, attrs=None):
         patchers = {attr: patch.object(mc_default_task_handler, attr)
@@ -55,109 +60,115 @@ class DefaultTaskTypeToHandlerDotSpecTestCase(BaseTestCase):
             expected_dot_spec='some.task_handler.foo_task_handler:TaskHandler'
         )
 
-class TickTaskTestCase(BaseTestCase):
+class _TickTaskTestCase(BaseTestCase): pass
+
+class InterpolateAndTickTaskCtxTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
+        self.task_handler.task = MagicMock()
         self.setup_handler_mocks(attrs=['get_interpolated_task_ctx',
-                                        'get_handler_for_task_ctx',
-                                        'propagate_task_ctx_changes'])
-        self.args = [MagicMock() for i in range(3)]
-        self.kwargs = {'kwargs_%s' % i: MagicMock() for i in range(3)}
-        self.task_ctx = MagicMock()
-        self.task_handler._tick_task(*self.args, task_ctx=self.task_ctx,
-                                     **self.kwargs)
+                                        'tick_task_ctx'])
+        self.task_handler.interpolate_and_tick_task_ctx(
+            *self.args, **self.kwargs)
+        self.expected_interpolated_task_ctx = (
+            self.task_handler.get_interpolated_task_ctx.return_value)
 
     def test_gets_interpolated_task_ctx(self):
         self.assertEqual(self.task_handler.get_interpolated_task_ctx.call_args,
-                         call(task_ctx=self.task_ctx))
+                         call())
+
+    def test_calls_tick_task_ctx(self):
+        self.assertEqual(
+            self.task_handler.tick_task_ctx.call_args,
+            call(*self.args, task_ctx=self.expected_interpolated_task_ctx,
+                 **self.kwargs)
+        )
+
+    def test_propagates_task_ctx_changes(self):
+        self.assertEqual(self.task_handler.task.update.call_args,
+                         call(self.expected_interpolated_task_ctx['task']))
+
+class TickTaskCtxTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.setup_handler_mocks(attrs=['get_handler_for_task_ctx'])
+        self.task_handler.tick_task_ctx(
+            *self.args, task_ctx=self.task_ctx, **self.kwargs)
 
     def test_gets_handler_for_task_ctx(self):
         self.assertEqual(
             self.task_handler.get_handler_for_task_ctx.call_args,
-            call(task_ctx=(self.task_handler.get_interpolated_task_ctx
-                           .return_value))
+            call(task_ctx=(self.task_ctx))
         )
 
     def test_calls_handler_tick_task(self):
         expected_handler = (self.task_handler.get_handler_for_task_ctx
                             .return_value)
-        self.assertEqual(expected_handler.tick_task.call_args,
-                         call(*self.args, **self.kwargs))
-
-    def test_propagates_task_ctx_changes(self):
         self.assertEqual(
-            self.task_handler.propagate_task_ctx_changes.call_args,
-            call(orig_task_ctx=self.task_ctx,
-                 interpolated_task_ctx=(self.task_handler
-                                        .get_interpolated_task_ctx.return_value)
-                )
+            expected_handler.tick_task.call_args,
+            call(*self.args, task_ctx=self.task_ctx, **self.kwargs)
         )
 
-class GetHandlerClsForTaskCtxTestCase(BaseTestCase):
+class GetHandlerForTaskCtxTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.task = collections.defaultdict(MagicMock)
 
-    def _get_handler_cls(self, task=None):
-        task_ctx = {'task': (task or self.task)}
-        return self.task_handler.get_handler_cls_for_task_ctx(task_ctx=task_ctx)
+    def _get_handler(self, task=None):
+        return self.task_handler.get_handler_for_task_ctx(
+            task_ctx={**self.task_ctx, 'task': task})
 
-    def assert_task_type_to_handler_cls(self, task_type=None,
-                                        expected_handler_cls=None):
-        handler_cls = self._get_handler_cls(task={'task_type': task_type})
-        self.assertEqual(handler_cls, expected_handler_cls)
+    def assert_task_type_to_handler(self, task_type=None,
+                                    expected_handler=None):
+        handler = self._get_handler(task={'task_type': task_type})
+        self.assertEqual(handler, expected_handler)
 
     def test_log(self):
-        self.assert_task_type_to_handler_cls(
+        self.assert_task_type_to_handler(
             'log', mc_default_task_handler.LogTaskHandler)
 
     def test_noop(self):
-        self.assert_task_type_to_handler_cls(
+        self.assert_task_type_to_handler(
             'noop', mc_default_task_handler.NoOpTaskHandler)
 
     def test_print(self):
-        self.assert_task_type_to_handler_cls(
+        self.assert_task_type_to_handler(
             'print', mc_default_task_handler.PrintTaskHandler)
 
     def test_wire(self):
-        self.assert_task_type_to_handler_cls(
+        self.assert_task_type_to_handler(
             'wire', mc_default_task_handler.WireTaskHandler)
 
     def test_dot_spec(self):
-        task = MagicMock()
         self.setup_handler_mocks(attrs=['task_type_to_handler_dot_spec',
                                         'load_from_dot_spec'])
-        handler_cls = self._get_handler_cls(task=task)
+        handler = self._get_handler(task=self.task)
         self.assertEqual(
             self.task_handler.task_type_to_handler_dot_spec.call_args,
-            call(task['task_type'])
+            call(self.task['task_type'])
         )
         self.assertEqual(
             self.task_handler.load_from_dot_spec.call_args,
             call(dot_spec=(self.task_handler.task_type_to_handler_dot_spec
                            .return_value))
         )
-        self.assertEqual(handler_cls,
+        self.assertEqual(handler,
                          self.task_handler.load_from_dot_spec.return_value)
 
 class GetInterpolatedTaskCtxTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.task_ctx = collections.defaultdict(
-            MagicMock, **{'key_%s' % i: MagicMock() for i in range(3)})
+        self.task_ctx.update({'key_%s' % i: MagicMock() for i in range(3)})
         self.setup_handler_mocks(attrs=['get_interpolated_task'])
-        self.result = self.task_handler.get_interpolated_task_ctx(
-            task_ctx=self.task_ctx)
+        self.result = self.task_handler.get_interpolated_task_ctx()
 
     def test_returns_task_ctx_w_interpolated_task(self):
         expected = {
             **self.task_ctx,
             'task': self.task_handler.get_interpolated_task.return_value
         }
-        self.assertEqual(
-            self.task_handler.get_interpolated_task.call_args,
-            call(task=self.task_ctx['task'], task_ctx=self.task_ctx)
-        )
+        self.assertEqual(self.task_handler.get_interpolated_task.call_args,
+                         call())
         self.assertEqual(self.result, expected)
 
 class GetInterpolatedTaskTestCase(BaseTestCase):
@@ -175,10 +186,7 @@ class GetInterpolatedTaskTestCase(BaseTestCase):
         self.task_handler.traverse_obj.return_value = self.mock_traversal_items
         def mock_has_interpolations(value=None): return value['interpolate']
         self.task_handler.value_has_interpolations = mock_has_interpolations
-        self.task = MagicMock()
-        self.task_ctx = MagicMock()
-        self.result = self.task_handler.get_interpolated_task(
-            task=self.task, task_ctx=self.task_ctx)
+        self.result = self.task_handler.get_interpolated_task()
 
     def test_copies_task(self):
         self.assertEqual(self.mocks['copy'].deepcopy.call_args,
