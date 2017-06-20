@@ -139,6 +139,10 @@ class GetHandlerForTaskCtxTestCase(BaseTestCase):
         self.assert_task_type_to_handler(
             'wire', mc_default_task_handler.WireTaskHandler)
 
+    def test_switch(self):
+        self.assert_task_type_to_handler(
+            'switch', mc_default_task_handler.SwitchTaskHandler)
+
     def test_dot_spec(self):
         self.setup_handler_mocks(attrs=['task_type_to_handler_dot_spec',
                                         'load_from_dot_spec'])
