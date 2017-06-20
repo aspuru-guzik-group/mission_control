@@ -6,6 +6,8 @@ from . import constants
 class BaseTaskHandler(object):
     TaskStatuses = constants.TaskStatuses
 
+    class InvalidTaskParamsError(Exception): pass
+
     def __init__(self, *args, task_ctx=None, logger=None, **kwargs):
         self.task_ctx = task_ctx
         self.logger = logger or logging

@@ -113,7 +113,7 @@ class FlowEngine(object):
     def tick_task(self, task=None, flow=None, task_ctx=None):
         task_ctx = task_ctx or {}
         try:
-            if 'proxied_task' in task:
+            if self.is_proxying_task(task=task):
                 self.tick_proxying_task(proxying_task=task, flow=flow,
                                         task_ctx=task_ctx)
             else:
@@ -124,12 +124,16 @@ class FlowEngine(object):
         except Exception as exception:
             self.fail_task(task=task, error=traceback.format_exc())
 
-    def tick_proxying_task(self, proxying_task=None, flow=None,
-                           task_ctx=None):
+    def is_proxying_task(self, task=None):
+        return (
+            ('proxied_task' in task)
+            and
+            (task['proxied_task'].get('status') not in {'COMPLETED', 'FAILED'})
+        )
+
+    def tick_proxying_task(self, proxying_task=None, flow=None, task_ctx=None):
         proxied_task = proxying_task['proxied_task']
         self.tick_task(task=proxied_task, flow=flow, task_ctx=task_ctx)
-        keys_to_copy = ['data', 'status']
-        for key in keys_to_copy: proxying_task[key] = proxied_task.get(key)
 
     def fail_task(self, task=None, error=None):
         task['error'] = error
