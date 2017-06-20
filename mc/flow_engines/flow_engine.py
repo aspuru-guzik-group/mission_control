@@ -106,6 +106,7 @@ class FlowEngine(object):
             if self.task_is_running(task=task):
                 self.tick_task(task=task, flow=flow, task_ctx=task_ctx)
             else: self.complete_task(task=task)
+            if flow.status == 'COMPLETED': break
 
     def task_is_running(self, task=None):
         return task['status'] == 'RUNNING'

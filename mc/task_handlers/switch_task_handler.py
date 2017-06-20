@@ -9,7 +9,7 @@ class SwitchTaskHandler(BaseProxyingTaskHandler):
             error = "No case matched and no default case was provided."
             super().__init__(self, error, *args, **kwargs)
 
-    def get_proxied_task(self, *args, **kwargs):
+    def generate_proxied_task(self, *args, **kwargs):
         matching_case = self.get_matching_case()
         return matching_case['task']
 
@@ -30,8 +30,9 @@ class SwitchTaskHandler(BaseProxyingTaskHandler):
         except: raise self.InvalidTaskParamsError()
 
     def evaluate_case(self, case=None, control_value=None):
-        op = getattr(operator, case['op'])
-        return op(control_value, case['arg'])
+        condition = case['condition']
+        op = getattr(operator, condition['op'])
+        return op(control_value, condition['arg'])
 
     def get_default_case(self):
         return self.task['task_params']['default_case']

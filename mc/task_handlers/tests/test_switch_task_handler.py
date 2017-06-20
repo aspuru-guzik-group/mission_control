@@ -23,11 +23,11 @@ class BaseTestCase(unittest.TestCase):
         task_ctx = task_ctx or self.task_ctx
         return switch_task_handler.SwitchTaskHandler(task_ctx=task_ctx)
 
-class GetProxiedTaskTestCase(BaseTestCase):
+class GenerateProxiedTaskTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.task_handler.get_matching_case = MagicMock()
-        self.result = self.task_handler.get_proxied_task()
+        self.result = self.task_handler.generate_proxied_task()
 
     def test_calls_get_matching_case(self):
         self.assertEqual(self.task_handler.get_matching_case.call_args,
@@ -82,13 +82,13 @@ class GetMatchingCaseTestCase(BaseTestCase):
 class EvaluateCaseTestCase(BaseTestCase):
     @patch.object(switch_task_handler, 'operator')
     def test_dispatches_to_op_with_control_value_and_arg(self, _operator):
-        case = defaultdict(MagicMock, {'op': 'some_op'})
+        case = {'condition': defaultdict(MagicMock, **{'op': 'some_op'})}
         control_value = MagicMock()
         result = self.task_handler.evaluate_case(
             case=case, control_value=control_value)
-        expected_op = getattr(_operator, case['op'])
+        expected_op = getattr(_operator, case['condition']['op'])
         self.assertEqual(expected_op.call_args,
-                         call(control_value, case['arg']))
+                         call(control_value, case['condition']['arg']))
         self.assertEqual(result, expected_op.return_value)
 
 class OnProxiedTaskFinishedTestCase(BaseTestCase):
