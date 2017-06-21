@@ -46,12 +46,26 @@ class DotSpecLoader(object):
         return cls()._get_attr_or_item(obj=obj, key=key)
 
     def _get_attr_or_item(self, obj=None, key=None):
-        try:
-            if isinstance(obj, collections.abc.Sequence): return obj[int(key)]
-            if isinstance(obj, collections.abc.Mapping): return obj[key]
-            if isinstance(obj, collections.abc.Mapping): return obj[key]
-            if isinstance(obj, collections.abc.MappingView):
-                return list(obj)[key]
-            if callable(obj): return self._get_attr_or_item(obj(), key)
-            if hasattr(obj, key): return getattr(obj, key)
-        except: return None
+        if isinstance(key, str) and key.endswith('()'): 
+            return self._get_attr_or_item(obj, key[:-2])()
+        for type_ in ['sequence', 'mapping', 'mapping_view', 'attr']:
+            try: return getattr(self, '_get_from_' + type_)(obj, key)
+            except: pass
+        return None
+
+    def _get_from_sequence(self, obj=None, key=None):
+        if isinstance(obj, collections.abc.Sequence): return obj[int(key)]
+        raise Exception("Not a sequence")
+
+    def _get_from_mapping(self, obj=None, key=None):
+        if isinstance(obj, collections.abc.Mapping): return obj[key]
+        raise Exception("Not a mapping")
+
+    def _get_from_mapping_view(self, obj=None, key=None):
+        if isinstance(obj, collections.abc.MappingView):
+            return list(obj)[int(key)]
+        raise Exception("Not a mapping_view")
+
+    def _get_from_attr(self, obj=None, key=None):
+        if hasattr(obj, key): return getattr(obj, key)
+        raise Exception("Does not have attr")

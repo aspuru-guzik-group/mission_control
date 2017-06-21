@@ -50,6 +50,13 @@ class _GetObjValueFromDotSpecTestCase(BaseTestCase):
                          expected_call_args_list)
         self.assertEqual(result, self.loader._get_attr_or_item.return_value)
 
+class _GetObjValueFromDotSpecTestCaseE2E(BaseTestCase):
+    def test_handles_dict_views(self):
+        obj = {i: MagicMock() for i in range(3)}
+        result = self.loader._get_obj_value_from_dot_spec(
+            obj=obj, dot_spec='values().0')
+        self.assertEqual(result, list(obj.values())[0])
+
 class _GetAttrOrItemTestCase(BaseTestCase):
     def _get(self, obj, key):
         return self.loader._get_attr_or_item(obj=obj, key=key)
@@ -66,9 +73,7 @@ class _GetAttrOrItemTestCase(BaseTestCase):
 
     def test_gets_from_callable(self):
         mapping = {'key_%s' % i: MagicMock() for i in range(3)}
-        items = list(mapping.items())
-        key = 1
-        self.assertEqual(self._get(mapping.items, key),  items[key])
+        self.assertEqual(self._get(mapping, 'items()'),  mapping.items())
 
     def test_gets_from_attr(self):
         obj = types.SimpleNamespace()
