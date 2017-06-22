@@ -300,14 +300,6 @@ class TickProxyingTaskTestCase(BaseTestCase):
                          call(task=self.proxied_task, flow=self.flow,
                               task_ctx=self.task_ctx))
 
-    def test_copies_values_to_proxying_task(self):
-        expected_keys_to_copy = ['status', 'data']
-        expected_values = {key: self.proxied_task.get(key)
-                           for key in expected_keys_to_copy}
-        actual_values = {key: self.proxying_task.get(key)
-                           for key in expected_keys_to_copy}
-        self.assertEqual(actual_values, expected_values)
-
 class CompleteTaskTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()

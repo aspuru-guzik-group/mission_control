@@ -1,10 +1,10 @@
-from mc.task_handlers.base_task_handler import BaseTaskHandler
+from mc.task_handlers.base_proxying_task_handler import BaseProxyingTaskHandler
 
 
-class MyCustomProxyingTaskHandler(BaseTaskHandler):
-    def initial_tick(self, *args, **kwargs):
-        print("MyCustomTaskHandler.initial_tick")
-        self.task['proxied_task'] = {
+class MyCustomProxyingTaskHandler(BaseProxyingTaskHandler):
+    def generate_proxied_task(self, *args, **kwargs):
+        print("MyCustomTaskHandler.generate_proxying_task")
+        return {
             'task_type': 'print',
             'task_params': {'msg': 'I am the proxied task'}
         }

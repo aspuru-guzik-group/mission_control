@@ -12,7 +12,7 @@ class TestExample(unittest.TestCase):
         stdout = subprocess.check_output(cmd, shell=True).decode()
         expected_stdout = textwrap.dedent(
             '''
-            MyCustomTaskHandler.initial_tick
+            MyCustomTaskHandler.generate_proxying_task
             I am the proxied task
             '''
         ).lstrip()
