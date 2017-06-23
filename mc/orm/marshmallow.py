@@ -34,8 +34,9 @@ def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
     class FlowSchema(Schema):
         key = sa_column_to_marshmallow_field(flow_table.columns['key'])
         label = sa_column_to_marshmallow_field(flow_table.columns['label'])
-        serialization = sa_column_to_marshmallow_field(
-            flow_table.columns['serialization'])
+        data = sa_column_to_marshmallow_field(flow_table.columns['data'])
+        graph = sa_column_to_marshmallow_field(flow_table.columns['graph'])
+        cfg = sa_column_to_marshmallow_field(flow_table.columns['cfg'])
         status = sa_column_to_marshmallow_field(flow_table.columns['status'])
         num_tickable_tasks = sa_column_to_marshmallow_field(
             flow_table.columns['num_tickable_tasks'])
@@ -44,8 +45,8 @@ def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
         created = sa_column_to_marshmallow_field(flow_table.columns['created'])
         modified = sa_column_to_marshmallow_field(flow_table.columns['modified'])
         class Meta:
-            fields = ['key', 'label', 'serialization', 'status', 'claimed',
-                      'created', 'modified']
+            fields = ['key', 'label', 'graph', 'status', 'claimed', 'depth',
+                      'created', 'modified', 'num_tickable_tasks']
             dump_only = common_dump_only_fields
     marshmallow_schemas['Flow'] = FlowSchema()
 

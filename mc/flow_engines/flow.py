@@ -5,7 +5,15 @@ from uuid import uuid4
 class Flow(object):
     ROOT_TASK_KEY = 'ROOT'
 
-    def __init__(self, *args, key=None, cfg=None, data=None, label=None,
+    SIMPLE_ATTRS = {'key', 'cfg', 'data', 'label', 'status', 'depth'}
+
+    @staticmethod
+    def sanitize_flow_kwargs(flow_kwargs):
+        flow_kwargs = flow_kwargs or {}
+        special_keys = {'tasks', 'edges', 'graph'}
+        return {k: v for k, v in flow_kwargs.items() if k not in special_keys}
+
+    def __init__(self, key=None, cfg=None, data=None, label=None,
                  status=None, depth=0, **kwargs):
         self.key = key
         self.cfg = cfg or {'fail_fast': True}
@@ -13,19 +21,13 @@ class Flow(object):
         self.label = label
         self.status = status or 'PENDING'
         self.depth = depth or 0
-
+        
         self.tasks = {}
-        self.edges = {}
-        self.edges_by_key = collections.defaultdict(
+        self._edges = {}
+        self._edges_by_key = collections.defaultdict(
             lambda: collections.defaultdict(dict))
 
         self.add_root_task()
-
-    def to_dict(self):
-        return {
-            attr: getattr(self, attr, None)
-            for attr in ['cfg', 'data', 'label', 'status', 'tasks', 'edges']
-        }
 
     def add_root_task(self):
         self.add_task(task={'key': self.ROOT_TASK_KEY, 'status': 'COMPLETED'})
@@ -49,21 +51,43 @@ class Flow(object):
         if dest_key is self.ROOT_TASK_KEY:
             raise Exception("Root task can not be an edge dest")
         edge_key = (src_key, dest_key)
-        self.edges[edge_key] = edge
-        self.edges_by_key[src_key]['outgoing'][edge_key] = edge
-        self.edges_by_key[dest_key]['incoming'][edge_key] = edge
+        self._edges[edge_key] = edge
+        self._edges_by_key[src_key]['outgoing'][edge_key] = edge
+        self._edges_by_key[dest_key]['incoming'][edge_key] = edge
+
+    @classmethod
+    def from_flow_dict(cls, flow_dict=None, **kwargs):
+        flow = cls(**cls.sanitize_flow_kwargs(flow_dict))
+        graph = flow_dict.get('graph', {})
+        for key, task in graph.get('tasks', {}).items():
+            if key == flow.ROOT_TASK_KEY: continue
+            flow.add_task(task=task)
+        for edge in graph.get('edges', []):
+            flow.add_edge(edge=edge)
+        return flow
+
+    def to_flow_dict(self):
+        flow_dict = {
+            **{attr: getattr(self, attr, None) for attr in self.SIMPLE_ATTRS},
+            'graph': {
+                'tasks': {key: task for key, task in self.tasks.items()
+                          if key != self.ROOT_TASK_KEY},
+                'edges': [edge for edge in self._edges.values()],
+            }
+        }
+        return flow_dict
 
     def has_edge(self, src_key=None, dest_key=None):
-        return (src_key, dest_key) in self.edges
+        return (src_key, dest_key) in self._edges
 
     def get_precursors(self, task=None):
-        task_edges = self.edges_by_key[task['key']]
+        task_edges = self._edges_by_key[task['key']]
         precursors = [self.tasks[edge['src_key']]
                       for edge in task_edges['incoming'].values()]
         return precursors
 
     def get_successors(self, task=None):
-        task_edges = self.edges_by_key[task['key']]
+        task_edges = self._edges_by_key[task['key']]
         successors = [self.tasks[edge['dest_key']] 
                       for edge in task_edges['outgoing'].values()]
         return successors
@@ -112,7 +136,7 @@ class Flow(object):
         else:
             tail_tasks = [
                 self.tasks[key]
-                for key, task_edges in self.edges_by_key.items()
+                for key, task_edges in self._edges_by_key.items()
                 if len(task_edges['outgoing']) == 0
             ]
         return tail_tasks

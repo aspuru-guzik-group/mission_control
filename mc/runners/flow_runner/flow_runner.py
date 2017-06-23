@@ -50,7 +50,7 @@ class FlowRunner(object):
         }
         return tick_stats
 
-    def claim_flow_records(self): return self.flow_client.claim_flows()
+    def claim_flow_records(self): return self.flow_client.claim_flow_records()
 
     def tick_flow_records(self, flow_records=None):
         tick_stats = defaultdict(int)
@@ -69,40 +69,16 @@ class FlowRunner(object):
 
     def tick_flow_record(self, flow_record=None):
         self.logger.debug('tick_flow_record')
-        flow = self.get_flow_for_flow_record(flow_record=flow_record)
+        flow = self.flow_engine.flow_dict_to_flow(flow_dict=flow_record)
         flow.data.setdefault('_flow_record_tick_counter', 0)
         flow.data['_flow_record_tick_counter'] += 1
         self.flow_engine.tick_flow_until_has_no_pending(
             flow=flow, task_ctx=self.task_ctx)
-        updated_serialization = self.flow_engine.serialize_flow(flow=flow)
-        patches = {
-            'serialization': updated_serialization,
-            'status': flow.status,
-            'num_tickable_tasks': len(flow.get_tickable_tasks()),
-        }
+        updated_flow_dict = self.flow_engine.flow_to_flow_dict(flow=flow)
+        patches = {**updated_flow_dict,
+                   'num_tickable_tasks': len(flow.get_tickable_tasks())}
         return patches
 
-    def get_flow_for_flow_record(self, flow_record=None):
-        return self.flow_engine.deserialize_flow(flow_record['serialization'],
-                                                 key=flow_record['key'])
-
     def patch_and_release_flow_record(self, flow_record=None, patches=None):
-        self.flow_client.patch_and_release_flow(flow=flow_record,
-                                                patches=patches)
-
-
-    @staticmethod
-    def generate_flow_client_from_mc_dao(mc_dao=None, queue_key=None):
-        return McDaoFlowClient(mc_dao=mc_dao, queue_key=queue_key)
-
-class McDaoFlowClient(object):
-    def __init__(self, mc_dao=None, queue_key=None):
-        self.mc_dao = mc_dao
-        self.queue_key = queue_key
-
-    def claim_flows(self):
-        return self.mc_dao.claim_queue_items(queue_key=self.queue_key)['items']
-
-    def patch_and_release_flow(self, flow=None, patches=None):
-        return self.mc_dao.patch_item(item_type='Flow', key=flow['key'],
-                                      patches={'claimed': False, **patches})
+        self.flow_client.patch_and_release_flow_record(flow_record=flow_record,
+                                                       patches=patches)

@@ -1,4 +1,3 @@
-import json
 import logging
 import traceback
 
@@ -6,8 +5,6 @@ from .flow import Flow
 
 
 class FlowEngine(object):
-    simple_flow_serialization_attrs = ['data', 'label', 'status', 'cfg',
-                                       'depth']
 
     class FlowError(Exception):
         def __init__(self, *args, flow=None, **kwargs):
@@ -28,10 +25,8 @@ class FlowEngine(object):
         return McDefaultTaskHandler()
 
     @classmethod
-    def generate_flow(self, flow_spec=None):
-        flow_kwargs = {k: v for k, v in flow_spec.items()
-                       if k in self.simple_flow_serialization_attrs}
-        flow = Flow(**flow_kwargs)
+    def flow_spec_to_flow(cls, flow_spec=None, **kwargs):
+        flow = Flow(**Flow.sanitize_flow_kwargs(flow_spec))
         for i, task in enumerate(flow_spec.get('tasks', [])):
             if 'precursors' not in task and 'sucessors' not in task:
                 if i == 0: precursor = 'ROOT'
@@ -41,29 +36,11 @@ class FlowEngine(object):
         return flow
 
     @classmethod
-    def deserialize_flow(self, serialized_flow=None, key=None):
-        flow = Flow(key=key)
-        flow_dict = json.loads(serialized_flow or '{}')
-        for attr in self.simple_flow_serialization_attrs:
-            setattr(flow, attr, flow_dict.get(attr, None))
-        if flow.data is None: flow.data = {}
-        for key, task in flow_dict.get('tasks', {}).items():
-            if key == Flow.ROOT_TASK_KEY: continue
-            flow.add_task(task=task)
-        for edge in flow_dict.get('edges', []):
-            flow.add_edge(edge=edge)
-        return flow
+    def flow_dict_to_flow(cls, flow_dict=None, **kwargs):
+        return Flow.from_flow_dict(flow_dict=flow_dict)
 
     @classmethod
-    def serialize_flow(self, flow=None):
-        flow_dict = {
-            **{attr: getattr(flow, attr, None)
-               for attr in self.simple_flow_serialization_attrs},
-            'tasks': {key: task for key, task in flow.tasks.items()
-                      if key != Flow.ROOT_TASK_KEY},
-            'edges': [edge for edge in flow.edges.values()],
-        }
-        return json.dumps(flow_dict)
+    def flow_to_flow_dict(cls, flow=None): return flow.to_flow_dict()
 
     def run_flow(self, flow=None, task_ctx=None, check=False):
         completed_statuses = {'COMPLETED', 'FAILED'}

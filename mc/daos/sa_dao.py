@@ -118,36 +118,6 @@ class SaDao(BaseDao):
             isouter=True,
             onclause=(filtered_flows_q.c.key == lock_count_subq.c.lockee_key)
         )
-        print("\n")
-        import pprint
-        import json
-        filtered_flows = self.statement_to_dicts(filtered_flows_q)
-        filtered_flows = [
-            {**f, 'serialization': json.loads(f['serialization'])}
-            for f in filtered_flows
-        ]
-        print(
-            "FLOWS:\n",
-            pprint.pformat(
-                {f['key']: ('label:{label}, d:{depth}, tt:{num_tickable_tasks}'
-                            ', s: {status}, ticks: {ticks}'
-                           ).format(**{
-                               **f, 'depth': f['serialization']['depth'],
-                               'ticks': f['serialization']['data']
-                           })
-                 for f in filtered_flows
-                }
-            )
-        )
-        print(
-            "LOCKS:\n",
-            pprint.pformat(
-                {r['lockee_key']: r['lock_count']
-                 for r in self.statement_to_dicts(lock_count_subq)
-                }
-            )
-        )
-        print("\n")
         statement = (
             _sqla.select('*')
             .select_from(joined)
