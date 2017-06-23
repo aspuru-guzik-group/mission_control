@@ -147,15 +147,7 @@ class FlowQueueTestCase(BaseTestCase):
         self.assert_flow_lists_match(claimed_flows, [unlocked_flow])
         self._release_flows(flows=claimed_flows)
 
-        self.dao.delete_items(
-            item_type='Lock',
-            query={
-                'filters': [
-                    {'field': 'locker_key', 'operator': '=',
-                     'value': locker_key},
-                ]
-            }
-        )
+        self.dao.release_locks(locker_key=locker_key)
         claimed_flows = self._claim_flows(queue=queue)
         self.assert_flow_lists_match(claimed_flows,
                                      [unlocked_flow, flow_to_unlock])

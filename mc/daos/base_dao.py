@@ -73,3 +73,17 @@ class BaseDao(object):
             item_type=queue['queue_spec']['item_type'],
             query={'filters': self.get_default_claiming_filters()}
         )
+
+    def release_locks(self, locker_key=None):
+        self.delete_items(
+            item_type='Lock',
+            query={
+                'filters': [
+                    {'field': 'locker_key', 'operator': '=',
+                     'value': locker_key},
+                ]
+            }
+        )
+
+    def delete_items(self, item_type=None, query=None):
+        raise NotImplementedError

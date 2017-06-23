@@ -5,6 +5,7 @@ class FlowTaskHandler(BaseFlowTaskHandler):
     def initial_tick(self):
         flow_meta = self.create_flow()
         self.task['data']['_flow_task_flow_meta'] = flow_meta
+        self.create_parent_flow_lock()
 
     def create_flow(self):
         create_flow_record_fn = \
@@ -27,6 +28,20 @@ class FlowTaskHandler(BaseFlowTaskHandler):
         flow = flow_engine.generate_flow(flow_spec=flow_spec)
         return flow_engine.serialize_flow(flow=flow)
 
+    def create_parent_flow_lock(self):
+        create_lock_fn = self.task_ctx.get('mc.tasks.flow.create_lock')
+        if not create_lock_fn:
+            release_locks_fn = self.task_ctx.get('mc.tasks.flow.release_locks')
+            if release_locks_fn:
+                raise self.FlowTaskError("'create_lock' fn defined,"
+                                         " but not 'release_locks' fn")
+            else: return
+        create_lock_fn(locker_key=self.get_locker_key(),
+                       lockee_key=self.task_ctx['flow'].key)
+
+    def get_locker_key(self):
+        return self.task['data']['_flow_task_flow_meta']['key']
+
     def intermediate_tick(self):
         flow = self.get_flow()
         self.handle_flow_status(flow=flow)
@@ -41,5 +56,13 @@ class FlowTaskHandler(BaseFlowTaskHandler):
         flow_engine = self.get_flow_engine()
         return flow_engine.deserialize_flow(
             serialized_flow=flow_record['serialization'])
+
+    def on_flow_finished(self, flow=None):
+        self.release_parent_flow_lock() 
+
+    def release_parent_flow_lock(self):
+        release_locks_fn = self.task_ctx.get('mc.tasks.flow.release_locks')
+        if not release_locks_fn: return
+        release_locks_fn(locker_key=self.get_locker_key())
 
 TaskHandler = FlowTaskHandler

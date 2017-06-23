@@ -25,6 +25,7 @@ class InitialTickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.task_handler.create_flow = MagicMock()
+        self.task_handler.create_parent_flow_lock = MagicMock()
         self.task_handler.initial_tick()
 
     def test_initial_tick_creates_flow(self):
@@ -33,6 +34,10 @@ class InitialTickTestCase(BaseTestCase):
     def test_has_flow_meta(self):
         self.assertEqual(self.task['data']['_flow_task_flow_meta'],
                          self.task_handler.create_flow.return_value)
+
+    def test_creates_lock(self):
+        self.assertEqual(self.task_handler.create_parent_flow_lock.call_args,
+                         call())
 
 class CreateFlowTestCase(BaseTestCase):
     def setUp(self):
@@ -91,6 +96,28 @@ class GetSerializationForFlowSpecTestCase(BaseTestCase):
         self.assertEqual(self.result,
                          self.flow_engine.serialize_flow.return_value)
 
+class CreateParentFlowLockTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.task_ctx['mc.tasks.flow.create_lock'] = MagicMock()
+        self.expected_create_lock_fn = self.task_ctx.get(
+            'mc.tasks.flow.create_lock')
+
+    def test_raises_if_no_release_lock_fn(self):
+        with self.assertRaises(Exception):
+            self.task_handler.create_parent_flow_lock()
+            self.assertEqual(self.expected_create_lock_fn.call_args, None)
+
+    def test_calls_create_lock_fn_if_has_release_locks(self):
+        self.task_ctx['mc.tasks.flow.release_locks'] = MagicMock()
+        self.task_handler.create_parent_flow_lock()
+        self.assertEqual(
+            self.expected_create_lock_fn.call_args,
+            call(locker_key=self.task_handler.get_locker_key(),
+                 lockee_key=self.task_handler.task_ctx['flow'].key)
+        )
+
+
 class IntermediateTickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
@@ -134,3 +161,20 @@ class DeserializeFlowRecordTestCase(BaseTestCase):
         self.assertEqual(self.flow_engine.deserialize_flow.call_args,
                          call(serialized_flow=flow_record['serialization']))
         self.assertEqual(result, self.flow_engine.deserialize_flow.return_value)
+
+class OnFlowFinishedTestCase(BaseTestCase):
+    def test_calls_release_parent_flow_lock(self):
+        self.task_handler.release_parent_flow_lock = MagicMock()
+        self.task_handler.on_flow_finished()
+        self.assertEqual(self.task_handler.release_parent_flow_lock.call_args,
+                         call())
+
+class ReleaseParentFlowLockTestCase(BaseTestCase):
+    def test_calls_release_locks_fn(self):
+        self.task_ctx['mc.tasks.flow.release_locks'] = MagicMock()
+        self.task_handler.release_parent_flow_lock()
+        expected_release_locks_fn = self.task_ctx.get(
+            'mc.tasks.flow.release_locks')
+        self.assertEqual(expected_release_locks_fn.call_args,
+                         call(locker_key=self.task_handler.get_locker_key()))
+

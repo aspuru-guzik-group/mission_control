@@ -39,11 +39,11 @@ class AddTaskTestCase(BaseTestCase):
         self.assertEqual(result, self.task)
 
     def test_generates_key_if_unset(self):
-        self.flow.generate_task_key = Mock()
+        self.flow.generate_key = Mock()
         del self.task['key']
         self.flow.add_task(task=self.task)
         self.assertEqual(self.task['key'],
-                         self.flow.generate_task_key.return_value)
+                         self.flow.generate_key.return_value)
 
     def test_adds_edges_for_precursors(self):
         precursors = [self.flow.add_task(task=self.generate_task(key=i))

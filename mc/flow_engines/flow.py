@@ -5,8 +5,9 @@ from uuid import uuid4
 class Flow(object):
     ROOT_TASK_KEY = 'ROOT'
 
-    def __init__(self, *args, cfg=None, data=None, label=None, status=None,
-                 **kwargs):
+    def __init__(self, *args, key=None, cfg=None, data=None, label=None,
+                 status=None, **kwargs):
+        self.key = key or self.generate_key()
         self.cfg = cfg or {'fail_fast': True}
         self.data = data or {}
         self.label = label
@@ -29,7 +30,7 @@ class Flow(object):
         self.add_task(task={'key': self.ROOT_TASK_KEY, 'status': 'COMPLETED'})
 
     def add_task(self, task=None):
-        task.setdefault('key', self.generate_task_key())
+        task.setdefault('key', self.generate_key())
         task.setdefault('status', 'PENDING')
         self.tasks[task['key']] = task
         for precursor_key in task.get('precursors', []):
@@ -40,7 +41,7 @@ class Flow(object):
                                 'dest_key': successor_key})
         return task
 
-    def generate_task_key(self): return str(uuid4())
+    def generate_key(self): return str(uuid4())
 
     def add_edge(self, edge=None):
         src_key, dest_key = (edge['src_key'], edge['dest_key'])

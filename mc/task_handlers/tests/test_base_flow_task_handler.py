@@ -1,6 +1,6 @@
 from collections import defaultdict
 import unittest
-from unittest.mock import MagicMock
+from unittest.mock import call, MagicMock
 
 from .. import base_flow_task_handler
 
@@ -21,6 +21,7 @@ class BaseTestCase(unittest.TestCase):
 class HandleFlowStatusTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
+        self.task_handler.on_flow_finished = MagicMock()
         self.flow = MagicMock()
 
     def _handle(self):
@@ -32,12 +33,16 @@ class HandleFlowStatusTestCase(BaseTestCase):
         self.assertEqual(self.task_handler.task['status'], 'COMPLETED')
         self.assertEqual(self.task_handler.task['data']['flow_data'],
                          self.flow.data)
+        self.assertEqual(self.task_handler.on_flow_finished.call_args,
+                         call(flow=self.flow))
 
     def test_sets_errors_for_failed_flow_and_raises(self):
         self.flow.status = 'FAILED'
         expected_msg = str(self.flow.data.get('errors', '<unknown>'))
         with self.assertRaises(Exception, msg=expected_msg):
             self._handle()
+            self.assertEqual(self.task_handler.on_flow_finished.call_args,
+                             call(flow=self.flow))
 
 if __name__ == '__main__':
     unittest.main()

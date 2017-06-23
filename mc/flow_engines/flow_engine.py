@@ -6,7 +6,7 @@ from .flow import Flow
 
 
 class FlowEngine(object):
-    simple_flow_serialization_attrs = ['data', 'label', 'status', 'cfg']
+    simple_flow_serialization_attrs = ['data', 'label', 'status', 'cfg', 'key']
 
     class FlowError(Exception):
         def __init__(self, *args, flow=None, **kwargs):
