@@ -6,12 +6,13 @@ class Flow(object):
     ROOT_TASK_KEY = 'ROOT'
 
     def __init__(self, *args, key=None, cfg=None, data=None, label=None,
-                 status=None, **kwargs):
-        self.key = key or self.generate_key()
+                 status=None, depth=0, **kwargs):
+        self.key = key
         self.cfg = cfg or {'fail_fast': True}
         self.data = data or {}
         self.label = label
         self.status = status or 'PENDING'
+        self.depth = depth or 0
 
         self.tasks = {}
         self.edges = {}
@@ -67,19 +68,19 @@ class Flow(object):
                       for edge in task_edges['outgoing'].values()]
         return successors
 
-    def get_nearest_pending_tasks(self):
-        nearest_pending_tasks = []
+    def get_nearest_tickable_pending_tasks(self):
+        nearest_tickable_pending_tasks = []
         cursors = [self.tasks[self.ROOT_TASK_KEY]]
         while len(cursors) > 0:
             next_cursors = []
             for cursor in cursors:
                 if cursor['status'] == 'PENDING':
-                    nearest_pending_tasks.append(cursor)
+                    nearest_tickable_pending_tasks.append(cursor)
                 elif cursor['status'] == 'COMPLETED':
                     successors = self.get_successors(task=cursor)
                     next_cursors.extend(successors)
             cursors = next_cursors
-        return nearest_pending_tasks
+        return nearest_tickable_pending_tasks
 
     def filter_tasks(self, filters=None, include_root_task=False):
         result = []
@@ -115,6 +116,10 @@ class Flow(object):
                 if len(task_edges['outgoing']) == 0
             ]
         return tail_tasks
+
+    def get_tickable_tasks(self):
+        return (self.get_running_tasks() +
+                self.get_nearest_tickable_pending_tasks())
 
     def get_running_tasks(self):
         return self.get_tasks_by_status(status='RUNNING')

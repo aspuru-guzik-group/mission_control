@@ -46,6 +46,7 @@ class GenerateFlowTestCase(BaseTestCase):
 class DeserializationTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
+        self.key = 'my_key'
         self.flow_dict = {
             'data': 'some data',
             'tasks': {
@@ -65,7 +66,11 @@ class DeserializationTestCase(BaseTestCase):
 
     def _deserialize_flow(self):
         return self.engine.deserialize_flow(
-            serialized_flow=json.dumps(self.flow_dict))
+            serialized_flow=json.dumps(self.flow_dict), key=self.key)
+
+    def test_has_expected_key(self):
+        flow = self._deserialize_flow()
+        self.assertEqual(flow.key, self.key)
 
     def test_has_expected_data(self):
         flow = self._deserialize_flow()

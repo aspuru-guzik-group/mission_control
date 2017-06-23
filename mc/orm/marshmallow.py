@@ -37,8 +37,9 @@ def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
         serialization = sa_column_to_marshmallow_field(
             flow_table.columns['serialization'])
         status = sa_column_to_marshmallow_field(flow_table.columns['status'])
-        num_running_tasks = sa_column_to_marshmallow_field(
-            flow_table.columns['num_running_tasks'])
+        num_tickable_tasks = sa_column_to_marshmallow_field(
+            flow_table.columns['num_tickable_tasks'])
+        depth = sa_column_to_marshmallow_field(flow_table.columns['depth'])
         claimed = sa_column_to_marshmallow_field(flow_table.columns['claimed'])
         created = sa_column_to_marshmallow_field(flow_table.columns['created'])
         modified = sa_column_to_marshmallow_field(flow_table.columns['modified'])

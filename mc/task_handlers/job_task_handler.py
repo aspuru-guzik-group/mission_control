@@ -3,6 +3,7 @@ from .base_task_handler import BaseTaskHandler
 
 class JobTaskHandler(BaseTaskHandler):
     def initial_tick(self):
+        print("itick")
         self.task['data']['_job_task_job_meta'] = self.create_job()
 
     def intermediate_tick(self):

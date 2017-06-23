@@ -149,6 +149,10 @@ class GetFlowForFlowRecordTestCase(BaseTestCase):
     def test_deserializes(self):
         flow_record = {'serialization': MagicMock()}
         flow = self.runner.get_flow_for_flow_record(flow_record=flow_record)
+        self.assertEqual(
+            self.runner.flow_engine.deserialize_flow.call_args,
+            call(flow_record['serialization'], key=flow_record['key'])
+        )
         self.assertEqual(flow,
                          self.runner.flow_engine.deserialize_flow.return_value)
         

@@ -6,7 +6,8 @@ from .flow import Flow
 
 
 class FlowEngine(object):
-    simple_flow_serialization_attrs = ['data', 'label', 'status', 'cfg', 'key']
+    simple_flow_serialization_attrs = ['data', 'label', 'status', 'cfg',
+                                       'depth']
 
     class FlowError(Exception):
         def __init__(self, *args, flow=None, **kwargs):
@@ -28,7 +29,7 @@ class FlowEngine(object):
 
     @classmethod
     def generate_flow(self, flow_spec=None):
-        flow_kwargs = {k:v for k, v in flow_spec.items()
+        flow_kwargs = {k: v for k, v in flow_spec.items()
                        if k in self.simple_flow_serialization_attrs}
         flow = Flow(**flow_kwargs)
         for i, task in enumerate(flow_spec.get('tasks', [])):
@@ -40,8 +41,8 @@ class FlowEngine(object):
         return flow
 
     @classmethod
-    def deserialize_flow(self, serialized_flow=None):
-        flow = Flow()
+    def deserialize_flow(self, serialized_flow=None, key=None):
+        flow = Flow(key=key)
         flow_dict = json.loads(serialized_flow or '{}')
         for attr in self.simple_flow_serialization_attrs:
             setattr(flow, attr, flow_dict.get(attr, None))
@@ -73,8 +74,10 @@ class FlowEngine(object):
 
     def tick_flow(self, flow=None, task_ctx=None):
         try:
+            flow.data.setdefault('_tick_counter', 0)
+            flow.data['_tick_counter'] += 1
             if flow.status == 'PENDING': self.start_flow(flow=flow)
-            self.start_nearest_pending_tasks(flow=flow)
+            self.start_nearest_tickable_pending_tasks(flow=flow)
             self.tick_running_tasks(flow=flow, task_ctx=task_ctx)
             if not flow.has_incomplete_tasks(): self.complete_flow(flow=flow)
         except Exception as exception:
@@ -87,14 +90,14 @@ class FlowEngine(object):
     def tick_flow_until_has_no_pending(self, flow=None, task_ctx=None):
         self.tick_flow(flow=flow, task_ctx=task_ctx)
         while (flow.status in {'PENDING', 'RUNNING'}
-               and len(flow.get_nearest_pending_tasks()) > 0):
+               and len(flow.get_nearest_tickable_pending_tasks()) > 0):
             self.tick_flow(flow=flow, task_ctx=task_ctx)
 
     def start_flow(self, flow=None):
         flow.status = 'RUNNING'
 
-    def start_nearest_pending_tasks(self, flow=None):
-        for task in flow.get_nearest_pending_tasks():
+    def start_nearest_tickable_pending_tasks(self, flow=None):
+        for task in flow.get_nearest_tickable_pending_tasks():
             try: self.start_task(flow=flow, task=task)
             except: self.fail_task(task=task, error=traceback.format_exc())
 

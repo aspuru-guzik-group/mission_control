@@ -70,20 +70,21 @@ class FlowRunner(object):
     def tick_flow_record(self, flow_record=None):
         self.logger.debug('tick_flow_record')
         flow = self.get_flow_for_flow_record(flow_record=flow_record)
-        flow.data.setdefault('_tick_counter', 0)
-        flow.data['_tick_counter'] += 1
+        flow.data.setdefault('_flow_record_tick_counter', 0)
+        flow.data['_flow_record_tick_counter'] += 1
         self.flow_engine.tick_flow_until_has_no_pending(
             flow=flow, task_ctx=self.task_ctx)
         updated_serialization = self.flow_engine.serialize_flow(flow=flow)
         patches = {
             'serialization': updated_serialization,
             'status': flow.status,
-            'num_running_tasks': len(flow.get_running_tasks()),
+            'num_tickable_tasks': len(flow.get_tickable_tasks()),
         }
         return patches
 
     def get_flow_for_flow_record(self, flow_record=None):
-        return self.flow_engine.deserialize_flow(flow_record['serialization'])
+        return self.flow_engine.deserialize_flow(flow_record['serialization'],
+                                                 key=flow_record['key'])
 
     def patch_and_release_flow_record(self, flow_record=None, patches=None):
         self.flow_client.patch_and_release_flow(flow=flow_record,

@@ -75,11 +75,20 @@ class SaDao(BaseDao):
     def add_wheres_to_statement(self, query=None, statement=None,
                                 columns=None):
         for _filter in query.get('filters', []):
+            clause = None
             col = columns[_filter['field']]
             operator = _filter['operator']
-            if operator == 'IN': op_fn = col.in_
+            arg = _filter['value']
+            negate = False
+            if operator.startswith('!'):
+                operator  = operator[2:]
+                negate = True
+            if operator == 'IN':
+                op_fn = col.in_
+                if not arg: clause = _sqla.false()
             else: op_fn = col.op(operator)
-            clause = op_fn(_filter['value'])
+            if clause is None: clause = op_fn(arg)
+            if negate: clause = ~clause
             statement = statement.where(clause)
         return statement
 
@@ -99,25 +108,63 @@ class SaDao(BaseDao):
             self.engine.execute(table.delete())
 
     def get_flow_queue_items_to_claim(self, queue=None):
-        flow_item_type = queue['queue_spec']['item_type']
-        flow_table = self.get_item_table(item_type=flow_item_type)
-        statement = self.get_items_statement(
-            item_type=flow_item_type,
+        filtered_flows_q = self.get_items_statement(
+            item_type=queue['queue_spec']['item_type'],
             query={'filters': self.get_default_claiming_filters()}
         )
-        lock_count_subq = self.get_lock_count_subq(lockee_key=flow_table.c.key)
-        statement = statement.where(
-            (flow_table.c.num_running_tasks == None)
-            | (flow_table.c.num_running_tasks > lock_count_subq.c.lock_count)
+        lock_count_subq = self.get_lock_count_subq()
+        joined = filtered_flows_q.join(
+            lock_count_subq,
+            isouter=True,
+            onclause=(filtered_flows_q.c.key == lock_count_subq.c.lockee_key)
+        )
+        print("\n")
+        import pprint
+        import json
+        filtered_flows = self.statement_to_dicts(filtered_flows_q)
+        filtered_flows = [
+            {**f, 'serialization': json.loads(f['serialization'])}
+            for f in filtered_flows
+        ]
+        print(
+            "FLOWS:\n",
+            pprint.pformat(
+                {f['key']: ('label:{label}, d:{depth}, tt:{num_tickable_tasks}'
+                            ', s: {status}, ticks: {ticks}'
+                           ).format(**{
+                               **f, 'depth': f['serialization']['depth'],
+                               'ticks': f['serialization']['data']
+                           })
+                 for f in filtered_flows
+                }
+            )
+        )
+        print(
+            "LOCKS:\n",
+            pprint.pformat(
+                {r['lockee_key']: r['lock_count']
+                 for r in self.statement_to_dicts(lock_count_subq)
+                }
+            )
+        )
+        print("\n")
+        statement = (
+            _sqla.select('*')
+            .select_from(joined)
+            .where(
+                (joined.c.num_tickable_tasks == None)
+                | (joined.c.lock_count == None)
+                | (joined.c.num_tickable_tasks > joined.c.lock_count)
+            )
         )
         return self.statement_to_dicts(statement=statement)
 
-    def get_lock_count_subq(self, lockee_key=None):
+    def get_lock_count_subq(self):
         lock_table = self.get_item_table(item_type='Lock')
         subq = (
-            _sqla.select([_sqla.func.count('*').label('lock_count')])
-            .select_from(lock_table)
-            .where(lock_table.c.lockee_key == lockee_key)
+            _sqla.select([_sqla.func.count('key').label('lock_count'),
+                          lock_table.c.lockee_key])
+            .group_by(lock_table.c.lockee_key)
         )
         return subq
 

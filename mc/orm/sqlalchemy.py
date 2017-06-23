@@ -22,7 +22,8 @@ def generate_schema():
         generate_label_column(),
         generate_serialization_column(),
         generate_status_column(),
-        generate_int_column('num_running_tasks'),
+        generate_int_column('num_tickable_tasks'),
+        generate_int_column('depth'),
         generate_claimed_column(),
         *generate_timestamp_columns()
     )
