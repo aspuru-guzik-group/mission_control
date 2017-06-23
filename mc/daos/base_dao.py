@@ -74,13 +74,13 @@ class BaseDao(object):
             query={'filters': self.get_default_claiming_filters()}
         )
 
-    def release_locks(self, locker_key=None):
+    def release_locks(self, locker_keys=None):
         self.delete_items(
             item_type='Lock',
             query={
                 'filters': [
-                    {'field': 'locker_key', 'operator': '=',
-                     'value': locker_key},
+                    {'field': 'locker_key', 'operator': 'IN',
+                     'value': locker_keys},
                 ]
             }
         )

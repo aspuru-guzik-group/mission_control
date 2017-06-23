@@ -63,6 +63,6 @@ class FlowTaskHandler(BaseFlowTaskHandler):
     def release_parent_flow_lock(self):
         release_locks_fn = self.task_ctx.get('mc.tasks.flow.release_locks')
         if not release_locks_fn: return
-        release_locks_fn(locker_key=self.get_locker_key())
+        release_locks_fn(locker_keys=[self.get_locker_key()])
 
 TaskHandler = FlowTaskHandler

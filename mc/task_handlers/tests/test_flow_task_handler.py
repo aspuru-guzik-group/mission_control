@@ -176,5 +176,5 @@ class ReleaseParentFlowLockTestCase(BaseTestCase):
         expected_release_locks_fn = self.task_ctx.get(
             'mc.tasks.flow.release_locks')
         self.assertEqual(expected_release_locks_fn.call_args,
-                         call(locker_key=self.task_handler.get_locker_key()))
+                         call(locker_keys=[self.task_handler.get_locker_key()]))
 
