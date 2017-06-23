@@ -140,9 +140,8 @@ class FlowQueueTestCase(BaseTestCase):
                                               kwargs={'label': 'to_unlock',
                                                       'num_running_tasks': 1})
         locker_key = 'the_locker'
-        self.dao.create_item(item_type='Lock',
-                             kwargs={'lockee_key': flow_to_unlock['key'],
-                                     'locker_key': locker_key})
+        self.dao.create_lock(lockee_key=flow_to_unlock['key'],
+                             locker_key=locker_key)
         claimed_flows = self._claim_flows(queue=queue)
         self.assert_flow_lists_match(claimed_flows, [unlocked_flow])
         self._release_flows(flows=claimed_flows)

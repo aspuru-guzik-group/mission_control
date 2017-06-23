@@ -74,6 +74,12 @@ class BaseDao(object):
             query={'filters': self.get_default_claiming_filters()}
         )
 
+    def create_lock(self, lockee_key=None, locker_key=None):
+        self.create_item(
+            item_type='Lock',
+            kwargs={'lockee_key': lockee_key, 'locker_key': locker_key}
+        )
+
     def release_locks(self, locker_keys=None):
         self.delete_items(
             item_type='Lock',
