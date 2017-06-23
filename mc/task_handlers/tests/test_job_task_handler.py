@@ -24,7 +24,10 @@ class BaseTestCase(unittest.TestCase):
         return job
 
     def generate_task_ctx(self, **kwargs):
-        return {'task': self.task, **self.job_context, **kwargs}
+        return defaultdict(
+            MagicMock,
+            **{'task': self.task, **self.job_context, **kwargs}
+        )
 
 class InitialTickTestCase(BaseTestCase):
     def setUp(self):
@@ -48,7 +51,8 @@ class CreateJobTestCase(BaseTestCase):
         self.assertEqual(
             self.task_handler.task_ctx['mc.tasks.job.create_job'].call_args,
             call(job_kwargs={
-                'job_spec': self.task['task_params'].get('job_spec')
+                'job_spec': self.task['task_params'].get('job_spec'),
+                'data': {'parent_key': self.task_ctx['flow'].key}
             })
         )
         self.assertEqual(

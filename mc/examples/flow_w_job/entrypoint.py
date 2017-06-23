@@ -31,8 +31,7 @@ def main():
 
 def setup_task_ctx():
     def create_job(*args, **kwargs):
-        print("creating job, args: {args}, kwargs: {kwargs}".format(
-            args=args, kwargs=kwargs))
+        print("creating job")
         job_meta = {'key': 'some_key'}
         return job_meta
 

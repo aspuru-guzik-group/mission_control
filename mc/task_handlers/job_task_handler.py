@@ -18,7 +18,10 @@ class JobTaskHandler(BaseTaskHandler):
 
     def create_job(self):
         create_job_fn = self.task_ctx['mc.tasks.job.create_job']
-        job_kwargs = {'job_spec': self.task['task_params'].get('job_spec')}
+        job_kwargs = {
+            'job_spec': self.task['task_params'].get('job_spec'),
+            'data': {'parent_key': self.task_ctx['flow'].key}
+        }
         job_meta = create_job_fn(job_kwargs=job_kwargs)
         return job_meta
 

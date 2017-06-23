@@ -13,7 +13,7 @@ class TestExample(unittest.TestCase):
         expected_stdout = textwrap.dedent(
             '''
             I am task_1.
-            creating job, args: (), kwargs: {'job_kwargs': {'job_spec': 'some job spec'}}
+            creating job
             getting job, job_meta: {'key': 'some_key'}
             '''
         ).lstrip()
