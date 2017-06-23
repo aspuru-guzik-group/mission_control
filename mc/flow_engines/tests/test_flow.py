@@ -1,6 +1,6 @@
 from collections import defaultdict
 import unittest
-from unittest.mock import Mock
+from unittest.mock import call, Mock, MagicMock
 from uuid import uuid4
 
 from ..flow import Flow
@@ -199,6 +199,14 @@ class GetTailTasksTestCase(BaseTestCase):
     def test_handles_flow_with_only_root_task(self):
         self.assertTrue(self.flow.get_tail_tasks(),
                         self.flow.tasks[self.flow.ROOT_TASK_KEY])
+
+class GetRunningTasksTestCase(BaseTestCase):
+    def test_dispatches_to_get_tasks_by_status(self):
+        self.flow.get_tasks_by_status = MagicMock()
+        result = self.flow.get_running_tasks()
+        self.assertEqual(self.flow.get_tasks_by_status.call_args,
+                         call(status='RUNNING'))
+        self.assertEqual(result, self.flow.get_tasks_by_status.return_value)
 
 if __name__ == '__main__':
     unittest.main()

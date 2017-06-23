@@ -1,4 +1,3 @@
-import json
 import os
 import tempfile
 
@@ -14,10 +13,10 @@ def main():
     create_flow(mc_dao=mc_dao, flow_engine=flow_engine)
 
     flow_queue_key = mc_dao.create_item(item_type='Queue', kwargs={
-        'queue_spec': json.dumps({'item_type': 'Flow'})
+        'queue_spec': {'item_type': 'Flow'}
     })['key']
     job_queue_key = mc_dao.create_item(item_type='Queue', kwargs={
-        'queue_spec': json.dumps({'item_type': 'Job'})
+        'queue_spec': {'item_type': 'Job'}
     })['key']
 
     flow_runner = FlowRunner(

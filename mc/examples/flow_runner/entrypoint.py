@@ -31,7 +31,7 @@ def setup_mc_dao():
 def create_queue(mc_dao=None):
     queue_spec = {'item_type': 'Flow'}
     queue_record = mc_dao.create_item(item_type='Queue', kwargs={
-        'queue_spec': mc_dao.serialize_value(queue_spec)
+        'queue_spec': queue_spec
     })
     return queue_record
 

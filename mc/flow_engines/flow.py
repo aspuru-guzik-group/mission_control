@@ -114,3 +114,6 @@ class Flow(object):
                 if len(task_edges['outgoing']) == 0
             ]
         return tail_tasks
+
+    def get_running_tasks(self):
+        return self.get_tasks_by_status(status='RUNNING')

@@ -1,6 +1,6 @@
 from types import SimpleNamespace
 import logging
-from sqlalchemy import create_engine
+import sqlalchemy as _sqla
 
 from .base_dao import BaseDao
 
@@ -46,7 +46,7 @@ class SaDao(BaseDao):
     @property
     def engine(self):
         if not hasattr(self, '_engine'):
-            self._engine = create_engine(self.db_uri)
+            self._engine = _sqla.create_engine(self.db_uri)
         return self._engine
 
     @engine.setter
@@ -55,10 +55,12 @@ class SaDao(BaseDao):
 
     def get_items(self, item_type=None, query=None):
         statement = self.get_items_statement(item_type=item_type, query=query)
-        items = [self.row_to_dict(row)
-                 for row in self.engine.execute(statement).fetchall()]
-        return self.serialize_items(item_type=item_type, items=items)
-    
+        return self.statement_to_dicts(statement=statement)
+
+    def statement_to_dicts(self, statement=None):
+        return [self.row_to_dict(row)
+                for row in self.engine.execute(statement).fetchall()]
+
     def row_to_dict(self, row): return dict(zip(row.keys(), row))
 
     def get_items_statement(self, item_type=None, query=None):
@@ -83,8 +85,11 @@ class SaDao(BaseDao):
 
     def patch_item(self, item_type=None, key=None, patches=None):
         table = self.get_item_table(item_type=item_type)
-        statement = \
-                table.update().where(table.columns.key == key).values(patches)
+        statement = (
+            table.update()
+            .where(table.columns.key == key)
+            .values(patches)
+        )
         self.engine.execute(statement)
         return self.get_item_by_key(item_type=item_type, key=key)
 
@@ -93,6 +98,37 @@ class SaDao(BaseDao):
             table = self.get_item_table(item_type=item_type)
             self.engine.execute(table.delete())
 
-    def get_queue_spec_for_queue_key(self, queue_key=None):
-        queue = self.get_item_by_key(item_type='Queue', key=queue_key)
-        return self.deserialize_value(queue['queue_spec'])
+    def get_flow_queue_items_to_claim(self, queue=None):
+        flow_item_type = queue['queue_spec']['item_type']
+        flow_table = self.get_item_table(item_type=flow_item_type)
+        statement = self.get_items_statement(
+            item_type=flow_item_type,
+            query={'filters': self.get_default_claiming_filters()}
+        )
+        lock_count_subq = self.get_lock_count_subq(lockee_key=flow_table.c.key)
+        statement = statement.where(
+            (flow_table.c.num_running_tasks == None)
+            | (flow_table.c.num_running_tasks > lock_count_subq.c.lock_count)
+        )
+        return self.statement_to_dicts(statement=statement)
+
+    def get_lock_count_subq(self, lockee_key=None):
+        lock_table = self.get_item_table(item_type='Lock')
+        subq = (
+            _sqla.select([_sqla.func.count('*').label('lock_count')])
+            .select_from(lock_table)
+            .where(lock_table.c.lockee_key == lockee_key)
+        )
+        return subq
+
+    def delete_items(self, item_type=None, query=None):
+        item_table = self.get_item_table(item_type=item_type)
+        keys_subq = (
+            self.get_items_statement(item_type=item_type, query=query)
+            .with_only_columns([item_table.c.key])
+        )
+        delete_statement = (
+            item_table.delete()
+            .where(item_table.c.key.in_(keys_subq))
+        )
+        self.engine.execute(delete_statement)

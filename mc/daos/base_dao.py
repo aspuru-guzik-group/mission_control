@@ -5,6 +5,8 @@ class BaseDao(object):
 
     class ItemNotFoundError(Exception): pass
 
+    def get_items(self, item_type=None, query=None): raise NotImplementedError
+
     def validate_query(self, query=None):
         for _filter in query.get('filters' or []):
             self.validate_query_filter(_filter=_filter)
@@ -39,24 +41,35 @@ class BaseDao(object):
         if serialized_value is None: return None
         return json.loads(serialized_value)
 
-    def serialize_value(self, value=None):
-        return json.dumps(value)
+    def serialize_value(self, value=None): return json.dumps(value)
 
-    def claim_queue_items(self, queue_key=None):
-        queue_spec = self.get_queue_spec_for_queue_key(queue_key=queue_key)
-        queue_item_type = queue_spec['item_type']
-        items_to_claim = self.get_items(
-            item_type=queue_item_type,
-            query={
-                'filters': [
-                    {'field': 'claimed', 'operator': '=', 'value': False},
-                    {'field': 'status', 'operator': 'IN',
-                     'value': ['PENDING', 'RUNNING']}
-                ]
-            }
-        )
+    def claim_queue_items(self, queue_key=None, **kwargs):
+        queue = self.get_item_by_key(item_type='Queue', key=queue_key)
+        items_to_claim = self.get_queue_items_to_claim(queue=queue)
         claimed_items = self.patch_items(
-            item_type=queue_item_type,
+            item_type=queue['queue_spec']['item_type'],
             keyed_patches={item['key']: {'claimed': True}
                            for item in items_to_claim})
         return {'items': claimed_items.values()}
+
+    def get_queue_items_to_claim(self, queue=None):
+        queue_item_type = queue['queue_spec']['item_type']
+        if queue_item_type == 'Flow':
+            return self.get_flow_queue_items_to_claim(queue=queue)
+        return self.default_get_queue_items_to_claim(queue=queue)
+
+    def get_default_claiming_filters(self):
+        return [
+            {'field': 'claimed', 'operator': '=', 'value': False},
+            {'field': 'status', 'operator': 'IN',
+             'value': ['PENDING', 'RUNNING']}
+        ]
+
+    def get_flow_queue_items_to_claim(self, queue=None):
+        raise NotImplementedError
+
+    def default_get_queue_items_to_claim(self, queue=None, filters=None):
+        return self.get_items(
+            item_type=queue['queue_spec']['item_type'],
+            query={'filters': self.get_default_claiming_filters()}
+        )

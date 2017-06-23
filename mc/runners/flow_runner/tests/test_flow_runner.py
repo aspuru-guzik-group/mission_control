@@ -124,7 +124,7 @@ class TickFlowRecordTestCase(BaseTestCase):
         self.runner.tick_flow_record(self.flow_record)
         expected_flow = self.runner.get_flow_for_flow_record.return_value
         self.assertEqual(
-            self.runner.flow_engine.tick_flow.call_args,
+            self.runner.flow_engine.tick_flow_until_has_no_pending.call_args,
             call(flow=expected_flow, task_ctx=self.runner.task_ctx))
 
     def test_includes_status_in_return(self):
@@ -137,6 +137,13 @@ class TickFlowRecordTestCase(BaseTestCase):
         result = self.runner.tick_flow_record(self.flow_record)
         self.assertEqual(result['serialization'],
                          self.runner.flow_engine.serialize_flow.return_value)
+
+    def test_includes_num_running_tasks_in_return(self):
+        result = self.runner.tick_flow_record(self.flow_record)
+        self.assertEqual(
+            result['num_running_tasks'],
+            len(self.flow.num_running_tasks.return_value)
+        )
 
 class GetFlowForFlowRecordTestCase(BaseTestCase):
     def test_deserializes(self):

@@ -1,3 +1,4 @@
+from collections import defaultdict
 import unittest
 from unittest.mock import call, MagicMock
 
@@ -9,28 +10,81 @@ class BaseTestCase(unittest.TestCase):
         self.item_type = MagicMock()
         self.dao = base_dao.BaseDao()
 
+    def setup_dao_mocks(self, attrs=None):
+        for attr in attrs: setattr(self.dao, attr, MagicMock())
+
     def generate_mocks(self, n=3): return [MagicMock() for i in range(n)]
 
 class ClaimQueueItemsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.queue_key = MagicMock()
-        self.dao.get_queue_spec_for_queue_key = MagicMock()
-        self.expected_queue_spec = \
-                self.dao.get_queue_spec_for_queue_key.return_value
-        self.dao.get_items = MagicMock(return_value=self.generate_mocks())
-        self.expected_items = self.dao.get_items.return_value
-        self.dao.patch_items = MagicMock()
+        self.setup_dao_mocks(attrs=['get_item_by_key',
+                                    'get_queue_items_to_claim', 'patch_items'])
+        self.expected_queue  = self.dao.get_item_by_key.return_value
+        self.dao.get_queue_items_to_claim.return_value = self.generate_mocks()
         self.result = self.dao.claim_queue_items(queue_key=self.queue_key)
 
-    def test_gets_queue_spec(self):
-        self.assertEqual(self.dao.get_queue_spec_for_queue_key.call_args,
-                         call(queue_key=self.queue_key))
+    def test_gets_queue(self):
+        self.assertEqual(self.dao.get_item_by_key.call_args,
+                         call(item_type='Queue', key=self.queue_key))
+
+    def test_gets_items_to_claim(self):
+        self.assertEqual(self.dao.get_queue_items_to_claim.call_args,
+                         call(queue=self.dao.get_item_by_key.return_value))
+
+    def test_patches_claimed_items(self):
+        expected_items = self.dao.get_queue_items_to_claim.return_value
+        self.assertEqual(
+            self.dao.patch_items.call_args,
+            call(item_type=self.expected_queue['queue_spec']['item_type'],
+                 keyed_patches={item['key']: {'claimed': True}
+                                for item in expected_items}
+                )
+        )
+
+    def test_returns_claimed_items(self):
+        self.assertEqual(self.result,
+                         {'items': self.dao.patch_items.return_value.values()})
+
+class GetQueueItemsToClaimTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.queue_spec = defaultdict(MagicMock)
+        self.queue = defaultdict(MagicMock, {'queue_spec': self.queue_spec})
+        self.setup_dao_mocks(attrs=['get_flow_queue_items_to_claim',
+                                    'default_get_queue_items_to_claim'])
+
+    def _get_queue_items_to_claim(self):
+        return self.dao.get_queue_items_to_claim(queue=self.queue)
+
+    def test_dispatches_to_flow_handler_for_flow_queues(self):
+        self.queue_spec['item_type'] = 'Flow'
+        result = self._get_queue_items_to_claim()
+        self.assertEqual(self.dao.get_flow_queue_items_to_claim.call_args,
+                         call(queue=self.queue))
+        self.assertEqual(result,
+                         self.dao.get_flow_queue_items_to_claim.return_value)
+
+    def test_dispatches_to_default_handler_for_non_flow_queues(self):
+        result = self._get_queue_items_to_claim()
+        self.assertEqual(self.dao.default_get_queue_items_to_claim.call_args,
+                         call(queue=self.queue))
+        self.assertEqual(result,
+                         self.dao.default_get_queue_items_to_claim.return_value)
+
+class DefaultGetQueueItemsToClaim(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.setup_dao_mocks(attrs=['get_items'])
+        self.queue = MagicMock()
+        self.result = \
+                self.dao.default_get_queue_items_to_claim(queue=self.queue)
 
     def test_gets_items_to_claim(self):
         self.assertEqual(
             self.dao.get_items.call_args,
-            call(item_type=self.expected_queue_spec['item_type'],
+            call(item_type=self.queue['queue_spec']['item_type'],
                  query={
                     'filters': [
                         {'field': 'claimed', 'operator': '=', 'value': False},
@@ -40,19 +94,7 @@ class ClaimQueueItemsTestCase(BaseTestCase):
                  }
                 )
         )
-
-    def test_patches_claimed_items(self):
-        self.assertEqual(
-            self.dao.patch_items.call_args,
-            call(item_type=self.expected_queue_spec['item_type'],
-                 keyed_patches={item['key']: {'claimed': True}
-                                for item in self.expected_items}
-                )
-        )
-
-    def test_returns_claimed_items(self):
-        self.assertEqual(self.result,
-                         {'items': self.dao.patch_items.return_value.values()})
+        self.assertEqual(self.result, self.dao.get_items.return_value)
 
 if __name__ == '__main__':
     unittest.main()

@@ -11,9 +11,8 @@ def main():
     flow_engine = FlowEngine()
     create_flows(dao=dao, flow_engine=flow_engine, n=3)
 
-    queue_spec = {'item_type': 'Flow'}
     queue_record = dao.create_item(item_type='Queue', kwargs={
-        'queue_spec': dao.serialize_value(queue_spec)
+        'queue_spec': {'item_type': 'Flow'}
     })
     queue_key = queue_record['key']
 

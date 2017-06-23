@@ -15,14 +15,16 @@ class BaseTestCase(unittest.TestCase):
             engine=MagicMock(),
         )
 
+    def setup_dao_mocks(self, attrs=None, mock_factory=MagicMock):
+        for attr in attrs: setattr(self.dao, attr, mock_factory())
+
     def generate_mocks(self, n=3): return [MagicMock() for i in range(n)]
 
 class CreateItemTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.dao.get_item_table = MagicMock()
-        self.dao.get_item_by_key = MagicMock()
-        self.dao.execute = MagicMock()
+        self.setup_dao_mocks(attrs=['get_item_table', 'get_item_by_key',
+                                    'execute'])
         self.expected_table = self.dao.get_item_table.return_value
         self.kwargs = MagicMock()
         self.result = self.dao.create_item(item_type=self.item_type,
@@ -61,10 +63,10 @@ class EngineTestCase(BaseTestCase):
         self.dao._engine = MagicMock()
         self.assertEqual(self.dao.engine, self.dao._engine)
 
-    @patch.object(sa_dao, 'create_engine')
-    def test_creates_engine_if_not_set(self, _create_engine):
+    @patch.object(sa_dao, '_sqla')
+    def test_creates_engine_if_not_set(self, _sqla):
         del self.dao._engine
-        self.assertEqual(self.dao.engine, _create_engine.return_value)
+        self.assertEqual(self.dao.engine, _sqla.create_engine.return_value)
 
     def test_sets_engine(self):
         value = MagicMock()
@@ -74,8 +76,8 @@ class EngineTestCase(BaseTestCase):
 class GetItemsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.dao.get_items_statement = MagicMock()
-        self.dao.serialize_items = MagicMock()
+        self.setup_dao_mocks(attrs=['get_items_statement',
+                                    'statement_to_dicts'])
         self.result = self.dao.get_items(item_type=self.item_type,
                                          query=self.query)
 
@@ -83,22 +85,18 @@ class GetItemsTestCase(BaseTestCase):
         self.assertEqual(self.dao.get_items_statement.call_args,
                          call(item_type=self.item_type, query=self.query))
 
-    def test_returns_serialized_results(self):
+    def test_returns_results(self):
         self.assertEqual(
-            self.dao.engine.execute.call_args,
-            call(self.dao.get_items_statement.return_value)
+            self.dao.statement_to_dicts.call_args,
+            call(statement=self.dao.get_items_statement.return_value)
         )
-        expected_items = [
-            self.dao.row_to_dict(row)
-            for row in self.dao.engine.execute.return_value.fetchall()
-        ]
-        self.assertEqual(self.dao.serialize_items.call_args,
-                         call(item_type=self.item_type, items=expected_items))
-        self.assertEqual(self.result, self.dao.serialize_items.return_value)
+        self.assertEqual(self.result, self.dao.statement_to_dicts.return_value)
 
 class GetItemsStatementTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
+        self.setup_dao_mocks(attrs=['get_item_table',
+                                    'add_wheres_to_statement'])
         self.dao.get_item_table = MagicMock()
         self.dao.add_wheres_to_statement = MagicMock()
         self.result = self.dao.get_items_statement(item_type=self.item_type,
@@ -119,13 +117,33 @@ class GetItemsStatementTestCase(BaseTestCase):
         self.assertEqual(self.result,
                          self.dao.add_wheres_to_statement.return_value)
 
+class StatementToDictsTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.statement = MagicMock()
+        self.setup_dao_mocks(attrs=['row_to-dict'])
+        self.mock_rows = [MagicMock() for i in range(3)]
+        self.dao.engine.execute.return_value.fetchall.return_value = \
+                self.mock_rows
+        self.result = self.dao.statement_to_dicts(statement=self.statement)
+
+    def test_executes_statement(self):
+        self.assertEqual(self.dao.engine.execute.call_args,
+                         call(self.statement))
+
+    def test_returns_rows_as_dicts(self):
+        expected_items = [
+            self.dao.row_to_dict(row)
+            for row in self.dao.engine.execute.return_value.fetchall()
+        ]
+        self.assertEqual(self.result, expected_items)
+
 class PatchItemTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.key = MagicMock()
         self.patches = MagicMock()
-        self.dao.get_item_table = MagicMock()
-        self.dao.get_item_by_key = MagicMock()
+        self.setup_dao_mocks(attrs=['get_item_table', 'get_item_by_key'])
         self.result = self.dao.patch_item(item_type=self.item_type,
                                           key=self.key, patches=self.patches)
 
@@ -154,7 +172,7 @@ class PatchItemTestCase(BaseTestCase):
 class FlushTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.dao.get_item_table = MagicMock()
+        self.setup_dao_mocks(attrs=['get_item_table'])
         self.dao.flush_mc_db()
 
     def test_calls_delete_for_each_item_table(self):
@@ -164,6 +182,99 @@ class FlushTestCase(BaseTestCase):
             expected_table = self.dao.get_item_table.return_value
             self.assertEqual(self.dao.engine.execute.call_args,
                              call(expected_table.delete()))
+
+class DeleteItemsTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.setup_dao_mocks(attrs=['get_item_table', 'get_items_statement'])
+        self.item_type = MagicMock()
+        self.query = MagicMock()
+        self.result = self.dao.delete_items(item_type=self.item_type,
+                                            query=self.query)
+
+    def test_gets_item_table(self):
+        self.assertEqual(self.dao.get_item_table.call_args,
+                         call(item_type=self.item_type))
+
+    def test_gets_items_statement(self):
+        self.assertEqual(self.dao.get_items_statement.call_args,
+                         call(item_type=self.item_type, query=self.query))
+
+    def test_builds_and_executes_delete_statement(self):
+        expected_item_table = self.dao.get_item_table.return_value
+        expected_items_statement = self.dao.get_items_statement.return_value
+        self.assertEqual(expected_items_statement.with_only_columns.call_args,
+                         call([expected_item_table.c.key]))
+        expected_keys_subq = (expected_items_statement.with_only_columns
+                              .return_value)
+        self.assertEqual(
+            expected_item_table.delete.return_value.where.call_args,
+            call(expected_item_table.c.key.in_(expected_keys_subq))
+        )
+        expected_delete_statement = (expected_item_table.delete.return_value
+                                     .where.return_value)
+        self.assertEqual(self.dao.engine.execute.call_args,
+                         call(expected_delete_statement))
+
+class GetFlowQueueItemsToClaim(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+
+        class MagicMockWithGt(MagicMock):
+            def __init__(_self, *args, **kwargs):
+                super(MagicMock, _self).__init__(*args, **kwargs)
+                def mock_gt(*args, **kwargs): return _self.cls()
+                _self.__gt__ = mock_gt
+
+        mock_factory = MagicMockWithGt
+        self.setup_dao_mocks(attrs=['get_item_table', 'get_items_statement',
+                                    'get_default_claiming_filters',
+                                    'get_lock_count_subq',
+                                    'statement_to_dicts'],
+                             mock_factory=mock_factory)
+        self.queue = mock_factory()
+        self.expected_flow_table = self.dao.get_item_table.return_value
+        self.expected_items_statement = \
+                self.dao.get_items_statement.return_value
+        self.result = self.dao.get_flow_queue_items_to_claim(queue=self.queue)
+
+    def test_gets_item_table(self):
+        self.assertEqual(self.dao.get_item_table.call_args,
+                         call(item_type=self.queue['queue_spec']['item_type']))
+
+    def test_gets_claiming_filters(self):
+        self.assertEqual(self.dao.get_default_claiming_filters.call_args,
+                         call())
+
+    def test_gets_items_statement(self):
+        self.assertEqual(
+            self.dao.get_items_statement.call_args,
+            call(item_type=self.queue['queue_spec']['item_type'],
+                 query={'filters': self.dao.get_default_claiming_filters()}
+                )
+        )
+
+    def test_gets_lock_count_subq(self):
+        self.assertEqual(self.dao.get_lock_count_subq.call_args,
+                         call(lockee_key=self.expected_flow_table.c.key))
+
+    def test_adds_where_conditions_to_items_statement(self):
+        expected_lock_count_subq = self.dao.get_lock_count_subq.return_value
+        self.assertEqual(
+            self.expected_items_statement.where.call_args,
+            call(
+                (self.expected_flow_table.c.num_running_tasks == None)
+                | (self.expected_flow_table.c.num_running_tasks
+                   > expected_lock_count_subq.c.lock_count)
+            )
+        )
+
+    def test_returns_dicts(self):
+        self.assertEqual(
+            self.dao.statement_to_dicts.call_args,
+            call(statement=self.expected_items_statement.where.return_value)
+        )
+        self.assertEqual(self.result, self.dao.statement_to_dicts.return_value)
 
 if __name__ == '__main__':
     unittest.main()

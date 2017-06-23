@@ -9,10 +9,13 @@ def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
     marshmallow_schemas = {}
 
     def sa_column_to_marshmallow_field(sa_column=None):
+        field_cls = None
         field_kwargs = {}
         if type(sa_column.type) is _sa_types.String:
             field_cls = fields.String
             field_kwargs['max_length'] = sa_column.type.length
+        elif type(sa_column.type) is _sa_types.Integer:
+            field_cls = fields.Integer
         elif type(sa_column.type) is _sa_types.Text:
             field_cls = fields.String
         elif type(sa_column.type) is _sa_types.Boolean:
@@ -22,6 +25,7 @@ def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
             field_kwargs['format'] = _mc_constants.DATETIME_FORMAT
         elif type(sa_column.type) is _custom_sa_types.JSONEncodedDict:
             field_cls = fields.Dict
+        assert field_cls is not None, "no field class set"
         return field_cls(**field_kwargs)
 
     common_dump_only_fields = ['created', 'modified']
@@ -33,6 +37,8 @@ def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
         serialization = sa_column_to_marshmallow_field(
             flow_table.columns['serialization'])
         status = sa_column_to_marshmallow_field(flow_table.columns['status'])
+        num_running_tasks = sa_column_to_marshmallow_field(
+            flow_table.columns['num_running_tasks'])
         claimed = sa_column_to_marshmallow_field(flow_table.columns['claimed'])
         created = sa_column_to_marshmallow_field(flow_table.columns['created'])
         modified = sa_column_to_marshmallow_field(flow_table.columns['modified'])
