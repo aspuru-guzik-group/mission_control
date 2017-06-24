@@ -87,3 +87,32 @@ class McSandbox(object):
             if log_ticks: self.logger.warn(log_msg)
             if tick_counter > max_ticks: raise Exception("Exceed max_ticks")
             time.sleep(tick_interval)
+
+    def print_jobs(self, **kwargs):
+        if 'keys_to_exclude' not in kwargs:
+            kwargs = {**kwargs, 'keys_to_exclude': {'data'}}
+        self.print_items(item_type='Job', **kwargs)
+
+    def print_items(self, item_type=None, keys_to_exclude=None, filters=None):
+        print('==== ' + item_type.upper() + ' ====')
+        keys_to_exclude = keys_to_exclude or {}
+        for item in self.mc_dao.get_items(item_type=item_type):
+            if not all([filter_(item) for filter_ in (filters or [])]): continue
+            for key, value in item.items():
+                if key not in keys_to_exclude:
+                    print("{key}: {value}".format(key=key, value=value))
+            print('-' * 10)
+
+    def print_flows(self, **kwargs):
+        if 'keys_to_exclude' not in kwargs:
+            kwargs = {**kwargs, 'keys_to_exclude': {'graph'}}
+        self.print_items(item_type='Flow', **kwargs)
+
+    def print_locks(self, **kwargs):
+        self.print_items(item_type='Lock', **kwargs)
+
+    def create_flow(self, flow_spec=None):
+        flow = self.flow_engine.flow_spec_to_flow(flow_spec=flow_spec)
+        flow_dict = self.flow_engine.flow_to_flow_dict(flow=flow)
+        return self.task_ctx['mc.tasks.flow.create_flow_record'](
+            flow_kwargs=flow_dict)
