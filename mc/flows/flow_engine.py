@@ -26,14 +26,7 @@ class FlowEngine(object):
 
     @classmethod
     def flow_spec_to_flow(cls, flow_spec=None, **kwargs):
-        flow = Flow(**Flow.sanitize_flow_kwargs(flow_spec))
-        for i, task in enumerate(flow_spec.get('tasks', [])):
-            if 'precursors' not in task and 'sucessors' not in task:
-                if i == 0: precursor = 'ROOT'
-                else: precursor = flow_spec['tasks'][i - 1]['key']
-                task['precursors'] = [precursor]
-            flow.add_task(task=task)
-        return flow
+        return Flow.from_flow_spec(flow_spec=flow_spec)
 
     @classmethod
     def flow_dict_to_flow(cls, flow_dict=None, **kwargs):

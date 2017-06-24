@@ -23,34 +23,13 @@ class BaseTestCase(unittest.TestCase):
         return mocks
 
 class FlowSpecToFlowTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.flow_spec = collections.defaultdict(MagicMock, **{
-            'data': MagicMock(),
-            'task': [MagicMock() for i in range(3)],
-        })
-        self.patchers = {'Flow': patch.object(flow_engine, 'Flow')}
-        self.mocks = self.start_patchers(patchers=self.patchers)
-        self.result = self.engine.flow_spec_to_flow(flow_spec=self.flow_spec)
-
-    def test_generates_flow_from_flow_spec(self):
-        _Flow = self.mocks['Flow']
-        self.assertEqual(self.result, _Flow.return_value)
-        self.assertEqual(_Flow.sanitize_flow_kwargs.call_args,
-                         call(self.flow_spec))
-        self.assertEqual(_Flow.call_args,
-                         call(**_Flow.sanitize_flow_kwargs.return_value))
-
-    def test_adds_tasks_w_default_precursors(self):
-        expected_add_task_call_args_list = []
-        for i, task in enumerate(self.flow_spec.get('tasks', [])):
-            if 'precursors' not in task and 'sucessors' not in task:
-                if i == 0: precursor = 'ROOT'
-                else: precursor = self.flow_spec['tasks'][i - 1]['key']
-                task['precursors'] = [precursor]
-                expected_add_task_call_args_list.append(call(task=task))
-        self.assertEqual(self.result.add_task.call_args_list,
-                         expected_add_task_call_args_list)
+    @patch.object(flow_engine, 'Flow')
+    def test_dispatches_to_flow(self, _Flow):
+        flow_spec = MagicMock()
+        result = flow_engine.FlowEngine.flow_spec_to_flow(flow_spec=flow_spec)
+        self.assertEqual(_Flow.from_flow_spec.call_args,
+                         call(flow_spec=flow_spec))
+        self.assertEqual(result, _Flow.from_flow_spec.return_value)
 
 class FlowDictToFlowTestCase(BaseTestCase):
     @patch.object(flow_engine, 'Flow')

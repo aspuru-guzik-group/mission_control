@@ -67,6 +67,13 @@ class Flow(object):
         self._edges_by_key[dest_key]['incoming'][edge_key] = edge
 
     @classmethod
+    def from_flow_spec(cls, flow_spec=None):
+        flow = Flow(**Flow.sanitize_flow_kwargs(flow_spec))
+        for i, task in enumerate(flow_spec.get('tasks', [])):
+            flow.add_task(task=task)
+        return flow
+
+    @classmethod
     def from_flow_dict(cls, flow_dict=None, **kwargs):
         flow = cls(**cls.sanitize_flow_kwargs(flow_dict),
                    add_root_task=False)

@@ -90,6 +90,47 @@ class AddEdgeTestCase(BaseTestCase):
             self.flow._edges_by_key[self.edge['dest_key']]['incoming'],
             {self.expected_edge_key: self.edge})
 
+class FromFlowSpecTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.flow_spec = {
+            'key':'my_key',
+            'data': 'some data',
+            'status': 'status',
+            'tasks': [{'key': 'task_%s' % i} for i in range(3)]
+        }
+        self.result = Flow.from_flow_spec(flow_spec=self.flow_spec)
+
+    def test_has_expected_key(self):
+        self.assertEqual(self.result.key, self.flow_spec['key'])
+
+    def test_has_expected_data(self):
+        self.assertEqual(self.result.data, self.flow_spec['data'])
+
+    def test_has_expected_status(self):
+        self.assertEqual(self.result.status, self.flow_spec['status'])
+
+    def test_has_expected_tasks(self):
+        expected_tasks = {task['key']: task for task in self.flow_spec['tasks']}
+        self.assertEqual(
+            set(self.result.tasks.keys()),
+            (set(expected_tasks.keys()) | {self.flow.ROOT_TASK_KEY})
+        )
+
+    def test_has_expected_edges(self):
+        expected_key_sequence = (
+            [Flow.ROOT_TASK_KEY] 
+            + [task['key'] for task in self.flow_spec['tasks']]
+        )
+        expected_edges = {}
+        for i in range(len(expected_key_sequence) - 1):
+            src_key = expected_key_sequence[i]
+            dest_key = expected_key_sequence[i+1]
+            edge_key = (src_key, dest_key)
+            edge = {'src_key': src_key, 'dest_key': dest_key}
+            expected_edges[edge_key] = edge
+        self.assertEqual(self.result._edges, expected_edges)
+
 class FromFlowDictTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
