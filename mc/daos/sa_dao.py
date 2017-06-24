@@ -21,6 +21,8 @@ class SaDao(BaseDao):
         from mc.orm import marshmallow as _mc_marsh
         return _mc_marsh.sa_schema_to_marsh_schemas(sa_schema=self.sa_schema)
 
+    def ensure_tables(self): self.create_tables()
+
     def create_tables(self):
         self.sa_schema['metadata'].create_all(self.engine)
 

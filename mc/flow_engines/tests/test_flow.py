@@ -73,20 +73,85 @@ class AddEdgeTestCase(BaseTestCase):
         self.expected_edge_key = (self.edge['src_key'], self.edge['dest_key'])
 
     def test_add_edge(self):
-        self.assertFalse(self.expected_edge_key in self.flow.edges)
+        self.assertFalse(self.expected_edge_key in self.flow._edges)
         self.flow.add_edge(edge=self.edge)
-        self.assertEqual(self.flow.edges[self.expected_edge_key], self.edge)
+        self.assertEqual(self.flow._edges[self.expected_edge_key], self.edge)
 
     def test_updates_edges_by_key(self):
-        self.assertTrue(self.tasks[0]['key'] not in self.flow.edges_by_key)
-        self.assertTrue(self.tasks[1]['key'] not in self.flow.edges_by_key)
+        self.assertTrue(self.tasks[0]['key'] not in self.flow._edges_by_key)
+        self.assertTrue(self.tasks[1]['key'] not in self.flow._edges_by_key)
         self.flow.add_edge(edge=self.edge)
         self.assertEqual(
-            self.flow.edges_by_key[self.edge['src_key']]['outgoing'],
+            self.flow._edges_by_key[self.edge['src_key']]['outgoing'],
             {self.expected_edge_key: self.edge})
         self.assertEqual(
-            self.flow.edges_by_key[self.edge['dest_key']]['incoming'],
+            self.flow._edges_by_key[self.edge['dest_key']]['incoming'],
             {self.expected_edge_key: self.edge})
+
+class FromFlowDictTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.flow_dict = {
+            'key':'my_key',
+            'data': 'some data',
+            'graph': {
+                'tasks': {
+                    'a': {'key': 'a', 'status': 'COMPLETED'},
+                    'b': {'key': 'b', 'status': 'COMPLETED'},
+                    'c': {'key': 'c', 'status': 'RUNNING'},
+                    'd': {'key': 'd', 'status': 'RUNNING'},
+                },
+                'edges': [
+                    {'src_key': 'ROOT', 'dest_key': 'a'},
+                    {'src_key': 'a', 'dest_key': 'b'},
+                    {'src_key': 'b', 'dest_key': 'c'},
+                    {'src_key': 'b', 'dest_key': 'd'},
+                ],
+            },
+            'status': 'status',
+        }
+        self.result = Flow.from_flow_dict(flow_dict=self.flow_dict)
+
+    def test_has_expected_key(self):
+        self.assertEqual(self.result.key, self.flow_dict['key'])
+
+    def test_has_expected_data(self):
+        self.assertEqual(self.result.data, self.flow_dict['data'])
+
+    def test_has_expected_tasks(self):
+        expected_tasks = {task['key']: task
+                          for task in self.flow_dict['graph']['tasks'].values()}
+        self.assertEqual(set(self.result.tasks.keys()),
+                         set(expected_tasks.keys()))
+
+    def test_has_expected_edges(self):
+        expected_edges = {}
+        for edge in self.flow_dict['graph']['edges']:
+            edge_key = (edge['src_key'], edge['dest_key'])
+            expected_edges[edge_key] = edge
+        self.assertEqual(self.result._edges, expected_edges)
+
+    def test_has_expected_status(self):
+        self.assertEqual(self.result.status, self.flow_dict['status'])
+
+class ToFlowDictTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.result = self.flow.to_flow_dict()
+
+    def test_copies_simple_attrs(self):
+        actual_values = {attr: self.result.get(attr)
+                         for attr in self.flow.SIMPLE_ATTRS}
+        expected_values = {attr: getattr(self.flow, attr, None)
+                           for attr in self.flow.SIMPLE_ATTRS}
+        self.assertEqual(actual_values, expected_values)
+
+    def test_copies_graph(self):
+        expected_graph = {
+            'tasks': {key: task for key, task in self.flow.tasks.items()},
+            'edges': [edge for edge in self.flow._edges.values()],
+        }
+        self.assertEqual(self.result['graph'], expected_graph)
 
 class GetNearestPendingTasksTestCase(BaseTestCase):
     def setUp(self):
@@ -116,14 +181,14 @@ class GetNearestPendingTasksTestCase(BaseTestCase):
         for task in branch_tasks:
             tail = flow.add_task(task={**task, 'precursors': [tail['key']]})
 
-    def test_get_nearest_pending_tasks(self):
+    def test_get_nearest_tickable_pending_tasks(self):
         expected_nearest_pending_tasks = [self.linear_branches['1'][1],
                                           self.linear_branches['2'][2]]
         def _sans_precursors(tasks): 
             return [{k: v for k, v in task.items() if k is not 'precursors'}
                     for task in tasks]
         self.assertEqual(
-            _sans_precursors(self.flow.get_nearest_pending_tasks()),
+            _sans_precursors(self.flow.get_nearest_tickable_pending_tasks()),
             _sans_precursors(expected_nearest_pending_tasks)
         )
 

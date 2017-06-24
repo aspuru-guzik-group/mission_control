@@ -1,14 +1,14 @@
 from collections import defaultdict
 import logging
 import unittest
-from unittest.mock import call, DEFAULT, MagicMock, patch
+from unittest.mock import call, MagicMock, patch
 from .. import flow_runner
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.runner = flow_runner.FlowRunner(
-            flow_client=MagicMock(),
+            flow_record_client=MagicMock(),
             flow_engine=MagicMock(),
             task_ctx=MagicMock()
         )
@@ -50,9 +50,11 @@ class TickTestCase(BaseTestCase):
         self.assertEqual(self.result, expected_tick_stats)
 
 class ClaimFlowRecordsTestCase(BaseTestCase):
-    def test_dispatches_to_flow_client(self):
+    def test_dispatches_to_flow_record_client(self):
         self.runner.claim_flow_records()
-        self.assertEqual(self.runner.flow_client.claim_flows.call_args, call())
+        self.assertEqual(
+            self.runner.flow_record_client.claim_flow_records.call_args,
+            call())
 
 class TickFlowRecordsTestCase(BaseTestCase):
     def setUp(self):
@@ -114,47 +116,38 @@ class TickFlowRecordTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.flow_record = MagicMock()
-        self.flow = MagicMock()
-        self.runner.get_flow_for_flow_record = MagicMock(return_value=self.flow)
+        self.runner.flow_record_to_flow = MagicMock()
+        self.expected_flow = self.runner.flow_record_to_flow.return_value
 
-    def decorate_patchers(self):
-        self.patchers['json'] = patch.multiple('json', dumps=DEFAULT)
-
-    def test_calls_engine_tick_with_get_flow_result(self):
+    def test_calls_engine_tick_with_flow_record_to_flow_result(self):
         self.runner.tick_flow_record(self.flow_record)
-        expected_flow = self.runner.get_flow_for_flow_record.return_value
+        self.assertEqual(self.runner.flow_record_to_flow.call_args,
+                         call(flow_record=self.flow_record))
         self.assertEqual(
             self.runner.flow_engine.tick_flow_until_has_no_pending.call_args,
-            call(flow=expected_flow, task_ctx=self.runner.task_ctx))
+            call(flow=self.expected_flow, task_ctx=self.runner.task_ctx))
 
-    def test_includes_status_in_return(self):
-        serialization = {'status': 'COMPLETED'}
-        self.runner.flow_engine.serialize_flow.return_value = serialization
-        result = self.runner.tick_flow_record(self.flow_record)
-        self.assertEqual(result['status'], self.flow.status)
-
-    def test_includes_serialization_in_return(self):
-        result = self.runner.tick_flow_record(self.flow_record)
-        self.assertEqual(result['serialization'],
-                         self.runner.flow_engine.serialize_flow.return_value)
-
-    def test_includes_num_running_tasks_in_return(self):
+    def test_includes_flow_dict_and_tickable_tasks_in_result(self):
+        mock_flow_dict = {'key_%s' % i: MagicMock() for i in range(3)}
+        self.runner.flow_engine.flow_to_flow_dict.return_value = mock_flow_dict
         result = self.runner.tick_flow_record(self.flow_record)
         self.assertEqual(
-            result['num_running_tasks'],
-            len(self.flow.num_running_tasks.return_value)
+            result,
+            {**mock_flow_dict, 
+             'num_tickable_tasks': len((self.expected_flow.get_tickable_tasks
+                                        .return_value))}
         )
 
-class GetFlowForFlowRecordTestCase(BaseTestCase):
-    def test_deserializes(self):
-        flow_record = {'serialization': MagicMock()}
-        flow = self.runner.get_flow_for_flow_record(flow_record=flow_record)
+class FlowRecordToFlowTestCase(BaseTestCase):
+    def test_to_flow(self):
+        flow_record = MagicMock()
+        flow = self.runner.flow_record_to_flow(flow_record=flow_record)
         self.assertEqual(
-            self.runner.flow_engine.deserialize_flow.call_args,
-            call(flow_record['serialization'], key=flow_record['key'])
+            self.runner.flow_engine.flow_dict_to_flow.call_args,
+            call(flow_dict=flow_record)
         )
         self.assertEqual(flow,
-                         self.runner.flow_engine.deserialize_flow.return_value)
+                         self.runner.flow_engine.flow_dict_to_flow.return_value)
         
 class PatchAndReleaseFlowRecordTestCase(BaseTestCase):
     def test_patch_flow_record(self):
@@ -163,46 +156,11 @@ class PatchAndReleaseFlowRecordTestCase(BaseTestCase):
         self.runner.patch_and_release_flow_record(flow_record=flow_record,
                                                   patches=patches)
         self.assertEqual(
-            self.runner.flow_client.patch_and_release_flow.call_args, 
-            call(flow=flow_record, patches=patches)
+            (self.runner.flow_record_client.patch_and_release_flow_record
+             .call_args),
+            call(flow_record=flow_record, patches=patches)
         )
 
-class GenerateFlowClientFromMcDaoTestCase(BaseTestCase):
-    @patch.object(flow_runner, 'McDaoFlowClient')
-    def test_returns_flow_client_instance(self, _McDaoFlowClient):
-        mc_dao = MagicMock()
-        queue_key = MagicMock()
-        result = flow_runner.FlowRunner.generate_flow_client_from_mc_dao(
-            mc_dao=mc_dao, queue_key=queue_key)
-        self.assertEqual(_McDaoFlowClient.call_args,
-                         call(mc_dao=mc_dao, queue_key=queue_key))
-        self.assertEqual(result, _McDaoFlowClient.return_value)
-
-class McDaoFlowClientTestCase(unittest.TestCase):
-    def setUp(self):
-        self.flow_client = flow_runner.McDaoFlowClient(
-            mc_dao=MagicMock(), queue_key=MagicMock())
-
-    def test_client_claim_flows(self):
-        result = self.flow_client.claim_flows()
-        self.assertEqual(self.flow_client.mc_dao.claim_queue_items.call_args,
-                         call(queue_key=self.flow_client.queue_key))
-        self.assertEqual(
-            result,
-            self.flow_client.mc_dao.claim_queue_items.return_value['items'])
-
-    def test_client_patch_and_release_flow(self):
-        flow = MagicMock()
-        patches = MagicMock()
-        result = self.flow_client.patch_and_release_flow(
-            flow=flow, patches=patches)
-        self.assertEqual(
-            self.flow_client.mc_dao.patch_item.call_args,
-            call(item_type='Flow', key=flow['key'],
-                 patches={'claimed': False, **patches})
-        )
-        self.assertEqual(result,
-                         self.flow_client.mc_dao.patch_item.return_value)
 
 if __name__ == '__main__':
     unittest.main()

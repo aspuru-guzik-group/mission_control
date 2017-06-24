@@ -28,7 +28,7 @@ def main():
         ]
     }
     flow_engine = FlowEngine()
-    flow = flow_engine.generate_flow(flow_spec=flow_spec)
+    flow = flow_engine.flow_spec_to_flow(flow_spec=flow_spec)
     flow_engine.run_flow(flow=flow)
 
 if __name__ == '__main__': main()

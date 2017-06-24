@@ -14,7 +14,7 @@ class Flow(object):
         return {k: v for k, v in flow_kwargs.items() if k not in special_keys}
 
     def __init__(self, key=None, cfg=None, data=None, label=None,
-                 status=None, depth=0, **kwargs):
+                 status=None, depth=0, add_root_task=True, **kwargs):
         self.key = key
         self.cfg = cfg or {'fail_fast': True}
         self.data = data or {}
@@ -27,7 +27,7 @@ class Flow(object):
         self._edges_by_key = collections.defaultdict(
             lambda: collections.defaultdict(dict))
 
-        self.add_root_task()
+        if add_root_task: self.add_root_task()
 
     def add_root_task(self):
         self.add_task(task={'key': self.ROOT_TASK_KEY, 'status': 'COMPLETED'})
@@ -57,24 +57,22 @@ class Flow(object):
 
     @classmethod
     def from_flow_dict(cls, flow_dict=None, **kwargs):
-        flow = cls(**cls.sanitize_flow_kwargs(flow_dict))
+        flow = cls(**cls.sanitize_flow_kwargs(flow_dict),
+                   add_root_task=False)
         graph = flow_dict.get('graph', {})
-        for key, task in graph.get('tasks', {}).items():
-            if key == flow.ROOT_TASK_KEY: continue
-            flow.add_task(task=task)
-        for edge in graph.get('edges', []):
-            flow.add_edge(edge=edge)
+        for task in graph.get('tasks', {}).values(): flow.add_task(task=task)
+        for edge in graph.get('edges', []): flow.add_edge(edge=edge)
         return flow
 
     def to_flow_dict(self):
         flow_dict = {
             **{attr: getattr(self, attr, None) for attr in self.SIMPLE_ATTRS},
             'graph': {
-                'tasks': {key: task for key, task in self.tasks.items()
-                          if key != self.ROOT_TASK_KEY},
+                'tasks': {key: task for key, task in self.tasks.items()},
                 'edges': [edge for edge in self._edges.values()],
             }
         }
+        if 'key' in flow_dict and flow_dict['key'] is None: del flow_dict['key']
         return flow_dict
 
     def has_edge(self, src_key=None, dest_key=None):

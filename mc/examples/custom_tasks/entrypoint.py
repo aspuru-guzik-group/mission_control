@@ -22,7 +22,7 @@ def main():
         ]
     }
     flow_engine = FlowEngine()
-    flow = flow_engine.generate_flow(flow_spec=flow_spec)
+    flow = flow_engine.flow_spec_to_flow(flow_spec=flow_spec)
     try:
         flow_engine.run_flow(flow=flow, check=True)
     except flow_engine.FlowError as exc:

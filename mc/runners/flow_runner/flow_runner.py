@@ -4,10 +4,10 @@ import time
 import traceback
 
 class FlowRunner(object):
-    def __init__(self, flow_client=None, flow_engine=None, task_ctx=None,
+    def __init__(self, flow_record_client=None, flow_engine=None, task_ctx=None,
                  tick_interval=120, max_flows_per_tick=3, logger=None):
         self.logger = logger or logging
-        self.flow_client = flow_client
+        self.flow_record_client = flow_record_client
         self.flow_engine = flow_engine or self.get_default_flow_engine()
         self.task_ctx = task_ctx or {}
         self.fill_in_task_ctx()
@@ -50,7 +50,8 @@ class FlowRunner(object):
         }
         return tick_stats
 
-    def claim_flow_records(self): return self.flow_client.claim_flow_records()
+    def claim_flow_records(self):
+        return self.flow_record_client.claim_flow_records()
 
     def tick_flow_records(self, flow_records=None):
         tick_stats = defaultdict(int)
@@ -69,7 +70,7 @@ class FlowRunner(object):
 
     def tick_flow_record(self, flow_record=None):
         self.logger.debug('tick_flow_record')
-        flow = self.flow_engine.flow_dict_to_flow(flow_dict=flow_record)
+        flow = self.flow_record_to_flow(flow_record=flow_record)
         flow.data.setdefault('_flow_record_tick_counter', 0)
         flow.data['_flow_record_tick_counter'] += 1
         self.flow_engine.tick_flow_until_has_no_pending(
@@ -79,6 +80,9 @@ class FlowRunner(object):
                    'num_tickable_tasks': len(flow.get_tickable_tasks())}
         return patches
 
+    def flow_record_to_flow(self, flow_record=None):
+        return self.flow_engine.flow_dict_to_flow(flow_dict=flow_record)
+
     def patch_and_release_flow_record(self, flow_record=None, patches=None):
-        self.flow_client.patch_and_release_flow_record(flow_record=flow_record,
-                                                       patches=patches)
+        self.flow_record_client.patch_and_release_flow_record(
+            flow_record=flow_record, patches=patches)

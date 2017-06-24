@@ -9,120 +9,88 @@ class BaseTestCase(unittest.TestCase):
     def setUp(self):
         super().setUp()
         self.task = defaultdict(MagicMock, {'data': defaultdict(MagicMock)})
-        self.flow_engine = MagicMock()
         self.task_ctx = self.generate_task_ctx()
         self.task_handler = flow_task_handler.FlowTaskHandler(
             task_ctx=self.task_ctx)
 
     def generate_task_ctx(self, **kwargs):
-        task_ctx = defaultdict(
-            MagicMock,
-            **{'task': self.task, 'flow_engine': self.flow_engine, **kwargs}
-        )
-        return task_ctx
+        return defaultdict(MagicMock, **{'task': self.task, **kwargs})
+
+    def setup_handler_mocks(self, attrs=None):
+        for attr in attrs: setattr(self.task_handler, attr, MagicMock())
 
 class InitialTickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.task_handler.create_flow = MagicMock()
-        self.task_handler.create_parent_flow_lock = MagicMock()
+        self.setup_handler_mocks(attrs=['create_flow_record'])
         self.task_handler.initial_tick()
 
-    def test_initial_tick_creates_flow(self):
+    def test_initial_tick_creates_flow_record(self):
+        self.assertEqual(self.task_handler.create_flow_record.call_args, call())
+
+    def test_stores_flow_meta(self):
+        self.assertEqual(self.task['data']['_flow_task_flow_meta'],
+                         self.task_handler.create_flow_record.return_value)
+
+class CreateFlowRecordTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.setup_handler_mocks(attrs=['create_flow', 'flow_record_client',
+                                        'flow_engine'])
+        self.result = self.task_handler.create_flow_record()
+
+    def test_creates_flow(self):
         self.assertEqual(self.task_handler.create_flow.call_args, call())
 
-    def test_has_flow_meta(self):
-        self.assertEqual(self.task['data']['_flow_task_flow_meta'],
-                         self.task_handler.create_flow.return_value)
+    def test_calls_flow_to_flow_dict(self):
+        self.assertEqual(
+            self.task_handler.flow_engine.flow_to_flow_dict.call_args,
+            call(flow=self.task_handler.create_flow.return_value)
+        )
 
-    def test_creates_lock(self):
-        self.assertEqual(self.task_handler.create_parent_flow_lock.call_args,
-                         call())
+    def test_calls_create_flow_record(self):
+        self.assertEqual(
+            self.task_handler.flow_record_client.create_flow_record.call_args,
+            call(flow_kwargs=(self.task_handler.flow_engine.flow_to_flow_dict
+                              .return_value))
+        )
+
+    def test_returns_flow_meta(self):
+        self.assertEqual(
+            self.result,
+            {'key': (self.task_handler.flow_record_client.create_flow_record
+                     .return_value['key'])}
+        )
 
 class CreateFlowTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.task_handler.generate_flow_record_kwargs = MagicMock()
+        self.expected_flow = (self.task_handler.flow_engine.flow_spec_to_flow
+                              .return_value)
+        self.expected_flow.data = {}
         self.result = self.task_handler.create_flow()
 
-    def test_flow_record_generates_kwargs(self):
+    def test_calls_flow_engine_flow_spec_to_flow(self):
         self.assertEqual(
-            self.task_handler.generate_flow_record_kwargs.call_args, call())
-
-    def test_calls_create_flow_record_ctx_fn(self):
-        self.assertEqual(
-            self.task_ctx['mc.tasks.flow.create_flow_record'].call_args,
-            call(flow_kwargs=(self.task_handler.generate_flow_record_kwargs
-                              .return_value))
+            self.task_handler.flow_engine.flow_spec_to_flow.call_args,
+            call(flow_spec=self.task['task_params']['flow_spec'])
         )
 
-    def test_returns_flow_record_meta(self):
-        self.assertEqual(
-            self.result,
-            {'key': (self.task_ctx['mc.tasks.flow.create_flow_record']
-                     .return_value)['key']}
-        )
+    def test_sets_depth(self):
+        self.assertEqual(self.expected_flow.depth,
+                         self.task_ctx['flow'].depth + 1)
 
-class GenerateFlowKwargsTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.task_handler.serialize_flow_spec = MagicMock()
-        self.result = self.task_handler.generate_flow_record_kwargs()
+    def test_sets_parent_key(self):
+        self.assertEqual(self.expected_flow.data['parent_key'],
+                         self.task_ctx['flow'].key)
 
-    def test_gets_serialization_for_spec(self):
-        self.assertEqual(
-            self.task_handler.serialize_flow_spec.call_args,
-            call(flow_spec=self.task['task_params']['flow_spec']))
-
-    def test_returns_expected_kwargs(self):
-        expected_kwargs = {
-            'label': self.task['task_params']['flow_spec'].get('label'),
-            'serialization': self.task_handler.serialize_flow_spec.return_value
-        }
-        self.assertEqual(self.result, expected_kwargs)
-
-class GetSerializationForFlowSpecTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.flow_spec = MagicMock()
-        self.result = self.task_handler.serialize_flow_spec(
-            flow_spec=self.flow_spec)
-
-    def test_gets_serialization(self):
-        self.assertEqual(self.flow_engine.generate_flow.call_args,
-                         call(flow_spec=self.flow_spec))
-        self.assertEqual(self.flow_engine.serialize_flow.call_args,
-                         call(flow=self.flow_engine.generate_flow.return_value))
-        self.assertEqual(self.result,
-                         self.flow_engine.serialize_flow.return_value)
-
-class CreateParentFlowLockTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.task_ctx['mc.tasks.flow.create_lock'] = MagicMock()
-        self.expected_create_lock_fn = self.task_ctx.get(
-            'mc.tasks.flow.create_lock')
-
-    def test_raises_if_no_release_lock_fn(self):
-        with self.assertRaises(Exception):
-            self.task_handler.create_parent_flow_lock()
-            self.assertEqual(self.expected_create_lock_fn.call_args, None)
-
-    def test_calls_create_lock_fn_if_has_release_locks(self):
-        self.task_ctx['mc.tasks.flow.release_locks'] = MagicMock()
-        self.task_handler.create_parent_flow_lock()
-        self.assertEqual(
-            self.expected_create_lock_fn.call_args,
-            call(locker_key=self.task_handler.get_locker_key(),
-                 lockee_key=self.task_handler.task_ctx['flow'].key)
-        )
-
+    def test_returns_flow(self):
+        self.assertEqual(self.result, self.expected_flow)
 
 class IntermediateTickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.task_handler.get_flow = MagicMock()
-        self.task_handler.handle_flow_status = MagicMock()
+        self.setup_handler_mocks(attrs=['get_flow', 'handle_flow_status'])
         self.task_handler.intermediate_tick()
 
     def test_gets_flow(self):
@@ -135,46 +103,30 @@ class IntermediateTickTestCase(BaseTestCase):
 class GetFlowTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.task_handler.deserialize_flow_record = MagicMock()
+        self.setup_handler_mocks(attrs=['get_flow_record'])
         self.result = self.task_handler.get_flow()
 
-    def test_calls_get_flow_ctx_fn(self):
+    def test_calls_get_flow_record(self):
+        self.assertEqual(self.task_handler.get_flow_record.call_args, call())
+
+    def test_returns_engine_flow_dict_to_flow(self):
         self.assertEqual(
-            self.task_ctx['mc.tasks.flow.get_flow_record'].call_args,
+            self.task_handler.flow_engine.flow_dict_to_flow.call_args,
+            call(flow_dict=self.task_handler.get_flow_record.return_value)
+        )
+        self.assertEqual(
+            self.result,
+            self.task_handler.flow_engine.flow_dict_to_flow.return_value
+        )
+
+class GetFlowRecordTestCase(BaseTestCase):
+    def test_dispatches_to_flow_record_client(self):
+        result = self.task_handler.get_flow_record()
+        self.assertEqual(
+            self.task_handler.flow_record_client.get_flow_record.call_args,
             call(flow_meta=self.task['data']['_flow_task_flow_meta'])
         )
-
-    def test_deserializes_ctx_fn_result(self):
         self.assertEqual(
-            self.task_handler.deserialize_flow_record.call_args,
-            call(flow_record=(self.task_ctx['mc.tasks.flow.get_flow_record']
-                              .return_value))
+            result,
+            self.task_handler.flow_record_client.get_flow_record.return_value
         )
-        self.assertEqual(self.result,
-                         self.task_handler.deserialize_flow_record.return_value)
-
-class DeserializeFlowRecordTestCase(BaseTestCase):
-    def test_dispatches_to_flow_engine(self):
-        flow_record = MagicMock()
-        result = self.task_handler.deserialize_flow_record(
-            flow_record=flow_record)
-        self.assertEqual(self.flow_engine.deserialize_flow.call_args,
-                         call(serialized_flow=flow_record['serialization']))
-        self.assertEqual(result, self.flow_engine.deserialize_flow.return_value)
-
-class OnFlowFinishedTestCase(BaseTestCase):
-    def test_calls_release_parent_flow_lock(self):
-        self.task_handler.release_parent_flow_lock = MagicMock()
-        self.task_handler.on_flow_finished()
-        self.assertEqual(self.task_handler.release_parent_flow_lock.call_args,
-                         call())
-
-class ReleaseParentFlowLockTestCase(BaseTestCase):
-    def test_calls_release_locks_fn(self):
-        self.task_ctx['mc.tasks.flow.release_locks'] = MagicMock()
-        self.task_handler.release_parent_flow_lock()
-        expected_release_locks_fn = self.task_ctx.get(
-            'mc.tasks.flow.release_locks')
-        self.assertEqual(expected_release_locks_fn.call_args,
-                         call(locker_keys=[self.task_handler.get_locker_key()]))
-

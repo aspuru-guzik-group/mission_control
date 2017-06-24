@@ -138,7 +138,7 @@ class FlowQueueTestCase(BaseTestCase):
                                              kwargs={'label': 'unlocked'})
         flow_to_unlock = self.dao.create_item(item_type='Flow',
                                               kwargs={'label': 'to_unlock',
-                                                      'num_running_tasks': 1})
+                                                      'num_tickable_tasks': 1})
         locker_key = 'the_locker'
         self.dao.create_lock(lockee_key=flow_to_unlock['key'],
                              locker_key=locker_key)

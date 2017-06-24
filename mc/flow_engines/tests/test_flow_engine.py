@@ -1,5 +1,4 @@
 import collections
-import json
 import unittest
 from unittest.mock import call, DEFAULT, patch, MagicMock
 from uuid import uuid4
@@ -23,118 +22,53 @@ class BaseTestCase(unittest.TestCase):
                  for key, patcher in patchers.items()}
         return mocks
 
-class GenerateFlowTestCase(BaseTestCase):
+class FlowSpecToFlowTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.flow_spec = collections.defaultdict(MagicMock, **{
             'data': MagicMock(),
             'task': [MagicMock() for i in range(3)],
         })
+        self.patchers = {'Flow': patch.object(flow_engine, 'Flow')}
+        self.mocks = self.start_patchers(patchers=self.patchers)
+        self.result = self.engine.flow_spec_to_flow(flow_spec=self.flow_spec)
 
-    @patch.object(flow_engine, 'Flow')
-    def test_generates_flow_from_flow_spec(self, MockFlow):
-        flow = self.engine.generate_flow(flow_spec=self.flow_spec)
-        self.assertEqual(flow, MockFlow.return_value)
-        self.assertEqual(MockFlow.call_args,
-                         call(data=self.flow_spec['data']))
-        expected_add_task_call_args_list = [
-            call(task=task) for task in self.flow_spec['tasks']
-        ]
-        self.assertEqual(flow.add_task.call_args_list,
+    def test_generates_flow_from_flow_spec(self):
+        _Flow = self.mocks['Flow']
+        self.assertEqual(self.result, _Flow.return_value)
+        self.assertEqual(_Flow.sanitize_flow_kwargs.call_args,
+                         call(self.flow_spec))
+        self.assertEqual(_Flow.call_args,
+                         call(**_Flow.sanitize_flow_kwargs.return_value))
+
+    def test_adds_tasks_w_default_precursors(self):
+        expected_add_task_call_args_list = []
+        for i, task in enumerate(self.flow_spec.get('tasks', [])):
+            if 'precursors' not in task and 'sucessors' not in task:
+                if i == 0: precursor = 'ROOT'
+                else: precursor = self.flow_spec['tasks'][i - 1]['key']
+                task['precursors'] = [precursor]
+                expected_add_task_call_args_list.append(call(task=task))
+        self.assertEqual(self.result.add_task.call_args_list,
                          expected_add_task_call_args_list)
 
-class DeserializationTestCase(BaseTestCase):
+class FlowDictToFlowTestCase(BaseTestCase):
+    @patch.object(flow_engine, 'Flow')
+    def test_dispatches_to_Flow(self, _Flow):
+        flow_dict = MagicMock()
+        result =flow_engine.FlowEngine.flow_dict_to_flow(flow_dict=flow_dict)
+        self.assertEqual(_Flow.from_flow_dict.call_args,
+                         call(flow_dict=flow_dict))
+        self.assertEqual(result, _Flow.from_flow_dict.return_value)
+
+class FlowToFlowDictTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.key = 'my_key'
-        self.flow_dict = {
-            'data': 'some data',
-            'tasks': {
-                'a': {'key': 'a', 'status': 'COMPLETED'},
-                'b': {'key': 'b', 'status': 'COMPLETED'},
-                'c': {'key': 'c', 'status': 'RUNNING'},
-                'd': {'key': 'd', 'status': 'RUNNING'},
-            },
-            'edges': [
-                {'src_key': 'ROOT', 'dest_key': 'a'},
-                {'src_key': 'a', 'dest_key': 'b'},
-                {'src_key': 'b', 'dest_key': 'c'},
-                {'src_key': 'b', 'dest_key': 'd'},
-            ],
-            'status': 'status',
-        }
+        self.flow = MagicMock()
+        self.result = self.engine.flow_to_flow_dict(flow=self.flow)
 
-    def _deserialize_flow(self):
-        return self.engine.deserialize_flow(
-            serialized_flow=json.dumps(self.flow_dict), key=self.key)
-
-    def test_has_expected_key(self):
-        flow = self._deserialize_flow()
-        self.assertEqual(flow.key, self.key)
-
-    def test_has_expected_data(self):
-        flow = self._deserialize_flow()
-        self.assertEqual(flow.data, self.flow_dict['data'])
-
-    def test_has_expected_tasks(self):
-        flow = self._deserialize_flow()
-        expected_tasks = {task['key']: task
-                          for task in self.flow_dict['tasks'].values()}
-        expected_tasks[flow.ROOT_TASK_KEY] = flow.tasks[flow.ROOT_TASK_KEY]
-        self.assertEqual(set(flow.tasks.keys()), set(expected_tasks.keys()))
-
-    def test_has_expected_edges(self):
-        flow = self._deserialize_flow()
-        expected_edges = {}
-        for edge in self.flow_dict['edges']:
-            edge_key = (edge['src_key'], edge['dest_key'])
-            expected_edges[edge_key] = edge
-        self.assertEqual(flow.edges, expected_edges)
-
-    def test_has_expected_status(self):
-        flow = self._deserialize_flow()
-        self.assertEqual(flow.status, self.flow_dict['status'])
-
-    def test_data_defaults_to_dict(self):
-        self.flow_dict = {}
-        flow = self._deserialize_flow()
-        self.assertEqual(flow.data, {})
-
-class SerializationTestCase(BaseTestCase):
-    def setUp(self):
-        super().setUp()
-        self.flow = self.generate_flow()
-        self.flow_dict = json.loads(self.engine.serialize_flow(self.flow))
-
-    def generate_flow(self):
-        flow = flow_engine.Flow()
-        flow.data = 'some data'
-        tasks = [{'key': 'key_%s' % i, 'status': 's_%s' % i} for i in range(3)]
-        for task in tasks: flow.add_task(task=task)
-        edges = [{'src_key': tasks[0]['key'], 'dest_key': tasks[1]['key']},
-                 {'src_key': tasks[1]['key'], 'dest_key': tasks[2]['key']}]
-        for edge in edges: flow.add_edge(edge=edge)
-        flow.status = 'flow_status'
-        return flow
-
-    def test_serializes_basic_attrs(self):
-        for attr in flow_engine.FlowEngine.simple_flow_serialization_attrs:
-            self.assertEqual(self.flow_dict[attr], getattr(self.flow, attr))
-
-    def test_serializes_tasks(self):
-        expected_serialized_tasks = {
-            key: task for key, task in self.flow.tasks.items()
-            if key != self.flow.ROOT_TASK_KEY
-        }
-        self.assertEqual(self.flow_dict['tasks'], expected_serialized_tasks)
-
-    def test_serializes_edges(self):
-        def sorted_edge_list(edge_list):
-            def get_edge_key_str(edge):
-                return "%s,%s" % (edge['src_key'], edge['dest_key'])
-            return sorted(edge_list, key=get_edge_key_str)
-        self.assertEqual(sorted_edge_list(self.flow_dict['edges']),
-                         sorted_edge_list(self.flow.edges.values()))
+    def test_dispatches_to_flow(self):
+        self.assertEqual(self.result, self.flow.to_flow_dict.return_value)
 
 class RunFlowTestCase(BaseTestCase):
     def setUp(self):

@@ -1,51 +1,17 @@
-import os
-import tempfile
+from mc.utils.mc_sandbox import McSandbox
 
-from mc.flow_engines.flow_engine import FlowEngine
-from mc.daos.sa_dao import SaDao
-from mc.runners.flow_runner import FlowRunner
-
-_DIR = os.path.dirname(__file__)
 
 def main():
-    mc_dao = setup_mc_dao()
-    flow_engine = FlowEngine()
-    create_flow(mc_dao=mc_dao, flow_engine=flow_engine)
-
-    flow_queue_key = mc_dao.create_item(item_type='Queue', kwargs={
-        'queue_spec': {'item_type': 'Flow'}
-    })['key']
-    job_queue_key = mc_dao.create_item(item_type='Queue', kwargs={
-        'queue_spec': {'item_type': 'Job'}
-    })['key']
-
-    flow_runner = FlowRunner(
-        flow_client=FlowRunner.generate_flow_client_from_mc_dao(
-            mc_dao=mc_dao, queue_key=flow_queue_key),
-        task_ctx=setup_task_ctx(mc_dao=mc_dao)
-    )
-
-    tick_stats = flow_runner.tick()
-    while tick_stats['claimed'] > 0:
-        tick_stats = flow_runner.tick()
-        claimed_jobs = mc_dao.claim_queue_items(
-            queue_key=job_queue_key)['items']
-        for job in claimed_jobs: run_job(job=job, mc_dao=mc_dao)
-    print("No more flows to claim.")
-
-def setup_mc_dao():
-    db_file = tempfile.mkstemp(suffix='.sqlite.db')[1]
-    db_uri = 'sqlite:///{db_file}'.format(db_file=db_file)
-    mc_dao = SaDao(db_uri=db_uri)
-    mc_dao.create_tables()
-    return mc_dao
-
-def create_flow(mc_dao=None, flow_engine=None):
+    sandbox = McSandbox()
     flow_spec = generate_flow_spec()
-    flow = flow_engine.generate_flow(flow_spec=flow_spec)
-    mc_dao.create_item(item_type='Flow', kwargs={
-        'serialization': flow_engine.serialize_flow(flow=flow)
-    })
+    sandbox.flow_record_client.create_flow_record_from_flow_spec(
+        flow_spec=flow_spec)
+    while sandbox.has_incomplete_items():
+        sandbox.flow_runner.tick()
+        claimed_jobs = sandbox.mc_dao.claim_queue_items(
+            queue_key=sandbox.queues['Job']['key'])['items']
+        for job in claimed_jobs: run_job(job=job, mc_dao=sandbox.mc_dao)
+    print("No more flows to claim.")
 
 def generate_flow_spec():
     flow_spec = {
@@ -61,23 +27,6 @@ def generate_flow_spec():
             'precursors': ['ROOT'],
         })
     return flow_spec
-
-def setup_task_ctx(mc_dao=None):
-    def create_job(*args, job_kwargs=None, **kwargs):
-        job_kwargs = {**(job_kwargs or {}), 'data': {}, 'status': 'PENDING'}
-        job = mc_dao.create_item(item_type='Job', kwargs=job_kwargs)
-        job_meta = {'key': job['key']}
-        return job_meta
-
-    def get_job(*args, job_meta=None, **kwargs):
-        job = mc_dao.get_item_by_key(item_type='Job', key=job_meta['key'])
-        return job
-
-    task_ctx = {
-        'mc.tasks.job.create_job': create_job,
-        'mc.tasks.job.get_job': get_job,
-    }
-    return task_ctx
 
 def run_job(job=None, mc_dao=None):
     print("running job '{job_id}'".format(job_id=job['job_spec']['job_id']))

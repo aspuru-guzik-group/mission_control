@@ -13,8 +13,8 @@ class TestExample(unittest.TestCase):
         expected_stdout = textwrap.dedent(
             '''
             I am task_1.
-            Running job.
-            Completing job.
+            Running job_record.
+            Completing job_record.
             '''
         ).lstrip()
         self.assertEqual(stdout, expected_stdout)

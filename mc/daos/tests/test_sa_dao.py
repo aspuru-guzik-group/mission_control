@@ -15,6 +15,14 @@ class BaseTestCase(unittest.TestCase):
             engine=MagicMock(),
         )
 
+    def setup_module_mocks(self, attrs=None, module=sa_dao):
+        patchers = {attr: patch.object(module, attr) for attr in attrs}
+        mocks = {}
+        for attr, patcher in patchers.items():
+            self.addCleanup(patcher.stop)
+            mocks[attr] = patcher.start()
+        return mocks
+
     def setup_dao_mocks(self, attrs=None, mock_factory=MagicMock):
         for attr in attrs: setattr(self.dao, attr, mock_factory())
 
@@ -227,20 +235,17 @@ class GetFlowQueueItemsToClaim(BaseTestCase):
                 _self.__gt__ = mock_gt
 
         mock_factory = MagicMockWithGt
-        self.setup_dao_mocks(attrs=['get_item_table', 'get_items_statement',
+        self.setup_dao_mocks(attrs=['get_items_statement',
                                     'get_default_claiming_filters',
                                     'get_lock_count_subq',
                                     'statement_to_dicts'],
                              mock_factory=mock_factory)
+        self.mocks = self.setup_module_mocks(attrs=['_sqla'])
         self.queue = mock_factory()
-        self.expected_flow_table = self.dao.get_item_table.return_value
         self.expected_items_statement = \
                 self.dao.get_items_statement.return_value
+        self.expected_lock_subq = self.dao.get_lock_count_subq.return_value
         self.result = self.dao.get_flow_queue_items_to_claim(queue=self.queue)
-
-    def test_gets_item_table(self):
-        self.assertEqual(self.dao.get_item_table.call_args,
-                         call(item_type=self.queue['queue_spec']['item_type']))
 
     def test_gets_claiming_filters(self):
         self.assertEqual(self.dao.get_default_claiming_filters.call_args,
@@ -255,24 +260,40 @@ class GetFlowQueueItemsToClaim(BaseTestCase):
         )
 
     def test_gets_lock_count_subq(self):
-        self.assertEqual(self.dao.get_lock_count_subq.call_args,
-                         call(lockee_key=self.expected_flow_table.c.key))
+        self.assertEqual(self.dao.get_lock_count_subq.call_args, call())
 
-    def test_adds_where_conditions_to_items_statement(self):
-        expected_lock_count_subq = self.dao.get_lock_count_subq.return_value
+
+    def test_joins_items_statement_and_lock_subq(self):
         self.assertEqual(
-            self.expected_items_statement.where.call_args,
+            self.expected_items_statement.join.call_args,
+            call(self.expected_lock_subq,
+                 isouter=True,
+                 onclause=(self.expected_items_statement.c.key == \
+                           self.expected_lock_subq.c.lockee_key)
+                )
+        )
+
+    def test_selects_from_join_with_where_conditions(self):
+        expected_join = self.expected_items_statement.join.return_value
+        self.assertEqual(self.mocks['_sqla'].select.call_args, call('*'))
+        expected_select = self.mocks['_sqla'].select.return_value
+        self.assertEqual(expected_select.select_from.call_args,
+                         call(expected_join))
+        self.assertEqual(
+            expected_select.select_from.return_value.where.call_args,
             call(
-                (self.expected_flow_table.c.num_running_tasks == None)
-                | (self.expected_flow_table.c.num_running_tasks
-                   > expected_lock_count_subq.c.lock_count)
+                (expected_join.c.num_tickable_tasks == None)
+                | (expected_join.c.lock_count == None)
+                | (expected_join.c.num_tickable_tasks > \
+                   expected_join.c.lock_count)
             )
         )
 
     def test_returns_dicts(self):
         self.assertEqual(
             self.dao.statement_to_dicts.call_args,
-            call(statement=self.expected_items_statement.where.return_value)
+            call(statement=(self.mocks['_sqla'].select.return_value.select_from
+                            .return_value.where.return_value))
         )
         self.assertEqual(self.result, self.dao.statement_to_dicts.return_value)
 

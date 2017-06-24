@@ -13,8 +13,8 @@ class TestExample(unittest.TestCase):
         expected_stdout = textwrap.dedent(
             '''
             I am task_1.
-            creating job
-            getting job, job_meta: {'key': 'some_key'}
+            creating job_record
+            getting job_record, job_meta: {'key': 'some_key'}
             '''
         ).lstrip()
         self.assertEqual(stdout, expected_stdout)
