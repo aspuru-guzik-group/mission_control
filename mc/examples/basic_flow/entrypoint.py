@@ -1,8 +1,4 @@
-import os
-
 from mc.flow_engines.flow_engine import FlowEngine
-
-_DIR = os.path.dirname(__file__)
 
 def main():
     flow_spec = {
@@ -12,18 +8,15 @@ def main():
                 'key': 'task_1',
                 'task_type': 'print',
                 'task_params': {'msg': 'I am task_1.'},
-                'precursors': ['ROOT'],
             },
             {
                 'key': 'task_2',
                 'task_type': 'print',
                 'task_params': {'msg': 'I am task_2.'},
-                'precursors': ['task_1'],
             },
             {
                 'key': 'task_3',
                 'task_type': 'print',
-                'task_params': {'msg': 'I am task_3.'},
             }
         ]
     }
