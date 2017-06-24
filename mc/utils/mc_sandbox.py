@@ -4,7 +4,7 @@ import time
 from mc.daos.sa_dao import SaDao
 from mc.clients.job_record_client import JobRecordClient
 from mc.clients.flow_record_client import FlowRecordClient
-from mc.flow_engines.flow_engine import FlowEngine
+from mc.flows.flow_engine import FlowEngine
 from mc.runners.flow_runner import FlowRunner
 
 class McSandbox(object):

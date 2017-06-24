@@ -21,7 +21,7 @@ class JobRecordClient(object):
     def claim_job_records(self, *args, **kwargs):
         return self.mc_dao.claim_queue_items(queue_key=self.queue_key)['items']
     
-    def patch_jobs(self, keyed_patches=None):
+    def patch_job_records(self, keyed_patches=None):
         patched = self.mc_dao.patch_items(item_type='Job',
                                           keyed_patches=keyed_patches)
         if self.use_locks:

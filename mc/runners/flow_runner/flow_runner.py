@@ -18,7 +18,7 @@ class FlowRunner(object):
 
 
     def get_default_flow_engine(self, task_handler=None):
-        from mc.flow_engines.flow_engine import FlowEngine
+        from mc.flows.flow_engine import FlowEngine
         return FlowEngine()
 
     def fill_in_task_ctx(self):

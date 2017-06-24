@@ -66,8 +66,10 @@ class AddTaskTestCase(BaseTestCase):
 class AddEdgeTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.tasks = [self.flow.add_task(task=task)
-                      for task in self.generate_tasks(n=2)]
+        self.tasks = [
+            self.flow.add_task(task=task, add_default_connections=False)
+            for task in self.generate_tasks(n=2)
+        ]
         self.edge = {'src_key': self.tasks[0]['key'],
                      'dest_key': self.tasks[1]['key']}
         self.expected_edge_key = (self.edge['src_key'], self.edge['dest_key'])
@@ -121,8 +123,10 @@ class FromFlowDictTestCase(BaseTestCase):
     def test_has_expected_tasks(self):
         expected_tasks = {task['key']: task
                           for task in self.flow_dict['graph']['tasks'].values()}
-        self.assertEqual(set(self.result.tasks.keys()),
-                         set(expected_tasks.keys()))
+        self.assertEqual(
+            set(self.result.tasks.keys()),
+            (set(expected_tasks.keys()) | {self.flow.ROOT_TASK_KEY})
+        )
 
     def test_has_expected_edges(self):
         expected_edges = {}

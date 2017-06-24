@@ -1,7 +1,7 @@
 import os
 import sys
 
-from mc.flow_engines.flow_engine import FlowEngine
+from mc.flows.flow_engine import FlowEngine
 
 _DIR = os.path.dirname(__file__)
 

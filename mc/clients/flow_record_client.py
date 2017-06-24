@@ -1,4 +1,4 @@
-from mc.flow_engines.flow_engine import FlowEngine
+from mc.flows.flow_engine import FlowEngine
 
 class FlowRecordClient(object):
     def __init__(self, mc_dao=None, queue_key=None, use_locks=False):

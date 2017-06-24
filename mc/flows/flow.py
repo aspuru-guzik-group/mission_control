@@ -26,25 +26,36 @@ class Flow(object):
         self._edges = {}
         self._edges_by_key = collections.defaultdict(
             lambda: collections.defaultdict(dict))
-
+        self._last_added_task = None
         if add_root_task: self.add_root_task()
 
     def add_root_task(self):
-        self.add_task(task={'key': self.ROOT_TASK_KEY, 'status': 'COMPLETED'})
+        self.add_task(task={'key': self.ROOT_TASK_KEY, 'status': 'COMPLETED'},
+                      add_default_connections=False)
 
-    def add_task(self, task=None):
+    def add_task(self, task=None, add_default_connections=True):
         task.setdefault('key', self.generate_key())
         task.setdefault('status', 'PENDING')
         self.tasks[task['key']] = task
+        if add_default_connections:
+            self.add_default_connections_to_task(task=task)
         for precursor_key in task.get('precursors', []):
             self.add_edge(edge={'src_key': precursor_key,
                                 'dest_key': task['key']})
         for successor_key in task.get('successors', []):
             self.add_edge(edge={'src_key': task['key'],
                                 'dest_key': successor_key})
+        self._last_added_task = task
         return task
 
     def generate_key(self): return str(uuid4())
+
+    def add_default_connections_to_task(self, task=None):
+        if ('precursors' not in task and 'successors' not in task
+            and self._last_added_task is not None
+            and task['key'] != self.ROOT_TASK_KEY
+           ):
+            task['precursors'] = [self._last_added_task['key']]
 
     def add_edge(self, edge=None):
         src_key, dest_key = (edge['src_key'], edge['dest_key'])
@@ -60,8 +71,10 @@ class Flow(object):
         flow = cls(**cls.sanitize_flow_kwargs(flow_dict),
                    add_root_task=False)
         graph = flow_dict.get('graph', {})
-        for task in graph.get('tasks', {}).values(): flow.add_task(task=task)
+        for task in graph.get('tasks', {}).values():
+            flow.add_task(task=task, add_default_connections=False)
         for edge in graph.get('edges', []): flow.add_edge(edge=edge)
+        if flow.ROOT_TASK_KEY not in flow.tasks: flow.add_root_task()
         return flow
 
     def to_flow_dict(self):

@@ -1,4 +1,4 @@
-from mc.flow_engines.flow_engine import FlowEngine
+from mc.flows.flow_engine import FlowEngine
 
 def main():
     flow_spec = {
@@ -17,6 +17,7 @@ def main():
             {
                 'key': 'task_3',
                 'task_type': 'print',
+                'task_params': {'msg': 'I am task_3.'},
             }
         ]
     }
