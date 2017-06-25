@@ -14,6 +14,8 @@ from . import constants
 class McDefaultTaskHandler(BaseTaskHandler):
     NO_INTERPOLATE_KEY = constants.NO_INTERPOLATE_KEY
 
+    class InvalidTaskTypeError(BaseTaskHandler.InvalidTaskError): pass
+
     def __init__(self, *args, task_type_to_handler_dot_spec_fn=None, **kwargs):
         super().__init__(self, *args, **kwargs)
         self.task_type_to_handler_dot_spec = task_type_to_handler_dot_spec_fn \
@@ -39,26 +41,17 @@ class McDefaultTaskHandler(BaseTaskHandler):
         self.tick_task_ctx(*args, task_ctx=interpolated_task_ctx, **kwargs)
         self.task.update(interpolated_task_ctx['task'])
 
-    def tick_task_ctx(self, *args, task_ctx=None, **kwargs):
-        handler = self.get_handler_for_task_ctx(task_ctx=task_ctx)
-        handler.tick_task(*args, task_ctx=task_ctx, **kwargs)
-
-    def get_handler_for_task_ctx(self, task_ctx=None):
-        task_type = task_ctx['task']['task_type']
-        if task_type == 'log': handler = LogTaskHandler
-        elif task_type == 'noop': handler = NoOpTaskHandler
-        elif task_type == 'print': handler = PrintTaskHandler
-        elif task_type == 'wire': handler = WireTaskHandler
-        elif task_type == 'switch': handler = SwitchTaskHandler
-        else:
-            handler_dot_spec = self.task_type_to_handler_dot_spec(task_type)
-            handler = self.load_from_dot_spec(dot_spec=handler_dot_spec)
-        return handler
-
     def should_interpolate_task_ctx(self):
         if self.NO_INTERPOLATE_KEY in self.task: return False
-        if self.task['task_type'] == 'mc.tasks.flow': return False
+        if self.get_task_type() == 'mc.tasks.flow': return False
         return True
+
+    def get_task_type(self):
+        try: return self.task_ctx['task']['task_type']
+        except Exception as exc:
+            task = self.task_ctx.get('task')
+            raise self.InvalidTaskError(
+                msg="invalid task_type", task=task) from exc
 
     def get_interpolated_task_ctx(self):
         interpolated_task_ctx = {**self.task_ctx,
@@ -114,6 +107,22 @@ class McDefaultTaskHandler(BaseTaskHandler):
     def load_from_dot_spec(self, dot_spec=None):
         return dot_spec_loader.DotSpecLoader.load_from_dot_spec(
             dot_spec=dot_spec)
+
+    def tick_task_ctx(self, *args, task_ctx=None, **kwargs):
+        handler = self.get_handler_for_task_ctx(task_ctx=task_ctx)
+        handler.tick_task(*args, task_ctx=task_ctx, **kwargs)
+
+    def get_handler_for_task_ctx(self, task_ctx=None):
+        task_type = self.get_task_type()
+        if task_type == 'log': handler = LogTaskHandler
+        elif task_type == 'noop': handler = NoOpTaskHandler
+        elif task_type == 'print': handler = PrintTaskHandler
+        elif task_type == 'wire': handler = WireTaskHandler
+        elif task_type == 'switch': handler = SwitchTaskHandler
+        else:
+            handler_dot_spec = self.task_type_to_handler_dot_spec(task_type)
+            handler = self.load_from_dot_spec(dot_spec=handler_dot_spec)
+        return handler
 
 class NoOpTaskHandler(BaseTaskHandler):
     def initial_tick(self, *args, **kwargs):
