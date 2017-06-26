@@ -17,7 +17,6 @@ class McSandbox(object):
         self.flow_engine = self.setup_flow_engine()
         self.task_ctx = self.setup_task_ctx()
         self.flow_runner = self.setup_flow_runner()
-        self.job_runner = self.setup_job_runner()
 
     def setup_mc_dao(self, mc_db_uri=None):
         mc_dao = SaDao(db_uri=mc_db_uri)
@@ -56,9 +55,6 @@ class McSandbox(object):
                           flow_record_client=self.flow_record_client,
                           task_ctx=self.task_ctx)
 
-    def setup_job_runner(self):
-        pass
-
     def has_incomplete_items(self):
         return self.has_incomplete_flows() or self.has_incomplete_jobs()
 
@@ -74,15 +70,16 @@ class McSandbox(object):
         return len(self.get_incomplete_items(item_type='Job')) > 0
 
     def run_until_completed(self, max_ticks=10, tick_interval=.1,
-                            log_ticks=False):
+                            log_ticks=False, job_runner=None):
         tick_counter = 0
         while (self.has_incomplete_flows() or self.has_incomplete_jobs()):
             tick_counter += 1
             log_msg = 't{tick_counter}:'.format(tick_counter=tick_counter)
             flow_tick_stats = self.flow_runner.tick()
             if flow_tick_stats['claimed'] > 0: log_msg += 'F'
-            job_tick_stats = self.job_runner.tick()
-            if job_tick_stats['claimed'] > 0: log_msg += 'J'
+            if job_runner:
+                job_tick_stats = job_runner.tick()
+                if job_tick_stats['claimed'] > 0: log_msg += 'J'
             log_msg += ' | '
             if log_ticks: self.logger.warn(log_msg)
             if tick_counter > max_ticks: raise Exception("Exceed max_ticks")
@@ -114,5 +111,4 @@ class McSandbox(object):
     def create_flow(self, flow_spec=None):
         flow = self.flow_engine.flow_spec_to_flow(flow_spec=flow_spec)
         flow_dict = self.flow_engine.flow_to_flow_dict(flow=flow)
-        return self.task_ctx['mc.tasks.flow.create_flow_record'](
-            flow_kwargs=flow_dict)
+        return self.flow_record_client.create_flow_record(flow_kwargs=flow_dict)

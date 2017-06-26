@@ -46,10 +46,11 @@ class McDefaultTaskHandler(BaseTaskHandler):
         if self.get_task_type() == 'mc.tasks.flow': return False
         return True
 
-    def get_task_type(self):
-        try: return self.task_ctx['task']['task_type']
+    def get_task_type(self, task_ctx=None):
+        task_ctx = task_ctx or self.task_ctx
+        try: return task_ctx['task']['task_type']
         except Exception as exc:
-            task = self.task_ctx.get('task')
+            task = task_ctx.get('task')
             raise self.InvalidTaskError(
                 msg="invalid task_type", task=task) from exc
 
@@ -113,7 +114,7 @@ class McDefaultTaskHandler(BaseTaskHandler):
         handler.tick_task(*args, task_ctx=task_ctx, **kwargs)
 
     def get_handler_for_task_ctx(self, task_ctx=None):
-        task_type = self.get_task_type()
+        task_type = self.get_task_type(task_ctx=task_ctx)
         if task_type == 'log': handler = LogTaskHandler
         elif task_type == 'noop': handler = NoOpTaskHandler
         elif task_type == 'print': handler = PrintTaskHandler

@@ -69,10 +69,11 @@ class RunFlowTestCase(BaseTestCase):
         self.engine.run_flow(flow=self.flow)
         self.assertEqual(self.flow.status, 'COMPLETED')
 
-    def test_stops_if_flow_fails(self):
+    def test_raises_if_flow_fails(self):
         self._setup_mock_tick(flow_end_status='FAILED')
-        self.engine.run_flow(flow=self.flow)
-        self.assertEqual(self.flow.status, 'FAILED')
+        with self.assertRaises(self.engine.FlowError):
+            self.engine.run_flow(flow=self.flow)
+            self.assertEqual(self.flow.status, 'FAILED')
 
 class TickTestCase(BaseTestCase):
     def setUp(self):

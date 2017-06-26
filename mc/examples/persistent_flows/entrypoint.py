@@ -16,7 +16,7 @@ def main():
                                                            key=flow_key)
     reconstituted_flow_1 = flow_engine.flow_dict_to_flow(
         flow_dict=fetched_flow_record_1)
-    flow_engine.run_flow(flow=reconstituted_flow_1, check=True)
+    flow_engine.run_flow(flow=reconstituted_flow_1)
     sandbox.mc_dao.patch_item(
         item_type='Flow', key=flow_key,
         patches=flow_engine.flow_to_flow_dict(flow=reconstituted_flow_1)
