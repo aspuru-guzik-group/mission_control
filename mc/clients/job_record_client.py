@@ -1,5 +1,13 @@
 class JobRecordClient(object):
     def __init__(self, mc_dao=None, queue_key=None, use_locks=False):
+        """
+        Args:
+            mc_dao (mc_dao): mc_dao
+            queue_key (str): key for the job queue to use
+            use_locks (bool): if True, create a lock record when creating
+                a job_record. This can be used to add a lock reference to parent
+                flows that create jobs.
+       """
         self.mc_dao = mc_dao
         self.queue_key = queue_key
         self.use_locks = use_locks
