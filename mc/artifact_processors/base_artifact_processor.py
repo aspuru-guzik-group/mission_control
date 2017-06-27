@@ -1,11 +1,17 @@
-class BaseArtifactProcessor(object):
+import abc
+
+
+class BaseArtifactProcessor(abc.ABC):
+    """Abstract base class for artifact processors."""
 
     ARTIFACT_TYPE = None
 
-    class UnknownArtifactTypeError(Exception): pass
+    class InvalidArtifactError(Exception): pass
 
-    def dir_to_artifact(self, dir_=None, **kwargs):
+    @abc.abstractmethod
+    def dir_to_artifact(self, dir=None, **kwargs):
         raise NotImplementedError
 
-    def artifact_todir_(self, artifact=None, dest=None, **kwargs):
+    @abc.abstractmethod
+    def artifact_to_dir(self, artifact=None, dest=None, **kwargs):
         raise NotImplementedError

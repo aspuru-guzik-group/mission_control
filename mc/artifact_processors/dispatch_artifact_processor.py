@@ -1,6 +1,8 @@
 from .base_artifact_processor import BaseArtifactProcessor
 
 class DispatchArtifactProcessor(BaseArtifactProcessor):
+    """ArtifactProcessor that dispatches to subprocessors, based on
+    artifact type."""
     def __init__(self, processors=None):
         self.processors = processors or {}
 

@@ -3,6 +3,8 @@ import os
 from .base_artifact_processor import BaseArtifactProcessor
 
 class LocalPathArtifactProcessor(BaseArtifactProcessor):
+    """ArtifactProcessor that records local path to dir."""
+
     ARTIFACT_TYPE = 'local_path'
 
     def dir_to_artifact(self, dir_=None, **kwargs):

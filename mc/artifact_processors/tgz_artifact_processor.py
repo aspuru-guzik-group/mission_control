@@ -5,6 +5,8 @@ import tarfile
 from .base_artifact_processor import BaseArtifactProcessor
 
 class TgzArtifactProcessor(BaseArtifactProcessor):
+    """ArtifactProcessor that converts dir <=> inline compressed bytes."""
+
     ARTIFACT_TYPE = 'tgz:bytes'
 
     def dir_to_artifact(self, dir_=None, **kwargs):
