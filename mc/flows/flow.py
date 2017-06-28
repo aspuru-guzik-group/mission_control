@@ -3,6 +3,9 @@ from uuid import uuid4
 
 
 class Flow(object):
+    """A flow is modeled as a <directed acyclic graph>.
+    (https://en.wikipedia.org/wiki/Directed_acyclic_graph)
+    """
     ROOT_TASK_KEY = 'ROOT'
 
     SIMPLE_ATTRS = {'key', 'cfg', 'data', 'label', 'status', 'depth'}
@@ -15,6 +18,17 @@ class Flow(object):
 
     def __init__(self, key=None, cfg=None, data=None, label=None,
                  status=None, depth=0, add_root_task=True, **kwargs):
+        """
+        Args:
+            key (str): a key to identify the flow.
+            cfg [dict]: a dict of flow cfg data. Defaults to:
+                {'fail_fast': True}.
+            data [dict]: dict of flow data.
+            label [str]: flow label
+            status [str]: flow status, defaults to 'PENDING'
+            depth [int]: depth level, for prioritizing nested flows.
+            add_root_task [bool]: whether to add root task. Default: True.
+        """
         self.key = key
         self.cfg = cfg or {'fail_fast': True}
         self.data = data or {}
@@ -34,6 +48,14 @@ class Flow(object):
                       add_default_connections=False)
 
     def add_task(self, task=None, add_default_connections=True):
+        """
+        Args:
+            task <dict>: a task dict
+            add_default_connections [bool]: whether to add default precursor
+                if precursors or successors are not specified. Default: True.
+        Returns:
+            task <dict>: altered task dict
+        """
         task.setdefault('key', self.generate_key())
         task.setdefault('status', 'PENDING')
         self.tasks[task['key']] = task
@@ -48,9 +70,15 @@ class Flow(object):
         self._last_added_task = task
         return task
 
-    def generate_key(self): return str(uuid4())
+    def generate_key(self):
+        """Generate keys as uuid.uuid4 strings"""
+        return str(uuid4())
 
     def add_default_connections_to_task(self, task=None):
+        """
+        If task has no precursors or successors given, use last task added
+        as precursor.
+        """
         if ('precursors' not in task and 'successors' not in task
             and self._last_added_task is not None
             and task['key'] != self.ROOT_TASK_KEY
@@ -58,6 +86,12 @@ class Flow(object):
             task['precursors'] = [self._last_added_task['key']]
 
     def add_edge(self, edge=None):
+        """
+        Also adds entry to _edges_by_key.
+
+        Args:
+            edge <dict>: dict in this shape: {'src_key': <>, 'dest_key': <>}
+        """
         src_key, dest_key = (edge['src_key'], edge['dest_key'])
         if dest_key is self.ROOT_TASK_KEY:
             raise Exception("Root task can not be an edge dest")
@@ -68,6 +102,7 @@ class Flow(object):
 
     @classmethod
     def from_flow_spec(cls, flow_spec=None):
+        """Create flow from flow_spec."""
         flow = Flow(**Flow.sanitize_flow_kwargs(flow_spec))
         for i, task in enumerate(flow_spec.get('tasks', [])):
             flow.add_task(task=task)
@@ -75,6 +110,7 @@ class Flow(object):
 
     @classmethod
     def from_flow_dict(cls, flow_dict=None, **kwargs):
+        """Create flow from flow dict."""
         flow = cls(**cls.sanitize_flow_kwargs(flow_dict),
                    add_root_task=False)
         graph = flow_dict.get('graph', {})
@@ -85,6 +121,7 @@ class Flow(object):
         return flow
 
     def to_flow_dict(self):
+        """Create flow_dict from flow."""
         flow_dict = {
             **{attr: getattr(self, attr, None) for attr in self.SIMPLE_ATTRS},
             'graph': {
@@ -111,6 +148,11 @@ class Flow(object):
         return successors
 
     def get_nearest_tickable_pending_tasks(self):
+        """
+        Tickable pending tasks are tasks with status 'PENDING' which can be
+        reached by starting from the flow root and advancing only through tasks
+        with status 'COMPLETED'.
+        """
         nearest_tickable_pending_tasks = []
         cursors = [self.tasks[self.ROOT_TASK_KEY]]
         while len(cursors) > 0:
@@ -160,6 +202,9 @@ class Flow(object):
         return tail_tasks
 
     def get_tickable_tasks(self):
+        """
+        Tickable tasks are nearest tickable tasks + running tasks.
+        """
         return (self.get_running_tasks() +
                 self.get_nearest_tickable_pending_tasks())
 

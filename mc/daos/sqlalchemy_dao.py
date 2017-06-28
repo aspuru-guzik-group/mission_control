@@ -4,9 +4,25 @@ import sqlalchemy as _sqla
 
 from .base_dao import BaseDao
 
-class SaDao(BaseDao):
+class SqlAlchemyDao(BaseDao):
+    """A SqlAlchemy implementation of a MissionControl DAO."""
     def __init__(self, sa_schema=None, marsh_schemas=None, db_uri=None,
                  engine=None, logger=None):
+        """
+        Args:
+            sa_schema [dict]: a dict representing a sqlalchemy schema, in this
+                shape: {'metadata': sqlalchemy metadata obj,
+                        'tables': a dict of sqlalchemy tables objects}
+                If empty, will use default schema.
+            marsh_schemas [dict]: a dict representing Marshmallow serializers.
+                If empty, will use default schema.
+                db_uri [st]: SqlAlchemy db_uri string. 'sqlite://'. If engine
+                    is provided, this will be ignored.
+                engine [SqlAlchemy engine]: SqlAlchemy engine object. If empty,
+                    will attempt to create engine from db_uri.
+                logger [logging.Logger]: Logger instance. If empty, will create
+                    logger.
+        """
         self.logger = logger or logging
         self.db_uri = db_uri
         self.sa_schema = sa_schema or self.get_default_sa_schema()
@@ -60,12 +76,16 @@ class SaDao(BaseDao):
         return self.statement_to_dicts(statement=statement)
 
     def statement_to_dicts(self, statement=None):
+        """execute statement and return results as dicts
+        """
         return [self.row_to_dict(row)
                 for row in self.engine.execute(statement).fetchall()]
 
     def row_to_dict(self, row): return dict(zip(row.keys(), row))
 
     def get_items_statement(self, item_type=None, query=None):
+        """get statement for items query.
+        """
         query = query or {}
         table = self.get_item_table(item_type=item_type)
         statement = table.select()
@@ -78,17 +98,17 @@ class SaDao(BaseDao):
                                 columns=None):
         for _filter in query.get('filters', []):
             clause = None
-            col = columns[_filter['field']]
-            operator = _filter['operator']
-            arg = _filter['value']
+            col = columns[_filter['prop']]
+            op = _filter['op']
+            arg = _filter['arg']
             negate = False
-            if operator.startswith('!'):
-                operator  = operator[2:]
+            if op.startswith('!'):
+                op  = op[2:]
                 negate = True
-            if operator == 'IN':
+            if op == 'IN':
                 op_fn = col.in_
                 if not arg: clause = _sqla.false()
-            else: op_fn = col.op(operator)
+            else: op_fn = col.op(op)
             if clause is None: clause = op_fn(arg)
             if negate: clause = ~clause
             statement = statement.where(clause)
@@ -105,11 +125,17 @@ class SaDao(BaseDao):
         return self.get_item_by_key(item_type=item_type, key=key)
 
     def flush_mc_db(self, item_types=None):
+        """clear the db tables
+        """
         for item_type in (item_types or self.ITEM_TYPES):
             table = self.get_item_table(item_type=item_type)
             self.engine.execute(table.delete())
 
     def get_flow_queue_items_to_claim(self, queue=None):
+        """gets flow queue items
+
+        Checks for lock records on items.
+        """
         filtered_flows_q = self.get_items_statement(
             item_type=queue['queue_spec']['item_type'],
             query={'filters': self.get_default_claiming_filters()}

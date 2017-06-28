@@ -8,7 +8,14 @@ from .. import base_dao
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.item_type = MagicMock()
-        self.dao = base_dao.BaseDao()
+
+        class MyDao(base_dao.BaseDao):
+            def delete_items(self, *args, **kwargs): pass
+            def get_flow_queue_items_to_claim(self, *args, **kwargs): pass
+            def get_items(self, *args, **kwargs): pass
+            def patch_item(self, *args, **kwargs): pass
+
+        self.dao = MyDao()
 
     def setup_dao_mocks(self, attrs=None):
         for attr in attrs: setattr(self.dao, attr, MagicMock())
@@ -87,9 +94,9 @@ class DefaultGetQueueItemsToClaim(BaseTestCase):
             call(item_type=self.queue['queue_spec']['item_type'],
                  query={
                     'filters': [
-                        {'field': 'claimed', 'operator': '=', 'value': False},
-                        {'field': 'status', 'operator': 'IN',
-                         'value': ['PENDING', 'RUNNING']}
+                        {'prop': 'claimed', 'op': '=', 'arg': False},
+                        {'prop': 'status', 'op': 'IN',
+                         'arg': ['PENDING', 'RUNNING']}
                     ]
                  }
                 )

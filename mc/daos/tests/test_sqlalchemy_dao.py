@@ -1,21 +1,21 @@
 import unittest
 from unittest.mock import call, MagicMock, patch
 
-from .. import sa_dao
+from .. import sqlalchemy_dao
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.item_type = MagicMock()
         self.query = MagicMock()
-        self.dao = sa_dao.SaDao(
+        self.dao = sqlalchemy_dao.SqlAlchemyDao(
             db_uri=MagicMock(),
             sa_schema=MagicMock(),
             marsh_schemas=MagicMock(),
             engine=MagicMock(),
         )
 
-    def setup_module_mocks(self, attrs=None, module=sa_dao):
+    def setup_module_mocks(self, attrs=None, module=sqlalchemy_dao):
         patchers = {attr: patch.object(module, attr) for attr in attrs}
         mocks = {}
         for attr, patcher in patchers.items():
@@ -71,7 +71,7 @@ class EngineTestCase(BaseTestCase):
         self.dao._engine = MagicMock()
         self.assertEqual(self.dao.engine, self.dao._engine)
 
-    @patch.object(sa_dao, '_sqla')
+    @patch.object(sqlalchemy_dao, '_sqla')
     def test_creates_engine_if_not_set(self, _sqla):
         del self.dao._engine
         self.assertEqual(self.dao.engine, _sqla.create_engine.return_value)

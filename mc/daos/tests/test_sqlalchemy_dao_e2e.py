@@ -1,13 +1,13 @@
 import unittest
 
-from .. import sa_dao
+from .. import sqlalchemy_dao
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         #from sqlalchemy import create_engine
         #engine = create_engine('sqlite:///:memory:', echo=True)
-        self.dao = sa_dao.SaDao(db_uri='sqlite:///:memory:')
+        self.dao = sqlalchemy_dao.SqlAlchemyDao(db_uri='sqlite:///:memory:')
         self.dao.create_tables()
 
 class FlowTestCase(BaseTestCase):
