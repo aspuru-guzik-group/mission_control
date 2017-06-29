@@ -1,7 +1,15 @@
+import abc
 from .base_task_handler import BaseTaskHandler
 
 
 class BaseProxyingTaskHandler(BaseTaskHandler):
+    """
+    Abstract base class for proxied tasks.
+
+    Implementing classes must define :code:`generate_proxied_task`
+    and may define :code:`on_proxied_task_finished`.
+
+    """
     @property
     def proxied_task(self): return self.task.get('proxied_task')
 
@@ -14,6 +22,7 @@ class BaseProxyingTaskHandler(BaseTaskHandler):
     def intermediate_tick(self, *args, **kwargs):
         self.on_proxied_task_finished()
 
+    @abc.abstractmethod
     def generate_proxied_task(self, *args, **kwargs):
         raise NotImplementedError()
 

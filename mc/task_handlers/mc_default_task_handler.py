@@ -12,12 +12,19 @@ from . import constants
 
 
 class McDefaultTaskHandler(BaseTaskHandler):
+    """Defult MissionControl TaskHandler.
+
+    Dispatches to task_handler modules by switching on
+    task_ctx['task']['task_type'].
+
+    Also performs '$' interpolation for doing simple wirings.
+    """
     NO_INTERPOLATE_KEY = constants.NO_INTERPOLATE_KEY
 
     class InvalidTaskTypeError(BaseTaskHandler.InvalidTaskError): pass
 
-    def __init__(self, *args, task_type_to_handler_dot_spec_fn=None, **kwargs):
-        super().__init__(self, *args, **kwargs)
+    def __init__(self, task_type_to_handler_dot_spec_fn=None, **kwargs):
+        super().__init__(**kwargs)
         self.task_type_to_handler_dot_spec = task_type_to_handler_dot_spec_fn \
                 or self.default_task_type_to_handler_dot_spec
 

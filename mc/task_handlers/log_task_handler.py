@@ -7,6 +7,12 @@ from .base_task_handler import BaseTaskHandler
 
 
 class LogTaskHandler(BaseTaskHandler):
+    """Writes a msg to a python logger.
+
+    Can also dump task_ctx info, by setting dump_task_ctx, dump_flow in
+    task_params.
+    
+    """
     def initial_tick(self):
         task_params = self.task.get('task_params', {})
         log_level_name = task_params.get('log_level', 'WARNING')

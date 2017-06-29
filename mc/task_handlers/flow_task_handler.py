@@ -2,6 +2,16 @@ from mc.task_handlers.base_flow_task_handler import BaseFlowTaskHandler
 
 
 class FlowTaskHandler(BaseFlowTaskHandler):
+    """TaskHandler that creates subflows, via a flow_record client."""
+
+    def validate_task_ctx(self):
+        super().validate_task_ctx()
+        assert self.task_ctx['mc.flow_record_client']
+
+    def validate_task_params(self):
+        super().validate_task_params()
+        assert self.task['task_params']['flow_spec']
+
     def initial_tick(self):
         flow_meta = self.create_flow_record()
         self.task['data']['_flow_task_flow_meta'] = flow_meta

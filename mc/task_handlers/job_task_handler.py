@@ -2,6 +2,14 @@ from .base_task_handler import BaseTaskHandler
 
 
 class JobTaskHandler(BaseTaskHandler):
+    """Creates and tracks jobs."""
+
+    def validate_task_ctx(self):
+        assert self.task_ctx['mc.job_record_client']
+
+    def validate_task_params(self):
+        assert self.task['task_params']['job_spec']
+
     def initial_tick(self):
         self.task['data']['_job_task_job_meta'] = self.create_job_record()
 
@@ -19,7 +27,7 @@ class JobTaskHandler(BaseTaskHandler):
 
     def create_job_record(self):
         job_kwargs = {
-            'job_spec': self.task['task_params'].get('job_spec'),
+            'job_spec': self.task['task_params']['job_spec'],
             'data': {'parent_key': self.task_ctx['flow'].key}
         }
         job_meta = self.job_record_client.create_job_record(

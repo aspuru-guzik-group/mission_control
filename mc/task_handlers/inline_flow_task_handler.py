@@ -2,6 +2,12 @@ from .base_flow_task_handler import BaseFlowTaskHandler
 
 
 class InlineFlowTaskHandler(BaseFlowTaskHandler):
+    """Creates flows as inline flows"""
+
+    def validate_task_params(self):
+        super().validate_task_params()
+        assert self.task['task_params']['flow_spec']
+
     def initial_tick(self):
         self.tick_flow_until_has_no_pending(flow=self.create_flow())
 

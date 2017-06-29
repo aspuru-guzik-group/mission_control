@@ -51,7 +51,7 @@ class CreateJobRecordTestCase(BaseTestCase):
         self.assertEqual(
             self.task_handler.job_record_client.create_job_record.call_args,
             call(job_kwargs={
-                'job_spec': self.task['task_params'].get('job_spec'),
+                'job_spec': self.task['task_params']['job_spec'],
                 'data': {'parent_key': self.task_ctx['flow'].key}
             })
         )

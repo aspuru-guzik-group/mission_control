@@ -2,7 +2,11 @@ from .base_task_handler import BaseTaskHandler
 
 
 class BaseFlowTaskHandler(BaseTaskHandler):
+    """A base class for task handlers that creates and track subflows."""
     class FlowTaskError(Exception): pass
+
+    def validate_task_ctx(self):
+        assert self.task_ctx['flow_engine']
 
     @property
     def flow_engine(self):
