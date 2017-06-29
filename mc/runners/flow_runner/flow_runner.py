@@ -37,6 +37,7 @@ class FlowRunner(object):
         return FlowEngine()
 
     def decorate_task_ctx(self, task_ctx=None):
+        task_ctx = task_ctx or {}
         return {**task_ctx, 'flow_engine': self.flow_engine}
 
     def run(self, ntimes=None, tick_interval=None):

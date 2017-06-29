@@ -65,8 +65,8 @@ class McSandbox(object):
         return len(self.get_incomplete_items(item_type='Flow')) > 0
 
     def get_incomplete_items(self, item_type=None):
-        incomplete_filter = {'field': 'status', 'operator': '! IN',
-                             'value': ['COMPLETED', 'FAILED']}
+        incomplete_filter = {'prop': 'status', 'op': '! IN',
+                             'arg': ['COMPLETED', 'FAILED']}
         return self.mc_dao.get_items(item_type=item_type,
                                      query={'filters':  [incomplete_filter]})
     def has_incomplete_jobs(self):
