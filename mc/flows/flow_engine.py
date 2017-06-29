@@ -7,7 +7,8 @@ from .flow import Flow
 
 class FlowEngine(object):
     """
-    A FlowEngine is what ticks a flow.
+    A FlowEngine contains methods for ticking a flow,
+    and for converting between flow representations.
     (https://en.wikipedia.org/wiki/Visitor_pattern)
     """
     class FlowError(Exception):
@@ -171,6 +172,14 @@ class FlowEngine(object):
             self.fail_task(task=task, error=traceback.format_exc())
 
     def is_proxying_task(self, task=None):
+        """Determine if a task is a proxying task.
+
+        Args:
+            task <task>: task to check
+
+        Returns:
+            is_proxying_task <bool>
+        """
         return (
             ('proxied_task' in task)
             and

@@ -167,6 +167,15 @@ class Flow(object):
         return nearest_tickable_pending_tasks
 
     def filter_tasks(self, filters=None, include_root_task=False):
+        """
+        Loop through all tasks, returning tasks which pass all of the filter
+        functions provided.
+
+        Args:
+            filters <list(<fn>)>: list of filter functions
+            include_root_task [bool]: whether to include the root task.
+                Default: False
+        """
         result = []
         for task in self.tasks.values():
             if not include_root_task and task['key'] == self.ROOT_TASK_KEY:
@@ -191,6 +200,9 @@ class Flow(object):
         return len(incomplete_tasks) > 0
 
     def get_tail_tasks(self):
+        """
+        Get tasks that are the edge of the graph.
+        """
         if len(self.tasks) == 1 and self.ROOT_TASK_KEY in self.tasks:
             tail_tasks = [self.tasks[self.ROOT_TASK_KEY]]
         else:
