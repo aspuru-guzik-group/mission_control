@@ -1,3 +1,8 @@
+"""
+Utils for gettings/setting values via python dot paths.
+Also includes logic for doing transforms on values during get/set operations.
+"""
+
 import collections
 import copy
 import json
@@ -18,6 +23,21 @@ class ContextValueSetter(object):
             self.set_context_value(value_spec=value_spec, context=context)
 
     def set_context_value(self, value_spec=None, context=None):
+        """
+        Args:
+            value_spec [dict]: a dict with this shape:
+                .. code-block::
+
+                    {
+                        <value|source>: a value or source string,
+                        [transform]: an optional transform to apply. See
+                            :module:`transform_value_for_value_spec`
+                        <dest>: a dot string specifying where to put the set
+                            value
+                    }
+
+            context [dict]: an object to use as the 'ctx' root for dot strings.
+        """
         try:
             value_spec = self.compile_value_spec(value_spec=value_spec)
             value = self.get_value_for_value_spec(
@@ -63,6 +83,13 @@ class ContextValueSetter(object):
 
     def transform_value_for_value_spec(self, value=None, value_spec=None,
                                        context=None):
+        """Transform a value per a value spec's 'transform' prop.
+
+        Transform types can be:
+            - json.dumps
+            - json.loads
+            - mapping (see :module:`execute_mapping_transform`)
+        """
         transform = value_spec.get('transform')
         if not transform: return value
         if type(transform) is str: transform = {'type': transform}
@@ -75,6 +102,21 @@ class ContextValueSetter(object):
 
     def execute_mapping_transform(self, value=None, transform=None,
                                   context=None):
+        """
+        Args:
+            value <>: value to use items source for mapping.
+            transform [dict]: transform spec, which is a dict like this:
+                .. code-block::
+                    {
+                        <skeleton>: <a template for the mapping product>
+                        [wirings]: a list of wirings to perform on the skeleton.
+                    }
+
+
+                The  wirings will be the given context plus an 'item' prop
+                representing the item being mapped. This prop will be a dict
+                with keys 'item', 'items', and 'idx'
+        """
         iterator = self.get_iterator_for_mapping_source(mapping_source=value)
         mapped_items = [
             self.map_item(

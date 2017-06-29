@@ -8,6 +8,9 @@ from mc.flows.flow_engine import FlowEngine
 from mc.runners.flow_runner import FlowRunner
 
 class McSandbox(object):
+    """
+    A facade for playing with parts of the MissionControl framework.
+    """
     def __init__(self, mc_db_uri='sqlite://', logger=None):
         self.logger = logger or logging
         self.mc_dao = self.setup_mc_dao(mc_db_uri=mc_db_uri)
