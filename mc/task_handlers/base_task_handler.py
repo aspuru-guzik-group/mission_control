@@ -21,8 +21,8 @@ class BaseTaskHandler(object):
     TaskStatuses = constants.TaskStatuses
 
     class InvalidTaskError(Exception):
-        def __init__(self, msg=None, **kwargs):
-            msg = (msg or '') + "\ntask: '{task}'".format(task=self.task)
+        def __init__(self, msg=None, task=None, **kwargs):
+            msg = (msg or '') + "\ntask: '{task}'".format(task=task)
             super().__init__(msg, **kwargs)
 
     class InvalidTaskCtxError(InvalidTaskError): pass

@@ -188,8 +188,8 @@ class TickTaskTestCase(BaseTestCase):
 
     def test_calls_task_handler(self):
         self._tick_task()
-        expected_task_ctx = {**self.task_ctx, 'task': self.task,
-                             'flow': self.flow}
+        expected_task_ctx = {'flow_engine': self.engine, **self.task_ctx,
+                             'task': self.task, 'flow': self.flow}
         self.assertEqual(self.engine.task_handler.tick_task.call_args,
                          call(task_ctx=expected_task_ctx))
 

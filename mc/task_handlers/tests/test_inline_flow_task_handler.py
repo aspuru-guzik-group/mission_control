@@ -59,10 +59,10 @@ class CreateFlowTestCase(BaseTestCase):
 
     def test_dispatches_to_flow_engine(self):
         self.assertEqual(
-            self.flow_engine.generate_flow.call_args,
+            self.flow_engine.flow_spec_to_flow.call_args,
             call(flow_spec=self.task_handler.task['task_params']['flow_spec']))
         self.assertEqual(self.result,
-                         self.flow_engine.generate_flow.return_value)
+                         self.flow_engine.flow_spec_to_flow.return_value)
 
 class TickFlowUntilHasNoPendingTestCase(BaseTestCase):
     def setUp(self):
@@ -102,15 +102,16 @@ class PersistFlowTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.flow = MagicMock()
+        self.task_handler.serialize_flow = MagicMock()
         self.task_handler.persist_flow(flow=self.flow)
 
     def test_serializes_flow(self):
-        self.assertEqual(self.flow_engine.serialize_flow.call_args,
+        self.assertEqual(self.task_handler.serialize_flow.call_args,
                          call(flow=self.flow))
 
     def test_saves_flow_meta_to_task_data(self):
         self.assertEqual(self.task_handler.task['data']['_flow_task_flow_meta'],
-                         {'serialization': (self.flow_engine.serialize_flow
+                         {'serialization': (self.task_handler.serialize_flow
                                             .return_value)})
             
     def test_sets_task_status(self):

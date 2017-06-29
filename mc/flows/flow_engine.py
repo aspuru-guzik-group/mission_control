@@ -166,8 +166,10 @@ class FlowEngine(object):
                 self.tick_proxying_task(proxying_task=task, flow=flow,
                                         task_ctx=task_ctx)
             else:
-                self.task_handler.tick_task(task_ctx={**task_ctx, 'task': task,
-                                                      'flow': flow})
+                self.task_handler.tick_task(
+                    task_ctx={'flow_engine': self, **task_ctx,
+                              'task': task, 'flow': flow}
+                )
             if task.get('status') == 'COMPLETED':
                 self.complete_task(flow=flow, task=task)
         except Exception as exception:

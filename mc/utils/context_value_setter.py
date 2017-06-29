@@ -108,16 +108,21 @@ class ContextValueSetter(object):
             transform (dict, optional): transform spec, which is a dict
                 like this:
                 ::
-
                     {
-                        <skeleton>: <a template for the mapping product>
-                        [wirings]: a list of wirings to perform on the skeleton.
+                        type: 'transform',
+                        params: {
+                            <skeleton>: <a template for the mapping product>
+                            [wirings]: a list of wirings to perform on the
+                            skeleton.
+                        }
                     }
-
 
                 The  wirings will be the given context plus an 'item' prop
                 representing the item being mapped. This prop will be a dict
                 with keys 'item', 'items', and 'idx'
+
+        Returns:
+            mapped_items (list): the mapped items
         """
         iterator = self.get_iterator_for_mapping_source(mapping_source=value)
         mapped_items = [
@@ -193,3 +198,7 @@ def set_context_values(value_specs=None, context=None):
 def set_context_value(value_spec=None, context=None):
     ContextValueSetter().set_context_value(value_spec=value_spec,
                                            context=context)
+
+def execute_mapping_transform(items=None, transform=None, context=None):
+    return ContextValueSetter().execute_mapping_transform(
+        value=items, transform=transform, context=context)

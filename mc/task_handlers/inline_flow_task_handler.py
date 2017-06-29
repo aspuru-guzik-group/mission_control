@@ -12,7 +12,7 @@ class InlineFlowTaskHandler(BaseFlowTaskHandler):
         self.tick_flow_until_has_no_pending(flow=self.create_flow())
 
     def create_flow(self):
-        return self.flow_engine.generate_flow(
+        return self.flow_engine.flow_spec_to_flow(
             flow_spec=self.task['task_params']['flow_spec'])
 
     def tick_flow_until_has_no_pending(self, flow=None):
@@ -27,18 +27,23 @@ class InlineFlowTaskHandler(BaseFlowTaskHandler):
         self.handle_flow_status(flow=flow)
 
     def persist_flow(self, flow=None):
-        serialization = self.flow_engine.serialize_flow(flow=flow)
+        serialization = self.serialize_flow(flow=flow)
         self.task['data']['_flow_task_flow_meta'] = \
             {'serialization': serialization}
         self.task['status'] = 'RUNNING'
+
+    def serialize_flow(self, flow=None):
+        return self.flow_engine.flow_to_flow_dict(flow=flow)
 
     def intermediate_tick(self):
         self.tick_flow_until_has_no_pending(flow=self.get_flow())
 
     def get_flow(self):
-        return self.flow_engine.deserialize_flow(
-            serialized_flow=(self.task['data']['_flow_task_flow_meta']
-                             ['serialization'])
-        )
+        serialization = \
+                self.task['data']['_flow_task_flow_meta']['serialization']
+        return self.flow_engine.deserialize_flow(serialization=serialization)
+
+    def deserialize_flow(self, serialization=None):
+        return self.flow_engine.flow_dict_to_flow(serialization)
 
 TaskHandler = InlineFlowTaskHandler
