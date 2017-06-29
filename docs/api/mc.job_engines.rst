@@ -48,6 +48,14 @@ mc\.job\_engines\.constants module
     :undoc-members:
     :show-inheritance:
 
+mc\.job\_engines\.default\_job\_module\_loader module
+-----------------------------------------------------
+
+.. automodule:: mc.job_engines.default_job_module_loader
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 mc\.job\_engines\.dispatch\_job\_submission\_builder module
 -----------------------------------------------------------
 

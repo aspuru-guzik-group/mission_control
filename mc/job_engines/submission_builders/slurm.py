@@ -17,10 +17,10 @@ class SlurmSubmissionBuilder(object):
     def build_submission(self, submission_spec=None, output_dir=None, **kwargs):
         """
         Args:
-            submission_spec <dict>: a submission_spec as per
+            submission_spec (dict): a submission_spec as per
                 BashSubmissionBuilder, but can also include 'sbatch_params'
                 prop.
-            output_dir [str]: dir in which to write submission files.
+            output_dir (str, optional): dir in which to write submission files.
         """
         self._spec = submission_spec
         self._output_dir = output_dir

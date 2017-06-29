@@ -8,17 +8,16 @@ class SwitchTaskHandler(BaseProxyingTaskHandler):
 
     task_params:
         control_value: value to use when checking cases
-        cases: list of case dicts, that look like:
-            .. code-block:: python
+        cases: list of case dicts, that look like: ::
 
             {'condition': condition_dict,
              'task': task to run if condition matches}
 
-            where a condition_dict looks like:
-            .. code-block:: python
+        where a condition_dict looks like: ::
 
             {'op': <operator from the python 'op' library  e.g 'eq'>,
              'arg': 2nd arg to operator}
+
         default_case: the case to use if no case matches.
     """
 

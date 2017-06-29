@@ -9,7 +9,7 @@ class BaseJobSubmissionRunner(abc.ABCMeta):
     def __init__(self, submission_meta=None, **kwargs):
         """
         Args:
-            submission_meta [dict]: dict of submission metadata, including job
+            submission_meta (dict): dict of submission metadata, including job
                 and cfg.
         """
         self.submission_meta = submission_meta
@@ -18,7 +18,7 @@ class BaseJobSubmissionRunner(abc.ABCMeta):
     def run_job_submission(cls, *args, submission_meta=None, **kwargs):
         """
         Args:
-            submission_meta [dict]: dict of submission metadata, including job
+            submission_meta (dict): dict of submission metadata, including job
                 and cfg.
         """
         runner = cls(*args, submission_meta=submission_meta, **kwargs)
@@ -34,7 +34,7 @@ class BaseJobSubmissionRunner(abc.ABCMeta):
         submission_meta['dir'].
 
         Args:
-            submission_meta [dict]: dict of submission metadata, including job
+            submission_meta (dict): dict of submission metadata, including job
                 and cfg.
 
         Returns:

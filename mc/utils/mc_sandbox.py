@@ -1,7 +1,7 @@
 import logging
 import time
 
-from mc.daos.sa_dao import SaDao
+from mc.daos.sqlalchemy_dao import SqlAlchemyDao
 from mc.clients.job_record_client import JobRecordClient
 from mc.clients.flow_record_client import FlowRecordClient
 from mc.flows.flow_engine import FlowEngine
@@ -22,7 +22,7 @@ class McSandbox(object):
         self.flow_runner = self.setup_flow_runner()
 
     def setup_mc_dao(self, mc_db_uri=None):
-        mc_dao = SaDao(db_uri=mc_db_uri)
+        mc_dao = SqlAlchemyDao(db_uri=mc_db_uri)
         mc_dao.ensure_tables()
         return mc_dao
 

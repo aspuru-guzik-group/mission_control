@@ -25,8 +25,8 @@ class ContextValueSetter(object):
     def set_context_value(self, value_spec=None, context=None):
         """
         Args:
-            value_spec [dict]: a dict with this shape:
-                .. code-block::
+            value_spec (dict, optional): a dict with this shape:
+                ::
 
                     {
                         <value|source>: a value or source string,
@@ -36,7 +36,7 @@ class ContextValueSetter(object):
                             value
                     }
 
-            context [dict]: an object to use as the 'ctx' root for dot strings.
+            context (dict): an object to use as the 'ctx' root for dot strings.
         """
         try:
             value_spec = self.compile_value_spec(value_spec=value_spec)
@@ -88,7 +88,7 @@ class ContextValueSetter(object):
         Transform types can be:
             - json.dumps
             - json.loads
-            - mapping (see :module:`execute_mapping_transform`)
+            - mapping (see :meth:`execute_mapping_transform`)
         """
         transform = value_spec.get('transform')
         if not transform: return value
@@ -104,9 +104,11 @@ class ContextValueSetter(object):
                                   context=None):
         """
         Args:
-            value <>: value to use items source for mapping.
-            transform [dict]: transform spec, which is a dict like this:
-                .. code-block::
+            value (obj): value to use items source for mapping.
+            transform (dict, optional): transform spec, which is a dict
+                like this:
+                ::
+
                     {
                         <skeleton>: <a template for the mapping product>
                         [wirings]: a list of wirings to perform on the skeleton.

@@ -17,10 +17,10 @@ mc\.daos\.base\_dao module
     :undoc-members:
     :show-inheritance:
 
-mc\.daos\.sa\_dao module
-------------------------
+mc\.daos\.sqlalchemy\_dao module
+--------------------------------
 
-.. automodule:: mc.daos.sa_dao
+.. automodule:: mc.daos.sqlalchemy_dao
     :members:
     :undoc-members:
     :show-inheritance:

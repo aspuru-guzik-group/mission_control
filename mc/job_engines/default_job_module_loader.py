@@ -12,11 +12,11 @@ class DefaultJobModuleLoader(object):
     def load_job_module(self, job=None, cfg=None):
         """
         Args:
-            job <dict>: job dict.
-            cfg <dict>: cfg dict.
+            job (dict): job dict.
+            cfg (dict): cfg dict.
 
         Returns:
-            job_module <module>: the loaded job module.
+            job_module (module): the loaded job module.
         """
         job_module_name = self.get_job_module_name(job=job, cfg=cfg)
         override = self.overrides.get(job_module_name)

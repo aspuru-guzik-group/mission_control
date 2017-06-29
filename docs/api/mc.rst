@@ -16,6 +16,7 @@ Subpackages
     mc.daos
     mc.flows
     mc.job_engines
+    mc.orm
     mc.runners
     mc.task_handlers
     mc.utils

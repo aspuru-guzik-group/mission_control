@@ -5,11 +5,11 @@ from .base_task_handler import BaseTaskHandler
 class WireTaskHandler(BaseTaskHandler):
     """Performs wirings.
 
-    Dispatches to :module:`mc.utils.context_value_setter.set_context_value`
+    Dispatches to :meth:`mc.utils.context_value_setter.set_context_value`
 
     task_params:
         wirings: a list of value_specs,
-            per :module:`mc.utils.context_value_setter.set_context_value`
+            per :meth:`mc.utils.context_value_setter.set_context_value`
     """
 
     def validate_task_params(self):

@@ -12,15 +12,15 @@ class FlowRunner(object):
                  tick_interval=120, max_flows_per_tick=3, logger=None):
         """
         Args:
-            flow_record_client <flow_record_client>: a client for doing
-                flow_record operations.
-            flow_engine [flow_engine]: flow_engine to use for ticking flows.
-                Default: mc.flows.flow_engine.FlowEngine instance.
-            task_ctx [dict]: extra ctx to pass to tasks.
-            tick_interval [int]: how often to run a tick, in seconds.
+            flow_record_client (mc.clients.flow_record_client): a client for
+                doing flow_record operations.
+            flow_engine (mc.flows.flow_engine): flow_engine to use for ticking
+                flows.  Default: mc.flows.flow_engine.FlowEngine instance.
+            task_ctx (dict, optional): extra ctx to pass to tasks.
+            tick_interval (int, optional): how often to run a tick, in seconds.
                 Default: 120.
-            max_flows_per_tick [int]: maximum number of flows to claim per tick.
-                Default: 3.
+            max_flows_per_tick (int, optional)]: maximum number of flows to
+                claim per tick. Default: 3.
         """
         self.logger = logger or logging
         self.flow_record_client = flow_record_client
@@ -43,9 +43,9 @@ class FlowRunner(object):
         """Run indefinitely or for several ticks.
 
         Args:
-            ntimes [int]: if specified, run this many ticks. If empty, run
+            ntimes (int, optional): if specified, run this many ticks. If empty, run
                 indefinitely. Default: None.
-            tick_interval [int]: run with this tick interval. Default:
+            tick_interval (int, optional): run with this tick interval. Default:
                 self.tick_interval.
         """
         self._ticking = True

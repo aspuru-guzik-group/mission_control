@@ -8,13 +8,12 @@ class BaseTaskHandler(object):
     """An abstract base class to help with common task_handler logic.
 
     Provides utility methods:
-        |tick_task class method: instantiates class, sets self.task_ctx
-        |validate_task_ctx
-        |validate_task_params
+       - tick_task class method: instantiates class, sets self.task_ctx
+       - validate_task_ctx
+       - validate_task_params
 
     Provides shortcuts:
-        |self.task => task_ctx['task']
-        |self.task => task_ctx['task']
+       - self.task => task_ctx['task']
 
     Subclasses should at least implement initial_tick method.
     

@@ -21,13 +21,13 @@ class Flow(object):
         """
         Args:
             key (str): a key to identify the flow.
-            cfg [dict]: a dict of flow cfg data. Defaults to:
+            cfg (dict): a dict of flow cfg data. Defaults to:
                 {'fail_fast': True}.
-            data [dict]: dict of flow data.
-            label [str]: flow label
-            status [str]: flow status, defaults to 'PENDING'
-            depth [int]: depth level, for prioritizing nested flows.
-            add_root_task [bool]: whether to add root task. Default: True.
+            data (dict): dict of flow data.
+            label (str): flow label
+            status (str): flow status, defaults to 'PENDING'
+            depth (int): depth level, for prioritizing nested flows.
+            add_root_task (bool): whether to add root task. Default: True.
         """
         self.key = key
         self.cfg = cfg or {'fail_fast': True}
@@ -90,7 +90,9 @@ class Flow(object):
         Also adds entry to _edges_by_key.
 
         Args:
-            edge <dict>: dict in this shape: {'src_key': <>, 'dest_key': <>}
+            edge (dict): dict in this shape: ::
+                
+                {'src_key': <>, 'dest_key': <>}
         """
         src_key, dest_key = (edge['src_key'], edge['dest_key'])
         if dest_key is self.ROOT_TASK_KEY:
@@ -172,9 +174,9 @@ class Flow(object):
         functions provided.
 
         Args:
-            filters <list(<fn>)>: list of filter functions
-            include_root_task [bool]: whether to include the root task.
-                Default: False
+            filters (list(fn)): list of filter functions
+            include_root_task (bool, optional): whether to include the root
+                task. Default: False
         """
         result = []
         for task in self.tasks.values():
@@ -200,9 +202,7 @@ class Flow(object):
         return len(incomplete_tasks) > 0
 
     def get_tail_tasks(self):
-        """
-        Get tasks that are the edge of the graph.
-        """
+        """Get tasks that are the edge of the graph."""
         if len(self.tasks) == 1 and self.ROOT_TASK_KEY in self.tasks:
             tail_tasks = [self.tasks[self.ROOT_TASK_KEY]]
         else:
@@ -214,9 +214,7 @@ class Flow(object):
         return tail_tasks
 
     def get_tickable_tasks(self):
-        """
-        Tickable tasks are nearest tickable tasks + running tasks.
-        """
+        """Tickable tasks are nearest tickable tasks + running tasks."""
         return (self.get_running_tasks() +
                 self.get_nearest_tickable_pending_tasks())
 

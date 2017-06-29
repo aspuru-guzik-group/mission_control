@@ -23,12 +23,13 @@ class FlowEngine(object):
                  debug=False):
         """
         Args:
-            logger [logging.Logger]: logger instance
-            debug [bool]: whether to log debug statements. Default: False
-            task_handler [task_handler]: task_handler instance.
+            logger (logging.Logger, optional): logger instance
+            debug (bool, optional): whether to log debug statements.
+                Default: False
+            task_handler (task_handler, optional): task_handler instance.
                 Default: get_default_task_handler return.
-            max_msg_len [int]: maximum length of error messages. Default:
-                no max length.
+            max_msg_len (int, optional): maximum length of error messages.
+                Default: no max length.
         """
         self.logger = logger or self.get_default_logger()
         self.debug = debug
@@ -75,9 +76,10 @@ class FlowEngine(object):
         If it failed, raise a FlowError.
         
         Args:
-            flow <flow>: flow to tick
-            task_ctx [dict]: task_ctx to include when ticking flow
-            max_ticks [int]: Fail if hit more than this number of ticks.
+            flow (flow): flow to tick
+            task_ctx (dict, optional): task_ctx to include when ticking flow
+            max_ticks (int, optional): Fail if hit more than this number of
+                ticks.
         """
         self.debug_locals()
         completed_statuses = {'COMPLETED', 'FAILED'}
@@ -94,8 +96,8 @@ class FlowEngine(object):
         """Tick a flow.
 
         Args:
-            flow <flow>: flow to tick
-            task_ctx [dict]: task_ctx to include when ticking flow
+            flow (flow): flow to tick
+            task_ctx (dict, optional): task_ctx to include when ticking flow
         """
         self.debug_locals()
         try:
@@ -116,8 +118,8 @@ class FlowEngine(object):
         """Tick a flow until it has no tickable pending tasks.
 
         Args:
-            flow <flow>: flow to tick
-            task_ctx [dict]: task_ctx to include when ticking flow
+            flow (flow): flow to tick
+            task_ctx (dict, optional): task_ctx to include when ticking flow
         """
         self.tick_flow(flow=flow, task_ctx=task_ctx)
         while (flow.status in {'PENDING', 'RUNNING'}
@@ -153,9 +155,9 @@ class FlowEngine(object):
         If task is a proxying task, we will tick the proxied task.
 
         Args:
-            task <task>: task to tick
-            flow <flow>: flow to tick
-            task_ctx [dict]: task_ctx to include when ticking flow
+            task (task): task to tick
+            flow (flow): flow to tick
+            task_ctx (dict, optional): task_ctx to include when ticking flow
         """
         self.debug_locals()
         task_ctx = task_ctx or {}
@@ -175,10 +177,10 @@ class FlowEngine(object):
         """Determine if a task is a proxying task.
 
         Args:
-            task <task>: task to check
+            task (task): task to check
 
         Returns:
-            is_proxying_task <bool>
+            is_proxying_task (bool)
         """
         return (
             ('proxied_task' in task)

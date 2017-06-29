@@ -16,9 +16,9 @@ class JobEngine(object):
     def __init__(self, job_module_loader=None, logger=None):
         """
         Args:
-            job_module_loader [JobModuleLoader]: loader to use for loading
+            job_module_loader (JobModuleLoader): loader to use for loading
                 job modules. Default: DefaultJobModuleLoader.
-            logger: [logging.Logger]: a logger.
+            logger: (logging.Logger): a logger.
         """
         self.logger = logger or logging
         self.job_module_loader = job_module_loader or \
@@ -35,12 +35,12 @@ class JobEngine(object):
         """Build a job submission.
 
         Args:
-            job <dict>: job dict.
-            cfg <dict>: cfg dict.
-            output_dir [str]: dir in which to put submission files.
+            job (dict): job dict.
+            cfg (dict): cfg dict.
+            output_dir (str): dir in which to put submission files.
 
         Returns:
-            submission_meta [dict]: dict of submission_meta.
+            submission_meta (dict): dict of submission_meta.
 
         """
         output_dir = output_dir or tempfile.mkdtemp()
@@ -69,7 +69,7 @@ class JobEngine(object):
         """Run a job submission.
 
         Args:
-            submission_dir <str>: path to submission dir. This dir should
+            submission_dir (str): path to submission dir. This dir should
                 contain the submission_meta file '{SUBMISSION_META_NAME}'
         """.format(SUBMISSION_META_NAME=self.SUBMISSION_META_NAME)
         submission_meta = self.read_submission_meta(dir_=submission_dir)

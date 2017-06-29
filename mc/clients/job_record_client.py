@@ -52,7 +52,7 @@ class JobRecordClient(object):
         """
         Args:
             keyed_patches (dict): a dict in which keys are job_record keys, and
-            values are dicts of job_record kwargs.
+                values are dicts of job_record kwargs.
         Returns:
             job_records (dict): the patched items
         """

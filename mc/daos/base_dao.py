@@ -17,22 +17,25 @@ class BaseDao(abc.ABC):
         """Get items of item_type that match the given query.
 
         Args:
-            item_type <str>: one of {ITEM_TYPES}
-            query [dict]: a dict in this shape:
-                {'filters': [filter_dict_1, ...filter_dict_n]}
-                where a filter_dict has this shape:
-                {'prop': 'prop_name', 'op': 'op_name', 'arg': 'op argument'}
+            item_type (str): one of :attr:`.ITEM_TYPES`
+            query (dict, optional): a dict in this shape:
+                ::
+
+                    {'filters': [filter_dict_1, ...filter_dict_n]}
+
+                where a filter_dict has this shape: ::
+                    {'prop': 'prop_name', 'op': 'op_name', 'arg': 'op argument'}
 
         Returns:
             items (list): a list of retrieved items.
 
-        """.format(ITEM_TYPES=self.ITEM_TYPES)
+        """
         raise NotImplementedError
 
     def validate_query(self, query=None):
         """
         Args:
-            query <dict>: a query as per get_items.
+            query (dict): a query as per get_items.
 
         Raises:
             InvalidQueryError
@@ -58,12 +61,12 @@ class BaseDao(abc.ABC):
     def get_item_by_key(self, item_type=None, key=None):
         """
         Args:
-            item_type <str>: item_type <str>: one of {ITEM_TYPES}
-            key <str>: the item's key
+            item_type (str): item_type <str>: one of :attr:`.ITEM_TYPES`
+            key (str): the item's key
 
         Raises:
             ItemNotFoundError
-        """.format(ITEM_TYPES=self.ITEM_TYPES)
+        """
         try:
             return self.get_items(item_type=item_type, query={
                 'filters': [
@@ -78,14 +81,14 @@ class BaseDao(abc.ABC):
     def patch_items(self, item_type=None, keyed_patches=None):
         """
         Args:
-            item_type <str>: item_type <str>: one of {ITEM_TYPES}
-            keyed_patches <dict>: a dictionary in which the keys are item_keys
+            item_type (str): item_type <str>: one of :attr:`.ITEM_TYPES`
+            keyed_patches (dict): a dictionary in which the keys are item_keys
                 and the values are dicts of item props to update.
 
         Returns:
-            patched_items <dict>: a dictionary of patched results, keyed by item
+            patched_items (dict): a dictionary of patched results, keyed by item
                 keys
-        """.format(ITEM_TYPES=self.ITEM_TYPES)
+        """
         return {
             key: self.patch_item(item_type=item_type, key=key, patches=patches)
             for key, patches in keyed_patches.items()
@@ -95,13 +98,13 @@ class BaseDao(abc.ABC):
     def patch_item(self, item_type=None, key=None, patches=None):
         """
         Args:
-            item_type <str>: item_type <str>: one of {ITEM_TYPES}
-            key <str>: the item's key.
-            patches <dict>: a dict of item props to update.
+            item_type (str): item_type <str>: one of :attr:`.ITEM_TYPES`
+            key (str): the item's key.
+            patches (dict): a dict of item props to update.
 
         Returns:
             patched_item <dict>: the patched item.
-        """.format(ITEM_TYPES=self.ITEM_TYPES)
+        """
         raise NotImplementedError
 
     def deserialize_value(self, serialized_value=None):
@@ -115,11 +118,12 @@ class BaseDao(abc.ABC):
         Builds query for queue by examining queue's queue_spec.
 
         Args:
-            queue_key <str>: the queue's key
+            queue_key (str): the queue's key
 
         Returns:
-            claimed_items <dict>: a dict of claim result, in this shape:
-                {items: [claimed_item_1, ..., claimed_item_n]}
+            claimed_items (dict): a dict of claim result, in this shape:
+                ::
+                    {items: [claimed_item_1, ..., claimed_item_n]}
         """
         queue = self.get_item_by_key(item_type='Queue', key=queue_key)
         items_to_claim = self.get_queue_items_to_claim(queue=queue)
@@ -132,10 +136,10 @@ class BaseDao(abc.ABC):
     def get_queue_items_to_claim(self, queue=None):
         """
         Args:
-            queue <dict>: a queue record
+            queue (dic): a queue record
 
         Returns:
-            items <list>: a list of items that match the queue's query.
+            items (list): a list of items that match the queue's query.
         """
         queue_item_type = queue['queue_spec']['item_type']
         if queue_item_type == 'Flow':
@@ -145,7 +149,7 @@ class BaseDao(abc.ABC):
     def get_default_claiming_filters(self):
         """
         Returns:
-            filters <list>: a list of default filters to use for claiming queue
+            filters (list): a list of default filters to use for claiming queue
                 items.
         """
         return [
@@ -161,10 +165,10 @@ class BaseDao(abc.ABC):
         locked.
 
         Args:
-            queue <dict>: a queue record
+            queue (dict): a queue record
 
         Returns:
-            items <list>: a list of items that match the queue's query.
+            items (list): a list of items that match the queue's query.
         """
         raise NotImplementedError
 
@@ -172,11 +176,11 @@ class BaseDao(abc.ABC):
         """Default handler for claiming queue items.
 
         Args:
-            queue <dict>: a queue record
+            queue (dict): a queue record
             filters <list>: filters to use for getting claimable items.
 
         Returns:
-            items <list>: a list of items that match the combination of the
+            items (list): a list of items that match the combination of the
                 filters and the queue's queue_spec.
         """
         return self.get_items(
@@ -188,11 +192,11 @@ class BaseDao(abc.ABC):
         """Create a lock record.
 
         Args:
-            lockee_key <str>: keyfor the item being locked.
-            locker_key <str>: key for the item that holds the lock.
+            lockee_key (str): keyfor the item being locked.
+            locker_key (str): key for the item that holds the lock.
 
         Returns:
-            lock_record <dict>: a lock_record
+            lock_record (dict): a lock_record
         """
         self.create_item(
             item_type='Lock',
@@ -203,7 +207,7 @@ class BaseDao(abc.ABC):
         """Release locks.
 
         Args:
-            locker_key <str>: key for the item that holds the lock.
+            locker_key (str): key for the item that holds the lock.
 
         Returns:
             None
@@ -221,10 +225,10 @@ class BaseDao(abc.ABC):
     def delete_items(self, item_type=None, query=None):
         """
         Args:
-            item_type <str>: one of {ITEM_TYPES}
-            query <dict>: a query dict
+            item_type (str): one of :attr:`.ITEM_TYPES`
+            query (dict): a query dict
 
         Returns:
             None
-        """.format(ITEM_TYPES=self.ITEM_TYPES)
+        """
         raise NotImplementedError

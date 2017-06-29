@@ -10,11 +10,11 @@ class DotSpecLoader(object):
     def load_from_dot_spec(cls, dot_spec=None):
         """
         Args:
-            dot_spec <str>: dot_spec should be a period-separated path, 
-            like a python module path.  A dot_spec can two parts separated by a
-            ':'. In this case the first part of the path will be interpreted as
-            a module path, and the second part of the path will be interpreted
-            as the dot_path to a member of that module.
+            dot_spec (str): dot_spec should be a period-separated path, 
+                like a python module path.  A dot_spec can two parts separated
+                by a ':'. In this case the first part of the path will be
+                interpreted as a module path, and the second part of the path
+                will be interpreted as the dot_path to a member of that module.
         """
         return cls()._load_from_dot_spec(dot_spec=dot_spec)
     
