@@ -4,10 +4,24 @@ from .bash import BashSubmissionBuilder
 
 
 class SlurmSubmissionBuilder(object):
-    def __init__(self, *args, submission_spec=None, **kwargs):
-        self.bash_builder = BashSubmissionBuilder(*args, **kwargs)
+    """A submission builder that builds submissions with slurm parameters.
+
+    Writes #SBATCH lines, and sets submission stderr/stdout logs
+    to match Slurm job stderr/stdout logs.
+
+    """
+
+    def __init__(self, submission_spec=None, **kwargs):
+        self.bash_builder = BashSubmissionBuilder(**kwargs)
 
     def build_submission(self, submission_spec=None, output_dir=None, **kwargs):
+        """
+        Args:
+            submission_spec <dict>: a submission_spec as per
+                BashSubmissionBuilder, but can also include 'sbatch_params'
+                prop.
+            output_dir [str]: dir in which to write submission files.
+        """
         self._spec = submission_spec
         self._output_dir = output_dir
         bash_submission_spec = {

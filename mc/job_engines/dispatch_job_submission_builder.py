@@ -2,6 +2,10 @@ from .base_job_submission_builder import BaseJobSubmissionBuilder
 
 
 class DispatchJobSubmissionBuilder(BaseJobSubmissionBuilder):
+    """
+    JobSubmissionBuilder that dispatches to another submission builder based
+    on the value of cfg['job_engine']['target_env']
+    """
     class UnknownTargetError(Exception): pass
 
     def _build_job_submission(self):

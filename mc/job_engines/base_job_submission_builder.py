@@ -1,16 +1,35 @@
-class BaseJobSubmissionBuilder(object):
-    def __init__(self, *args, **kwargs):
-        self.args = args
-        self.kwargs = kwargs or {}
-        for attr in ['job', 'cfg']:
-            setattr(self, attr, self.kwargs.get(attr, {}))
-        self.output_dir = self.kwargs.get('output_dir')
+import abc
+
+class BaseJobSubmissionBuilder(abc.ABCMeta):
+    """
+    Abstract Base Class for SubmissionBuilders.
+    """
+    def __init__(self, job=None, cfg=None, output_dir=None, **kwargs):
+        """
+        Args:
+            job [dict]: job dict.
+            cfg [dict]: cfg dict.
+            output_dir [str]: directory in which to put submission files.
+        """
+        self.job = job or {}
+        self.cfg = cfg or {}
+        self.output_dir = output_dir
 
     @classmethod
-    def build_job_submission(cls, *args, job=None, cfg=None, output_dir=None,
+    def build_job_submission(cls, job=None, cfg=None, output_dir=None,
                              **kwargs):
-        builder = cls(*args, job=job, cfg=cfg, output_dir=output_dir, **kwargs)
+        """
+        Args:
+            job [dict]: job dict.
+            cfg [dict]: cfg dict.
+            output_dir [str]: directory in which to put submission files.
+
+        Returns:
+            submission_meta <dict>: dict of submission metadata.
+        """
+        builder = cls(job=job, cfg=cfg, output_dir=output_dir, **kwargs)
         return builder._build_job_submission()
 
+    @abc.abstractmethod
     def _build_job_submission(self): raise NotImplementedError
     

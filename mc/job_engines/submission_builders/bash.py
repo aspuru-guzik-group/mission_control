@@ -7,9 +7,18 @@ from jinja2 import Template
 
 
 class BashSubmissionBuilder(object):
-    def __init__(self, *args, checkpoint_file_names=None,
+    """Creates submissions suitable for running as bash jobs."""
+
+    def __init__(self, checkpoint_file_names=None,
                  entrypoint_file_name=None, io_dir_names=None,
                  std_log_file_names=None, **kwargs):
+        """
+        Args:
+            checkpoint_file_names [dict]: override checkpoint file names.
+            entrypoint_file_name [str]: override entrypoint file name.
+            io_dir_names [dict]: override input/output dir names.
+            std_log_file_names [dict]: override standard log file names.
+        """
         self.checkpoint_file_names = {
             'completed': 'MC_JOB__COMPLETED',
             'failed': 'MC_JOB__FAILED',
@@ -28,15 +37,37 @@ class BashSubmissionBuilder(object):
             **(std_log_file_names or {})
         }
 
-    def build_submission(self, *args, submission_spec=None, cfg=None,
+    def build_submission(self, submission_spec=None, cfg=None,
                          output_dir=None, **kwargs):
+        """
+        Args:
+            submission_spec <dict>: dict of submission params.
+                Keys can include:
+                |shebang_line: [str:'#!/bin/bash']
+                |header: [str:'']: premable to include before entrypoint body.
+                |env_vars: [dict:{}]
+                |templates: [dict:{}]: dict template specs, as per
+                    write_templates.
+
+            cfg [dict]: cfg dict.
+            output_dir <str>: dir in which to write submission files.
+
+        Returns:
+            submission_meta <dict>: submission metadata dict, with these keys:
+                |dir <str>: the output dir.
+                |checkpoint_file_names <dict>: completed/failed checkpoint
+                    files.
+                |entrypoint_file_name <str>: entrypoint file name.
+                |std_log_file_names <dict>: standard log file names.
+                |io_dir_names <dict>: input/output dir names.
+        """
         self._spec = submission_spec or {}
         self._cfg = cfg
         self._output_dir = output_dir or tempfile.mkdtemp(prefix='bash.sub.')
         self.ensure_dir(self._output_dir)
         self.setup_io_dirs()
         self.write_entrypoint()
-        self.write_templates()
+        self.write_templates(templates=self._spec.get('templates', {}))
         submission_meta = {
             'dir': self._output_dir,
             'checkpoint_file_names': self.checkpoint_file_names,
@@ -151,14 +182,28 @@ class BashSubmissionBuilder(object):
         )
         return body_section
 
-    def write_templates(self):
-        templates = self._spec.get('templates', {})
-        if not templates.get('specs', None): return
+    def write_templates(self, templates=None):
+        """Writes templates.
+
+        Args:
+            templates [dict]: a dict with keys 'specs' and optionally, 'ctx'.
+                specs define individual templates. ctx defines ctx shared by
+                all templates.
+        """
+        if not templates or not templates.get('specs'): return
         ctx = templates.get('ctx', {})
         for template_spec in templates.get('specs', []):
             self.write_template_spec(template_spec=template_spec, ctx=ctx)
 
     def write_template_spec(self, template_spec=None, ctx=None):
+        """Write a template for a given spec.
+
+        Args:
+            template_spec <dict>: a dict with keys 'target' (the name of the
+                template output file), and optionally 'ctx' (ctx specific to
+                that template).
+            ctx [dict]: additional ctx to pass to the template.
+        """
         target_path = os.path.join(self._output_dir, template_spec['target'])
         self.ensure_dir(dir_path=os.path.dirname(target_path))
         rendered = self.render_template_spec(
