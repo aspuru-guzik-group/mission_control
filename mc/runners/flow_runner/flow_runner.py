@@ -4,13 +4,28 @@ import time
 import traceback
 
 class FlowRunner(object):
+    """
+    A FlowRunner encapsulates logic related to claiming and ticking flows.
+    """
+
     def __init__(self, flow_record_client=None, flow_engine=None, task_ctx=None,
                  tick_interval=120, max_flows_per_tick=3, logger=None):
+        """
+        Args:
+            flow_record_client <flow_record_client>: a client for doing
+                flow_record operations.
+            flow_engine [flow_engine]: flow_engine to use for ticking flows.
+                Default: mc.flows.flow_engine.FlowEngine instance.
+            task_ctx [dict]: extra ctx to pass to tasks.
+            tick_interval [int]: how often to run a tick, in seconds.
+                Default: 120.
+            max_flows_per_tick [int]: maximum number of flows to claim per tick.
+                Default: 3.
+        """
         self.logger = logger or logging
         self.flow_record_client = flow_record_client
         self.flow_engine = flow_engine or self.get_default_flow_engine()
-        self.task_ctx = task_ctx or {}
-        self.fill_in_task_ctx()
+        self.task_ctx = self.decorate_task_ctx(task_ctx=task_ctx)
         self.tick_interval = tick_interval
         self.max_flows_per_tick = max_flows_per_tick
         self.tick_counter = 0
@@ -21,10 +36,18 @@ class FlowRunner(object):
         from mc.flows.flow_engine import FlowEngine
         return FlowEngine()
 
-    def fill_in_task_ctx(self):
-        self.task_ctx.setdefault('flow_engine', self.flow_engine)
+    def decorate_task_ctx(self, task_ctx=None):
+        return {**task_ctx, 'flow_engine': self.flow_engine}
 
     def run(self, ntimes=None, tick_interval=None):
+        """Run indefinitely or for several ticks.
+
+        Args:
+            ntimes [int]: if specified, run this many ticks. If empty, run
+                indefinitely. Default: None.
+            tick_interval [int]: run with this tick interval. Default:
+                self.tick_interval.
+        """
         self._ticking = True
         if ntimes:
             for i in range(ntimes):
@@ -33,7 +56,9 @@ class FlowRunner(object):
             while self._ticking:
                 self._tick_and_sleep(tick_interval=tick_interval)
 
-    def stop(self): self._ticking = False
+    def stop(self):
+        """Stop ticking."""
+        self._ticking = False
 
     def _tick_and_sleep(self, tick_interval=None):
         if tick_interval is None: tick_interval = self.tick_interval
@@ -41,6 +66,7 @@ class FlowRunner(object):
         time.sleep(tick_interval)
 
     def tick(self):
+        """Run one claim-and-tick-flows cycle."""
         self.tick_counter += 1
         self.logger.debug('%s, tick #%s' % (self, self.tick_counter))
         claimed_flow_records = self.claim_flow_records()
