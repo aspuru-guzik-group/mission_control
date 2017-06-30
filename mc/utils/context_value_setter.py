@@ -106,8 +106,8 @@ class ContextValueSetter(object):
         Args:
             value (obj): value to use items source for mapping.
             transform (dict, optional): transform spec, which is a dict
-                like this:
-                ::
+                like this: ::
+
                     {
                         type: 'transform',
                         params: {
