@@ -13,6 +13,7 @@ Contents:
 
    api
    guide
+   todos
 
 Indices and tables
 ==================

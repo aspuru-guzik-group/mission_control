@@ -34,6 +34,7 @@ extensions = [
     'sphinx.ext.doctest',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
+    'sphinx.ext.todo',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
 ]
@@ -299,3 +300,5 @@ texinfo_documents = [
 #texinfo_no_detailmenu = False
 
 autoclass_content = 'both'
+
+todo_include_todos = True
