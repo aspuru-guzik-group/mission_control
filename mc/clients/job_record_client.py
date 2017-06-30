@@ -22,7 +22,8 @@ class JobRecordClient(object):
                 get_job_record to retrieve a job.
         """
         job_kwargs = {**(job_kwargs or {}), 'status': 'PENDING'}
-        job_record = self.mc_dao.create_item(item_type='Job', kwargs=job_kwargs)
+        job_record = self.mc_dao.create_item(item_type='Job',
+                                             item_kwargs=job_kwargs)
         if self.use_locks:
             parent_key = job_kwargs.get('data', {}).get('parent_key')
             if parent_key:

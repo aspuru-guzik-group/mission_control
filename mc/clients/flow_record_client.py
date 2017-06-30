@@ -24,7 +24,7 @@ class FlowRecordClient(object):
                 get_flow_record to retrieve a flow.
         """
         flow_record = self.mc_dao.create_item(item_type='Flow',
-                                              kwargs=flow_kwargs)
+                                              item_kwargs=flow_kwargs)
         if self.use_locks:
             parent_key = flow_kwargs.get('data', {}).get('parent_key')
             if parent_key: self.mc_dao.create_lock(

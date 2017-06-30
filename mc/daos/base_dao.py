@@ -200,7 +200,7 @@ class BaseDao(abc.ABC):
         """
         self.create_item(
             item_type='Lock',
-            kwargs={'lockee_key': lockee_key, 'locker_key': locker_key}
+            item_kwargs={'lockee_key': lockee_key, 'locker_key': locker_key}
         )
 
     def release_locks(self, locker_keys=None):

@@ -50,9 +50,9 @@ class SqlAlchemyDao(BaseDao):
     def drop_tables(self):
         self.sa_schema['metadata'].drop_all(self.engine)
 
-    def create_item(self, item_type=None, kwargs=None):
+    def create_item(self, item_type=None, item_kwargs=None):
         table = self.get_item_table(item_type=item_type)
-        statement = table.insert().values(kwargs).return_defaults()
+        statement = table.insert().values(item_kwargs).return_defaults()
         key = self.engine.execute(statement).inserted_primary_key[0]
         return self.get_item_by_key(item_type=item_type, key=key)
 

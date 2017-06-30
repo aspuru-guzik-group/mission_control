@@ -31,7 +31,7 @@ class CommandParser(argparse.ArgumentParser):
     SystemExit in several occasions, as SystemExit is unacceptable when a
     command is called programmatically.
     """
-    def __init__(self, cmd, **kwargs):
+    def __init__(self, cmd=None, **kwargs):
         self.cmd = cmd
         super().__init__(**kwargs)
 
@@ -180,10 +180,10 @@ class BaseCommand:
             '--no-color', action='store_true', dest='no_color',
             help="Don't colorize the command output.",
         )
-        self.add_arguments(parser)
+        self.add_arguments(parser=parser)
         return parser
 
-    def add_arguments(self, parser):
+    def add_arguments(self, parser=None):
         """
         Entry point for subclassed commands to add custom arguments.
         """
@@ -207,18 +207,18 @@ class BaseCommand:
         """
         self._called_from_command_line = True
         parser = self.create_parser(argv[0])
-        options = parser.parse_args(args=argv[1:])
+        options, unparsed_args = parser.parse_known_args(args=argv[1:])
         cmd_options = vars(options)
         # Move positional args out of options to mimic legacy optparse
         args = cmd_options.pop('args', ())
         handle_default_options(options)
-        try: self.execute(*args, **cmd_options)
+        try: self.execute(unparsed_args, *args, **cmd_options)
         except Exception as e:
             if options.traceback or not isinstance(e, CommandError): raise
             self.stderr.write(msg='%s: %s' % (e.__class__.__name__, e))
             sys.exit(1)
 
-    def execute(self, *args, **options):
+    def execute(self, unparsed_args, *args, **options):
         """Try to execute this command."""
         if options['no_color']:
             self.style = color.no_style()
@@ -228,13 +228,15 @@ class BaseCommand:
         if options.get('stderr'):
             self.stderr = OutputWrapper(options['stderr'],
                                         self.stderr.style_func)
-        output = self.handle(*args, **options)
+        output = self.handle(args=args, kwargs=options,
+                             unparsed_args=unparsed_args)
         self.stdout.write(msg=output)
         return output
 
-    def handle(self, *args, **options):
+    def handle(self, args=None, kwargs=None, unparsed_args=None):
         """
         The actual logic of the command. Subclasses must implement
         this method.
         """
-        raise NotImplementedError('subclasses of BaseCommand must provide a handle() method')
+        raise NotImplementedError('subclasses of BaseCommand must provide a'
+                                  'handle() method')

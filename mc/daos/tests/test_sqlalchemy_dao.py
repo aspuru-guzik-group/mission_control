@@ -34,9 +34,9 @@ class CreateItemTestCase(BaseTestCase):
         self.setup_dao_mocks(attrs=['get_item_table', 'get_item_by_key',
                                     'execute'])
         self.expected_table = self.dao.get_item_table.return_value
-        self.kwargs = MagicMock()
+        self.item_kwargs = MagicMock()
         self.result = self.dao.create_item(item_type=self.item_type,
-                                           kwargs=self.kwargs)
+                                           item_kwargs=self.item_kwargs)
 
     def test_gets_item_table(self):
         self.assertEqual(self.dao.get_item_table.call_args,
@@ -45,7 +45,7 @@ class CreateItemTestCase(BaseTestCase):
     def test_creates_insert_statement(self):
         self.assertEqual(
             self.expected_table.insert.return_value.values.call_args,
-            call(self.kwargs)
+            call(self.item_kwargs)
         )
 
     def test_executes_insert_statement(self):

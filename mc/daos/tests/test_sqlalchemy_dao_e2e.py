@@ -16,7 +16,8 @@ class FlowTestCase(BaseTestCase):
         self.flow_kwargs = {'label': 'initial_label'}
 
     def _create_flow(self):
-        return self.dao.create_item(item_type='Flow', kwargs=self.flow_kwargs)
+        return self.dao.create_item(item_type='Flow',
+                                    item_kwargs=self.flow_kwargs)
 
     def test_create_flow(self):
         created_flow = self._create_flow()
@@ -42,7 +43,8 @@ class JobTestCase(BaseTestCase):
         }
 
     def _create_job(self):
-        return self.dao.create_item(item_type='Job', kwargs=self.job_kwargs)
+        return self.dao.create_item(item_type='Job',
+                                    item_kwargs=self.job_kwargs)
 
     def test_create_job(self):
         created_job = self._create_job()
@@ -67,7 +69,8 @@ class JobQueueTestCase(BaseTestCase):
 
     def _create_queue(self, queue_kwargs=None):
         queue_kwargs = queue_kwargs or self.queue_kwargs
-        return self.dao.create_item(item_type='Queue', kwargs=queue_kwargs)
+        return self.dao.create_item(item_type='Queue',
+                                    item_kwargs=queue_kwargs)
 
     def test_create_queue(self):
         created_queue = self._create_queue()
@@ -79,10 +82,8 @@ class JobQueueTestCase(BaseTestCase):
                         'queue_spec': {'item_type': 'Job'}}
         queue = self._create_queue(queue_kwargs=queue_kwargs)
         flows = [
-            self.dao.create_item(
-                item_type='Job',
-                kwargs={'label': 'flow_%s' % i}
-            )
+            self.dao.create_item(item_type='Job',
+                                 item_kwargs={'label': 'flow_%s' % i})
             for i in range(3)
         ]
         claimed_flows = \
@@ -98,7 +99,7 @@ class FlowQueueTestCase(BaseTestCase):
 
     def _create_queue(self, queue_kwargs=None):
         queue_kwargs = queue_kwargs or self.queue_kwargs
-        return self.dao.create_item(item_type='Queue', kwargs=queue_kwargs)
+        return self.dao.create_item(item_type='Queue', item_kwargs=queue_kwargs)
 
     def test_create_queue(self):
         created_queue = self._create_queue()
@@ -119,10 +120,8 @@ class FlowQueueTestCase(BaseTestCase):
                         'queue_spec': {'item_type': 'Flow'}}
         queue = self._create_queue(queue_kwargs=queue_kwargs)
         flows = [
-            self.dao.create_item(
-                item_type='Flow',
-                kwargs={'label': 'flow_%s' % i}
-            )
+            self.dao.create_item(item_type='Flow',
+                                 item_kwargs={'label': 'flow_%s' % i})
             for i in range(3)
         ]
         claimed_flows = self._claim_flows(queue=queue)
@@ -135,10 +134,12 @@ class FlowQueueTestCase(BaseTestCase):
                         'queue_spec': {'item_type': 'Flow'}}
         queue = self._create_queue(queue_kwargs=queue_kwargs)
         unlocked_flow = self.dao.create_item(item_type='Flow',
-                                             kwargs={'label': 'unlocked'})
-        flow_to_unlock = self.dao.create_item(item_type='Flow',
-                                              kwargs={'label': 'to_unlock',
-                                                      'num_tickable_tasks': 1})
+                                             item_kwargs={'label': 'unlocked'})
+        flow_to_unlock = self.dao.create_item(
+            item_type='Flow',
+            item_kwargs={'label': 'to_unlock',
+                         'num_tickable_tasks': 1}
+        )
         locker_key = 'the_locker'
         self.dao.create_lock(lockee_key=flow_to_unlock['key'],
                              locker_key=locker_key)
