@@ -17,6 +17,7 @@ A few heuristic questions:
 #  task create a job.
 #. What **inputs** does our task need?
 #. What **outputs** should our task produce?
+#. Do we want to **store** the outputs?
 #. Where do we want the code for our task to live?
 #. How can we test that our task does what we expect?
 
