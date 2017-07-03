@@ -4,10 +4,17 @@ import logging
 import os
 import time
 
+from jobman.jobman import JobMan
+
+from mc.artifact_processors.local_path_artifact_processor import (
+    LocalPathArtifactProcessor)
 from mc.clients.job_record_client import JobRecordClient
 from mc.clients.flow_record_client import FlowRecordClient
 from mc.daos.sqlalchemy_dao import SqlAlchemyDao as _McSqlAlchemyDao
+from mc.flows.flow import Flow
+from mc.job_engines.job_engine import JobEngine
 from mc.runners.flow_runner import FlowRunner
+from mc.runners.jobman_job_runner.job_runner import JobRunner
 from mc.utils.commands.subcommand_command import SubcommandCommand
 from mc.utils import import_utils
 
@@ -43,16 +50,28 @@ class HoustonCommand(SubcommandCommand):
         for item_type in ['Flow', 'Job']:
             queue_key = self.settings.get(item_type.upper() + '_QUEUE_KEY')
             try:
-                mc_dao.create_item(item_type='Queue',
-                                   item_kwargs={'key': queue_key})
-                self.logger.info("Created {item_type} queue".format(item_type))
+                mc_dao.create_item(
+                    item_type='Queue',
+                    item_kwargs={
+                        'key': queue_key,
+                        'queue_spec': {'item_type': item_type},
+                    }
+                )
+                self.logger.info("Created {item_type} queue".format(
+                    item_type=item_type))
             except mc_dao.IntegrityError:
                 self.logger.info(("Queue with key '{queue_key}' already"
                                   " exists.").format(queue_key=queue_key))
 
     def create_flow(self, args=None, kwargs=None, unparsed_args=None):
         mc_dao = self._get_mc_dao()
-        flow_dict = {}
+        flow_spec = {
+            'tasks': [
+                {'task_type': 'print', 'task_params': {'msg': i}}
+                for i in range(3)
+            ]
+        }
+        flow_dict = Flow.from_flow_spec(flow_spec=flow_spec).to_flow_dict()
         flow_record = mc_dao.create_item(item_type='Flow',
                                          item_kwargs=flow_dict)
         print("Created flow_record: ", flow_record)
@@ -106,8 +125,23 @@ class HoustonCommand(SubcommandCommand):
         return FlowRunner(flow_record_client=mc_clients['flow'],
                           task_ctx=task_ctx)
 
-    def _get_job_runner(self):
-        raise NotImplementedError()
+    def _get_job_runner(self, mc_clients=None):
+        return JobRunner(
+            artifact_processor=self._get_artifact_processor(),
+            job_record_client=mc_clients['job'],
+            jobman=self._get_jobman(),
+            submissions_dir=self.settings['SUBMISSIONS_DIR'],
+            submission_factory=self._get_job_engine()
+        )
+
+    def _get_artifact_processor(self): return LocalPathArtifactProcessor()
+
+    def _get_jobman(self):
+        jobman_cfg = import_utils.load_module_from_path(
+            path=self.settings['JOBMAN_CFG_PATH'])
+        return JobMan.from_cfg(cfg=jobman_cfg)
+
+    def _get_job_engine(self): return JobEngine()
 
     def _has_unfinished_items(self, mc_dao=None):
         for item_type in ['Flow', 'Job']:
@@ -117,8 +151,8 @@ class HoustonCommand(SubcommandCommand):
         return False
 
     def _get_unfinished_items(self, mc_dao=None, item_type=None):
-        unfinished_filter = {'field': 'status', 'operator': '! IN',
-                             'value': ['COMPLETED', 'FAILED']}
+        unfinished_filter = {'prop': 'status', 'op': '! IN',
+                             'arg': ['COMPLETED', 'FAILED']}
         return mc_dao.get_items(item_type=item_type,
                                 query={'filters':  [unfinished_filter]})
 

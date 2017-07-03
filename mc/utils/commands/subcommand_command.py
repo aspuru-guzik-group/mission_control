@@ -12,6 +12,7 @@ class SubcommandCommand(BaseCommand):
     def add_arguments(self, parser=None):
         subparsers = parser.add_subparsers(title='subcommand',
                                            dest='subcommand')
+        subparsers.required = True
         for subcommand in self.subcommands: subparsers.add_parser(subcommand)
 
     def handle(self, args=None, kwargs=None, unparsed_args=None):
