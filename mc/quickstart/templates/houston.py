@@ -2,6 +2,7 @@
 
 import logging
 import os
+import sys
 import time
 
 from jobman.jobman import JobMan
@@ -18,6 +19,10 @@ from mc.runners.jobman_job_runner.job_runner import JobRunner
 from mc.utils.commands.subcommand_command import SubcommandCommand
 from mc.utils import import_utils
 
+
+THIS_DIR = os.path.dirname(__file__)
+sys.path.append(os.path.abspath(os.path.join(THIS_DIR, '.')))
+sys.path.append(os.path.abspath(os.path.join(THIS_DIR, '..')))
 
 class HoustonCommand(SubcommandCommand):
     subcommands = ['ensure_queues', 'create_flow', 'run_until_completed',
@@ -67,8 +72,12 @@ class HoustonCommand(SubcommandCommand):
         mc_dao = self._get_mc_dao()
         flow_spec = {
             'tasks': [
-                {'task_type': 'print', 'task_params': {'msg': i}}
-                for i in range(3)
+                *[
+                    {'task_type': 'print', 'task_params': {'msg': i}}
+                    for i in range(3)
+                ],
+                {'task_type': 'tasks.example_countdown',
+                 'task_params': {'countdown_start': 3}}
             ]
         }
         flow_dict = Flow.from_flow_spec(flow_spec=flow_spec).to_flow_dict()
