@@ -17,7 +17,7 @@ dependencies = [
     {
         'install_requires_value': 'jobman==0.0.1',
         'dependency_links_value': (
-            'git+https://bitbucket.org/aspuru-guzik/jobman.git'
+            'git+https://github.com/aspuru-guzik-group/jobman.git'
             '#egg=jobman-0.0.1'
         )
     },
