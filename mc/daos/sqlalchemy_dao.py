@@ -53,7 +53,9 @@ class SqlAlchemyDao(BaseDao):
     def create_item(self, item_type=None, item_kwargs=None):
         table = self.get_item_table(item_type=item_type)
         statement = table.insert().values(item_kwargs).return_defaults()
-        key = self.engine.execute(statement).inserted_primary_key[0]
+        try: key = self.engine.execute(statement).inserted_primary_key[0]
+        except _sqla.exc.IntegrityError as exc:
+            raise self.IntegrityError() from exc
         return self.get_item_by_key(item_type=item_type, key=key)
 
     def serialize_items(self, item_type=None, items=None):

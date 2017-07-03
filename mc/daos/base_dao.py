@@ -11,6 +11,7 @@ class BaseDao(abc.ABC):
     class InvalidQueryError(Exception): pass
     class InvalidFilterError(Exception): pass
     class ItemNotFoundError(Exception): pass
+    class IntegrityError(Exception): pass
 
     @abc.abstractmethod
     def get_items(self, item_type=None, query=None):

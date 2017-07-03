@@ -1,14 +1,32 @@
-import os
+#!/usr/bin/env python
 
+import logging
+import os
+import time
+
+from mc.clients.job_record_client import JobRecordClient
+from mc.clients.flow_record_client import FlowRecordClient
 from mc.daos.sqlalchemy_dao import SqlAlchemyDao as _McSqlAlchemyDao
+from mc.runners.flow_runner import FlowRunner
 from mc.utils.commands.subcommand_command import SubcommandCommand
 from mc.utils import import_utils
 
 
 class HoustonCommand(SubcommandCommand):
-    subcommands = ['create_flow', 'run_until_completed', 'dump_flows']
+    subcommands = ['ensure_queues', 'create_flow', 'run_until_completed',
+                   'dump_flows']
 
     class SettingsError(Exception): pass
+
+    def __init__(self, *args, logger=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.logger = logger or self._get_default_logger()
+    
+    def _get_default_logger(self):
+        logger = logging.getLogger(__name__)
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+        return logger
 
     @property
     def settings(self):
@@ -19,6 +37,18 @@ class HoustonCommand(SubcommandCommand):
     def _load_houston_settings(self):
         try: return HoustonSettings()
         except Exception as exc: raise self.SettingsError() from exc
+
+    def ensure_queues(self, args=None, kwargs=None, unparsed_args=None):
+        mc_dao = self._get_mc_dao()
+        for item_type in ['Flow', 'Job']:
+            queue_key = self.settings.get(item_type.upper() + '_QUEUE_KEY')
+            try:
+                mc_dao.create_item(item_type='Queue',
+                                   item_kwargs={'key': queue_key})
+                self.logger.info("Created {item_type} queue".format(item_type))
+            except mc_dao.IntegrityError:
+                self.logger.info(("Queue with key '{queue_key}' already"
+                                  " exists.").format(queue_key=queue_key))
 
     def create_flow(self, args=None, kwargs=None, unparsed_args=None):
         mc_dao = self._get_mc_dao()
@@ -33,7 +63,64 @@ class HoustonCommand(SubcommandCommand):
         return mc_dao
 
     def run_until_completed(self, args=None, kwargs=None, unparsed_args=None):
-        print("run_until_completed")
+        max_ticks = 1e3
+        tick_interval = .5
+        mc_dao = self._get_mc_dao()
+        mc_clients = self._get_mc_clients(mc_dao=mc_dao)
+        flow_runner = self._get_flow_runner(mc_clients=mc_clients)
+        job_runner = self._get_job_runner(mc_clients=mc_clients)
+        tick_counter = 0
+        while self._has_unfinished_items(mc_dao=mc_dao):
+            tick_counter += 1
+            self.logger.info('Tick #%s' % (tick_counter))
+            if tick_counter > max_ticks: raise Exception("exceed max ticks")
+            flow_runner.tick()
+            job_runner.tick()
+            time.sleep(tick_interval)
+        self.logger.info('Completed.')
+
+    def _get_mc_clients(self, mc_dao=None):
+        return {
+            'flow': self._get_flow_record_client(mc_dao=mc_dao),
+            'job': self._get_job_record_client(mc_dao=mc_dao)
+        }
+
+    def _get_flow_record_client(self, mc_dao=None):
+        return FlowRecordClient(
+            mc_dao=mc_dao, use_locks=True,
+            queue_key=self.settings['FLOW_QUEUE_KEY']
+        )
+
+    def _get_job_record_client(self, mc_dao=None):
+        return JobRecordClient(
+            mc_dao=mc_dao, use_locks=True,
+            queue_key=self.settings['JOB_QUEUE_KEY']
+        )
+
+    def _get_flow_runner(self, mc_clients=None):
+        task_ctx = {
+            'mc.flow_record_client': mc_clients['flow'],
+            'mc.job_record_client': mc_clients['job'],
+
+        }
+        return FlowRunner(flow_record_client=mc_clients['flow'],
+                          task_ctx=task_ctx)
+
+    def _get_job_runner(self):
+        raise NotImplementedError()
+
+    def _has_unfinished_items(self, mc_dao=None):
+        for item_type in ['Flow', 'Job']:
+            unfinished_items = self._get_unfinished_items(mc_dao=mc_dao,
+                                                          item_type=item_type)
+            if unfinished_items: return True
+        return False
+
+    def _get_unfinished_items(self, mc_dao=None, item_type=None):
+        unfinished_filter = {'field': 'status', 'operator': '! IN',
+                             'value': ['COMPLETED', 'FAILED']}
+        return mc_dao.get_items(item_type=item_type,
+                                query={'filters':  [unfinished_filter]})
 
     def dump_flows(self, args=None, kwargs=None, unparsed_args=None):
         if 'keys_to_exclude' not in kwargs:
