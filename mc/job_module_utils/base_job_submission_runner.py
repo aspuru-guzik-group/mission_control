@@ -4,23 +4,25 @@ import shutil
 
 
 class BaseJobSubmissionRunner(object):
-    """Abstract Base Class for JobSubmissionRunners"""
-    def __init__(self, submission_meta=None, **kwargs):
+    """Base Class for JobSubmissionRunners"""
+    def __init__(self, submission_meta=None, cfg=None, **kwargs):
         """
         Args:
             submission_meta (dict): dict of submission metadata, including job
                 and cfg.
         """
         self.submission_meta = submission_meta
+        self.cfg = cfg or {}
 
     @classmethod
-    def run_job_submission(cls, *args, submission_meta=None, **kwargs):
+    def run_job_submission(cls, *args, submission_meta=None, cfg=None,
+                           **kwargs):
         """
         Args:
             submission_meta (dict): dict of submission metadata, including job
                 and cfg.
         """
-        runner = cls(*args, submission_meta=submission_meta, **kwargs)
+        runner = cls(*args, submission_meta=submission_meta, cfg=cfg, **kwargs)
         runner.validate_job_params()
         return runner._run_job_submission()
 

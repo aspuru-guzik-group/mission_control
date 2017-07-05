@@ -6,6 +6,9 @@ import dill
 
 class DefaultJobModuleLoader(object):
     """A class that helps with loading job modules."""
+
+    class JobModuleImportError(Exception): pass
+
     def __init__(self):
         self.overrides = {}
 
@@ -18,15 +21,19 @@ class DefaultJobModuleLoader(object):
         Returns:
             job_module (module): the loaded job module.
         """
-        job_module_name = self.get_job_module_name(job=job, cfg=cfg)
-        override = self.overrides.get(job_module_name)
-        if override:
-            module = self.load_module_per_override(
-                job=job, cfg=cfg, override=override)
-        else:
-            module = self.load_module_from_module_path(
-                module_path=job_module_name)
-        return module
+        try:
+            job_module_name = self.get_job_module_name(job=job, cfg=cfg)
+            override = self.overrides.get(job_module_name)
+            if override:
+                module = self.load_module_per_override(
+                    job=job, cfg=cfg, override=override)
+            else:
+                module = self.load_module_from_module_path(
+                    module_path=job_module_name)
+            return module
+        except Exception as exc:
+            msg = "Could not load module for job"
+            raise self.JobModuleImportError(msg) from exc
 
     def load_module_per_override(self, job=None, cfg=None, override=None):
         if isinstance(override, str):

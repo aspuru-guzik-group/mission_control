@@ -1,7 +1,8 @@
 import os
 import subprocess
 
-from mc.job_engines.base_job_submission_runner import BaseJobSubmissionRunner
+from mc.job_module_utils.base_job_submission_runner \
+        import BaseJobSubmissionRunner
 
 from .workdir_builder import WorkdirBuilder
 
@@ -39,7 +40,6 @@ class JobSubmissionRunner(BaseJobSubmissionRunner):
         entrypoint_path = os.path.join(workdir_meta['dir'],
                                        workdir_meta['entrypoint'])
         cmd = [entrypoint_path]
-        extra_env_vars = (self.submission_meta['cfg'].get('example_echo', {})
-                          .get('env_vars', {}))
+        extra_env_vars = self.cfg.get('example_echo', {}).get('env_vars', {})
         workdir_env = {**os.environ, **extra_env_vars}
         subprocess.run(cmd, env=workdir_env, check=True)

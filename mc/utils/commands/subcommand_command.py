@@ -1,4 +1,4 @@
-from mc.utils.commands.base_command import BaseCommand
+from .base_command import BaseCommand
 
 
 class SubcommandCommand(BaseCommand):

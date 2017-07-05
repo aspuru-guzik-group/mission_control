@@ -14,7 +14,7 @@ from mc.clients.job_record_client import JobRecordClient
 from mc.clients.flow_record_client import FlowRecordClient
 from mc.daos.sqlalchemy_dao import SqlAlchemyDao as _McSqlAlchemyDao
 from mc.flows.flow import Flow
-from mc.job_engines.job_engine import JobEngine
+from mc.job_module_utils.dispatcher import JobModuleCommandDispatcher
 from mc.runners.flow_runner import FlowRunner
 from mc.runners.jobman_job_runner.job_runner import JobRunner
 from mc.utils.commands.subcommand_command import SubcommandCommand
@@ -169,25 +169,20 @@ class HoustonCommand(SubcommandCommand):
             path=self.settings['JOBMAN_CFG_PATH'])
         return JobMan.from_cfg(cfg=jobman_cfg)
 
-    def _get_job_engine(self): return JobEngine()
-
     def _get_submission_factory(self):
         class MySubmissionFactory(object):
-            def __init__(self_, job_engine=None, cfg=None):
-                self_.job_engine = job_engine
+            def __init__(self_, cfg=None):
                 self_.cfg = cfg
 
             def build_job_submission(self_, job=None, output_dir=None):
-                return self_.job_engine.build_job_submission(
+                return JobModuleCommandDispatcher().build_job_submission(
                     job=job, cfg=self_.cfg, output_dir=output_dir)
         
-        cfg = {
+        return MySubmissionFactory(cfg={
             'JOB_SUBMISSION_RUNNER_EXE': (
                 self.settings['JOB_SUBMISSION_RUNNER_EXE']),
             'SUBMISSION_BUILD_TARGET': 'bash'
-        }
-        return MySubmissionFactory(job_engine=self._get_job_engine(),
-                                   cfg=cfg)
+        })
 
     def _has_unfinished_items(self, mc_dao=None):
         for item_type in ['Flow', 'Job']:
