@@ -30,7 +30,7 @@ class HoustonCommand(SubcommandCommand):
                    'dump_flows', 'dump_jobs', 'flush_mc_db', 'flush_flows',
                    'flush_jobs']
 
-    class SettingsError(Exception): pass
+    class CfgError(Exception): pass
 
     def __init__(self, *args, logger=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -43,19 +43,19 @@ class HoustonCommand(SubcommandCommand):
         return logger
 
     @property
-    def settings(self):
-        if not hasattr(self, '_houston_settings'):
-            self._houston_settings = self._load_houston_settings()
-        return self._houston_settings
+    def cfg(self):
+        if not hasattr(self, '_houston_cfg'):
+            self._houston_cfg = self._load_houston_cfg()
+        return self._houston_cfg
 
-    def _load_houston_settings(self):
-        try: return HoustonSettings()
-        except Exception as exc: raise self.SettingsError() from exc
+    def _load_houston_cfg(self):
+        try: return HoustonCfg()
+        except Exception as exc: raise self.CfgError() from exc
 
     def ensure_queues(self, args=None, kwargs=None, unparsed_args=None):
         mc_dao = self._get_mc_dao()
         for item_type in ['Flow', 'Job']:
-            queue_key = self.settings.get(item_type.upper() + '_QUEUE_KEY')
+            queue_key = self.cfg.get(item_type.upper() + '_QUEUE_KEY')
             try:
                 mc_dao.create_item(
                     item_type='Queue',
@@ -101,7 +101,7 @@ class HoustonCommand(SubcommandCommand):
         print("Created flow_record: ", flow_record)
 
     def _get_mc_dao(self):
-        mc_dao = _McSqlAlchemyDao(db_uri=self.settings['MC_DB_URI'])
+        mc_dao = _McSqlAlchemyDao(db_uri=self.cfg['MC_DB_URI'])
         mc_dao.ensure_tables()
         return mc_dao
 
@@ -135,13 +135,13 @@ class HoustonCommand(SubcommandCommand):
     def _get_flow_record_client(self, mc_dao=None):
         return FlowRecordClient(
             mc_dao=mc_dao, use_locks=True,
-            queue_key=self.settings['FLOW_QUEUE_KEY']
+            queue_key=self.cfg['FLOW_QUEUE_KEY']
         )
 
     def _get_job_record_client(self, mc_dao=None):
         return JobRecordClient(
             mc_dao=mc_dao, use_locks=True,
-            queue_key=self.settings['JOB_QUEUE_KEY']
+            queue_key=self.cfg['JOB_QUEUE_KEY']
         )
 
     def _get_flow_runner(self, mc_clients=None):
@@ -158,7 +158,7 @@ class HoustonCommand(SubcommandCommand):
             artifact_processor=self._get_artifact_processor(),
             job_record_client=mc_clients['job'],
             jobman=self._get_jobman(),
-            submissions_dir=self.settings['SUBMISSIONS_DIR'],
+            submissions_dir=self.cfg['SUBMISSIONS_DIR'],
             submission_factory=self._get_submission_factory(),
         )
 
@@ -166,7 +166,7 @@ class HoustonCommand(SubcommandCommand):
 
     def _get_jobman(self):
         jobman_cfg = import_utils.load_module_from_path(
-            path=self.settings['JOBMAN_CFG_PATH'])
+            path=self.cfg['JOBMAN_CFG_PATH'])
         return JobMan.from_cfg(cfg=jobman_cfg)
 
     def _get_submission_factory(self):
@@ -180,7 +180,7 @@ class HoustonCommand(SubcommandCommand):
         
         return MySubmissionFactory(cfg={
             'JOB_SUBMISSION_RUNNER_EXE': (
-                self.settings['JOB_SUBMISSION_RUNNER_EXE']),
+                self.cfg['JOB_SUBMISSION_RUNNER_EXE']),
             'SUBMISSION_BUILD_TARGET': 'bash'
         })
 
@@ -245,19 +245,19 @@ class HoustonCommand(SubcommandCommand):
         mc_dao = self._get_mc_dao()
         mc_dao.delete_items(item_type='Job')
 
-class HoustonSettings():
-    DEFAULT_SETTINGS_FILE_NAME = 'settings.py'
+class HoustonCfg():
+    DEFAULT_CFG_FILE_PATH = os.path.join(THIS_DIR, 'cfg', 'houston_cfg.py')
 
-    def __init__(self, settings_file_path=...):
-        self._settings = {}
-        self._sources = [self._settings]
-        if settings_file_path is ...:
-            settings_file_path = os.path.join(os.path.dirname(__file__),
-                                              self.DEFAULT_SETTINGS_FILE_NAME)
-        if settings_file_path:
-            settings_file_source = self._generate_source_for_file(
-                path=settings_file_path)
-            self._sources.append(settings_file_source)
+    def __init__(self, cfg_file_path=...):
+        self._cfg = {}
+        self._sources = [self._cfg]
+        if cfg_file_path is ...:
+            cfg_file_path = os.path.join(os.path.dirname(__file__),
+                                              self.DEFAULT_CFG_FILE_PATH)
+        if cfg_file_path:
+            cfg_file_source = self._generate_source_for_file(
+                path=cfg_file_path)
+            self._sources.append(cfg_file_source)
         self._sources.append(os.environ)
 
     def _generate_source_for_file(self, path=None):
@@ -276,6 +276,6 @@ class HoustonSettings():
             except KeyError: pass
         raise KeyError(key)
 
-    def __setitem__(self, key, val): self._settings[key] = val
+    def __setitem__(self, key, val): self._cfg[key] = val
 
 if __name__ == '__main__': HoustonCommand.run()
