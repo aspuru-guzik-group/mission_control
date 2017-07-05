@@ -168,16 +168,15 @@ class BashSubmissionBuilder(object):
 
     def generate_body_section(self):
         std_log_files = self.get_std_log_files()
-        job_engine_cfg = self._cfg.get('job_engine', {})
         body_section = textwrap.dedent(
             """
-            {job_engine_preamble}
-            {job_engine_exe} run_job_submission --submission_dir={output_dir} \\
+            {preamble}
+            {job_submission_runner_exe} --submission_dir={output_dir} \\
                 >>"{stdout_log_file}" 2>>"{stderr_log_file}"
             """
         ).strip().format(
-            job_engine_preamble=job_engine_cfg.get('entrypoint_preamble', ''),
-            job_engine_exe=job_engine_cfg['job_engine_exe'],
+            preamble=self._cfg.get('ENTRYPOINT_PREAMBLE', ''),
+            job_submission_runner_exe=self._cfg['JOB_SUBMISSION_RUNNER_EXE'],
             output_dir=self._output_dir,
             stdout_log_file=std_log_files['stdout'],
             stderr_log_file=std_log_files['stderr'],

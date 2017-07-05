@@ -4,21 +4,19 @@ import os
 import logging
 import tempfile
 import traceback
-import types
 
 
 class JobRunner(object):
     class SubmissionError(Exception):
         def __init__(self, *args, cause=None, mc_job=None, **kwargs):
-            error = "cause: {cause}, job_record: {json_mc_job}".format(
+            error = "cause: {cause}; job_record: {json_mc_job}".format(
                 cause=cause, json_mc_job=json.dumps(mc_job, indent=2))
             super().__init__(self, error, *args, **kwargs)
 
     def __init__(self, job_record_client=None, submission_factory=None,
                  jobman=None, max_claims_per_tick=None, logger=None,
                  logging_cfg=None, jobman_source_name=None,
-                 artifact_processor=None, cfg_factory=None,
-                 submissions_dir=None, **kwargs):
+                 artifact_processor=None, submissions_dir=None, **kwargs):
         self.logger = logger or self._generate_logger(logging_cfg=logging_cfg)
         self.job_record_client = job_record_client
         self.submission_factory = submission_factory
@@ -26,7 +24,6 @@ class JobRunner(object):
         self.max_claims_per_tick = max_claims_per_tick or 3
         self.jobman_source_name = jobman_source_name or 'mc'
         self.artifact_processor = artifact_processor
-        self.cfg_factory = cfg_factory or self._get_default_cfg_factory()
         self.submissions_dir = submissions_dir
 
         self.tick_counter = 0
@@ -46,11 +43,6 @@ class JobRunner(object):
         formatter = logging.Formatter(fmt)
         for handler in logger.handlers: handler.setFormatter(formatter)
         return logger
-    
-    def _get_default_cfg_factory(self):
-        def get_cfg(*args, **kwargs): return {}
-        cfg_factory = types.SimpleNamespace(get_cfg=get_cfg)
-        return cfg_factory
 
     def tick(self):
         self.tick_counter += 1
@@ -170,9 +162,9 @@ class JobRunner(object):
                 self.submit_mc_job(mc_job=mc_job)
                 job_records_by_submission_outcome['submitted'].append(mc_job)
             except Exception as exc:
+                self.logger.exception("SubmissionError")
                 error = self.SubmissionError(cause=traceback.format_exc(),
                                              mc_job=mc_job)
-                self.logger.warn(error)
                 mc_job['data']['error'] = str(error)
                 job_records_by_submission_outcome['failed'].append(mc_job)
         self.patch_job_records_per_submission_outcome(
@@ -202,11 +194,9 @@ class JobRunner(object):
             prefix=self.get_submission_dir_prefix(mc_job=mc_job),
             dir=self.submissions_dir
         )
-        cfg = self.cfg_factory.get_cfg(job=mc_job)
-        self.prepare_job_inputs(mc_job=mc_job, cfg=cfg,
-                                submission_dir=submission_dir)
+        self.prepare_job_inputs(mc_job=mc_job, submission_dir=submission_dir)
         submission = self.submission_factory.build_job_submission(
-            job=mc_job, cfg=cfg, output_dir=submission_dir)
+            job=mc_job, output_dir=submission_dir)
         return submission
 
     def get_submission_dir_prefix(self, mc_job=None):
@@ -215,7 +205,7 @@ class JobRunner(object):
             now=datetime.datetime.now().isoformat()
         )
 
-    def prepare_job_inputs(self, mc_job=None, cfg=None, submission_dir=None):
+    def prepare_job_inputs(self, mc_job=None, submission_dir=None):
         inputs_dir = os.path.join(submission_dir, 'inputs')
         os.makedirs(inputs_dir, exist_ok=True)
         artifacts = mc_job['job_spec'].get('inputs', {}).get('artifacts', {})

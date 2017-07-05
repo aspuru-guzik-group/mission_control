@@ -9,3 +9,5 @@ from jobman.engines.local_engine import LocalEngine
 local_engine_db_uri = os.path.join(settings.DATA_DIR,
                                    'jobman.local_engine.db.sqlite')
 engine = LocalEngine(db_uri=local_engine_db_uri)
+
+job_engine_states_ttl = .1

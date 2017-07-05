@@ -57,7 +57,4 @@ class WorkdirBuilder(object):
         )
         return entrypoint_content
 
-    def generate_input_file_content(self):
-        input_file_path = os.path.join(self.workdir, self.input_file_name)
-        with open(input_file_path, 'w') as f:
-            f.write(self.workdir_params['message'])
+    def generate_input_file_content(self): return self.workdir_params['message']

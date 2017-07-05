@@ -1,10 +1,9 @@
-import abc
 import os
 import tempfile
 import shutil
 
 
-class BaseJobSubmissionRunner(abc.ABCMeta):
+class BaseJobSubmissionRunner(object):
     """Abstract Base Class for JobSubmissionRunners"""
     def __init__(self, submission_meta=None, **kwargs):
         """
@@ -27,7 +26,6 @@ class BaseJobSubmissionRunner(abc.ABCMeta):
 
     def validate_job_params(self): pass
 
-    @abc.abstractmethod
     def _run_job_submission(self): raise NotImplementedError
 
     def generate_tmp_dir(self, prefix=None, suffix=None):

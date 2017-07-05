@@ -27,7 +27,8 @@ sys.path.append(os.path.abspath(os.path.join(THIS_DIR, '..')))
 
 class HoustonCommand(SubcommandCommand):
     subcommands = ['ensure_queues', 'create_flow', 'run_until_completed',
-                   'dump_flows', 'flush_mc_db', 'flush_flows']
+                   'dump_flows', 'dump_jobs', 'flush_mc_db', 'flush_flows',
+                   'flush_jobs']
 
     class SettingsError(Exception): pass
 
@@ -158,7 +159,7 @@ class HoustonCommand(SubcommandCommand):
             job_record_client=mc_clients['job'],
             jobman=self._get_jobman(),
             submissions_dir=self.settings['SUBMISSIONS_DIR'],
-            submission_factory=self._get_job_engine()
+            submission_factory=self._get_submission_factory(),
         )
 
     def _get_artifact_processor(self): return LocalPathArtifactProcessor()
@@ -169,6 +170,24 @@ class HoustonCommand(SubcommandCommand):
         return JobMan.from_cfg(cfg=jobman_cfg)
 
     def _get_job_engine(self): return JobEngine()
+
+    def _get_submission_factory(self):
+        class MySubmissionFactory(object):
+            def __init__(self_, job_engine=None, cfg=None):
+                self_.job_engine = job_engine
+                self_.cfg = cfg
+
+            def build_job_submission(self_, job=None, output_dir=None):
+                return self_.job_engine.build_job_submission(
+                    job=job, cfg=self_.cfg, output_dir=output_dir)
+        
+        cfg = {
+            'JOB_SUBMISSION_RUNNER_EXE': (
+                self.settings['JOB_SUBMISSION_RUNNER_EXE']),
+            'SUBMISSION_BUILD_TARGET': 'bash'
+        }
+        return MySubmissionFactory(job_engine=self._get_job_engine(),
+                                   cfg=cfg)
 
     def _has_unfinished_items(self, mc_dao=None):
         for item_type in ['Flow', 'Job']:
@@ -194,14 +213,15 @@ class HoustonCommand(SubcommandCommand):
     def dump_flows(self, args=None, kwargs=None, unparsed_args=None):
         if 'keys_to_exclude' not in kwargs:
             kwargs = {**kwargs, 'keys_to_exclude': {'graph'}}
-        self._dump_items(item_type='Flow')
+        self._dump_items(item_type='Flow', kwargs=kwargs)
 
     def dump_jobs(self, args=None, kwargs=None, unparsed_args=None):
         if 'keys_to_exclude' not in kwargs:
             kwargs = {**kwargs, 'keys_to_exclude': {'data'}}
         self._dump_items(item_type='Job', **kwargs)
 
-    def _dump_items(self, item_type=None, keys_to_exclude=None, filters=None):
+    def _dump_items(self, item_type=None, keys_to_exclude=None, filters=None,
+                    **kwargs):
         print('==== ' + item_type.upper() + ' ====')
         mc_dao = self._get_mc_dao()
         keys_to_exclude = keys_to_exclude or {}
@@ -225,6 +245,10 @@ class HoustonCommand(SubcommandCommand):
     def flush_flows(self, args=None, kwargs=None, unparsed_args=None):
         mc_dao = self._get_mc_dao()
         mc_dao.delete_items(item_type='Flow')
+
+    def flush_jobs(self, args=None, kwargs=None, unparsed_args=None):
+        mc_dao = self._get_mc_dao()
+        mc_dao.delete_items(item_type='Job')
 
 class HoustonSettings():
     DEFAULT_SETTINGS_FILE_NAME = 'settings.py'
