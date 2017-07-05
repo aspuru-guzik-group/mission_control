@@ -3,6 +3,7 @@ import json
 import os
 import logging
 import tempfile
+import traceback
 import types
 
 
@@ -169,7 +170,8 @@ class JobRunner(object):
                 self.submit_mc_job(mc_job=mc_job)
                 job_records_by_submission_outcome['submitted'].append(mc_job)
             except Exception as exc:
-                error = self.SubmissionError(cause=str(exc), mc_job=mc_job)
+                error = self.SubmissionError(cause=traceback.format_exc(),
+                                             mc_job=mc_job)
                 self.logger.warn(error)
                 mc_job['data']['error'] = str(error)
                 job_records_by_submission_outcome['failed'].append(mc_job)

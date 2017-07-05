@@ -1,6 +1,4 @@
-import abc
-
-class BaseJobSubmissionBuilder(abc.ABCMeta):
+class BaseJobSubmissionBuilder(object):
     """Abstract Base Class for SubmissionBuilders."""
 
     def __init__(self, job=None, cfg=None, output_dir=None, **kwargs):
@@ -30,6 +28,5 @@ class BaseJobSubmissionBuilder(abc.ABCMeta):
         builder = cls(job=job, cfg=cfg, output_dir=output_dir, **kwargs)
         return builder._build_job_submission()
 
-    @abc.abstractmethod
     def _build_job_submission(self): raise NotImplementedError
     

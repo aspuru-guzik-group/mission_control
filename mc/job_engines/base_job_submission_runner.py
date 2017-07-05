@@ -22,7 +22,10 @@ class BaseJobSubmissionRunner(abc.ABCMeta):
                 and cfg.
         """
         runner = cls(*args, submission_meta=submission_meta, **kwargs)
+        runner.validate_job_params()
         return runner._run_job_submission()
+
+    def validate_job_params(self): pass
 
     @abc.abstractmethod
     def _run_job_submission(self): raise NotImplementedError

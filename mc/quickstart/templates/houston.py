@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import logging
+import pprint
 import os
 import sys
 import time
@@ -26,7 +27,7 @@ sys.path.append(os.path.abspath(os.path.join(THIS_DIR, '..')))
 
 class HoustonCommand(SubcommandCommand):
     subcommands = ['ensure_queues', 'create_flow', 'run_until_completed',
-                   'dump_flows']
+                   'dump_flows', 'flush_mc_db', 'flush_flows']
 
     class SettingsError(Exception): pass
 
@@ -76,8 +77,21 @@ class HoustonCommand(SubcommandCommand):
                     {'task_type': 'print', 'task_params': {'msg': i}}
                     for i in range(3)
                 ],
-                {'task_type': 'tasks.example_countdown',
-                 'task_params': {'countdown_start': 3}}
+                {
+                    'task_type': 'tasks.example_countdown',
+                    'task_params': {'countdown_start': 3}
+                },
+                {
+                    'task_type': 'job',
+                    'task_params': {
+                        'job_spec': {
+                            'job_type': 'job_modules.example_echo',
+                            'job_params': {
+                                'message' :'Hello echo!'
+                            }
+                        }
+                    }
+                }
             ]
         }
         flow_dict = Flow.from_flow_spec(flow_spec=flow_spec).to_flow_dict()
@@ -105,6 +119,10 @@ class HoustonCommand(SubcommandCommand):
             flow_runner.tick()
             job_runner.tick()
             time.sleep(tick_interval)
+        failed_flows = self._get_failed_flows(mc_dao=mc_dao)
+        if failed_flows:
+            raise Exception("Failed flows:\n{failed_flows_dump}".format(
+                failed_flows_dump=pprint.pformat(failed_flows)))
         self.logger.info('Completed.')
 
     def _get_mc_clients(self, mc_dao=None):
@@ -165,6 +183,14 @@ class HoustonCommand(SubcommandCommand):
         return mc_dao.get_items(item_type=item_type,
                                 query={'filters':  [unfinished_filter]})
 
+    def _get_failed_flows(self, mc_dao=None):
+        return self._get_failed_items(mc_dao=mc_dao, item_type='Flow')
+
+    def _get_failed_items(self, mc_dao=None, item_type=None):
+        failed_filter = {'prop': 'status', 'op': '=', 'arg': 'FAILED'}
+        return mc_dao.get_items(item_type=item_type,
+                                query={'filters':  [failed_filter]})
+
     def dump_flows(self, args=None, kwargs=None, unparsed_args=None):
         if 'keys_to_exclude' not in kwargs:
             kwargs = {**kwargs, 'keys_to_exclude': {'graph'}}
@@ -181,13 +207,24 @@ class HoustonCommand(SubcommandCommand):
         keys_to_exclude = keys_to_exclude or {}
         for item in mc_dao.get_items(item_type=item_type):
             if not all([filter_(item) for filter_ in (filters or [])]): continue
-            for key, value in item.items():
-                if key not in keys_to_exclude:
-                    print("{key}: {value}".format(key=key, value=value))
+            self._dump_item(item=item, keys_to_exclude=keys_to_exclude)
             print('-' * 10)
+
+    def _dump_item(self, item=None, keys_to_exclude=None):
+        for key, value in item.items():
+            if key not in keys_to_exclude:
+                print("{key}: {value}".format(key=key, value=value))
 
     def dump_locks(self, args=None, kwargs=None, unparsed_args=None):
         self._dump_items(item_type='Lock', **kwargs)
+
+    def flush_mc_db(self, args=None, kwargs=None, unparsed_args=None):
+        mc_dao = self._get_mc_dao()
+        mc_dao.flush_mc_db()
+
+    def flush_flows(self, args=None, kwargs=None, unparsed_args=None):
+        mc_dao = self._get_mc_dao()
+        mc_dao.delete_items(item_type='Flow')
 
 class HoustonSettings():
     DEFAULT_SETTINGS_FILE_NAME = 'settings.py'

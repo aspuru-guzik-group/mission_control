@@ -5,6 +5,8 @@ import re
 from mc.utils import dot_spec_loader
 
 from .base_task_handler import BaseTaskHandler
+from .flow_task_handler import FlowTaskHandler
+from .job_task_handler import JobTaskHandler
 from .log_task_handler import LogTaskHandler
 from .wire_task_handler import WireTaskHandler
 from .spread_task_handler import SpreadTaskHandler
@@ -123,7 +125,9 @@ class McDefaultTaskHandler(BaseTaskHandler):
 
     def get_handler_for_task_ctx(self, task_ctx=None):
         task_type = self.get_task_type(task_ctx=task_ctx)
-        if task_type == 'log': handler = LogTaskHandler
+        if task_type == 'flow': handler = FlowTaskHandler
+        elif task_type == 'job': handler = JobTaskHandler
+        elif task_type == 'log': handler = LogTaskHandler
         elif task_type == 'noop': handler = NoOpTaskHandler
         elif task_type == 'print': handler = PrintTaskHandler
         elif task_type == 'spread': handler = SpreadTaskHandler
