@@ -12,8 +12,8 @@ class TestExample(unittest.TestCase):
         stdout = subprocess.check_output(cmd, shell=True).decode()
         expected_stdout = textwrap.dedent(
             '''
-            build_job_submission
-            run_job_submission
+            build_jobdir
+            run_jobdir
             '''
         ).lstrip()
         self.assertEqual(stdout, expected_stdout)

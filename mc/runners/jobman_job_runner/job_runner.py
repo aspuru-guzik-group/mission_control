@@ -13,18 +13,18 @@ class JobRunner(object):
                 cause=cause, json_mc_job=json.dumps(mc_job, indent=2))
             super().__init__(self, error, *args, **kwargs)
 
-    def __init__(self, job_record_client=None, submission_factory=None,
+    def __init__(self, job_record_client=None, jobdir_factory=None,
                  jobman=None, max_claims_per_tick=None, logger=None,
                  logging_cfg=None, jobman_source_name=None,
-                 artifact_processor=None, submissions_dir=None, **kwargs):
+                 artifact_processor=None, jobdirs_dir=None, **kwargs):
         self.logger = logger or self._generate_logger(logging_cfg=logging_cfg)
         self.job_record_client = job_record_client
-        self.submission_factory = submission_factory
+        self.jobdir_factory = jobdir_factory
         self.jobman = jobman
         self.max_claims_per_tick = max_claims_per_tick or 3
         self.jobman_source_name = jobman_source_name or 'mc'
         self.artifact_processor = artifact_processor
-        self.submissions_dir = submissions_dir
+        self.jobdirs_dir = jobdirs_dir
 
         self.tick_counter = 0
 
@@ -89,7 +89,7 @@ class JobRunner(object):
             'jobman_job': jobman_job,
             'mc_job': jobman_job['source_meta']['mc_job'],
             'artifact': self.artifact_processor.dir_to_artifact(
-                dir_=jobman_job['submission']['dir']),
+                dir_=jobman_job['jobdir_meta']['dir']),
             'std_logs': self.get_std_log_contents_for_jobman_job(
                 jobman_job=jobman_job),
         }
@@ -101,25 +101,23 @@ class JobRunner(object):
         return parsed_jobman_job
 
     def get_std_log_contents_for_jobman_job(self, jobman_job=None):
-        submission = jobman_job['submission']
+        jobdir_meta = jobman_job['jobdir_meta']
         mc_job = jobman_job['source_meta']['mc_job']
         logs_to_expose = mc_job['job_spec'].get('std_logs_to_expose', [])
         if logs_to_expose == 'all':
-            logs_to_expose = submission.get('std_log_file_names', {}).keys()
-        std_log_contents = self.read_submission_logs(submission=submission,
-                                                     logs=logs_to_expose)
+            logs_to_expose = jobdir_meta.get('std_log_file_names', {}).keys()
+        std_log_contents = self.read_jobdir_logs(jobdir_meta=jobdir_meta,
+                                                 logs=logs_to_expose)
         return std_log_contents
 
-    def read_submission_logs(self, submission=None, logs=None):
+    def read_jobdir_logs(self, jobdir_meta=None, logs=None):
         logs = logs or []
-        return {
-            log: self.read_submission_log(submission=submission, log=log)
-            for log in logs
-        }
+        return {log: self.read_jobdir_log(jobdir_meta=jobdir_meta, log=log)
+                for log in logs}
 
-    def read_submission_log(self, submission=None, log=None):
-        rel_log_path = submission['std_log_file_names'][log]
-        abs_log_path = os.path.join(submission['dir'], rel_log_path)
+    def read_jobdir_log(self, jobdir_meta=None, log=None):
+        rel_log_path = jobdir_meta['std_log_file_names'][log]
+        abs_log_path = os.path.join(jobdir_meta['dir'], rel_log_path)
         if os.path.exists(abs_log_path):
             with open(abs_log_path) as f: return f.read()
 
@@ -183,30 +181,28 @@ class JobRunner(object):
         return min(self.max_claims_per_tick, self.jobman.num_free_slots)
 
     def submit_mc_job(self, mc_job=None):
-        self.jobman.submit_job(
-            submission=self.build_job_submission(mc_job=mc_job),
+        self.jobman.submit_jobdir(
+            jobdir_meta=self.build_jobdir(mc_job=mc_job),
             source=self.jobman_source_name,
             source_meta={'mc_job': mc_job}
         )
 
-    def build_job_submission(self, mc_job=None):
-        submission_dir = tempfile.mkdtemp(
-            prefix=self.get_submission_dir_prefix(mc_job=mc_job),
-            dir=self.submissions_dir
-        )
-        self.prepare_job_inputs(mc_job=mc_job, submission_dir=submission_dir)
-        submission = self.submission_factory.build_job_submission(
-            job=mc_job, output_dir=submission_dir)
-        return submission
+    def build_jobdir(self, mc_job=None):
+        jobdir = tempfile.mkdtemp(prefix=self.get_jobdir_prefix(mc_job=mc_job),
+                                  dir=self.jobdirs_dir)
+        self.prepare_job_inputs(mc_job=mc_job, jobdir=jobdir)
+        jobdir_meta = self.jobdir_factory.build_jobdir(job=mc_job,
+                                                       output_dir=jobdir)
+        return jobdir_meta
 
-    def get_submission_dir_prefix(self, mc_job=None):
+    def get_jobdir_prefix(self, mc_job=None):
         return 'sf.{job_type}.{now}.'.format(
             job_type=mc_job["job_spec"]["job_type"],
             now=datetime.datetime.now().isoformat()
         )
 
-    def prepare_job_inputs(self, mc_job=None, submission_dir=None):
-        inputs_dir = os.path.join(submission_dir, 'inputs')
+    def prepare_job_inputs(self, mc_job=None, jobdir=None):
+        inputs_dir = os.path.join(jobdir, 'inputs')
         os.makedirs(inputs_dir, exist_ok=True)
         artifacts = mc_job['job_spec'].get('inputs', {}).get('artifacts', {})
         for artifact_key, artifact in artifacts.items():

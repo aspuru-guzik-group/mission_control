@@ -8,7 +8,7 @@ def main():
     flow = flow_engine.flow_spec_to_flow(flow_spec=flow_spec)
     flow_record = sandbox.mc_dao.create_item(
         item_type='Flow',
-        kwargs=flow_engine.flow_to_flow_dict(flow=flow)
+        item_kwargs=flow_engine.flow_to_flow_dict(flow=flow)
     )
     flow_key = flow_record['key']
 

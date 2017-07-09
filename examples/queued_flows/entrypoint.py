@@ -9,7 +9,7 @@ def main():
 
     queue_record = mc_dao.create_item(
         item_type='Queue',
-        kwargs={'queue_spec': {'item_type': 'Flow'}
+        item_kwargs={'queue_spec': {'item_type': 'Flow'}
     })
     queue_key = queue_record['key']
 
@@ -39,7 +39,7 @@ def create_flows(mc_dao=None, flow_engine=None, n=3):
         })
         flow = flow_engine.flow_spec_to_flow(flow_spec=flow_spec)
         mc_dao.create_item(item_type='Flow',
-                           kwargs=flow_engine.flow_to_flow_dict(flow=flow))
+                           item_kwargs=flow_engine.flow_to_flow_dict(flow=flow))
 
 def generate_flow_spec(params=None):
     msg_tpl = "I am task '{task_id}' in flow '{flow_id}'"

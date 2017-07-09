@@ -30,7 +30,7 @@ class McSandbox(object):
         return {
             item_type: self.mc_dao.create_item(
                 item_type='Queue',
-                kwargs={'queue_spec': {'item_type': item_type}
+                item_kwargs={'queue_spec': {'item_type': item_type}
             })
             for item_type in ['Flow', 'Job']
         }

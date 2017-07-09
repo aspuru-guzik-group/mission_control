@@ -4,8 +4,8 @@ import mc.job_engines.cli
 from mc.job_engines.submission_builders.bash import BashSubmissionBuilder
 
 
-def build_job_submission(*args, output_dir=None, **kwargs):
-    print("build_job_submission")
+def build_jobdir(*args, output_dir=None, **kwargs):
+    print("build_jobdir")
     submission_meta = BashSubmissionBuilder().build_submission(
         submission_spec={
             'env_vars': [('PYTHONPATH', '$PYTHONPATH:' +':'.join(sys.path))],
@@ -20,11 +20,11 @@ def build_job_submission(*args, output_dir=None, **kwargs):
     )
     return submission_meta
 
-def run_job_submission(*args, submission_meta=None, **kwargs):
+def run_jobdir(*args, submission_meta=None, **kwargs):
     for log_name in ['stdout', 'stderr']:
         log_path = os.path.join(
             submission_meta['dir'],
             submission_meta['std_log_file_names'][log_name]
         )
         with open(log_path, 'w') as log:
-            log.write("run_job_submission:%s" % log_name)
+            log.write("run_jobdir:%s" % log_name)

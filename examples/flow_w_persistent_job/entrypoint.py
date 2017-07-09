@@ -38,7 +38,7 @@ def setup_task_ctx(mc_dao=None):
             job_kwargs = {**(job_kwargs or {}), 'data': {},
                           'status': 'PENDING'}
             job_record = self.mc_dao.create_item(item_type='Job',
-                                                 kwargs=job_kwargs)
+                                                 item_kwargs=job_kwargs)
             job_meta = {'key': job_record['key']}
             return job_meta
 
