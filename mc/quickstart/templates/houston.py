@@ -85,11 +85,9 @@ class HoustonCommand(SubcommandCommand):
                 {
                     'task_type': 'job',
                     'task_params': {
-                        'job_spec': {
-                            'job_type': 'job_modules.example_echo',
-                            'job_params': {
-                                'message' :'Hello echo!'
-                            }
+                        'job_type': 'job_modules.example_echo',
+                        'job_params': {
+                            'message' :'Hello echo!'
                         }
                     }
                 }

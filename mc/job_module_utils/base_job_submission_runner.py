@@ -69,8 +69,7 @@ class BaseJobSubmissionRunner(object):
     @property
     def job_params(self):
         if not hasattr(self, '_job_params'):
-            self.job_params = \
-                    self.submission_meta['job']['job_spec']['job_params']
+            self.job_params = self.submission_meta['job']['job_params']
         return self._job_params
 
     @job_params.setter

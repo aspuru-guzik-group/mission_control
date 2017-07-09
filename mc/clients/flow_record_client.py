@@ -26,7 +26,7 @@ class FlowRecordClient(object):
         flow_record = self.mc_dao.create_item(item_type='Flow',
                                               item_kwargs=flow_kwargs)
         if self.use_locks:
-            parent_key = flow_kwargs.get('data', {}).get('parent_key')
+            parent_key = flow_kwargs.get('parent_key')
             if parent_key: self.mc_dao.create_lock(
                 lockee_key=parent_key, locker_key=flow_record['key'])
         flow_meta = {'key': flow_record['key']}

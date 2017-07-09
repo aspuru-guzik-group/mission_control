@@ -24,6 +24,7 @@ def generate_schema():
         generate_json_column('cfg'),
         generate_json_column('data'),
         generate_json_column('graph'),
+        generate_fkey_column('parent_key'),
         generate_int_column('num_tickable_tasks'),
         generate_int_column('depth'),
         generate_claimed_column(),
@@ -33,7 +34,11 @@ def generate_schema():
         generate_table_name('job'), metadata,
         generate_key_column(),
         generate_label_column(),
-        generate_json_column('job_spec'),
+        generate_str_column('job_type', length=512),
+        generate_json_column('job_params'),
+        generate_json_column('job_inputs'),
+        generate_fkey_column('parent_key'),
+        generate_json_column('cfg'),
         generate_json_column('data'),
         generate_status_column(),
         generate_claimed_column(),
@@ -63,16 +68,21 @@ def generate_table_name(table_name=None):
     return '{table_ns}_{table_name}'.format(table_ns='mc_models',
                                             table_name=table_name)
 
+KEY_LENGTH = 36
 def str_uuid(): return str(uuid.uuid4())
 def generate_key_column(column_name='key', **kwargs):
     return generate_str_column(
-        column_name=column_name, length=36,
+        column_name=column_name, length=KEY_LENGTH,
         **{'primary_key': True, 'default': str_uuid, **kwargs}
     )
 
 def generate_str_column(column_name=None, length=None, **kwargs):
     assert column_name is not None
     return Column(column_name, _sa_types.String(length=length), **kwargs)
+
+def generate_fkey_column(column_name=None, **kwargs):
+    return generate_str_column(column_name=column_name, length=KEY_LENGTH,
+                               **kwargs)
 
 def generate_label_column(column_name='label', **kwargs):
     return Column(column_name, _sa_types.String(length=1024),

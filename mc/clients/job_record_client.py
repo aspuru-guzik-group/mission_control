@@ -25,7 +25,7 @@ class JobRecordClient(object):
         job_record = self.mc_dao.create_item(item_type='Job',
                                              item_kwargs=job_kwargs)
         if self.use_locks:
-            parent_key = job_kwargs.get('data', {}).get('parent_key')
+            parent_key = job_kwargs.get('parent_key')
             if parent_key:
                 self.mc_dao.create_lock(lockee_key=parent_key,
                                         locker_key=job_record['key'])

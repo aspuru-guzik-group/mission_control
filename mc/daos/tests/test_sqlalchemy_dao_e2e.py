@@ -39,7 +39,10 @@ class JobTestCase(BaseTestCase):
         self.job_kwargs = {
             'label': 'initial_label',
             'data': {'some': 'data'},
-            'job_spec': {'some': 'job_spec'}
+            'job_type': 'some.job_type',
+            'job_params': {'some': 'job_params'},
+            'cfg': {'some': 'cfg'},
+            'parent_key': 'some_parent_key',
         }
 
     def _create_job(self):
@@ -56,7 +59,10 @@ class JobTestCase(BaseTestCase):
         patches = {
             'label': 'label2',
             'data': {'some': 'data2'},
-            'job_spec': {'some': 'job_spec2'},
+            'job_type': 'some.job_type2',
+            'job_params': {'some': 'job_params2'},
+            'cfg': {'some': 'cfg2'},
+            'parent_key': 'some_parent_key2',
         }
         patched_job = self.dao.patch_item(
             item_type='Job', key=created_job['key'], patches=patches)

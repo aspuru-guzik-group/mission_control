@@ -65,5 +65,5 @@ class DefaultJobModuleLoader(object):
         with open(dill_path, 'rb') as f: return dill.load(f)
 
     def get_job_module_name(self, job=None, cfg=None):
-        module_name = job['job_spec']['job_type']
+        module_name = job['job_type']
         return module_name

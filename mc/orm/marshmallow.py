@@ -34,9 +34,11 @@ def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
     class FlowSchema(Schema):
         key = sa_column_to_marshmallow_field(flow_table.columns['key'])
         label = sa_column_to_marshmallow_field(flow_table.columns['label'])
-        data = sa_column_to_marshmallow_field(flow_table.columns['data'])
-        graph = sa_column_to_marshmallow_field(flow_table.columns['graph'])
         cfg = sa_column_to_marshmallow_field(flow_table.columns['cfg'])
+        data = sa_column_to_marshmallow_field(flow_table.columns['data'])
+        parent_key = sa_column_to_marshmallow_field(
+            flow_table.columns['parent_key'])
+        graph = sa_column_to_marshmallow_field(flow_table.columns['graph'])
         status = sa_column_to_marshmallow_field(flow_table.columns['status'])
         num_tickable_tasks = sa_column_to_marshmallow_field(
             flow_table.columns['num_tickable_tasks'])
@@ -45,8 +47,9 @@ def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
         created = sa_column_to_marshmallow_field(flow_table.columns['created'])
         modified = sa_column_to_marshmallow_field(flow_table.columns['modified'])
         class Meta:
-            fields = ['key', 'label', 'graph', 'status', 'claimed', 'depth',
-                      'created', 'modified', 'num_tickable_tasks']
+            fields = ['key', 'label', 'cfg', 'data', 'parent_key', 'graph',
+                      'status', 'claimed', 'depth', 'created', 'modified',
+                      'num_tickable_tasks']
             dump_only = common_dump_only_fields
     marshmallow_schemas['Flow'] = FlowSchema()
 
@@ -54,14 +57,22 @@ def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
     class JobSchema(Schema):
         key = sa_column_to_marshmallow_field(job_table.columns['key'])
         label = sa_column_to_marshmallow_field(job_table.columns['label'])
-        job_spec = sa_column_to_marshmallow_field(job_table.columns['job_spec'])
+        job_type = sa_column_to_marshmallow_field(job_table.columns['job_type'])
+        job_params = sa_column_to_marshmallow_field(
+            job_table.columns['job_params'])
+        job_inputs = sa_column_to_marshmallow_field(
+            job_table.columns['job_inputs'])
+        cfg = sa_column_to_marshmallow_field(job_table.columns['cfg'])
         data = sa_column_to_marshmallow_field(job_table.columns['data'])
+        parent_key = sa_column_to_marshmallow_field(
+            flow_table.columns['parent_key'])
         status = sa_column_to_marshmallow_field(job_table.columns['status'])
         claimed = sa_column_to_marshmallow_field(job_table.columns['claimed'])
         created = sa_column_to_marshmallow_field(job_table.columns['created'])
         modified = sa_column_to_marshmallow_field(job_table.columns['modified'])
         class Meta:
-            fields = ['key', 'label', 'job_spec', 'data', 'status', 'claimed',
+            fields = ['key', 'label', 'job_type', 'job_params', 'job_inputs',
+                      'cfg', 'data', 'parent_key', 'status', 'claimed',
                       'created', 'modified']
             dump_only_fields = common_dump_only_fields
     marshmallow_schemas['Job'] = JobSchema()

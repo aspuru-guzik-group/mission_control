@@ -89,7 +89,7 @@ class JobRunner(object):
             'jobman_job': jobman_job,
             'mc_job': jobman_job['source_meta']['mc_job'],
             'artifact': self.artifact_processor.dir_to_artifact(
-                dir_=jobman_job['jobdir_meta']['dir']),
+                dir_=jobman_job['job_spec']['dir']),
             'std_logs': self.get_std_log_contents_for_jobman_job(
                 jobman_job=jobman_job),
         }
@@ -101,23 +101,23 @@ class JobRunner(object):
         return parsed_jobman_job
 
     def get_std_log_contents_for_jobman_job(self, jobman_job=None):
-        jobdir_meta = jobman_job['jobdir_meta']
+        job_spec = jobman_job['job_spec']
         mc_job = jobman_job['source_meta']['mc_job']
-        logs_to_expose = mc_job['job_spec'].get('std_logs_to_expose', [])
+        logs_to_expose = mc_job.get('cfg', {}).get('std_logs_to_expose') or []
         if logs_to_expose == 'all':
-            logs_to_expose = jobdir_meta.get('std_log_file_names', {}).keys()
-        std_log_contents = self.read_jobdir_logs(jobdir_meta=jobdir_meta,
+            logs_to_expose = job_spec.get('std_log_file_names', {}).keys()
+        std_log_contents = self.read_jobdir_logs(job_spec=job_spec,
                                                  logs=logs_to_expose)
         return std_log_contents
 
-    def read_jobdir_logs(self, jobdir_meta=None, logs=None):
+    def read_jobdir_logs(self, job_spec=None, logs=None):
         logs = logs or []
-        return {log: self.read_jobdir_log(jobdir_meta=jobdir_meta, log=log)
+        return {log: self.read_jobdir_log(job_spec=job_spec, log=log)
                 for log in logs}
 
-    def read_jobdir_log(self, jobdir_meta=None, log=None):
-        rel_log_path = jobdir_meta['std_log_file_names'][log]
-        abs_log_path = os.path.join(jobdir_meta['dir'], rel_log_path)
+    def read_jobdir_log(self, job_spec=None, log=None):
+        rel_log_path = job_spec['std_log_file_names'][log]
+        abs_log_path = os.path.join(job_spec['dir'], rel_log_path)
         if os.path.exists(abs_log_path):
             with open(abs_log_path) as f: return f.read()
 
@@ -182,7 +182,7 @@ class JobRunner(object):
 
     def submit_mc_job(self, mc_job=None):
         self.jobman.submit_jobdir(
-            jobdir_meta=self.build_jobdir(mc_job=mc_job),
+            job_spec=self.build_jobdir(mc_job=mc_job),
             source=self.jobman_source_name,
             source_meta={'mc_job': mc_job}
         )
@@ -191,20 +191,20 @@ class JobRunner(object):
         jobdir = tempfile.mkdtemp(prefix=self.get_jobdir_prefix(mc_job=mc_job),
                                   dir=self.jobdirs_dir)
         self.prepare_job_inputs(mc_job=mc_job, jobdir=jobdir)
-        jobdir_meta = self.jobdir_factory.build_jobdir(job=mc_job,
-                                                       output_dir=jobdir)
-        return jobdir_meta
+        job_spec = self.jobdir_factory.build_jobdir(job=mc_job,
+                                                    output_dir=jobdir)
+        return job_spec
 
     def get_jobdir_prefix(self, mc_job=None):
         return 'sf.{job_type}.{now}.'.format(
-            job_type=mc_job["job_spec"]["job_type"],
+            job_type=mc_job['job_type'],
             now=datetime.datetime.now().isoformat()
         )
 
     def prepare_job_inputs(self, mc_job=None, jobdir=None):
         inputs_dir = os.path.join(jobdir, 'inputs')
         os.makedirs(inputs_dir, exist_ok=True)
-        artifacts = mc_job['job_spec'].get('inputs', {}).get('artifacts', {})
+        artifacts = mc_job.get('job_inputs', {}).get('artifacts') or  {}
         for artifact_key, artifact in artifacts.items():
             dest = os.path.join(inputs_dir, artifact_key)
             self.artifact_processor.artifact_to_dir(

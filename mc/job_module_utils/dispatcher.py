@@ -8,7 +8,7 @@ from .default_job_module_loader import DefaultJobModuleLoader
 
 
 class JobModuleCommandDispatcher(object):
-    JOBDIR_META_NAME = constants.JOBDIR_META_NAME
+    JOB_SPEC_NAME = constants.JOB_SPEC_NAME
 
     def __init__(self, job_module_loader=None, logger=None):
         """
@@ -29,39 +29,37 @@ class JobModuleCommandDispatcher(object):
             output_dir (str): dir in which to put job files.
 
         Returns:
-            jobdir_meta (dict): dict of jobdir_meta.
-
+            job_spec (dict): a spec that describes where the built dir is,
+                and how to run it.
         """
         output_dir = output_dir or tempfile.mkdtemp()
         os.makedirs(output_dir, exist_ok=True)
         job_module = self.job_module_loader.load_job_module(job=job, cfg=cfg)
-        jobdir_meta_from_module = job_module.build_jobdir(
+        job_spec = job_module.build_jobdir(
             job=job, cfg=cfg, output_dir=output_dir, **kwargs) or {}
-        jobdir_meta = {'job': job, 'cfg': cfg, 'dir': output_dir,
-                           **jobdir_meta_from_module}
-        self._write_jobdir_meta(jobdir_meta=jobdir_meta,
-                                    dir_=output_dir)
-        return jobdir_meta
+        job_spec = {'job': job, 'cfg': cfg, 'dir': output_dir, **job_spec}
+        self._write_job_spec(job_spec=job_spec, dir_=output_dir)
+        return job_spec
 
-    def _write_jobdir_meta(self, jobdir_meta=None, dir_=None):
-        jobdir_meta_path = os.path.join(dir_, self.JOBDIR_META_NAME)
-        with open(jobdir_meta_path, 'w') as f: json.dump(jobdir_meta, f)
+    def _write_job_spec(self, job_spec=None, dir_=None):
+        job_spec_path = os.path.join(dir_, self.JOB_SPEC_NAME)
+        with open(job_spec_path, 'w') as f: json.dump(job_spec, f)
 
     def run_jobdir(self, jobdir=None):
         """Run a jobdir.
 
         Args:
             jobdir (str): path to jobdir. This dir should
-                contain the jobdir_meta file '{JOBDIR_META_NAME}'
+                contain the job_spec file '{JOB_SPEC_NAME}'
              (str): path to jobdir. This dir should
-                contain the jobdir_meta file '{JOBDIR_META_NAME}'
-        """.format(JOBDIR_META_NAME=self.JOBDIR_META_NAME)
-        jobdir_meta = self._read_jobdir_meta(dir_=jobdir)
-        job = jobdir_meta['job']
+                contain the job_spec file '{JOB_SPEC_NAME}'
+        """.format(JOB_SPEC_NAME=self.JOB_SPEC_NAME)
+        job_spec = self._read_job_spec(dir_=jobdir)
+        job = job_spec['job']
         job_module = self.job_module_loader.load_job_module(job=job)
-        return job_module.run_jobdir(jobdir_meta=jobdir_meta)
+        return job_module.run_jobdir(job_spec=job_spec)
 
-    def _read_jobdir_meta(self, dir_=None):
-        """Read jobdir_meta from a submission dir."""
-        jobdir_meta_path = os.path.join(dir_, self.JOBDIR_META_NAME)
-        with open(jobdir_meta_path) as f: return json.load(f)
+    def _read_job_spec(self, dir_=None):
+        """Read job_spec from a submission dir."""
+        job_spec_path = os.path.join(dir_, self.JOB_SPEC_NAME)
+        with open(job_spec_path) as f: return json.load(f)

@@ -32,8 +32,7 @@ class JobSubmissionRunner(BaseJobSubmissionRunner):
         return workdir_meta
 
     def get_workdir_params(self):
-        job_params = self.submission_meta['job']['job_spec']['job_params']
-        workdir_params = {'message': job_params.get('message')}
+        workdir_params = {'message': self.job_params.get('message')}
         return workdir_params
 
     def run_workdir(self, workdir_meta=None):

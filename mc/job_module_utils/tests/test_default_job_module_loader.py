@@ -20,6 +20,6 @@ class DefaultJobModuleLoaderCase(BaseTestCase):
                          call(self.loader.get_job_module_name.return_value))
         self.assertEqual(result, patched_importlib.import_module.return_value)
 
-    def test_gets_job_module_name_from_job_spec(self):
+    def test_gets_job_module_name_from_job_type(self):
         result = self.loader.get_job_module_name(job=self.job)
-        self.assertEqual(result, self.job['job_spec']['job_type'])
+        self.assertEqual(result, self.job['job_type'])

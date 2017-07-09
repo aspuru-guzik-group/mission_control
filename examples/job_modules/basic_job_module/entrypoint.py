@@ -5,8 +5,8 @@ def main():
     job_module_loader = setup_job_module_loader(job_module=job_module)
     dispatcher = JobModuleCommandDispatcher(job_module_loader=job_module_loader)
     job = {'key': 'some_job'}
-    jobdir_meta = dispatcher.build_jobdir(job=job)
-    dispatcher.run_jobdir(jobdir=jobdir_meta['dir'])
+    job_spec = dispatcher.build_jobdir(job=job)
+    dispatcher.run_jobdir(jobdir=job_spec['dir'])
 
 def setup_job_module():
     class MyJobModule:

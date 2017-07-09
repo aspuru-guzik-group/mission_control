@@ -12,9 +12,9 @@ class TestExample(unittest.TestCase):
         stdout = subprocess.check_output(cmd, shell=True).decode()
         expected_stdout = textwrap.dedent(
             '''
-            running job 'job_0'
-            running job 'job_2'
-            running job 'job_1'
+            running job 'job.0'
+            running job 'job.2'
+            running job 'job.1'
             No more flows to claim.
             '''
         ).lstrip()

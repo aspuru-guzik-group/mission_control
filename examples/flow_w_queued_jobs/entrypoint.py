@@ -19,17 +19,17 @@ def generate_flow_spec():
         'tasks': []
     }
     for i in range(3):
-        job_id = 'job_%s' % i
+        job_type = 'job.%s' % i
         flow_spec['tasks'].append({
-            'key': 'job_{job_id}_task'.format(job_id=job_id),
+            'key': 'job_{job_type}_task'.format(job_type=job_type),
             'task_type': 'mc.tasks.job',
-            'task_params': {'job_spec': {'job_id': job_id}},
+            'task_params': {'job_type': job_type},
             'precursors': ['ROOT'],
         })
     return flow_spec
 
 def run_job(job=None, mc_dao=None):
-    print("running job '{job_id}'".format(job_id=job['job_spec']['job_id']))
+    print("running job '{job_type}'".format(job_type=job['job_type']))
     job['status'] = 'COMPLETED'
     mc_dao.patch_item(item_type='Job', key=job['key'], patches={
         'data': job['data'],
