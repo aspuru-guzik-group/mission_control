@@ -1,7 +1,7 @@
 import argparse
 
 from mc.utils.commands.subcommand_command import SubcommandCommand
-from .dispatcher import JobModuleCommandDispatcher
+from .job_module_command_dispatcher import JobModuleCommandDispatcher
 
 
 class JobModuleCliCommand(SubcommandCommand):
