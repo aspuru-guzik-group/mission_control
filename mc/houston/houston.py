@@ -26,8 +26,8 @@ class HoustonCommand(SubcommandCommand):
         return logger
 
     def _get_default_subcommands_registry(self):
-        from .subcommands import registry
-        return registry.subcommands_registry
+        from .subcommands.registry import SubcommandRegistry
+        return SubcommandRegistry()
 
     def _get_cfg(self):
         if not hasattr(self, '_houston_cfg'):
