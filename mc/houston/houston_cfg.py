@@ -3,12 +3,11 @@ import os
 from mc.utils import import_utils
 
 class HoustonCfg():
-    def __init__(self, cfg_file_path=...):
+    def __init__(self, cfg_path=...):
         self._cfg = {}
         self._sources = [self._cfg]
-        if cfg_file_path is not ...:
-            cfg_file_source = self._generate_source_for_file(
-                path=cfg_file_path)
+        if cfg_path is not ...:
+            cfg_file_source = self._generate_source_for_file(path=cfg_path)
             self._sources.append(cfg_file_source)
         self._sources.append(os.environ)
 

@@ -27,6 +27,12 @@ class _RunTestCase(BaseTestCase):
                                              '_tick_jobman'])
         self.subcommand._run()
 
+    def test_ensures_db(self):
+        self.assertEqual(self.subcommand.utils.ensure_db.call_args, call())
+
+    def test_ensures_queues(self):
+        self.assertEqual(self.subcommand.utils.ensure_queues.call_args, call())
+
     def test_ticks_flow_runner(self):
         self.assertEqual(self.subcommand._tick_flow_runner.call_args, call())
 
@@ -41,40 +47,23 @@ class _TickFlowRunnerTestCase(BaseTestCase):
         super().setUp()
         self.subcommand._tick_flow_runner()
 
-    def test_gets_flow_runner_via_utils(self):
-        self.assertEqual(self.subcommand.utils.get_flow_runner.call_args,
-                         call())
-
     def test_ticks_flow_runner(self):
-        self.assertEqual(
-            self.subcommand.utils.get_flow_runner.return_value.tick.call_args,
-            call()
-        )
+        self.assertEqual(self.subcommand.utils.flow_runner.tick.call_args,
+                         call())
 
 class _TickJobRunnerTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.subcommand._tick_job_runner()
 
-    def test_gets_job_runner_via_utils(self):
-        self.assertEqual(self.subcommand.utils.get_job_runner.call_args, call())
-
     def test_ticks_job_runner(self):
-        self.assertEqual(
-            self.subcommand.utils.get_job_runner.return_value.tick.call_args,
-            call()
-        )
+        self.assertEqual(self.subcommand.utils.job_runner.tick.call_args,
+                         call())
 
 class _TickJobManTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.subcommand._tick_jobman()
 
-    def test_gets_jobman_via_utils(self):
-        self.assertEqual(self.subcommand.utils.get_jobman.call_args, call())
-
     def test_ticks_jobman(self):
-        self.assertEqual(
-            self.subcommand.utils.get_jobman.return_value.tick.call_args,
-            call()
-        )
+        self.assertEqual(self.subcommand.utils.jobman.tick.call_args, call())

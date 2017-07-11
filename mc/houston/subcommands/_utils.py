@@ -11,8 +11,8 @@ from mc.utils import import_utils
 
 
 class HoustonSubcommandUtils(object):
-    def __init__(self, get_cfg=None):
-        self.get_cfg = get_cfg
+    def __init__(self, load_cfg=None):
+        self.load_cfg = load_cfg
 
         self._cfg = ...
         self._mc_dao = ...
@@ -26,14 +26,31 @@ class HoustonSubcommandUtils(object):
 
     @property
     def cfg(self):
-        if self._cfg is ...: self._cfg = self.get_cfg()
+        if self._cfg is ...: self._cfg = self.load_cfg()
         return self._cfg
+
+    def ensure_db(self): self.mc_dao.ensure_tables()
+
+    def ensure_queues(self):
+        self.ensure_queue(queue_cfg=self.cfg['FLOW_QUEUE'])
+        self.ensure_queue(queue_cfg=self.cfg['JOB_QUEUE'])
+
+    def ensure_queue(self, queue_cfg=None):
+        try: self.mc_dao.get_item_by_key(item_type='Queue',
+                                         key=queue_cfg['key'])
+        except self.mc_dao.ItemNotFoundError:
+            self.mc_dao.create_item(
+                item_type='Queue',
+                item_kwargs={
+                    'key': queue_cfg['key'],
+                    **queue_cfg.get('queue_kwargs', {})
+                }
+            )
 
     @property
     def mc_dao(self):
         if self._mc_dao is ...: 
             self._mc_dao = _McSqlAlchemyDao(db_uri=self.cfg['MC_DB_URI'])
-            self._mc_dao.ensure_tables()
         return self._mc_dao
 
     @mc_dao.setter
@@ -57,11 +74,7 @@ class HoustonSubcommandUtils(object):
     @property
     def flow_record_client(self):
         if self._flow_record_client is ...:
-            self._flow_record_client = FlowRecordClient(
-                mc_dao=self.mc_dao,
-                use_locks=self.cfg.get('USE_LOCKS', True),
-                queue_key=self.cfg['FLOW_QUEUE_KEY']
-            )
+            self._flow_record_client = self._get_mc_client(record_type='Flow')
         return self._flow_record_client
 
     @flow_record_client.setter
@@ -71,12 +84,18 @@ class HoustonSubcommandUtils(object):
     @property
     def job_record_client(self):
         if self._job_record_client is ...:
-            self._job_record_client = JobRecordClient(
-                mc_dao=self.mc_dao,
-                use_locks=self.cfg.get('USE_LOCKS', True),
-                queue_key=self.cfg['JOB_QUEUE_KEY']
-            )
+            self._job_record_client = self._get_mc_client(record_type='Job')
         return self._job_record_client
+
+    def _get_mc_client(self, record_type=None):
+        client_cls = None
+        if record_type == 'Flow': client_cls = FlowRecordClient
+        elif record_type == 'Job': client_cls = JobRecordClient
+        assert client_cls is not None
+        queue_cfg = self.cfg[record_type.upper() + '_QUEUE']
+        return client_cls(mc_dao=self.mc_dao,
+                          use_locks=self.cfg.get('USE_LOCKS', True),
+                          queue_key=queue_cfg['key'])
 
     @job_record_client.setter
     def job_record_client(self, new_value): self._job_record_client = new_value

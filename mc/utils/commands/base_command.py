@@ -2,51 +2,14 @@
 Base classes for writing commands.
 Adapted from django.core.management.base.py
 """
-import argparse
 import io
 import os
 import sys
 
 import mc
 from . import color
-
-
-class CommandError(Exception):
-    """
-    Exception class indicating a problem while executing a management
-    command.
-
-    If this exception is raised during the execution of a management
-    command, it will be caught and turned into a nicely-printed error
-    message to the appropriate output stream (i.e., stderr); as a
-    result, raising this exception (with a sensible description of the
-    error) is the preferred way to indicate that something has gone
-    wrong in the execution of a command.
-    """
-    pass
-
-class CommandParser(argparse.ArgumentParser):
-    """
-    Customized ArgumentParser class to improve some error messages and prevent
-    SystemExit in several occasions, as SystemExit is unacceptable when a
-    command is called programmatically.
-    """
-    def __init__(self, cmd=None, **kwargs):
-        self.cmd = cmd
-        super().__init__(**kwargs)
-
-    def parse_args(self, args=None, namespace=None):
-        # Catch missing argument for a better error message
-        if (hasattr(self.cmd, 'missing_args_message') and
-                not (args or any(not arg.startswith('-') for arg in args))):
-            self.error(self.cmd.missing_args_message)
-        return super().parse_args(args, namespace)
-
-    def error(self, message):
-        if self.cmd._called_from_command_line:
-            super().error(message)
-        else:
-            raise CommandError("Error: %s" % message)
+from .errors import CommandError
+from .command_parser import CommandParser
 
 
 def handle_default_options(options):
@@ -55,8 +18,7 @@ def handle_default_options(options):
     so that ManagementUtility can handle them before searching for
     user commands.
     """
-    if options.pythonpath:
-        sys.path.insert(0, options.pythonpath)
+    if options.pythonpath: sys.path.insert(0, options.pythonpath)
 
 
 class OutputWrapper(io.TextIOBase):
@@ -166,8 +128,9 @@ class BaseCommand:
         Create and return the ``ArgumentParser`` which will be used to
         parse the arguments to this command.
         """
-        parser = CommandParser(self, prog="%s" % (os.path.basename(prog_name)),
-                               description=self.help or None)
+        parser_cls = self.get_base_parser_cls()
+        parser = parser_cls(self, prog="%s" % (os.path.basename(prog_name)),
+                            description=self.help or None)
         parser.add_argument('--version', action='version',
                             version=self.get_version())
         parser.add_argument(
@@ -183,6 +146,8 @@ class BaseCommand:
         )
         self.add_arguments(parser=parser)
         return parser
+
+    def get_base_parser_cls(self): return CommandParser
 
     def add_arguments(self, parser=None):
         """
