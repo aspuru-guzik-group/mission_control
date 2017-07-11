@@ -11,22 +11,24 @@ class BaseTestCase(unittest.TestCase):
         self.jobman = MagicMock()
         self.job_runner = job_runner.JobRunner(
             job_record_client=MagicMock(),
-            jobdir_factory=MagicMock(),
+            build_jobdir_fn=MagicMock(),
             jobman=MagicMock(),
             jobman_source_name=MagicMock(),
-            artifact_processor=MagicMock(),
+            artifact_handler=MagicMock(),
         )
 
 def TickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        for attr in ['process_executed_jobs, fill_jobman_queue']:
+        for attr in ['process_unprocessed_finished_jobs, fill_jobman_queue']:
             setattr(self.job_runner, attr, MagicMock())
         self.job_runner.tick()
 
-    def test_processes_executed_jobs(self):
-        self.assertEqual(self.job_runner.process_executed_jobs.call_args,
-                         call())
+    def test_processes_unprocessed_finished_jobs(self):
+        self.assertEqual(
+            self.job_runner.process_unprocessed_finished_jobs.call_args,
+            call()
+        )
 
     def test_fills_jobman_queue(self):
         self.assertEqual(self.job_runner.fill_jobman_queue.call_args, call())
@@ -34,22 +36,25 @@ def TickTestCase(BaseTestCase):
     def test_returns_tick_stats(self):
         self.fail()
 
-class ProcessExecutedJobsTestCase(BaseTestCase):
+class ProcessFinishedJobsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        for attr in ['get_executed_jobman_jobs', 'parse_jobman_jobs',
-                     'parsed_jobman_jobs_to_keyed_patches', 'patch_job_records',
-                     'finalize_jobman_jobs']:
+        for attr in ['get_unprocessed_finished_jobman_jobs',
+                     'parse_jobman_jobs', 'parsed_jobman_jobs_to_keyed_patches',
+                     'patch_job_records', 'finalize_jobman_jobs']:
             setattr(self.job_runner, attr, MagicMock())
-        self.result = self.job_runner.process_executed_jobs()
+        self.result = self.job_runner.process_finished_jobs()
 
-    def test_parses_executed_jobman_jobs(self):
-        self.assertEqual(self.job_runner.get_executed_jobman_jobs.call_args,
-                         call())
+    def test_parses_jobman_jobs(self):
+        self.assertEqual(
+            self.job_runner.get_unprocessed_finished_jobman_jobs.call_args,
+            call()
+        )
         self.assertEqual(
             self.job_runner.parse_jobman_jobs.call_args,
-            call(jobman_jobs=\
-                 self.job_runner.get_executed_jobman_jobs.return_value)
+            call(jobman_jobs=(self.job_runner
+                              .get_unprocessed_finished_jobman_jobs
+                              .return_value))
         )
 
     def test_posts_keyed_patches(self):
@@ -67,27 +72,31 @@ class ProcessExecutedJobsTestCase(BaseTestCase):
     def test_finalizes_jobman_jobs(self):
         self.assertEqual(
             self.job_runner.finalize_jobman_jobs.call_args,
-            call(jobman_jobs=\
-                 self.job_runner.get_executed_jobman_jobs.return_value))
+            call(jobman_jobs=(self.job_runner
+                              .get_unprocessed_finished_jobman_jobs
+                              .return_value))
+        )
 
     def test_returns_stats(self):
         expected_stats = {
-            'executed': len(
-                self.job_runner.get_executed_jobman_jobs.return_value)
+            'finished': len(self.job_runner
+                            .get_unprocessed_finished_jobman_jobs.return_value)
         }
         self.assertEqual(self.result, expected_stats)
 
-class GetExecutedJobmanJobsTestCase(BaseTestCase):
+class GetUnprocessedFinishedJobmanJobsTestCase(BaseTestCase):
     def test_dispatches_to_jobman(self):
-        result = self.job_runner.get_executed_jobman_jobs()
+        result = self.job_runner.get_unprocessed_finished_jobman_jobs()
         self.assertEqual(
             self.job_runner.jobman.get_jobs.call_args,
             call(query={
                 'filters': [
-                    {'field': 'status', 'operator': 'IN',
-                     'value': ['EXECUTED', 'FAILED']},
-                    {'field': 'source', 'operator': '=',
-                     'value': self.job_runner.jobman_source_name},
+                    {'field': 'status', 'op': 'IN',
+                     'arg': ['COMPLETED', 'FAILED']},
+                    {'field': 'source', 'op': '=',
+                     'arg': self.job_runner.jobman_source_name},
+                    {'field': 'source_tag', 'op': '! =',
+                     'arg': self.job_runner.PROCESSED_TAG},
                 ]
             })
         )
@@ -127,11 +136,11 @@ class ParseJobmanJobTestCase(BaseTestCase):
     def test_has_artifact_spec(self):
         result = self._parse()
         self.assertEqual(
-            self.job_runner.artifact_processor.dir_to_artifact.call_args,
+            self.job_runner.artifact_handler.dir_to_artifact.call_args,
             call(dir_=self.jobman_job['job_spec']['dir']))
         self.assertEqual(
             result['artifact'],
-            self.job_runner.artifact_processor.dir_to_artifact.return_value)
+            self.job_runner.artifact_handler.dir_to_artifact.return_value)
 
     def test_has_std_log_contents(self):
         result = self._parse()
@@ -288,9 +297,12 @@ class FinalizeJobmanJobsTestCase(BaseTestCase):
         self.result = self.job_runner.finalize_jobman_jobs(
             jobman_jobs=self.jobman_jobs)
 
-    def test_saves_jobs_with_completed_status(self):
-        expected_finalized_jobs = [{**jobman_job, 'status': 'COMPLETED'}
-                                   for jobman_job in self.jobman_jobs]
+    def test_saves_jobs_with_processed_tag_and_purgeable(self):
+        expected_finalized_jobs = [
+            {**jobman_job, 'source_tag': self.job_runner.PROCESSED_TAG,
+             'purgeable': 1}
+            for jobman_job in self.jobman_jobs
+        ]
         self.assertEqual(self.job_runner.jobman.save_jobs.call_args,
                          call(jobs=expected_finalized_jobs))
 
@@ -362,14 +374,14 @@ class BuildMcJobdirTestCase(BaseTestCase):
                  jobdir=job_runner.tempfile.mkdtemp.return_value)
         )
 
-    def test_dispatches_to_jobdir_factory(self):
-        jobdir_factory = self.job_runner.jobdir_factory
+    def test_dispatches_to_build_jobdir_fn(self):
         self.assertEqual(
-            jobdir_factory.build_jobdir.call_args,
+            self.job_runner.build_jobdir_fn.call_args,
             call(job=self.mc_job,
                  output_dir=job_runner.tempfile.mkdtemp.return_value)
         )
-        self.assertEqual(self.result, jobdir_factory.build_jobdir.return_value)
+        self.assertEqual(self.result,
+                         self.job_runner.build_jobdir_fn.return_value)
 
 class PrepareJobInputsTestCase(BaseTestCase):
     def setUp(self):
@@ -396,6 +408,6 @@ class PrepareJobInputsTestCase(BaseTestCase):
                 self.expected_inputs_dir, artifact_key)
             expected_call_args_list.append(call(artifact=artifact, dest=dest))
         self.assertEqual(
-            self.job_runner.artifact_processor.artifact_to_dir.call_args_list,
+            self.job_runner.artifact_handler.artifact_to_dir.call_args_list,
             expected_call_args_list
         )

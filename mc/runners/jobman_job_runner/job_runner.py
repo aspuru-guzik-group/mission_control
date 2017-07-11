@@ -13,17 +13,19 @@ class JobRunner(object):
                 cause=cause, json_mc_job=json.dumps(mc_job, indent=2))
             super().__init__(self, error, *args, **kwargs)
 
-    def __init__(self, job_record_client=None, jobdir_factory=None,
+    PROCESSED_TAG = 'PROCESSED'
+
+    def __init__(self, job_record_client=None, build_jobdir_fn=None,
                  jobman=None, max_claims_per_tick=None, logger=None,
                  logging_cfg=None, jobman_source_name=None,
-                 artifact_processor=None, jobdirs_dir=None, **kwargs):
+                 artifact_handler=None, jobdirs_dir=None, **kwargs):
         self.logger = logger or self._generate_logger(logging_cfg=logging_cfg)
         self.job_record_client = job_record_client
-        self.jobdir_factory = jobdir_factory
+        self.build_jobdir_fn = build_jobdir_fn
         self.jobman = jobman
         self.max_claims_per_tick = max_claims_per_tick or 3
         self.jobman_source_name = jobman_source_name or 'mc'
-        self.artifact_processor = artifact_processor
+        self.artifact_handler = artifact_handler
         self.jobdirs_dir = jobdirs_dir
 
         self.tick_counter = 0
@@ -48,35 +50,29 @@ class JobRunner(object):
         self.tick_counter += 1
         self.logger.debug('{self}, tick #{tick_counter}'.format(
             self=self, tick_counter=self.tick_counter))
-        executed_stats = self.process_executed_jobs()
+        finished_stats = self.process_finished_jobs()
         claimed_stats = self.fill_jobman_queue()
-        tick_stats = {**executed_stats, **claimed_stats}
+        tick_stats = {**finished_stats, **claimed_stats}
         return tick_stats
 
-    def process_executed_jobs(self):
-        executed_jobman_jobs = self.get_executed_jobman_jobs()
+    def process_finished_jobs(self):
+        unprocessed_finished_jobman_jobs = \
+                self.get_unprocessed_finished_jobman_jobs()
         parsed_jobman_jobs = self.parse_jobman_jobs(
-            jobman_jobs=executed_jobman_jobs)
+            jobman_jobs=unprocessed_finished_jobman_jobs)
         keyed_patches = self.parsed_jobman_jobs_to_keyed_patches(
             parsed_jobman_jobs=parsed_jobman_jobs)
         self.patch_job_records(keyed_patches=keyed_patches)
-        self.finalize_jobman_jobs(jobman_jobs=executed_jobman_jobs)
-        executed_stats = {'executed': len(executed_jobman_jobs)}
-        return executed_stats
+        self.finalize_jobman_jobs(jobman_jobs=unprocessed_finished_jobman_jobs)
+        finished_stats = {'finished': len(unprocessed_finished_jobman_jobs)}
+        return finished_stats
 
-    def get_executed_jobman_jobs(self):
-        self.jobman.update_job_engine_states(query={
-            'filters': [
-                {'field': 'source', 'operator': '=',
-                 'value': self.jobman_source_name},
-            ]
-        })
+    def get_unprocessed_finished_jobman_jobs(self):
         return self.jobman.get_jobs(query={
             'filters': [
-                {'field': 'status', 'operator': 'IN',
-                 'value': ['EXECUTED', 'FAILED']},
-                {'field': 'source', 'operator': '=',
-                 'value': self.jobman_source_name},
+                {'field': 'status', 'op': 'IN', 'arg': ['COMPLETED', 'FAILED']},
+                {'field': 'source', 'op': '=', 'arg': self.jobman_source_name},
+                {'field': 'source_tag', 'op': '! =', 'arg': self.PROCESSED_TAG},
             ]
         })
 
@@ -88,7 +84,7 @@ class JobRunner(object):
         parsed_jobman_job = {
             'jobman_job': jobman_job,
             'mc_job': jobman_job['source_meta']['mc_job'],
-            'artifact': self.artifact_processor.dir_to_artifact(
+            'artifact': self.artifact_handler.dir_to_artifact(
                 dir_=jobman_job['job_spec']['dir']),
             'std_logs': self.get_std_log_contents_for_jobman_job(
                 jobman_job=jobman_job),
@@ -146,9 +142,11 @@ class JobRunner(object):
 
     def finalize_jobman_jobs(self, jobman_jobs=None):
         if not jobman_jobs: return
-        finalized_jobman_jobs = [{**jobman_job, 'status': 'COMPLETED'}
-                                 for jobman_job in jobman_jobs]
-        self.jobman.save_jobs(jobs=finalized_jobman_jobs)
+        marked_jobman_jobs = [
+            {**jobman_job, 'source_tag': self.PROCESSED_TAG, 'purgeable': 1}
+            for jobman_job in jobman_jobs
+        ]
+        self.jobman.save_jobs(jobs=marked_jobman_jobs)
 
     def fill_jobman_queue(self):
         limit = self.get_claim_limit()
@@ -178,7 +176,7 @@ class JobRunner(object):
         return claimed_stats
 
     def get_claim_limit(self):
-        return min(self.max_claims_per_tick, self.jobman.num_free_slots)
+        return min(self.max_claims_per_tick, self.jobman.get_num_free_slots())
 
     def submit_mc_job(self, mc_job=None):
         self.jobman.submit_jobdir(
@@ -191,8 +189,7 @@ class JobRunner(object):
         jobdir = tempfile.mkdtemp(prefix=self.get_jobdir_prefix(mc_job=mc_job),
                                   dir=self.jobdirs_dir)
         self.prepare_job_inputs(mc_job=mc_job, jobdir=jobdir)
-        job_spec = self.jobdir_factory.build_jobdir(job=mc_job,
-                                                    output_dir=jobdir)
+        job_spec = self.build_jobdir_fn(job=mc_job, output_dir=jobdir)
         return job_spec
 
     def get_jobdir_prefix(self, mc_job=None):
@@ -207,8 +204,7 @@ class JobRunner(object):
         artifacts = mc_job.get('job_inputs', {}).get('artifacts') or  {}
         for artifact_key, artifact in artifacts.items():
             dest = os.path.join(inputs_dir, artifact_key)
-            self.artifact_processor.artifact_to_dir(
-                artifact=artifact, dest=dest)
+            self.artifact_handler.artifact_to_dir(artifact=artifact, dest=dest)
 
     def patch_job_records_per_submission_outcome(
         self, job_records_by_submission_outcome=None):
