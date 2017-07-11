@@ -121,4 +121,4 @@ def generate_claimed_column(column_name='claimed', **kwargs):
 
 def generate_json_column(column_name='json', **kwargs):
     return Column(column_name, _custom_sa_types.JSONEncodedDict(),
-                  **{'nullable': True, **kwargs})
+                  **{'default': {}, 'nullable': True, **kwargs})
