@@ -87,6 +87,7 @@ class OutputWrapper(io.TextIOBase):
 
     def write(self, msg=None, style_func=None, ending=None):
         if not msg: return
+        if not isinstance(msg, str): msg = str(msg)
         ending = self.ending if ending is None else ending
         if ending and not msg.endswith(ending): msg += ending
         style_func = style_func or self.style_func

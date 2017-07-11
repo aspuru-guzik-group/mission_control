@@ -1,0 +1,2 @@
+subcommands_registry = {
+}
