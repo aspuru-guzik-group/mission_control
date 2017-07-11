@@ -11,41 +11,57 @@ from mc.runners.jobman_job_runner.job_runner import JobRunner
 from mc.utils import import_utils
 
 
-class HoustonUtils(object):
-    def __init__(self):
-        pass
+class HoustonSubcommandUtils(object):
+    def __init__(self, get_cfg=None):
+        self.get_cfg = get_cfg
 
-    def get_mc_dao(self, cfg=None):
-        mc_dao = _McSqlAlchemyDao(db_uri=cfg['MC_DB_URI'])
-        mc_dao.ensure_tables()
-        return mc_dao
+        self._cfg = ...
+        self._mc_dao = ...
 
-    def _get_mc_clients(self, mc_dao=None):
-        return {
-            'flow': self._get_flow_record_client(mc_dao=mc_dao),
-            'job': self._get_job_record_client(mc_dao=mc_dao)
-        }
+    @property
+    def cfg(self):
+        if self._cfg is ...: self._cfg = self.get_cfg()
+        return self._cfg
 
-    def _get_flow_record_client(self, mc_dao=None):
-        return FlowRecordClient(
-            mc_dao=mc_dao, use_locks=True,
-            queue_key=self.cfg['FLOW_QUEUE_KEY']
-        )
+    @property
+    def mc_dao(self):
+        if self._mc_dao is ...: 
+            self._mc_dao = _McSqlAlchemyDao(db_uri=self.cfg['MC_DB_URI'])
+            self._mc_dao.ensure_tables()
+        return self._mc_dao
 
-    def _get_job_record_client(self, mc_dao=None):
-        return JobRecordClient(
-            mc_dao=mc_dao, use_locks=True,
-            queue_key=self.cfg['JOB_QUEUE_KEY']
-        )
+    @mc_dao.setter
+    def mc_dao(self, new_value): self._mc_dao = new_value
 
-    def _get_flow_runner(self, mc_clients=None):
+    def get_flow_runner(self, mc_clients=None):
+        mc_clients = mc_clients or self.get_mc_clients()
         task_ctx = {
             'mc.flow_record_client': mc_clients['flow'],
             'mc.job_record_client': mc_clients['job'],
-
         }
         return FlowRunner(flow_record_client=mc_clients['flow'],
                           task_ctx=task_ctx)
+
+    def get_mc_clients(self, mc_dao=None):
+        mc_dao = mc_dao or self.mc_dao
+        return {
+            'flow': self.get_flow_record_client(mc_dao=mc_dao),
+            'job': self.get_job_record_client(mc_dao=mc_dao)
+        }
+
+    def get_flow_record_client(self, mc_dao=None, queue_key=...):
+        mc_dao = mc_dao or self.mc_dao
+        if queue_key is ...: queue_key = self.get_mc_queues['flow']['key']
+        return FlowRecordClient(mc_dao=mc_dao, use_locks=True,
+                                queue_key=queue_key)
+
+    def get_mc_queues(self): raise NotImplementedError
+
+    def _get_job_record_client(self, mc_dao=None, queue_key=...):
+        mc_dao = mc_dao or self.mc_dao
+        if queue_key is ...: queue_key = self.get_mc_queues['job']['key']
+        return JobRecordClient(mc_dao=mc_dao, use_locks=True,
+                               queue_key=queue_key)
 
     def _get_job_runner(self, mc_clients=None):
         return JobRunner(

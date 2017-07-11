@@ -3,19 +3,25 @@ import logging
 
 class BaseHoustonSubcommand(object):
     def __init__(self, logger=None, args=None, kwargs=None, unparsed_args=None,
-                 get_cfg=None, **kwargs_):
+                 get_cfg=None, utils=..., **kwargs_):
         self.logger = logger or logging.getLogger(__name__)
         self.args = args
         self.kwargs = kwargs
         self.unparsed_args = unparsed_args
         self.get_cfg = get_cfg
-
-        self._cfg = ...
+        self.utils = utils
 
     @property
-    def cfg(self):
-        if self._cfg is ...: self._cfg = self.get_cfg()
-        return self._cfg
+    def utils(self):
+        if self._utils is ...: self._utils = self._get_utils()
+        return self._utils
+
+    @utils.setter
+    def utils(self, new_value): self._utils = new_value
+
+    def _get_utils(self):
+        from . import _utils
+        return _utils.HoustonSubcommandUtils(get_cfg=self.get_cfg)
 
     @classmethod
     def run(cls, args=None, kwargs=None, unparsed_args=None, get_cfg=None,
