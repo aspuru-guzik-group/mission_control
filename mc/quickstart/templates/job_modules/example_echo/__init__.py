@@ -1,5 +1,5 @@
-from .job_submission_builder import JobSubmissionBuilder
-build_job_submission = JobSubmissionBuilder.build_job_submission
+from .jobdir_builder import JobdirBuilder
+build_jobdir = JobdirBuilder.build_jobdir
 
-from .job_submission_runner import  JobSubmissionRunner
-run_job_submission = JobSubmissionRunner.run_job_submission
+from .jobdir_runner import  JobdirRunner
+run_jobdir = JobdirRunner.run_jobdir

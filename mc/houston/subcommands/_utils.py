@@ -128,3 +128,23 @@ class HoustonSubcommandUtils(object):
 
     def build_jobdir(self, *args, **kwargs):
         return JobModuleCommandDispatcher().build_jobdir(*args, **kwargs)
+
+    def has_unfinished_mc_records(self):
+        unfinished_records = self.get_unfinished_mc_records()
+        for record_type, records in unfinished_records.items():
+            if len(records) > 0: return True
+        return False
+
+    def get_unfinished_mc_records(self):
+        return {
+            record_type: self._get_unfinished_mc_items(item_type=record_type)
+            for record_type in ['Flow', 'Job']
+        }
+
+    def _get_unfinished_mc_items(self, item_type=None):
+        return self.mc_dao.get_items(item_type=item_type, query={
+            'filters': [
+                {'prop': 'status', 'op': '! IN',
+                 'arg': ['FAILED', 'COMPLETED']}
+            ]
+        })

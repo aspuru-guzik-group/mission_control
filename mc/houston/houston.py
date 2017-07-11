@@ -21,10 +21,14 @@ class HoustonCommand(SubcommandCommand):
         self.subcommands_registry = subcommands_registry
         self.subcommands = list(self.subcommands_registry.keys())
         
-    def _get_default_logger(self): return logging.getLogger(__name__)
+    def _get_default_logger(self):
+        logger = logging.getLogger(__name__)
+        logger.addHandler(logging.StreamHandler())
+        logger.setLevel(logging.INFO)
+        return logger
 
     def _get_default_subcommands_registry(self):
-        from .subcommands.registry import SubcommandRegistry
+        from .subcommands._registry import SubcommandRegistry
         return SubcommandRegistry()
 
     def add_arguments(self, parser=None):
@@ -41,6 +45,7 @@ class HoustonCommand(SubcommandCommand):
     def _call_subcommand_fn(self, subcommand_fn=None, args=None, kwargs=None,
                             unparsed_args=None):
         return subcommand_fn(
+            logger=self.logger,
             args=args, kwargs=kwargs,
             unparsed_args=unparsed_args,
             load_cfg=self._get_load_cfg_fn(kwargs['cfg_path'])

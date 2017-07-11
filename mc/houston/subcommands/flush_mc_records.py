@@ -1,4 +1,4 @@
-from .base_houston_subcommand import BaseHoustonSubcommand
+from ._base_houston_subcommand import BaseHoustonSubcommand
 
 class FlushMcRecordsSubcommand(BaseHoustonSubcommand):
     def add_arguments(self, parser=None):

@@ -179,7 +179,7 @@ class JobRunner(object):
         return min(self.max_claims_per_tick, self.jobman.get_num_free_slots())
 
     def submit_mc_job(self, mc_job=None):
-        self.jobman.submit_jobdir(
+        self.jobman.submit_job_spec(
             job_spec=self.build_jobdir(mc_job=mc_job),
             source=self.jobman_source_name,
             source_meta={'mc_job': mc_job}

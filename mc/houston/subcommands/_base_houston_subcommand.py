@@ -37,9 +37,9 @@ class BaseHoustonSubcommand(object):
 
     @classmethod
     def run(cls, args=None, kwargs=None, unparsed_args=None, load_cfg=None,
-            **kwargs_):
+            logger=None, **kwargs_):
         instance = cls(args=args, kwargs=kwargs, unparsed_args=unparsed_args,
-                       load_cfg=load_cfg, **kwargs_)
+                       load_cfg=load_cfg, logger=logger, **kwargs_)
         return instance._run()
 
     def _run(self): raise NotImplementedError
