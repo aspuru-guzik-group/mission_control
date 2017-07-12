@@ -30,12 +30,12 @@ class BaseTestCase(unittest.TestCase):
             mocks[attr] = patcher.start()
         self.mod_mocks.update(mocks)
 
-class BuildJobdirTestCase(BaseTestCase):
+class _BuildJobdirTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.mockify_builder_attrs(attrs=['_write_entrypoint',
                                           '_generate_job_spec'])
-        self.result = self.builder.build_jobdir()
+        self.result = self.builder._build_jobdir()
 
     def test_writes_entrypoint(self):
         self.assertEqual(self.builder._write_entrypoint.call_args,

@@ -13,20 +13,50 @@ class JobdirRunner(object):
             job (dict): mc job
             cfg (dict): cfg dict
             run_jobdir_fn (fn): a function that runs a jobdir.
-                This fn is how users of this class can customize job run.
-                See :meth:`_default_run_jobdir` for more info.
+                Users of this class can use this param to use 
+                the customize the class, without subclassing.
+                See :meth:`_default_run_jobdir` for arg/return info.
+                An alternative way to customize is to subclass and override
+                :meth:`_run_jobdir`.
         """
         self.job_spec = job_spec
         self.job = job
         self.cfg = cfg or {}
         self.run_jobdir_fn = run_jobdir_fn
+        self.utils = {attr: getattr(self, attr)
+                      for attr in ['mkdtemp', 'move_to_outputs']}
 
-        self.utils = {
-            'mkdtemp': self.mkdtemp,
-            'mv_to_outputs': self.mv_to_outputs,
-        }
+    @property
+    def job_params(self): return self.job['job_params']
 
-    def run_jobdir(self):
+    @classmethod
+    def run_jobdir(cls, job_spec=None, job=None, cfg=None, run_jobdir_fn=None,
+                   **kwargs):
+        """Instantiates class and calls :meth:`_run_jobdir`."""
+        instance = cls(job_spec=job_spec, job=job, cfg=cfg,
+                       run_jobdir_fn=run_jobdir_fn, **kwargs)
+        instance._ensure_outputs_dir()
+        return instance._run_jobdir(**kwargs)
+
+    def _ensure_outputs_dir(self):
+        os.makedirs(self._get_outputs_dir(), exist_ok=True)
+
+    def _get_outputs_dir(self):
+        return os.path.join(
+            self.job_spec['dir'],
+            self.job_spec.get('io_dir_names', {}).get('outputs', 'outputs')
+        )
+
+    def _run_jobdir(self):
+        """Subclasses of this class can overrde this method to define custom
+        run logic.
+
+        See the run_jobdir_fn parameter of `:meth:__init__` for other ways
+        to customize that don't involve subclassing.
+
+        The default behavior is to call the run_jobdir_fn provided to the
+        constructor.
+        """
         self.run_jobdir_fn(job_spec=self.job_spec, job=self.job, cfg=self.cfg,
                            utils=self.utils)
 
@@ -49,7 +79,7 @@ class JobdirRunner(object):
                                      dir=self.job_spec['dir'])
         return tempfile.mkdtemp(**kwargs)
 
-    def mv_to_outputs(self, src=None, outputs_key=None):
+    def move_to_outputs(self, src=None, outputs_key=None):
         """Move a path to the submission outputs dir.
         
         Args:
@@ -57,9 +87,6 @@ class JobdirRunner(object):
             outputs_key <str>: relative path under outputs dir to use as move
                 target.
         """
-        outputs_dir = os.path.join(
-            self.job_spec['dir'],
-            self.job_spec.get('io_dir_names', {}).get('outputs', 'outputs')
-        )
+        outputs_dir = self._get_outputs_dir()
         outputs_dest = os.path.join(outputs_dir, outputs_key)
         shutil.move(src, outputs_dest)

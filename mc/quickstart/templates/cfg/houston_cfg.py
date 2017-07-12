@@ -23,8 +23,8 @@ JOB_QUEUE = {
 
 JOBMAN_CFG_PATH = os.path.join(CFG_DIR, 'jobman_cfg.py')
 
-SUBMISSIONS_DIR = os.path.join(ROOT_DIR, 'submissions')
-os.makedirs(SUBMISSIONS_DIR, exist_ok=True)
+JOBDIRS_DIR = os.path.join(ROOT_DIR, 'jobdirs')
+os.makedirs(JOBDIRS_DIR, exist_ok=True)
 
 JOB_SUBMISSION_RUNNER_EXE = os.path.join(ROOT_DIR, 'run_job_submission.sh')
 SUBMISSION_BUILD_TARGET = 'bash'

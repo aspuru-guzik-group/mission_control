@@ -92,8 +92,10 @@ class JobRunner(object):
         parsed_jobman_job['error'] = \
                 parsed_jobman_job['std_logs'].get('failure')
         parsed_jobman_job['status'] = 'COMPLETED'
-        if parsed_jobman_job['jobman_job']['status'] == 'FAILED' or \
-           parsed_jobman_job['error']: parsed_jobman_job['status'] = 'FAILED'
+        if parsed_jobman_job['error']:
+            parsed_jobman_job['jobman_job']['status'] == 'FAILED'
+            msg = "Job failed, error was:\n" + parsed_jobman_job['error']
+            self.logger.warning(msg)
         return parsed_jobman_job
 
     def get_std_log_contents_for_jobman_job(self, jobman_job=None):
@@ -101,7 +103,8 @@ class JobRunner(object):
         mc_job = jobman_job['source_meta']['mc_job']
         logs_to_expose = mc_job.get('cfg', {}).get('std_logs_to_expose') or []
         if logs_to_expose == 'all':
-            logs_to_expose = job_spec.get('std_log_file_names', {}).keys()
+            logs_to_expose = list(job_spec.get('std_log_file_names', {}).keys())
+        if 'failure' not in logs_to_expose: logs_to_expose.append('failure')
         std_log_contents = self.read_jobdir_logs(job_spec=job_spec,
                                                  logs=logs_to_expose)
         return std_log_contents

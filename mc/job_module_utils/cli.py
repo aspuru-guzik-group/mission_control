@@ -1,7 +1,9 @@
 import argparse
+import os
 
 from mc.utils.commands.subcommand_command import SubcommandCommand
-from .job_module_command_dispatcher import JobModuleCommandDispatcher
+from mc.job_module_utils.job_module_command_dispatcher import (
+    JobModuleCommandDispatcher)
 
 
 class JobModuleCliCommand(SubcommandCommand):
@@ -19,7 +21,7 @@ class JobModuleCliCommand(SubcommandCommand):
 
     def _parse_run_jobdir_args(self, unparsed_args=None):
         parser = argparse.ArgumentParser()
-        parser.add_argument('--jobdir', required=True)
+        parser.add_argument('--jobdir', default=os.environ['PWD'])
         return vars(parser.parse_args(args=unparsed_args))
 
 if __name__ == '__main__': JobModuleCliCommand.run()

@@ -18,10 +18,10 @@ class BaseTestCase(unittest.TestCase):
             run_jobdir_fn=self.run_jobdir_fn
         )
 
-class RunJobdirTestCase(BaseTestCase):
+class _RunJobdirTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.runner.run_jobdir()
+        self.runner._run_jobdir()
 
     def test_dispatches_to_run_jobdir_fn(self):
         self.assertEqual(

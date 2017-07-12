@@ -1,32 +1,29 @@
 import os
 import subprocess
 
-from mc.job_module_utils.base_job_submission_runner \
-        import BaseJobSubmissionRunner
+from mc.job_module_utils.jobdir_runner import JobdirRunner
 
 from .workdir_builder import WorkdirBuilder
 
 
-class JobSubmissionRunner(BaseJobSubmissionRunner):
+class ExampleEchoJobdirRunner(JobdirRunner):
     class InvalidMessageError(Exception): pass
 
-    def validate_job_params(self, job_params=None):
-        job_params = job_params or self.job_params
-        try: assert job_params['message'] is not None
+    def _run_jobdir(self):
+        self._validate_job_params()
+        workdir_meta = self._build_workdir()
+        self._run_workdir(workdir_meta=workdir_meta)
+        workdir_output = os.path.join(workdir_meta['dir'],
+                                      workdir_meta['output_file_name'])
+        self.move_to_outputs(src=workdir_output, outputs_key='example_echo.out')
+
+    def _validate_job_params(self):
+        try: assert self.job_params['message'] is not None
         except Exception as exc: raise self.InvalidMessageError()
 
-    def _run_job_submission(self):
-        workdir_meta = self.create_workdir()
-        self.run_workdir(workdir_meta=workdir_meta)
-        self.move_to_outputs(
-            src=os.path.join(workdir_meta['dir'],
-                             workdir_meta['output_file_name']),
-            outputs_key='example_echo.output'
-        )
-
-    def create_workdir(self):
+    def _build_workdir(self):
         workdir_meta = WorkdirBuilder(
-            workdir=self.generate_tmp_dir(prefix='example_echo.wd.'),
+            workdir=self.mkdtemp(prefix='example_echo.wd.'),
             workdir_params=self.get_workdir_params()
         ).build_workdir()
         return workdir_meta
@@ -35,10 +32,13 @@ class JobSubmissionRunner(BaseJobSubmissionRunner):
         workdir_params = {'message': self.job_params.get('message')}
         return workdir_params
 
-    def run_workdir(self, workdir_meta=None):
+    def _run_workdir(self, workdir_meta=None):
         entrypoint_path = os.path.join(workdir_meta['dir'],
                                        workdir_meta['entrypoint'])
         cmd = [entrypoint_path]
         extra_env_vars = self.cfg.get('example_echo', {}).get('env_vars', {})
         workdir_env = {**os.environ, **extra_env_vars}
         subprocess.run(cmd, env=workdir_env, check=True)
+
+run_jobdir = ExampleEchoJobdirRunner.run_jobdir
+

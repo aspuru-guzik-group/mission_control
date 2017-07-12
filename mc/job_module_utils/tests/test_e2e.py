@@ -17,13 +17,13 @@ class BaseTestCase(unittest.TestCase):
     def _generate_job_module(self, db=None):
         class MyJobModule(object):
             def build_jobdir(self_, job=None, cfg=None, output_dir=None):
-                builder = JobdirBuilder(job=job, cfg=cfg, output_dir=output_dir)
-                return builder.build_jobdir()
+                return JobdirBuilder.build_jobdir(job=job, cfg=cfg,
+                                                  output_dir=output_dir)
 
             def run_jobdir(self_, job_spec=None, job=None, cfg=None):
                 runner = JobdirRunner(job_spec=job_spec, job=job, cfg=cfg,
                                       run_jobdir_fn=self_._run_jobdir)
-                runner.run_jobdir()
+                runner._run_jobdir()
 
             def _run_jobdir(self_, job_spec=None, job=None, cfg=None,
                             utils=None):
