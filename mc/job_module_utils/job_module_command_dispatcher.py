@@ -8,18 +8,33 @@ from .default_job_module_loader import DefaultJobModuleLoader
 
 
 class JobModuleCommandDispatcher(object):
-    JOBMAN_JOB_SPEC_FILE_NAME = constants.JOBMAN_JOB_SPEC_FILE_NAME
-    MC_JOB_FILE_NAME = constants.MC_JOB_FILE_NAME
+    JOB_META_FILE_NAMES = {
+        'job': constants.MC_JOB_FILE_NAME,
+        'job_spec': constants.JOBMAN_JOB_SPEC_FILE_NAME,
+    }
 
-    def __init__(self, job_module_loader=None, logger=None):
+    def __init__(self, load_job_module_fn=None, logger=None):
         """
         Args:
-            job_module_loader (JobModuleLoader): loader to use for loading
-                job modules. Default: DefaultJobModuleLoader.
+            load_job_module_fn (fn): A fn to use for loading job modules. See
+                :meth:`_detault_load_job_module_fn for more info.
             logger: (logging.Logger): a logger.
         """
         self.logger = logger or logging
-        self.job_module_loader = job_module_loader or DefaultJobModuleLoader()
+        self.load_job_module_fn = load_job_module_fn or \
+                self._default_load_job_module_fn
+
+    def _default_load_job_module_fn(self, job=None, cfg=None):
+        """Load a job module.
+
+        Args:
+            job (dict): job dict
+            cfg (dict): cfg dict
+
+        Returns:
+            job_module (job_module): loaded module
+        """
+        return DefaultJobModuleLoader().load_job_module(job=job, cfg=cfg)
 
     def build_jobdir(self, job=None, cfg=None, output_dir=None, **kwargs):
         """Build a jobdir.
@@ -35,35 +50,36 @@ class JobModuleCommandDispatcher(object):
         """
         output_dir = output_dir or tempfile.mkdtemp()
         os.makedirs(output_dir, exist_ok=True)
-        job_module = self.job_module_loader.load_job_module(job=job, cfg=cfg)
+        job_module = self.load_job_module_fn(job=job, cfg=cfg)
         job_spec = job_module.build_jobdir(
             job=job, cfg=cfg, output_dir=output_dir, **kwargs) or {}
         job_spec = {'job': job, 'cfg': cfg, 'dir': output_dir, **job_spec}
-        self._write_job_spec(job_spec=job_spec, dir_=output_dir)
+        self._write_job_meta_files(dir_=output_dir, job_spec=job_spec, job=job)
         return job_spec
 
-    def _write_job_spec(self, job_spec=None, dir_=None):
-        job_spec_path = os.path.join(dir_, self.JOBMAN_JOB_SPEC_NAME)
-        with open(job_spec_path, 'w') as f: json.dump(job_spec, f)
-
-    def run_jobdir(self, jobdir=None):
+    def _write_job_meta_files(self, dir_=None, **kwargs):
+        for key, meta_file_name in self.JOB_META_FILE_NAMES.items():
+            path = os.path.join(dir_, meta_file_name)
+            with open(path, 'w') as f: json.dump(kwargs[key], f)
+        
+    def run_jobdir(self, jobdir=None, cfg=None):
         """Run a jobdir.
 
         Args:
             jobdir (str): path to jobdir. This dir should
                 contain: (1) the jobman job_spec file
-                '{JOBMAN_JOB_SPEC_FILE_NAME}', and (2) the mc job file
-                '{MC_JOB_FILE_NAME}'.
-        """.format(
-            JOBMAN_JOB_SPEC_FILE_NAME=self.JOBMAN_JOB_SPEC_FILE_NAME,
-            MC_JOB_FILE_NAME=self.MC_JOB_FILE_NAME
-        )
-        job_spec = self._load_from_jobdir_file(
-            jobdir=jobdir, file_name=self.JOBMAN_JOB_SPEC_FILE_NAME)
-        mc_job = self._load_from_jobdir_file(
-            jobdir=jobdir, file_name=self.MC_JOB_FILE_NAME)
-        job_module = self.job_module_loader.load_job_module(job=mc_job)
-        return job_module.run_jobdir(job=mc_job, job_spec=job_spec)
+                '{job_spec}', and (2) the mc job file '{job}'.
+        """.format(**self.JOB_META_FILE_NAMES)
+        job_metas = {
+            meta_key: self._load_from_jobdir_file(
+                jobdir=jobdir, file_name=meta_file_name)
+            for meta_key, meta_file_name in self.JOB_META_FILE_NAMES.items()
+        }
+        job_module = self._load_job_module(job=job_metas['job'], cfg=None)
+        return job_module.run_jobdir(**job_metas, cfg=cfg)
+
+    def _load_job_module(self, job=None, cfg=None):
+        return self.load_job_module_fn(job=job, cfg=cfg)
 
     def _load_from_jobdir_file(self, jobdir=None, file_name=None):
         path = os.path.join(jobdir, file_name)
