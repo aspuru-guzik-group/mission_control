@@ -7,8 +7,8 @@ class BaseHoustonSubcommand(object):
     def __init__(self, logger=None, args=None, kwargs=None, unparsed_args=None,
                  load_cfg=None, utils=..., **kwargs_):
         self.logger = logger or logging.getLogger(__name__)
-        self.args = args
-        self.kwargs = kwargs
+        self.args = args or []
+        self.kwargs = kwargs or {}
         self.unparsed_args = unparsed_args
         subcommand_kwargs, self.unparsed_args = \
                 self.parse_subcommand_kwargs(subcommand_argv=unparsed_args)
@@ -25,8 +25,8 @@ class BaseHoustonSubcommand(object):
     def utils(self, new_value): self._utils = new_value
 
     def _get_utils(self):
-        from . import _utils
-        return _utils.HoustonSubcommandUtils(load_cfg=self.load_cfg)
+        from mc.houston import utils
+        return utils.HoustonUtils(load_cfg=self.load_cfg)
 
     def parse_subcommand_kwargs(self, subcommand_argv=None):
         parser = CommandParser()

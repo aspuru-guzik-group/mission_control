@@ -1,20 +1,20 @@
 import unittest
 from unittest.mock import call, MagicMock, patch
 
-from .. import _utils
+from .. import utils
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.cfg = MagicMock()
-        self.utils = _utils.HoustonSubcommandUtils(
+        self.utils = utils.HoustonUtils(
             load_cfg=MagicMock(return_value=self.cfg)
         )
 
     def mockify_utils_attrs(self, attrs=None):
         for attr in attrs: setattr(self.utils, attr, MagicMock())
 
-    def mockify_module_attrs(self, attrs=None, module=_utils):
+    def mockify_module_attrs(self, attrs=None, module=utils):
         mod_mocks = {}
         for attr in attrs:
             patcher = patch.object(module, attr)
@@ -79,8 +79,9 @@ class EnsureQueueTestCase(BaseTestCase):
         self._ensure_queue()
         self.assertEqual(
             self.utils.mc_dao.create_item.call_args,
-            call(item_type='Queue', key=self.queue_cfg['key'],
-                 item_kwargs=self.queue_cfg.get('queue_kwargs', {}))
+            call(item_type='Queue',
+                 item_kwargs={'key': self.queue_cfg['key'],
+                              **self.queue_cfg.get('queue_kwargs', {})})
         )
 
 class FlowRunnerTestCase(BaseTestCase):
@@ -117,11 +118,9 @@ class FlowRecordClientTestCase(BaseTestCase):
     def test_constructs_and_returns_flow_record_client(self):
         self.assertEqual(
             self.mod_mocks['FlowRecordClient'].call_args,
-            call(
-                mc_dao=self.utils.mc_dao,
-                use_locks=self.utils.cfg.get('USE_LOCKS', True),
-                queue_key=self.utils.cfg['FLOW_QUEUE_KEY']
-            )
+            call(mc_dao=self.utils.mc_dao,
+                 use_locks=self.utils.cfg.get('USE_LOCKS', True),
+                 queue_key=self.utils.cfg['FLOW_QUEUE']['key'])
         )
         self.assertEqual(self.result,
                          self.mod_mocks['FlowRecordClient'].return_value)
@@ -142,7 +141,7 @@ class JobRecordClientTestCase(BaseTestCase):
             call(
                 mc_dao=self.utils.mc_dao,
                 use_locks=self.utils.cfg.get('USE_LOCKS', True),
-                queue_key=self.utils.cfg['JOB_QUEUE_KEY']
+                queue_key=self.utils.cfg['JOB_QUEUE']['key']
             )
         )
         self.assertEqual(self.result,
@@ -178,21 +177,13 @@ class JobRunnerTestCase(BaseTestCase):
 class JobManTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.mod_mocks = self.mockify_module_attrs(attrs=['JobMan',
-                                                          'import_utils'])
+        self.mod_mocks = self.mockify_module_attrs(attrs=['JobMan'])
         self.result = self.utils.jobman
-
-    def test_loads_jobman_cfg(self):
-        self.assertEqual(
-            self.mod_mocks['import_utils'].load_module_from_path.call_args,
-            call(path=self.utils.cfg['JOBMAN_CFG_PATH'])
-        )
 
     def test_constructs_and_returns_jobman(self):
         self.assertEqual(
             self.mod_mocks['JobMan'].from_cfg.call_args,
-            call(cfg=(self.mod_mocks['import_utils'].load_module_from_path
-                      .return_value))
+            call(cfg=(self.cfg['JOBMAN_CFG']))
         )
         self.assertEqual(self.result,
                          self.mod_mocks['JobMan'].from_cfg.return_value)

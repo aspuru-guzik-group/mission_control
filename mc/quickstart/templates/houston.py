@@ -18,7 +18,7 @@ if __name__ == '__main__':
     except ImportError as err:
         handle_error(err, "  is 'mc' in your pythonpath?")
     command = HoustonCommand(
-        default_cfg_path=os.path.join(THIS_DIR, 'cfg', 'houston_cfg.py')
+        default_cfg_path=os.path.join(THIS_DIR, 'cfgs', 'houston_cfg.py')
     )
     command.run_from_argv(argv=sys.argv)
 

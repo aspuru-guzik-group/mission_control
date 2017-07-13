@@ -1,7 +1,7 @@
 import os
 import textwrap
 
-from . import constants
+from . import cfg
 
 
 class WorkdirBuilder(object):
@@ -14,8 +14,8 @@ class WorkdirBuilder(object):
         self.validate_workdir_params(workdir_params=workdir_params)
         self.workdir_params = workdir_params
         self.entrypoint_name = entrypoint_name or 'entrypoint.sh'
-        self.input_file_name = constants.INPUT_FILE_NAME
-        self.output_file_name = constants.OUTPUT_FILE_NAME
+        self.input_file_name = cfg.INPUT_FILE_NAME
+        self.output_file_name = cfg.OUTPUT_FILE_NAME
 
     def validate_workdir_params(self, workdir_params=None):
         try: assert workdir_params['message'] is not None
@@ -47,11 +47,12 @@ class WorkdirBuilder(object):
             DIR="$( cd "$( dirname "${{BASH_SOURCE[0]}}" )" && pwd )"
             cd $DIR
 
-            ${{ECHO_EXE:-{default_echo_exe}}} "$(cat "{input_file_name}")" \\
+            ${echo_cmd_output_key} "$(cat "{input_file_name}")" \\
                 > "{output_file_name}"
             '''
         ).lstrip().format(
-            default_echo_exe=self.DEFAULT_ECHO_EXE,
+            echo_cmd_output_key=(
+                cfg.cfg_specs['EXAMPLE_ECHO_ECHO_CMD']['output_key']),
             input_file_name=self.input_file_name,
             output_file_name=self.output_file_name
         )

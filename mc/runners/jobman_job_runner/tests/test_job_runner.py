@@ -16,12 +16,22 @@ class BaseTestCase(unittest.TestCase):
             jobman_source_name=MagicMock(),
             artifact_handler=MagicMock(),
         )
+        self.mod_mocks = {}
+
+    def mockify_job_runner_attrs(self, attrs=None):
+        for attr in attrs: setattr(self.job_runner, attr, MagicMock())
+
+    def mockify_module_attrs(self, attrs=None, module=job_runner):
+        for attr in attrs:
+            patcher = patch.object(module, attr)
+            self.addCleanup(patcher.stop)
+            self.mod_mocks[attr] = patcher.start()
 
 def TickTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        for attr in ['process_unprocessed_finished_jobs, fill_jobman_queue']:
-            setattr(self.job_runner, attr, MagicMock())
+        self.mockify_job_runner_attrs(attrs=[
+            'process_unprocessed_finished_jobs', 'fill_jobman_queue'])
         self.job_runner.tick()
 
     def test_processes_unprocessed_finished_jobs(self):
@@ -39,10 +49,10 @@ def TickTestCase(BaseTestCase):
 class ProcessFinishedJobsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        for attr in ['get_unprocessed_finished_jobman_jobs',
-                     'parse_jobman_jobs', 'parsed_jobman_jobs_to_keyed_patches',
-                     'patch_job_records', 'finalize_jobman_jobs']:
-            setattr(self.job_runner, attr, MagicMock())
+        self.mockify_job_runner_attrs(attrs=[
+            'get_unprocessed_finished_jobman_jobs', 'parse_jobman_jobs',
+            'parsed_jobman_jobs_to_keyed_patches', 'patch_job_records',
+            'finalize_jobman_jobs'])
         self.result = self.job_runner.process_finished_jobs()
 
     def test_parses_jobman_jobs(self):
@@ -106,8 +116,7 @@ class ParseJobmanJobsTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.jobman_jobs = [MagicMock() for i in range(3)]
-        for attr in ['parse_jobman_job']:
-            setattr(self.job_runner, attr, MagicMock())
+        self.mockify_job_runner_attrs(attrs=['parse_jobman_job'])
         self.result = self.job_runner.parse_jobman_jobs(
             jobman_jobs=self.jobman_jobs)
 
@@ -123,33 +132,52 @@ class ParseJobmanJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.jobman_job = MagicMock()
-        for attr in ['get_std_log_contents_for_jobman_job']:
-            setattr(self.job_runner, attr, MagicMock())
+        self.mockify_job_runner_attrs(attrs=['_parse_std_log_contents'])
+        self.result = self.job_runner.parse_jobman_job(
+            jobman_job=self.jobman_job)
 
-    def _parse(self):
-        return self.job_runner.parse_jobman_job(jobman_job=self.jobman_job)
-
-    def test_has_jobman_job(self):
-        result = self._parse()
-        self.assertEqual(result['jobman_job'], self.jobman_job)
-
-    def test_has_artifact_spec(self):
-        result = self._parse()
+    def test_handles_artifact(self):
         self.assertEqual(
             self.job_runner.artifact_handler.dir_to_artifact.call_args,
-            call(dir_=self.jobman_job['job_spec']['dir']))
-        self.assertEqual(
-            result['artifact'],
-            self.job_runner.artifact_handler.dir_to_artifact.return_value)
+            call(dir_=self.jobman_job['job_spec']['dir'])
+        )
 
-    def test_has_std_log_contents(self):
-        result = self._parse()
+    def test_parses_std_log_contents(self):
+        self.assertEqual(self.job_runner._parse_std_log_contents.call_args,
+                         call(jobman_job=self.jobman_job))
+
+    def test_returns_expected_parse_results(self):
+        expected_result = {
+            'jobman_job': self.jobman_job,
+            'mc_job': self.jobman_job['source_meta']['mc_job'],
+            'artifact': (self.job_runner.artifact_handler.dir_to_artifact
+                         .return_value),
+            **(self.job_runner._parse_std_log_contents.return_value)
+        }
+        self.assertEqual(self.result, expected_result)
+
+class ParseStdLogContentsTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.jobman_job = MagicMock()
+        self.mockify_job_runner_attrs(
+            attrs=['get_std_log_contents_for_jobman_job'])
+
+    def _parse_std_log_contents(self, jobman_job=None):
+        return self.job_runner._parse_std_log_contents(
+            jobman_job=self.jobman_job)
+
+    def test_calls_get_std_log_contents(self):
+        self._parse_std_log_contents()
         self.assertEqual(
             self.job_runner.get_std_log_contents_for_jobman_job.call_args,
             call(jobman_job=self.jobman_job)
         )
+
+    def test_result_has_std_logs(self):
+        result = self._parse_std_log_contents()
         self.assertEqual(
-            result['std_logs'],
+            result['std_logs'], 
             self.job_runner.get_std_log_contents_for_jobman_job.return_value
         )
 
@@ -157,24 +185,24 @@ class ParseJobmanJobTestCase(BaseTestCase):
         failure_msg = 'some_failure'
         self.job_runner.get_std_log_contents_for_jobman_job.return_value = \
                 {'failure': failure_msg}
-        result = self._parse()
+        result = self._parse_std_log_contents()
         self.assertEqual(result['error'], failure_msg)
 
     def test_sets_status_to_failed_if_error(self):
         self.job_runner.get_std_log_contents_for_jobman_job.return_value = \
                 {'failure': MagicMock()}
-        result = self._parse()
+        result = self._parse_std_log_contents()
         self.assertEqual(result['status'], 'FAILED')
 
     def test_sets_status_to_completed_if_no_error(self):
         self.job_runner.get_std_log_contents_for_jobman_job.return_value = {}
-        result = self._parse()
+        result = self._parse_std_log_contents()
         self.assertEqual(result['status'], 'COMPLETED')
 
 class GetJobStdLogFileContentsForJobmanJobTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.job_runner.read_jobdir_logs = MagicMock()
+        self.mockify_job_runner_attrs(attrs=['read_jobdir_logs'])
         self.job_spec = defaultdict(MagicMock, **{
             'std_log_file_names': {'log_%s' % i: MagicMock() for i in range(3)}
         })
@@ -198,7 +226,8 @@ class GetJobStdLogFileContentsForJobmanJobTestCase(BaseTestCase):
         self.assertEqual(
             self.job_runner.read_jobdir_logs.call_args,
             call(job_spec=self.job_spec,
-                 logs=self.job_spec['std_log_file_names'].keys())
+                 logs=[*self.job_spec['std_log_file_names'].keys(),
+                       'failure'])
         )
         self.assertEqual(result,
                          self.job_runner.read_jobdir_logs.return_value)
@@ -215,8 +244,11 @@ class GetJobStdLogFileContentsForJobmanJobTestCase(BaseTestCase):
                          self.job_runner.read_jobdir_logs.return_value)
 
 class ReadJobdirLogsTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.mockify_job_runner_attrs(attrs=['read_jobdir_log'])
+
     def test_dispatches_to_read_jobdir_log_file(self):
-        self.job_runner.read_jobdir_log = MagicMock()
         job_spec = MagicMock()
         logs = [MagicMock() for i in range(3)]
         result = self.job_runner.read_jobdir_logs(job_spec=job_spec,
@@ -232,20 +264,23 @@ class ReadJobdirLogsTestCase(BaseTestCase):
         self.assertEqual(result, expected_result)
 
 class ReadJobdirLogTestCase(BaseTestCase):
-    @patch.object(job_runner, 'os')
-    @patch.object(job_runner, 'open')
-    def test_reads_log_file(self, mock_open, mock_os):
+    def setUp(self):
+        super().setUp()
+        self.mockify_module_attrs(attrs=['os', 'open'])
+
+    def test_reads_log_file(self):
         job_spec = MagicMock()
         log = MagicMock()
         self.job_runner.read_jobdir_log(job_spec=job_spec, log=log)
-        expected_job_file_path = mock_os.path.join(
+        expected_job_file_path = self.mod_mocks['os'].path.join(
             job_spec['dir'], job_spec['std_log_files'][log])
-        self.assertEqual(mock_open.call_args, call(expected_job_file_path))
+        self.assertEqual(self.mod_mocks['open'].call_args,
+                         call(expected_job_file_path))
 
 class ParsedJobmanJobsToKeyedPatchesTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.job_runner.parsed_jobman_job_to_patch = MagicMock()
+        self.mockify_job_runner_attrs(attrs=['parsed_jobman_job_to_patch'])
         self.parsed_jobman_jobs = [MagicMock() for i in range(3)]
 
     def test_keys_patches_by_mc_job_key(self):
@@ -260,8 +295,8 @@ class ParsedJobmanJobsToKeyedPatchesTestCase(BaseTestCase):
 class ParsedJobmanJobToPatchTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
+        self.mockify_job_runner_attrs(attrs=['get_std_log_contents'])
         self.parsed_jobman_job = MagicMock()
-        self.job_runner.get_std_log_contents = MagicMock()
         self.patch = self.job_runner.parsed_jobman_job_to_patch(
             parsed_jobman_job=self.parsed_jobman_job)
 
@@ -309,8 +344,8 @@ class FinalizeJobmanJobsTestCase(BaseTestCase):
 class FillJobmanQueueTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        for attr in ['build_jobdir', 'get_claim_limit']:
-            setattr(self.job_runner, attr, MagicMock())
+        self.mockify_job_runner_attrs(
+            attrs=['submit_mc_job', 'get_claim_limit'])
         self.mc_jobs = [MagicMock() for i in range(3)]
         self.job_runner.job_record_client.claim_job_records.return_value = \
                 self.mc_jobs
@@ -324,22 +359,9 @@ class FillJobmanQueueTestCase(BaseTestCase):
             })
         )
 
-    def test_builds_jobdirs(self):
-        self.assertEqual(self.job_runner.build_jobdir.call_args_list,
+    def test_submits_mc_jobs(self):
+        self.assertEqual(self.job_runner.submit_mc_job.call_args_list,
                          [call(mc_job=mc_job) for mc_job in self.mc_jobs])
-
-    def test_submits_jobdirs(self):
-        self.assertEqual(
-            self.job_runner.jobman.submit_jobdir.call_args_list,
-            [
-                call(
-                    job_spec=self.job_runner.build_jobdir.return_value,
-                    source_meta={'mc_job': mc_job},
-                    source=self.job_runner.jobman_source_name
-                )
-                for mc_job in self.mc_jobs
-            ]
-        )
 
     def test_returns_stats(self):
         expected_num_claimed = len(
@@ -349,20 +371,37 @@ class FillJobmanQueueTestCase(BaseTestCase):
                                   'failed': 0}
         self.assertEqual(self.result, expected_claimed_stats)
 
+class SubmitMcJobTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.mockify_job_runner_attrs(attrs=['build_jobdir'])
+        self.mc_job = MagicMock()
+        self.result = self.job_runner.submit_mc_job(mc_job=self.mc_job)
+
+    def test_builds_jobdir(self):
+        self.assertEqual(self.job_runner.build_jobdir.call_args,
+                         call(mc_job=self.mc_job))
+
+    def test_submits_job_spec(self):
+        self.assertEqual(
+            self.job_runner.jobman.submit_job_spec.call_args,
+            call(job_spec=self.job_runner.build_jobdir.return_value,
+                 source=self.job_runner.jobman_source_name,
+                 source_meta={'mc_job': self.mc_job})
+        )
+
 class BuildMcJobdirTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.mc_job = MagicMock()
-        for attr in ['prepare_job_inputs', 'get_jobdir_prefix']:
-            setattr(self.job_runner, attr, MagicMock())
-        patcher = patch.object(job_runner, 'tempfile')
-        self.addCleanup(patcher.stop)
-        self.mocks = {'tempfile': patcher.start()}
+        self.mockify_job_runner_attrs(
+            attrs=['prepare_job_inputs', 'get_jobdir_prefix'])
+        self.mockify_module_attrs(attrs=['tempfile'])
         self.result = self.job_runner.build_jobdir(mc_job=self.mc_job)
 
     def test_creates_jobdir(self):
         self.assertEqual(
-            self.mocks['tempfile'].mkdtemp.call_args,
+            self.mod_mocks['tempfile'].mkdtemp.call_args,
             call(dir=self.job_runner.jobdirs_dir,
                  prefix=self.job_runner.get_jobdir_prefix.return_value)
         )
@@ -389,16 +428,14 @@ class PrepareJobInputsTestCase(BaseTestCase):
         self.artifacts = {'artifact_%s' % i: MagicMock() for i in range(3)}
         self.mc_job = {'job_inputs': {'artifacts': self.artifacts}}
         self.jobdir = 'some_jobdir'
-        patcher = patch.object(job_runner.os, 'makedirs')
-        patcher.start()
-        self.addCleanup(patcher.stop)
-        self.expected_inputs_dir = job_runner.os.path.join(self.jobdir,
-                                                           'inputs')
+        self.mockify_module_attrs(attrs=['os'])
+        self.expected_inputs_dir = self.mod_mocks['os'].path.join(
+            self.jobdir, 'inputs')
         self.job_runner.prepare_job_inputs(mc_job=self.mc_job,
                                            jobdir=self.jobdir)
 
     def test_makes_inputs_dir(self):
-        self.assertEqual(job_runner.os.makedirs.call_args,
+        self.assertEqual(self.mod_mocks['os'].makedirs.call_args,
                          call(self.expected_inputs_dir, exist_ok=True))
 
     def test_calls_artifact_to_dir_for_each_artifact(self):

@@ -99,7 +99,7 @@ class JobdirBuilder(object):
             }}
             trap "output_checkpoint_files" EXIT
             '''
-        ).strip().format(
+        ).lstrip().format(
             completed_checkpoint_name=self.CHECKPOINT_FILE_NAMES['completed'],
             failure_log_name=self.STD_LOG_FILE_NAMES['failure'],
             summary_stdout_cmd=generate_log_summary_cmd(log_name='stdout'),
@@ -119,7 +119,8 @@ class JobdirBuilder(object):
             },
             'dir': self.output_dir,
             'entrypoint': './' + self.ENTRYPOINT_NAME,
-            'std_log_file_names': self.STD_LOG_FILE_NAMES
+            'std_log_file_names': self.STD_LOG_FILE_NAMES,
+            'checkpoint_file_names': self.CHECKPOINT_FILE_NAMES,
         }
 
     def _decorate_job_spec(self, job_spec=None):

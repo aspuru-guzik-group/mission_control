@@ -7,10 +7,9 @@ from mc.job_module_utils.job_module_command_dispatcher import (
     JobModuleCommandDispatcher)
 from mc.runners.flow_runner import FlowRunner
 from mc.runners.jobman_job_runner.job_runner import JobRunner
-from mc.utils import import_utils
 
 
-class HoustonSubcommandUtils(object):
+class HoustonUtils(object):
     def __init__(self, load_cfg=None):
         self.load_cfg = load_cfg
 
@@ -118,9 +117,7 @@ class HoustonSubcommandUtils(object):
     @property
     def jobman(self):
         if self._jobman is ...:
-            jobman_cfg = import_utils.load_module_from_path(
-                path=self.cfg['JOBMAN_CFG_PATH'])
-            self._jobman = JobMan.from_cfg(cfg=jobman_cfg)
+            self._jobman = JobMan.from_cfg(cfg=self.cfg['JOBMAN_CFG'])
         return self._jobman
 
     @jobman.setter

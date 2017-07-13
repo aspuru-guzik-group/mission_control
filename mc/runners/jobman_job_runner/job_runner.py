@@ -86,17 +86,24 @@ class JobRunner(object):
             'mc_job': jobman_job['source_meta']['mc_job'],
             'artifact': self.artifact_handler.dir_to_artifact(
                 dir_=jobman_job['job_spec']['dir']),
-            'std_logs': self.get_std_log_contents_for_jobman_job(
-                jobman_job=jobman_job),
+            **self._parse_std_log_contents(jobman_job=jobman_job)
         }
-        parsed_jobman_job['error'] = \
-                parsed_jobman_job['std_logs'].get('failure')
-        parsed_jobman_job['status'] = 'COMPLETED'
-        if parsed_jobman_job['error']:
-            parsed_jobman_job['jobman_job']['status'] == 'FAILED'
-            msg = "Job failed, error was:\n" + parsed_jobman_job['error']
-            self.logger.warning(msg)
+        if parsed_jobman_job.get('status') == 'FAILED':
+            self.logger.warning("Job failed, error was:\n{error}".format(
+                error=parsed_jobman_job.get('error')))
         return parsed_jobman_job
+
+    def _parse_std_log_contents(self, jobman_job=None):
+        parse_results = {}
+        std_log_contents =self.get_std_log_contents_for_jobman_job(
+            jobman_job=jobman_job)
+        parse_results['std_logs'] = std_log_contents
+        failure_log_content = std_log_contents.get('failure')
+        if failure_log_content:
+            parse_results['error'] = failure_log_content
+            parse_results['status'] = 'FAILED'
+        else: parse_results['status'] = 'COMPLETED'
+        return parse_results
 
     def get_std_log_contents_for_jobman_job(self, jobman_job=None):
         job_spec = jobman_job['job_spec']

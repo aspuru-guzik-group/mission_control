@@ -72,18 +72,64 @@ class _WriteEntrypointTestCase(BaseTestCase):
 class _GenerateEntrypointContentTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
+        self.mockify_builder_attrs(attrs=['_generate_checkpoint_section'])
         self.result = self.builder._generate_entrypoint_content()
+
+    def test_genereates_checkpoint_section(self):
+        self.assertEqual(self.builder._generate_checkpoint_section.call_args,
+                         call())
 
     def test_generates_expected_content(self):
         expected_content = textwrap.dedent(
             """
             #!/bin/bash
+            {checkpoint_section}
             ${RUN_JOBDIR_CMD_VARNAME}
             """
         ).lstrip().format(
+            checkpoint_section=(
+                self.builder._generate_checkpoint_section.return_value),
             RUN_JOBDIR_CMD_VARNAME=self.builder.RUN_JOBDIR_CMD_VARNAME
         )
         self.assertEqual(self.result, expected_content)
+
+class _GenerateCheckpointSectionTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.result = self.builder._generate_checkpoint_section()
+
+    def test_generates_expected_checkpoint_section(self):
+        def generate_log_summary_cmd(log_name):
+            return 'tail -n 50 %s' % self.builder.STD_LOG_FILE_NAMES[log_name]
+        expected_checkpoint_section = textwrap.dedent(
+            '''
+            START_DIR=$PWD
+            output_checkpoint_files () {{
+                PREV_RETURN_CODE=$?
+                pushd $START_DIR > /dev/null
+                if [ $PREV_RETURN_CODE -eq 0 ]; then
+                    touch "{completed_checkpoint_name}"
+                else
+                    echo "{summary_stdout_cmd}:" >> "{failure_log_name}"
+                    {summary_stdout_cmd} >> "{failure_log_name}"
+                    echo "{summary_stderr_cmd}:" >> "{failure_log_name}"
+                    {summary_stderr_cmd} >> "{failure_log_name}"
+                    echo "{ls_cmd}:" >> "{failure_log_name}"
+                    {ls_cmd} >> "{failure_log_name}"
+                fi
+                popd > /dev/null
+            }}
+            trap "output_checkpoint_files" EXIT
+            '''
+        ).lstrip().format(
+            completed_checkpoint_name=(
+                self.builder.CHECKPOINT_FILE_NAMES['completed']),
+            failure_log_name=self.builder.STD_LOG_FILE_NAMES['failure'],
+            summary_stdout_cmd=generate_log_summary_cmd(log_name='stdout'),
+            summary_stderr_cmd=generate_log_summary_cmd(log_name='stderr'),
+            ls_cmd='ls -1'
+        )
+        self.assertEqual(self.result, expected_checkpoint_section)
 
 class _GenerateJobSpecTestCase(BaseTestCase):
     def setUp(self):
@@ -117,6 +163,8 @@ class _GenerateBaseJobSpecTestCase(BaseTestCase):
                 self.builder.RUN_JOBDIR_CMD_VARNAME: {'required': True}
             },
             'dir': self.builder.output_dir,
-            'entrypoint': self.builder.ENTRYPOINT_NAME,
+            'entrypoint': './' + self.builder.ENTRYPOINT_NAME,
+            'std_log_file_names': self.builder.STD_LOG_FILE_NAMES,
+            'checkpoint_file_names': self.builder.CHECKPOINT_FILE_NAMES,
         }
         self.assertEqual(self.result, expected_job_spec)
