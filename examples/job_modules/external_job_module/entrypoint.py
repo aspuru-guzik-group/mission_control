@@ -2,7 +2,8 @@ import os
 import sys
 from unittest.mock import patch
 
-from mc.job_module_utils.dispatcher import JobModuleCommandDispatcher
+from mc.job_module_utils.job_module_command_dispatcher import (
+    JobModuleCommandDispatcher)
 
 def main():
     dispatcher = JobModuleCommandDispatcher()
