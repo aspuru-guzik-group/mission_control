@@ -26,9 +26,6 @@ JOBMAN_CFG_PATH = os.path.join(CFG_DIR, 'jobman_cfg.py')
 JOBDIRS_DIR = os.path.join(ROOT_DIR, 'jobdirs')
 os.makedirs(JOBDIRS_DIR, exist_ok=True)
 
-JOB_SUBMISSION_RUNNER_EXE = os.path.join(ROOT_DIR, 'run_job_submission.sh')
-SUBMISSION_BUILD_TARGET = 'bash'
-
 from mc.artifact_processors.local_path_artifact_processor import (
     LocalPathArtifactProcessor)
 ARTIFACT_HANDLER = LocalPathArtifactProcessor()
