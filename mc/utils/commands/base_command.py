@@ -56,7 +56,7 @@ class OutputWrapper(io.TextIOBase):
         self._out.write(style_func(msg))
 
 
-class BaseCommand:
+class BaseCommand(object):
     """
     A base class for common command logic.
 
@@ -101,7 +101,7 @@ class BaseCommand:
     help = ''
 
     _called_from_command_line = False
-    def __init__(self, stdout=None, stderr=None, no_color=False):
+    def __init__(self, stdout=None, stderr=None, no_color=False, **kwargs):
         self.stdout = OutputWrapper(stdout or sys.stdout)
         self.stderr = OutputWrapper(stderr or sys.stderr)
         if no_color: self.style = color.no_style()
@@ -117,8 +117,8 @@ class BaseCommand:
 
     def get_version(self):
         """
-        Return the Django version, which should be correct for all built-in
-        Django commands. User-supplied commands can override this method to
+        Return the MC version, which should be correct for all built-in
+        MC commands. User-supplied commands can override this method to
         return their own version.
         """
         return mc.get_version()

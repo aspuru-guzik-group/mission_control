@@ -14,7 +14,7 @@ if __name__ == '__main__':
         raise
     
     try:
-        from mc.houston.houston import HoustonCommand
+        from mc.houston.houston_command import HoustonCommand
     except ImportError as err:
         handle_error(err, "  is 'mc' in your pythonpath?")
     command = HoustonCommand(

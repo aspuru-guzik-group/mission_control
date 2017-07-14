@@ -22,6 +22,11 @@ class SubcommandCommand(BaseCommand):
 
     def handle(self, args=None, kwargs=None, unparsed_args=None):
         subcommand = kwargs.get('subcommand')
+        self._run_subcommand(subcommand=subcommand, args=args, kwargs=kwargs,
+                             unparsed_args=unparsed_args)
+
+    def _run_subcommand(self, subcommand=None, args=None, kwargs=None,
+                        unparsed_args=None):
         try: subcommand_fn = self._get_subcommand_fn(subcommand=subcommand)
         except Exception as exc:
             raise self.InvalidSubcommandError(subcommand) from exc

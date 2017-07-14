@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import MagicMock
 
-from .. import houston
+from .. import houston_command
 
 
 class BaseTestCase(unittest.TestCase):
@@ -10,7 +10,7 @@ class BaseTestCase(unittest.TestCase):
             'subcommand_%s' % i: MagicMock(return_value=None)
             for i in range(3)
         }
-        self.houston = houston.HoustonCommand(
+        self.houston = houston_command.HoustonCommand(
             subcommands_registry=self.subcommands_registry)
 
     def mockify_houston_attrs(self, attrs=None):
