@@ -30,7 +30,7 @@ def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
 
     common_dump_only_fields = ['created', 'modified']
 
-    flow_table = sa_schema['tables']['Flow']
+    flow_table = sa_schema['tables']['flow']
     class FlowSchema(Schema):
         key = sa_column_to_marshmallow_field(flow_table.columns['key'])
         label = sa_column_to_marshmallow_field(flow_table.columns['label'])
@@ -51,9 +51,9 @@ def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
                       'status', 'claimed', 'depth', 'created', 'modified',
                       'num_tickable_tasks']
             dump_only = common_dump_only_fields
-    marshmallow_schemas['Flow'] = FlowSchema()
+    marshmallow_schemas['flow'] = FlowSchema()
 
-    job_table = sa_schema['tables']['Job']
+    job_table = sa_schema['tables']['job']
     class JobSchema(Schema):
         key = sa_column_to_marshmallow_field(job_table.columns['key'])
         label = sa_column_to_marshmallow_field(job_table.columns['label'])
@@ -75,9 +75,9 @@ def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
                       'cfg', 'data', 'parent_key', 'status', 'claimed',
                       'created', 'modified']
             dump_only_fields = common_dump_only_fields
-    marshmallow_schemas['Job'] = JobSchema()
+    marshmallow_schemas['job'] = JobSchema()
 
-    queue_table = sa_schema['tables']['Queue']
+    queue_table = sa_schema['tables']['queue']
     class QueueSchema(Schema):
         key = sa_column_to_marshmallow_field(queue_table.columns['key'])
         label = sa_column_to_marshmallow_field(queue_table.columns['label'])
@@ -88,6 +88,6 @@ def sa_schema_to_marsh_schemas(sa_schema=None, Schema=marshmallow.Schema,
         class Meta:
             fields = ['key', 'label', 'queue_spec', 'created', 'modified']
             dump_only_fields = common_dump_only_fields
-    marshmallow_schemas['Queue'] = QueueSchema()
+    marshmallow_schemas['queue'] = QueueSchema()
 
     return marshmallow_schemas

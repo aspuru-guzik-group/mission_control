@@ -8,8 +8,8 @@ def main():
     create_flows(mc_dao=mc_dao, flow_engine=flow_engine, n=3)
 
     queue_record = mc_dao.create_item(
-        item_type='Queue',
-        item_kwargs={'queue_spec': {'item_type': 'Flow'}
+        item_type='queue',
+        item_kwargs={'queue_spec': {'item_type': 'flow'}
     })
     queue_key = queue_record['key']
 
@@ -20,7 +20,7 @@ def main():
                 flow_dict=flow_record)
             flow_engine.tick_flow(flow=reconstituted_flow)
             mc_dao.patch_item(
-                item_type='Flow',
+                item_type='flow',
                 key=flow_record['key'],
                 patches={
                     **flow_engine.flow_to_flow_dict(flow=reconstituted_flow),
@@ -38,7 +38,7 @@ def create_flows(mc_dao=None, flow_engine=None, n=3):
             'num_tasks': 3
         })
         flow = flow_engine.flow_spec_to_flow(flow_spec=flow_spec)
-        mc_dao.create_item(item_type='Flow',
+        mc_dao.create_item(item_type='flow',
                            item_kwargs=flow_engine.flow_to_flow_dict(flow=flow))
 
 def generate_flow_spec(params=None):

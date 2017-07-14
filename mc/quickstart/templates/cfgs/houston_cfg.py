@@ -11,13 +11,13 @@ MC_DB_URI = 'sqlite:///' + os.path.join(DATA_DIR, 'mc.db.sqlite')
 FLOW_QUEUE = {
     'key': 'houston_queue_flow',
     'queue_kwargs': {
-        'queue_spec': {'item_type': 'Flow'}
+        'queue_spec': {'item_type': 'flow'}
     }
 }
 JOB_QUEUE = {
     'key': 'houston_queue_job',
     'queue_kwargs': {
-        'queue_spec': {'item_type': 'Job'}
+        'queue_spec': {'item_type': 'job'}
     }
 }
 

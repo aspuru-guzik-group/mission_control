@@ -22,7 +22,7 @@ class JobRecordClient(object):
                 get_job_record to retrieve a job.
         """
         job_kwargs = {**(job_kwargs or {}), 'status': 'PENDING'}
-        job_record = self.mc_dao.create_item(item_type='Job',
+        job_record = self.mc_dao.create_item(item_type='job',
                                              item_kwargs=job_kwargs)
         if self.use_locks:
             parent_key = job_kwargs.get('parent_key')
@@ -40,7 +40,7 @@ class JobRecordClient(object):
         Returns:
             job_record (dict): a job_record.
         """
-        return self.mc_dao.get_item_by_key(item_type='Job', key=job_meta['key'])
+        return self.mc_dao.get_item_by_key(item_type='job', key=job_meta['key'])
 
     def claim_job_records(self, *args, **kwargs):
         """
@@ -57,7 +57,7 @@ class JobRecordClient(object):
         Returns:
             job_records (dict): the patched items
         """
-        patched = self.mc_dao.patch_items(item_type='Job',
+        patched = self.mc_dao.patch_items(item_type='job',
                                           keyed_patches=keyed_patches)
         if self.use_locks:
             locker_keys = [job_key for job_key, patches in keyed_patches.items()

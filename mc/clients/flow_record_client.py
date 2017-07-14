@@ -23,7 +23,7 @@ class FlowRecordClient(object):
             flow_meta (dict): a dictionary of metadata that can be passed to
                 get_flow_record to retrieve a flow.
         """
-        flow_record = self.mc_dao.create_item(item_type='Flow',
+        flow_record = self.mc_dao.create_item(item_type='flow',
                                               item_kwargs=flow_kwargs)
         if self.use_locks:
             parent_key = flow_kwargs.get('parent_key')
@@ -40,7 +40,7 @@ class FlowRecordClient(object):
         Returns:
             flow_record (dict): a flow_record.
         """
-        return self.mc_dao.get_item_by_key(item_type='Flow',
+        return self.mc_dao.get_item_by_key(item_type='flow',
                                            key=flow_meta['key'])
 
     def create_flow_record_from_flow_spec(self, flow_spec=None):
@@ -78,7 +78,7 @@ class FlowRecordClient(object):
         Returns:
             flow_record (dict): a patched flow dict.
         """
-        patched =  self.mc_dao.patch_item(item_type='Flow',
+        patched =  self.mc_dao.patch_item(item_type='flow',
                                           key=flow_record['key'],
                                           patches={'claimed': False, **patches})
         if self.use_locks:

@@ -1,12 +1,12 @@
 def dump_flows(self, args=None, kwargs=None, unparsed_args=None):
     if 'keys_to_exclude' not in kwargs:
         kwargs = {**kwargs, 'keys_to_exclude': {'graph'}}
-    self._dump_items(item_type='Flow', kwargs=kwargs)
+    self._dump_items(item_type='flow', kwargs=kwargs)
 
 def dump_jobs(self, args=None, kwargs=None, unparsed_args=None):
     if 'keys_to_exclude' not in kwargs:
         kwargs = {**kwargs, 'keys_to_exclude': {'data'}}
-    self._dump_items(item_type='Job', **kwargs)
+    self._dump_items(item_type='job', **kwargs)
 
 def _dump_items(self, item_type=None, keys_to_exclude=None, filters=None,
                 **kwargs):
@@ -24,4 +24,4 @@ def _dump_item(self, item=None, keys_to_exclude=None):
             print("{key}: {value}".format(key=key, value=value))
 
 def dump_locks(self, args=None, kwargs=None, unparsed_args=None):
-    self._dump_items(item_type='Lock', **kwargs)
+    self._dump_items(item_type='lock', **kwargs)

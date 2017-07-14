@@ -8,7 +8,7 @@ class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.cfg = MagicMock()
         self.utils = utils.HoustonUtils(
-            load_cfg=MagicMock(return_value=self.cfg)
+            get_cfg=MagicMock(return_value=self.cfg)
         )
 
     def mockify_utils_attrs(self, attrs=None):
@@ -79,7 +79,7 @@ class EnsureQueueTestCase(BaseTestCase):
         self._ensure_queue()
         self.assertEqual(
             self.utils.mc_dao.create_item.call_args,
-            call(item_type='Queue',
+            call(item_type='queue',
                  item_kwargs={'key': self.queue_cfg['key'],
                               **self.queue_cfg.get('queue_kwargs', {})})
         )

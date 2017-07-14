@@ -24,7 +24,7 @@ def create_flows(mc_dao=None, flow_engine=None, n=3):
             'num_tasks': 3
         })
         flow = flow_engine.flow_spec_to_flow(flow_spec=flow_spec)
-        mc_dao.create_item(item_type='Flow',
+        mc_dao.create_item(item_type='flow',
                            item_kwargs=flow_engine.flow_to_flow_dict(flow=flow))
 
 def generate_flow_spec(params=None):

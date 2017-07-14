@@ -34,7 +34,7 @@ class ClaimQueueItemsTestCase(BaseTestCase):
 
     def test_gets_queue(self):
         self.assertEqual(self.dao.get_item_by_key.call_args,
-                         call(item_type='Queue', key=self.queue_key))
+                         call(item_type='queue', key=self.queue_key))
 
     def test_gets_items_to_claim(self):
         self.assertEqual(self.dao.get_queue_items_to_claim.call_args,
@@ -66,7 +66,7 @@ class GetQueueItemsToClaimTestCase(BaseTestCase):
         return self.dao.get_queue_items_to_claim(queue=self.queue)
 
     def test_dispatches_to_flow_handler_for_flow_queues(self):
-        self.queue_spec['item_type'] = 'Flow'
+        self.queue_spec['item_type'] = 'flow'
         result = self._get_queue_items_to_claim()
         self.assertEqual(self.dao.get_flow_queue_items_to_claim.call_args,
                          call(queue=self.queue))

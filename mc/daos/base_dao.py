@@ -6,7 +6,7 @@ class BaseDao(abc.ABC):
     common utilities.
     """
 
-    ITEM_TYPES = ['Job', 'Flow', 'Queue']
+    ITEM_TYPES = ['job', 'flow', 'queue']
 
     class InvalidQueryError(Exception): pass
     class InvalidFilterError(Exception): pass
@@ -126,7 +126,7 @@ class BaseDao(abc.ABC):
                 ::
                     {items: [claimed_item_1, ..., claimed_item_n]}
         """
-        queue = self.get_item_by_key(item_type='Queue', key=queue_key)
+        queue = self.get_item_by_key(item_type='queue', key=queue_key)
         items_to_claim = self.get_queue_items_to_claim(queue=queue)
         claimed_items = self.patch_items(
             item_type=queue['queue_spec']['item_type'],
@@ -143,7 +143,7 @@ class BaseDao(abc.ABC):
             items (list): a list of items that match the queue's query.
         """
         queue_item_type = queue['queue_spec']['item_type']
-        if queue_item_type == 'Flow':
+        if queue_item_type == 'flow':
             return self.get_flow_queue_items_to_claim(queue=queue)
         return self.default_get_queue_items_to_claim(queue=queue)
 
@@ -200,7 +200,7 @@ class BaseDao(abc.ABC):
             lock_record (dict): a lock_record
         """
         self.create_item(
-            item_type='Lock',
+            item_type='lock',
             item_kwargs={'lockee_key': lockee_key, 'locker_key': locker_key}
         )
 
@@ -214,7 +214,7 @@ class BaseDao(abc.ABC):
             None
         """
         self.delete_items(
-            item_type='Lock',
+            item_type='lock',
             query={
                 'filters': [
                     {'prop': 'locker_key', 'op': 'IN', 'arg': locker_keys},

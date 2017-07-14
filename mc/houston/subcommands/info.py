@@ -15,7 +15,7 @@ class InfoSubcommand(BaseHoustonSubcommand):
         infos_for_types = {
             record_type: self._get_info_for_mc_record_type(
                 record_type=record_type)
-            for record_type in ['Flow', 'Job']
+            for record_type in ['flow', 'job']
         }
         return infos_for_types
 

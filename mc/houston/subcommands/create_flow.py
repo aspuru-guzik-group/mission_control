@@ -11,7 +11,7 @@ class CreateFlowSubcommand(BaseHoustonSubcommand):
         flow_spec = self.kwargs['flow_spec']
         flow_dict = Flow.from_flow_spec(flow_spec=flow_spec).to_flow_dict()
         flow_record = self.utils.mc_dao.create_item(
-            item_type='Flow', item_kwargs=flow_dict)
+            item_type='flow', item_kwargs=flow_dict)
         print(json.dumps(flow_record))
 
 Subcommand = CreateFlowSubcommand

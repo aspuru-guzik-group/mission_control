@@ -16,7 +16,7 @@ def generate_schema():
         generate_label_column(),
         *generate_timestamp_columns()
     )
-    tables['Flow'] = Table(
+    tables['flow'] = Table(
         generate_table_name('flow'), metadata,
         generate_key_column(prefix='flow:'),
         generate_label_column(),
@@ -30,7 +30,7 @@ def generate_schema():
         generate_claimed_column(),
         *generate_timestamp_columns()
     )
-    tables['Job'] = Table(
+    tables['job'] = Table(
         generate_table_name('job'), metadata,
         generate_key_column(prefix='job:'),
         generate_label_column(),
@@ -44,16 +44,16 @@ def generate_schema():
         generate_claimed_column(),
         *generate_timestamp_columns()
     )
-    tables['Queue'] = Table(
+    tables['queue'] = Table(
         generate_table_name('queue'), metadata,
         generate_key_column(prefix='queue:'),
         generate_label_column(),
         generate_json_column(column_name='queue_spec'),
         *generate_timestamp_columns()
     )
-    tables['Lock'] = Table(
+    tables['lock'] = Table(
         generate_table_name('lock'), metadata,
-        generate_key_column('key', prefix='lock:'),
+        generate_key_column(prefix='lock:'),
         generate_key_column('lockee_key', default=None),
         generate_key_column('locker_key', default=None),
         *generate_timestamp_columns()
@@ -71,6 +71,7 @@ def generate_table_name(table_name=None):
 KEY_LENGTH = 60
 def key_fn_factory(prefix=''):
     def key_fn(): return prefix + str(uuid.uuid4())
+    return key_fn
 
 def generate_key_column(column_name='key', prefix=None, **kwargs):
     key_fn = key_fn_factory(prefix=prefix)

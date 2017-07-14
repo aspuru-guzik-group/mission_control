@@ -35,19 +35,19 @@ def setup_task_ctx(mc_dao=None):
         def create_job_record(self, *args, job_kwargs=None, **kwargs):
             job_kwargs = {**(job_kwargs or {}), 'data': {},
                           'status': 'PENDING'}
-            job_record = self.mc_dao.create_item(item_type='Job',
+            job_record = self.mc_dao.create_item(item_type='job',
                                                  item_kwargs=job_kwargs)
             job_meta = {'key': job_record['key']}
             return job_meta
 
         def get_job_record(self, *args, job_meta=None, **kwargs):
-            job_record = self.mc_dao.get_item_by_key(item_type='Job',
+            job_record = self.mc_dao.get_item_by_key(item_type='job',
                                                      key=job_meta['key'])
             # Normally the job would be run by an external runner,
             # but we're faking it here.
             tick_job_record(job_record=job_record)
             self.mc_dao.patch_item(
-                item_type='Job', key=job_meta['key'],
+                item_type='job', key=job_meta['key'],
                 patches={'data': job_record['data'],
                          'status': job_record['status']}
             )

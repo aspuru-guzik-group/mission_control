@@ -29,10 +29,10 @@ class McSandbox(object):
     def setup_queues(self):
         return {
             item_type: self.mc_dao.create_item(
-                item_type='Queue',
+                item_type='queue',
                 item_kwargs={'queue_spec': {'item_type': item_type}
             })
-            for item_type in ['Flow', 'Job']
+            for item_type in ['flow', 'job']
         }
 
     def setup_task_ctx(self):
@@ -44,11 +44,11 @@ class McSandbox(object):
 
     def setup_flow_record_client(self):
         return FlowRecordClient(mc_dao=self.mc_dao,
-                                queue_key=self.queues['Flow']['key'])
+                                queue_key=self.queues['flow']['key'])
 
     def setup_job_record_client(self):
         return JobRecordClient(mc_dao=self.mc_dao,
-                               queue_key=self.queues['Job']['key'])
+                               queue_key=self.queues['job']['key'])
 
     def setup_flow_engine(self):
         return FlowEngine()
@@ -62,7 +62,7 @@ class McSandbox(object):
         return self.has_incomplete_flows() or self.has_incomplete_jobs()
 
     def has_incomplete_flows(self):
-        return len(self.get_incomplete_items(item_type='Flow')) > 0
+        return len(self.get_incomplete_items(item_type='flow')) > 0
 
     def get_incomplete_items(self, item_type=None):
         incomplete_filter = {'prop': 'status', 'op': '! IN',
@@ -70,7 +70,7 @@ class McSandbox(object):
         return self.mc_dao.get_items(item_type=item_type,
                                      query={'filters':  [incomplete_filter]})
     def has_incomplete_jobs(self):
-        return len(self.get_incomplete_items(item_type='Job')) > 0
+        return len(self.get_incomplete_items(item_type='job')) > 0
 
     def run_until_completed(self, max_ticks=10, tick_interval=.1,
                             log_ticks=False, job_runner=None):
@@ -91,7 +91,7 @@ class McSandbox(object):
     def print_jobs(self, **kwargs):
         if 'keys_to_exclude' not in kwargs:
             kwargs = {**kwargs, 'keys_to_exclude': {'data'}}
-        self.print_items(item_type='Job', **kwargs)
+        self.print_items(item_type='job', **kwargs)
 
     def print_items(self, item_type=None, keys_to_exclude=None, filters=None):
         print('==== ' + item_type.upper() + ' ====')
@@ -106,10 +106,10 @@ class McSandbox(object):
     def print_flows(self, **kwargs):
         if 'keys_to_exclude' not in kwargs:
             kwargs = {**kwargs, 'keys_to_exclude': {'graph'}}
-        self.print_items(item_type='Flow', **kwargs)
+        self.print_items(item_type='flow', **kwargs)
 
     def print_locks(self, **kwargs):
-        self.print_items(item_type='Lock', **kwargs)
+        self.print_items(item_type='lock', **kwargs)
 
     def create_flow(self, flow_spec=None):
         flow = self.flow_engine.flow_spec_to_flow(flow_spec=flow_spec)

@@ -35,11 +35,11 @@ class HoustonUtils(object):
         self.ensure_queue(queue_cfg=self.cfg['JOB_QUEUE'])
 
     def ensure_queue(self, queue_cfg=None):
-        try: self.mc_dao.get_item_by_key(item_type='Queue',
+        try: self.mc_dao.get_item_by_key(item_type='queue',
                                          key=queue_cfg['key'])
         except self.mc_dao.ItemNotFoundError:
             self.mc_dao.create_item(
-                item_type='Queue',
+                item_type='queue',
                 item_kwargs={
                     'key': queue_cfg['key'],
                     **queue_cfg.get('queue_kwargs', {})
@@ -73,7 +73,7 @@ class HoustonUtils(object):
     @property
     def flow_record_client(self):
         if self._flow_record_client is ...:
-            self._flow_record_client = self._get_mc_client(record_type='Flow')
+            self._flow_record_client = self._get_mc_client(record_type='flow')
         return self._flow_record_client
 
     @flow_record_client.setter
@@ -83,13 +83,13 @@ class HoustonUtils(object):
     @property
     def job_record_client(self):
         if self._job_record_client is ...:
-            self._job_record_client = self._get_mc_client(record_type='Job')
+            self._job_record_client = self._get_mc_client(record_type='job')
         return self._job_record_client
 
     def _get_mc_client(self, record_type=None):
         client_cls = None
-        if record_type == 'Flow': client_cls = FlowRecordClient
-        elif record_type == 'Job': client_cls = JobRecordClient
+        if record_type == 'flow': client_cls = FlowRecordClient
+        elif record_type == 'job': client_cls = JobRecordClient
         assert client_cls is not None
         queue_cfg = self.cfg[record_type.upper() + '_QUEUE']
         return client_cls(mc_dao=self.mc_dao,
@@ -135,7 +135,7 @@ class HoustonUtils(object):
     def get_unfinished_mc_records(self):
         return {
             record_type: self._get_unfinished_mc_items(item_type=record_type)
-            for record_type in ['Flow', 'Job']
+            for record_type in ['flow', 'job']
         }
 
     def _get_unfinished_mc_items(self, item_type=None):

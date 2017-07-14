@@ -53,9 +53,9 @@ class InfoTestCase(BaseTestCase):
     def test_returns_general_info(self):
         self.assertEqual(self._get_info(),
             {
-                'Flow': {'count': 0},
-                'Job': {'count': 0}
+                'flow': {'count': 0},
+                'job': {'count': 0}
             }
         )
         self._create_flow()
-        self.assertEqual(self._get_info()['Flow']['count'], 1)
+        self.assertEqual(self._get_info()['flow']['count'], 1)

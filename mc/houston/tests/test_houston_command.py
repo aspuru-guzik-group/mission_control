@@ -26,5 +26,4 @@ class RunTestCase(BaseTestCase):
     def test_dispatches_to_subcommand(self):
         expected_subcommand_fn = self.subcommands_registry[self.subcommand]
         call_kwargs = expected_subcommand_fn.call_args[1]
-        self.assertEqual(call_kwargs['load_cfg'],
-                         self.houston._get_load_cfg_fn.return_value)
+        self.assertEqual(call_kwargs['get_cfg'], self.houston._get_cfg)

@@ -16,7 +16,7 @@ class FlowTestCase(BaseTestCase):
         self.flow_kwargs = {'label': 'initial_label'}
 
     def _create_flow(self):
-        return self.dao.create_item(item_type='Flow',
+        return self.dao.create_item(item_type='flow',
                                     item_kwargs=self.flow_kwargs)
 
     def test_create_flow(self):
@@ -27,7 +27,7 @@ class FlowTestCase(BaseTestCase):
     def test_patch_flow(self):
         created_flow = self._create_flow()
         patched_flow = self.dao.patch_item(
-            item_type='Flow',
+            item_type='flow',
             key=created_flow['key'],
             patches={'label': 'label2'}
         )
@@ -46,7 +46,7 @@ class JobTestCase(BaseTestCase):
         }
 
     def _create_job(self):
-        return self.dao.create_item(item_type='Job',
+        return self.dao.create_item(item_type='job',
                                     item_kwargs=self.job_kwargs)
 
     def test_create_job(self):
@@ -65,7 +65,7 @@ class JobTestCase(BaseTestCase):
             'parent_key': 'some_parent_key2',
         }
         patched_job = self.dao.patch_item(
-            item_type='Job', key=created_job['key'], patches=patches)
+            item_type='job', key=created_job['key'], patches=patches)
         for k, v in patches.items(): self.assertEqual(patched_job[k], v)
 
 class JobQueueTestCase(BaseTestCase):
@@ -75,7 +75,7 @@ class JobQueueTestCase(BaseTestCase):
 
     def _create_queue(self, queue_kwargs=None):
         queue_kwargs = queue_kwargs or self.queue_kwargs
-        return self.dao.create_item(item_type='Queue',
+        return self.dao.create_item(item_type='queue',
                                     item_kwargs=queue_kwargs)
 
     def test_create_queue(self):
@@ -85,10 +85,10 @@ class JobQueueTestCase(BaseTestCase):
 
     def test_claim_queue_items(self):
         queue_kwargs = {'label': 'initial_label',
-                        'queue_spec': {'item_type': 'Job'}}
+                        'queue_spec': {'item_type': 'job'}}
         queue = self._create_queue(queue_kwargs=queue_kwargs)
         flows = [
-            self.dao.create_item(item_type='Job',
+            self.dao.create_item(item_type='job',
                                  item_kwargs={'label': 'flow_%s' % i})
             for i in range(3)
         ]
@@ -105,7 +105,7 @@ class FlowQueueTestCase(BaseTestCase):
 
     def _create_queue(self, queue_kwargs=None):
         queue_kwargs = queue_kwargs or self.queue_kwargs
-        return self.dao.create_item(item_type='Queue', item_kwargs=queue_kwargs)
+        return self.dao.create_item(item_type='queue', item_kwargs=queue_kwargs)
 
     def test_create_queue(self):
         created_queue = self._create_queue()
@@ -117,16 +117,16 @@ class FlowQueueTestCase(BaseTestCase):
 
     def _release_flows(self, flows=None):
         self.dao.patch_items(
-            item_type='Flow',
+            item_type='flow',
             keyed_patches={flow['key']: {'claimed': False} for flow in flows}
         )
 
     def test_claim_queue_items(self):
         queue_kwargs = {'label': 'initial_label',
-                        'queue_spec': {'item_type': 'Flow'}}
+                        'queue_spec': {'item_type': 'flow'}}
         queue = self._create_queue(queue_kwargs=queue_kwargs)
         flows = [
-            self.dao.create_item(item_type='Flow',
+            self.dao.create_item(item_type='flow',
                                  item_kwargs={'label': 'flow_%s' % i})
             for i in range(3)
         ]
@@ -137,12 +137,12 @@ class FlowQueueTestCase(BaseTestCase):
 
     def test_locks(self):
         queue_kwargs = {'label': 'initial_label',
-                        'queue_spec': {'item_type': 'Flow'}}
+                        'queue_spec': {'item_type': 'flow'}}
         queue = self._create_queue(queue_kwargs=queue_kwargs)
-        unlocked_flow = self.dao.create_item(item_type='Flow',
+        unlocked_flow = self.dao.create_item(item_type='flow',
                                              item_kwargs={'label': 'unlocked'})
         flow_to_unlock = self.dao.create_item(
-            item_type='Flow',
+            item_type='flow',
             item_kwargs={'label': 'to_unlock',
                          'num_tickable_tasks': 1}
         )

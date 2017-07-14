@@ -162,7 +162,7 @@ class SqlAlchemyDao(BaseDao):
         return self.statement_to_dicts(statement=statement)
 
     def get_lock_count_subq(self):
-        lock_table = self.get_item_table(item_type='Lock')
+        lock_table = self.get_item_table(item_type='lock')
         subq = (
             _sqla.select([_sqla.func.count('key').label('lock_count'),
                           lock_table.c.lockee_key])
