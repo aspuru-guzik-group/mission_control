@@ -1,11 +1,24 @@
+from contextlib import contextmanager
 import difflib
 import filecmp
 import io
 import json
 import os
 import re
+import sys
 from unittest.mock import Mock
 
+
+
+@contextmanager
+def capture():
+    orig_stdout = sys.stdout
+    try:
+        tmp_stdout = io.StringIO()
+        sys.stdout = tmp_stdout
+        yield tmp_stdout
+        tmp_stdout.seek(0)
+    finally: sys.stdout = orig_stdout
 
 def assert_dirs_equal(test=None, left=None, right=None, ignore_patterns=None,
                       json_patterns=None):
