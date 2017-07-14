@@ -2,6 +2,7 @@ from jobman.jobman import JobMan
 
 from mc.clients.job_record_client import JobRecordClient
 from mc.clients.flow_record_client import FlowRecordClient
+from mc.flows.flow_engine import FlowEngine
 from mc.daos.sqlalchemy_dao import SqlAlchemyDao as _McSqlAlchemyDao
 from mc.job_module_utils.job_module_command_dispatcher import (
     JobModuleCommandDispatcher)
@@ -20,6 +21,7 @@ class HoustonUtils(object):
         self._job_record_client = ...
         self._flow_queue = ...
         self._job_queue = ...
+        self._flow_engine = ...
         self._job_runner = ...
         self._jobman = ...
 
@@ -59,6 +61,7 @@ class HoustonUtils(object):
     def flow_runner(self):
         if self._flow_runner is ...: 
             self._flow_runner = FlowRunner(
+                flow_engine=self.flow_engine,
                 flow_record_client=self.flow_record_client,
                 task_ctx={
                     'mc.flow_record_client': self.flow_record_client,
@@ -69,6 +72,16 @@ class HoustonUtils(object):
 
     @flow_runner.setter
     def flow_runner(self, new_value): self._flow_runner = new_value
+
+
+    @property
+    def flow_engine(self):
+        if self._flow_engine is ...:
+            self._flow_engine = FlowEngine()
+        return self._flow_engine
+
+    @flow_engine.setter
+    def flow_engine(self, new_value): self._flow_engine = new_value
 
     @property
     def flow_record_client(self):

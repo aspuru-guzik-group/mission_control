@@ -15,12 +15,11 @@ class BaseTestCase(unittest.TestCase):
         for attr in attrs: setattr(self.utils, attr, MagicMock())
 
     def mockify_module_attrs(self, attrs=None, module=utils):
-        mod_mocks = {}
+        if not hasattr(self, 'modmocks'): self.modmocks = {}
         for attr in attrs:
             patcher = patch.object(module, attr)
             self.addCleanup(patcher.stop)
-            mod_mocks[attr] = patcher.start()
-        return mod_mocks
+            self.modmocks[attr] = patcher.start()
 
 class EnsureDbTestCase(BaseTestCase):
     def setUp(self):
@@ -34,16 +33,16 @@ class EnsureDbTestCase(BaseTestCase):
 class McDaoTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.mod_mocks = self.mockify_module_attrs(attrs=['_McSqlAlchemyDao'])
+        self.mockify_module_attrs(attrs=['_McSqlAlchemyDao'])
         self.result = self.utils.mc_dao
 
     def test_constructs_dao(self):
-        self.assertEqual(self.mod_mocks['_McSqlAlchemyDao'].call_args,
+        self.assertEqual(self.modmocks['_McSqlAlchemyDao'].call_args,
                          call(db_uri=self.cfg['MC_DB_URI']))
 
     def test_returns_dao(self):
         self.assertEqual(self.result,
-                         self.mod_mocks['_McSqlAlchemyDao'].return_value)
+                         self.modmocks['_McSqlAlchemyDao'].return_value)
 
     def test_memoizes(self):
         self.assertTrue(self.utils.mc_dao is self.result)
@@ -87,15 +86,16 @@ class EnsureQueueTestCase(BaseTestCase):
 class FlowRunnerTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.mockify_utils_attrs(attrs=['flow_record_client',
+        self.mockify_utils_attrs(attrs=['flow_engine','flow_record_client',
                                         'job_record_client'])
-        self.mod_mocks = self.mockify_module_attrs(attrs=['FlowRunner'])
+        self.mockify_module_attrs(attrs=['FlowRunner'])
         self.result = self.utils.flow_runner
 
     def test_constructs_and_returns_flow_runner(self):
         self.assertEqual(
-            self.mod_mocks['FlowRunner'].call_args,
+            self.modmocks['FlowRunner'].call_args,
             call(
+                flow_engine=self.utils.flow_engine,
                 flow_record_client=self.utils.flow_record_client,
                 task_ctx={
                     'mc.flow_record_client': self.utils.flow_record_client,
@@ -103,27 +103,40 @@ class FlowRunnerTestCase(BaseTestCase):
                 }
             )
         )
-        self.assertEqual(self.result, self.mod_mocks['FlowRunner'].return_value)
+        self.assertEqual(self.result, self.modmocks['FlowRunner'].return_value)
 
     def test_memoizes(self):
         self.assertTrue(self.utils.flow_runner is self.result)
+
+class FlowEngineTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.mockify_module_attrs(attrs=['FlowEngine'])
+        self.result = self.utils.flow_engine
+
+    def test_constructs_and_returns_flow_engine(self):
+        self.assertEqual(self.modmocks['FlowEngine'].call_args, call())
+        self.assertEqual(self.result, self.modmocks['FlowEngine'].return_value)
+
+    def test_memoizes(self):
+        self.assertTrue(self.utils.flow_engine is self.result)
 
 class FlowRecordClientTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.mockify_utils_attrs(attrs=['mc_dao'])
-        self.mod_mocks = self.mockify_module_attrs(attrs=['FlowRecordClient'])
+        self.mockify_module_attrs(attrs=['FlowRecordClient'])
         self.result = self.utils.flow_record_client
 
     def test_constructs_and_returns_flow_record_client(self):
         self.assertEqual(
-            self.mod_mocks['FlowRecordClient'].call_args,
+            self.modmocks['FlowRecordClient'].call_args,
             call(mc_dao=self.utils.mc_dao,
                  use_locks=self.utils.cfg.get('USE_LOCKS', True),
                  queue_key=self.utils.cfg['FLOW_QUEUE']['key'])
         )
         self.assertEqual(self.result,
-                         self.mod_mocks['FlowRecordClient'].return_value)
+                         self.modmocks['FlowRecordClient'].return_value)
 
     def test_memoizes(self):
         self.assertTrue(self.utils.flow_record_client is self.result)
@@ -132,12 +145,12 @@ class JobRecordClientTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.mockify_utils_attrs(attrs=['mc_dao'])
-        self.mod_mocks = self.mockify_module_attrs(attrs=['JobRecordClient'])
+        self.mockify_module_attrs(attrs=['JobRecordClient'])
         self.result = self.utils.job_record_client
 
     def test_constructs_and_returns_job_record_client(self):
         self.assertEqual(
-            self.mod_mocks['JobRecordClient'].call_args,
+            self.modmocks['JobRecordClient'].call_args,
             call(
                 mc_dao=self.utils.mc_dao,
                 use_locks=self.utils.cfg.get('USE_LOCKS', True),
@@ -145,7 +158,7 @@ class JobRecordClientTestCase(BaseTestCase):
             )
         )
         self.assertEqual(self.result,
-                         self.mod_mocks['JobRecordClient'].return_value)
+                         self.modmocks['JobRecordClient'].return_value)
 
     def test_memoizes(self):
         self.assertTrue(self.utils.job_record_client is self.result)
@@ -155,12 +168,12 @@ class JobRunnerTestCase(BaseTestCase):
         super().setUp()
         self.mockify_utils_attrs(attrs=['job_record_client', 'jobman',
                                         'jobdir_factory'])
-        self.mod_mocks = self.mockify_module_attrs(attrs=['JobRunner'])
+        self.mockify_module_attrs(attrs=['JobRunner'])
         self.result = self.utils.job_runner
 
     def test_constructs_and_returns_job_runner(self):
         self.assertEqual(
-            self.mod_mocks['JobRunner'].call_args,
+            self.modmocks['JobRunner'].call_args,
             call(
                 artifact_handler=self.utils.cfg['ARTIFACT_HANDLER'],
                 job_record_client=self.utils.job_record_client,
@@ -169,7 +182,7 @@ class JobRunnerTestCase(BaseTestCase):
                 build_jobdir_fn=self.utils.build_jobdir
             )
         )
-        self.assertEqual(self.result, self.mod_mocks['JobRunner'].return_value)
+        self.assertEqual(self.result, self.modmocks['JobRunner'].return_value)
 
     def test_memoizes(self):
         self.assertTrue(self.utils.job_runner is self.result)
@@ -177,16 +190,16 @@ class JobRunnerTestCase(BaseTestCase):
 class JobManTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.mod_mocks = self.mockify_module_attrs(attrs=['JobMan'])
+        self.mockify_module_attrs(attrs=['JobMan'])
         self.result = self.utils.jobman
 
     def test_constructs_and_returns_jobman(self):
         self.assertEqual(
-            self.mod_mocks['JobMan'].from_cfg.call_args,
+            self.modmocks['JobMan'].from_cfg.call_args,
             call(cfg=(self.cfg['JOBMAN_CFG']))
         )
         self.assertEqual(self.result,
-                         self.mod_mocks['JobMan'].from_cfg.return_value)
+                         self.modmocks['JobMan'].from_cfg.return_value)
 
     def test_memoizes(self):
         self.assertTrue(self.utils.jobman is self.result)
@@ -194,22 +207,21 @@ class JobManTestCase(BaseTestCase):
 class BuildJobdirTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
-        self.mod_mocks = self.mockify_module_attrs(attrs=[
-            'JobModuleCommandDispatcher'])
+        self.mockify_module_attrs(attrs=['JobModuleCommandDispatcher'])
         self.args = [MagicMock() for i in range(3)]
         self.kwargs = {'kwarg_%s' % i: MagicMock() for i in range(3)}
         self.result = self.utils.build_jobdir(*self.args, **self.kwargs)
 
     def test_dispatches_to_job_module_command_dispatcher(self):
-        self.assertEqual(self.mod_mocks['JobModuleCommandDispatcher'].call_args,
+        self.assertEqual(self.modmocks['JobModuleCommandDispatcher'].call_args,
                          call())
         self.assertEqual(
-            (self.mod_mocks['JobModuleCommandDispatcher'].return_value
+            (self.modmocks['JobModuleCommandDispatcher'].return_value
              .build_jobdir.call_args),
             call(*self.args, **self.kwargs)
         )
         self.assertEqual(
             self.result, 
-            (self.mod_mocks['JobModuleCommandDispatcher'].return_value
+            (self.modmocks['JobModuleCommandDispatcher'].return_value
              .build_jobdir.return_value)
         )

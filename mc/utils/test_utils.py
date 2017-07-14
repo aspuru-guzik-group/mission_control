@@ -9,16 +9,36 @@ import sys
 from unittest.mock import Mock
 
 
-
 @contextmanager
 def capture():
-    orig_stdout = sys.stdout
+    with capture_std_streams(streams=['stdout']) as captured_streams:
+        yield captured_streams['stdout']
+
+def capture_std_streams(streams=None):
+    stream_keys = streams or ['stdout']
+    stream_cfgs = {}
+    for stream_key in stream_keys:
+        def _get_setter(stream_key_):
+            return lambda new_stream: setattr(sys, stream_key_, new_stream)
+        stream_cfgs[stream_key] = {'original': getattr(sys, stream_key),
+                                   'setter': _get_setter(stream_key)}
+    return capture_streams(stream_cfgs=stream_cfgs)
+
+@contextmanager
+def capture_streams(stream_cfgs=None):
+    stream_cfgs = stream_cfgs or {}
+    originals = {key: stream_cfg['original']
+                 for key, stream_cfg in stream_cfgs.items()}
     try:
-        tmp_stdout = io.StringIO()
-        sys.stdout = tmp_stdout
-        yield tmp_stdout
-        tmp_stdout.seek(0)
-    finally: sys.stdout = orig_stdout
+        tmp_streams = {}
+        for key, stream_cfg in stream_cfgs.items():
+            tmp_streams[key] = io.StringIO()
+            stream_cfg['setter'](tmp_streams[key])
+        yield tmp_streams
+        for tmp_stream in tmp_streams.values(): tmp_stream.seek(0)
+    finally:
+        for key, original_stream in originals.items():
+            stream_cfgs[key]['setter'](original_stream)
 
 def assert_dirs_equal(test=None, left=None, right=None, ignore_patterns=None,
                       json_patterns=None):
