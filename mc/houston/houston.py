@@ -43,7 +43,11 @@ class Houston(object):
         )
 
     def _kwargs_to_unparsed_args(self, **kwargs):
-        return ['--{k}={v}'.format(k=k, v=v) for k, v in kwargs.items()]
+        return [self._kvp_to_arg(k=k, v=v) for k, v in kwargs.items()]
+
+    def _kvp_to_arg(self, k=None, v=None):
+        if isinstance(v, bool): return '--{k}'.format(k=k)
+        else: return '--{k}={v}'.format(k=k, v=v)
 
     # Override for mc.utils.comamnds.subcommand_command
     def _get_subcommand_fn(self, subcommand=None):

@@ -18,8 +18,6 @@ class TickSubcommand(BaseHoustonSubcommand):
             'tickee', help="The component to tick",
             choices=self.TICKEE_NAMES
         )
-        parser.add_argument('--until_finished', action='store_true',
-                            default=False)
         parser.add_argument('--interval', type=float, default=1)
         parser.add_argument('--nticks', type=int, default=1)
         parser.add_argument('--max_ticks', type=int)
@@ -39,12 +37,12 @@ class TickSubcommand(BaseHoustonSubcommand):
         return fn_for_tickee
 
     def _run_for_flow_tickee(self):
-        self._updated_parsed_args_for_flow_tickee()
+        self._update_parsed_args_for_flow_tickee()
         if self.kwargs.get('flow_spec'): output = self._run_for_flow_spec()
         elif self.kwargs.get('flow_key'): output = self._run_for_flow_key()
         return output
 
-    def _updated_parsed_args_for_flow_tickee(self):
+    def _update_parsed_args_for_flow_tickee(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('--indent', type=int)
         group = parser.add_mutually_exclusive_group(required=True)
@@ -52,6 +50,9 @@ class TickSubcommand(BaseHoustonSubcommand):
                            help="A flow_spec JSON string")
         group.add_argument('--flow_key', help="A flow key")
         parsed, unparsed = parser.parse_known_args(self.unparsed_args)
+        self._update_parsed_args(parsed=parsed, unparsed=unparsed)
+
+    def _update_parsed_args(self, parsed=None, unparsed=None):
         self.kwargs.update(vars(parsed))
         self.unparsed_args = unparsed
 
@@ -103,9 +104,14 @@ class TickSubcommand(BaseHoustonSubcommand):
 
     def _get_common_condition_fns(self):
         common_condition_fns = []
-        if self.kwargs.get('nticks'):
+        if self.kwargs.get('until_finished'):
+            common_condition_fns.append(self._has_unfinished_mc_records)
+        elif self.kwargs.get('nticks'):
             common_condition_fns.append(self._tick_counter_is_lt_nticks)
         return common_condition_fns
+
+    def _has_unfinished_mc_records(self):
+        return self.utils.has_unfinished_mc_records()
 
     def _tick_counter_is_lt_nticks(self):
         return self.tick_counter < self.kwargs['nticks']
@@ -128,9 +134,17 @@ class TickSubcommand(BaseHoustonSubcommand):
         self._run_for_flow(flow=flow)
 
     def _run_for_flow_runner_tickee(self):
-        self.utils.ensure_db()
-        self.utils.ensure_queues()
-        pass
+        self._update_parsed_args_for_flow_runner_tickee()
+        self._tick_while(
+            tick_fn=self._tick_flow_runner,
+            condition_fns=self._get_common_condition_fns()
+        )
+
+    def _update_parsed_args_for_flow_runner_tickee(self):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--until_finished', action='store_true')
+        parsed, unparsed = parser.parse_known_args(self.unparsed_args)
+        self._update_parsed_args(parsed=parsed, unparsed=unparsed)
 
     def _run_for_job_runner_tickee(self):
         pass
