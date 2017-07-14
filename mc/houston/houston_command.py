@@ -20,8 +20,8 @@ class HoustonCommand(Houston, SubcommandCommand):
                             default=self.default_cfg_path)
         super().add_arguments(parser=parser)
 
-    def _get_raw_cfg(self, args=None, kwargs=None, unparsed_args=None): 
-        cfg_path = kwargs['cfg_path']
+    def _get_raw_cfg(self):
+        cfg_path = self.kwargs['cfg_path']
         cfg_module = import_utils.load_module_from_path(path=cfg_path)
         return cfg_module.__dict__
 

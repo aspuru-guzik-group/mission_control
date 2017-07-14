@@ -1,6 +1,7 @@
 import logging
 
-from . import houston_cfg
+from .houston_cfg import HoustonCfg
+from .utils import HoustonUtils
 
 
 class Houston(object):
@@ -14,6 +15,15 @@ class Houston(object):
         if subcommands_registry is ...:
             subcommands_registry = self._get_default_subcommands_registry()
         self.subcommands_registry = subcommands_registry
+
+    @property
+    def utils(self):
+        if not hasattr(self, '_utils'):
+            self._utils = HoustonUtils(get_cfg=self._get_cfg)
+        return self._utils
+
+    @utils.setter
+    def utils(self, new_value): self._utils = new_value
         
     def _get_default_logger(self):
         logger = logging.getLogger(__name__)
@@ -29,7 +39,7 @@ class Houston(object):
         self._call_subcommand_fn(
             subcommand_fn=self._get_subcommand_fn(subcommand=command),
             args=None, kwargs=None,
-            unparsed_args=[*args, self._kwargs_to_unparsed_args(**kwargs)]
+            unparsed_args=[*args, *self._kwargs_to_unparsed_args(**kwargs)]
         )
 
     def _kwargs_to_unparsed_args(self, **kwargs):
@@ -46,18 +56,14 @@ class Houston(object):
             logger=self.logger,
             args=args, kwargs=kwargs,
             unparsed_args=unparsed_args,
-            load_cfg=self._get_load_cfg_fn(
-                subcommand_fn=None, args=None, kwargs=None, unparsed_args=None)
+            get_cfg=self._get_cfg,
+            utils=self.utils
         )
 
-    def _get_load_cfg_fn(self, subcommand_fn=None, args=None, kwargs=None,
-                         unparsed_args=None):
-        def load_cfg(): 
-            try:
-                raw_cfg = self._get_raw_cfg(args=args, kwargs=kwargs,
-                                            unparsed_args=None)
-                return houston_cfg.HoustonCfg(cfg=raw_cfg)
-            except Exception as exc: raise self.CfgError() from exc
-        return load_cfg
+    def _get_cfg(self): 
+        try:
+            raw_cfg = self._get_raw_cfg()
+            return HoustonCfg(cfg=raw_cfg)
+        except Exception as exc: raise self.CfgError() from exc
 
-    def _get_raw_cfg(self, *args, **kwargs): return self.cfg
+    def _get_raw_cfg(self): return self.cfg

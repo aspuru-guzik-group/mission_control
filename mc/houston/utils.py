@@ -10,8 +10,8 @@ from mc.runners.jobman_job_runner.job_runner import JobRunner
 
 
 class HoustonUtils(object):
-    def __init__(self, load_cfg=None):
-        self.load_cfg = load_cfg
+    def __init__(self, get_cfg=None):
+        self.get_cfg = get_cfg
 
         self._cfg = ...
         self._mc_dao = ...
@@ -25,7 +25,7 @@ class HoustonUtils(object):
 
     @property
     def cfg(self):
-        if self._cfg is ...: self._cfg = self.load_cfg()
+        if self._cfg is ...: self._cfg = self.get_cfg()
         return self._cfg
 
     def ensure_db(self): self.mc_dao.ensure_tables()

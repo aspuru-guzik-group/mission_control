@@ -5,7 +5,7 @@ from mc.utils.commands.command_parser import CommandParser
 
 class BaseHoustonSubcommand(object):
     def __init__(self, logger=None, args=None, kwargs=None, unparsed_args=None,
-                 load_cfg=None, utils=..., **kwargs_):
+                 get_cfg=None, utils=..., **kwargs_):
         self.logger = logger or logging.getLogger(__name__)
         self.args = args or []
         self.kwargs = kwargs or {}
@@ -13,7 +13,7 @@ class BaseHoustonSubcommand(object):
         subcommand_kwargs, self.unparsed_args = \
                 self.parse_subcommand_kwargs(subcommand_argv=unparsed_args)
         self.kwargs = {**self.kwargs, **(vars(subcommand_kwargs))}
-        self.load_cfg = load_cfg
+        self.get_cfg = get_cfg
         self.utils = utils
 
     @property
@@ -26,7 +26,7 @@ class BaseHoustonSubcommand(object):
 
     def _get_utils(self):
         from mc.houston import utils
-        return utils.HoustonUtils(load_cfg=self.load_cfg)
+        return utils.HoustonUtils(get_cfg=self.get_cfg)
 
     def parse_subcommand_kwargs(self, subcommand_argv=None):
         parser = CommandParser()
@@ -36,10 +36,10 @@ class BaseHoustonSubcommand(object):
     def add_arguments(self, parser=None): pass
 
     @classmethod
-    def run(cls, args=None, kwargs=None, unparsed_args=None, load_cfg=None,
+    def run(cls, args=None, kwargs=None, unparsed_args=None, get_cfg=None,
             logger=None, **kwargs_):
         instance = cls(args=args, kwargs=kwargs, unparsed_args=unparsed_args,
-                       load_cfg=load_cfg, logger=logger, **kwargs_)
+                       get_cfg=get_cfg, logger=logger, **kwargs_)
         return instance._run()
 
     def _run(self): raise NotImplementedError
