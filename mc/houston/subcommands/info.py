@@ -6,7 +6,7 @@ from ._base_houston_subcommand import BaseHoustonSubcommand
 class InfoSubcommand(BaseHoustonSubcommand):
     def add_arguments(self, parser=None):
         parser.add_argument('--key', help="key for a single object")
-        parser.add_argument('--indent', help="indent output")
+        parser.add_argument('--indent', type=int, help="indent output")
 
     def _run(self):
         key = self.kwargs.get('key')

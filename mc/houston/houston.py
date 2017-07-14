@@ -1,7 +1,9 @@
+import contextlib
 import logging
 
 from .houston_cfg import HoustonCfg
 from .utils import HoustonUtils
+from mc.utils import test_utils as _mc_test_utils
 
 
 class Houston(object):
@@ -35,12 +37,19 @@ class Houston(object):
         from .subcommands._registry import SubcommandRegistry
         return SubcommandRegistry()
 
-    def call_command(self, command, *args, **kwargs):
-        self._call_subcommand_fn(
-            subcommand_fn=self._get_subcommand_fn(subcommand=command),
-            args=None, kwargs=None,
-            unparsed_args=[*args, *self._kwargs_to_unparsed_args(**kwargs)]
-        )
+    def call_command(self, command, *args, mute_stdout=True, **kwargs):
+        with _mc_test_utils.capture() as stdout:
+            self._call_subcommand_fn(
+                subcommand_fn=self._get_subcommand_fn(subcommand=command),
+                args=None, kwargs=None,
+                unparsed_args=[*args, *self._kwargs_to_unparsed_args(**kwargs)]
+            )
+        stdout_content = stdout.read()
+        if not mute_stdout: print(stdout_content)
+        return stdout_content
+
+    @contextlib.contextmanager
+    def _noop_ctx(self): yield
 
     def _kwargs_to_unparsed_args(self, **kwargs):
         return [self._kvp_to_arg(k=k, v=v) for k, v in kwargs.items()]
