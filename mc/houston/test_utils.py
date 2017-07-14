@@ -1,3 +1,4 @@
+from unittest.mock import MagicMock
 from jobman.engines.local_engine import LocalEngine
 
 
@@ -19,6 +20,8 @@ def generate_test_cfg():
             'queue_kwargs': {
                 'queue_spec': {'item_type': 'job'}
             }
-        }
+        },
+        'ARTIFACT_HANDLER': MagicMock(return_value={}),
+        'BUILD_JOBDIR_FN': MagicMock(return_value={}),
     }
     return cfg

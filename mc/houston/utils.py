@@ -137,7 +137,9 @@ class HoustonUtils(object):
     def jobman(self, new_value): self._jobman = new_value
 
     def build_jobdir(self, *args, **kwargs):
-        return JobModuleCommandDispatcher().build_jobdir(*args, **kwargs)
+        try: build_jobdir_fn = self.cfg['BUILD_JOBDIR_FN']
+        except: build_jobdir_fn = JobModuleCommandDispatcher().build_jobdir
+        return build_jobdir_fn(*args, **kwargs)
 
     def has_unfinished_mc_records(self):
         unfinished_records = self.get_unfinished_mc_records()

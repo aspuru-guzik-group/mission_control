@@ -46,6 +46,12 @@ class BaseTestCase(unittest.TestCase):
             flow_kwargs=flow_dict)
         return flow_record
 
+    def _create_job_record(self, job_kwargs=None):
+        job_kwargs = job_kwargs or {}
+        job_record = self.houston.utils.job_record_client.create_job_record(
+            job_kwargs=job_kwargs)
+        return job_record
+
 class TickFlowSpecTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
@@ -74,3 +80,33 @@ class TickFlowRunnerTestCase(BaseTestCase):
 
     def test_runs_until_finished(self):
         self._call_command('tick', 'flow_runner', until_finished=True)
+
+class TickJobRunnerTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+
+    def test_runs_for_nticks(self):
+        self.job_record = self._create_job_record()
+        self._call_command('tick', 'job_runner', nticks=3)
+
+    def test_runs_until_finished(self):
+        self.skipTest('RETURN TO THIS LATER!')
+        self.job_record = self._create_job_record({'status': 'COMPLETED'})
+        self._call_command('tick', 'job_runner', until_finished=True)
+
+class TickJobManTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+
+    def test_runs_for_nticks(self):
+        self._call_command('tick', 'jobman', nticks=3)
+
+class TickAllTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+
+    def test_runs_for_nticks(self):
+        self._call_command('tick', 'all', nticks=3)
+
+    def test_runs_unfil_finished(self):
+        self._call_command('tick', 'all', until_finished=True)
