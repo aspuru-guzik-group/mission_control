@@ -4,15 +4,11 @@ import os
 import tempfile
 
 from . import constants
+from . import utils
 from .default_job_module_loader import DefaultJobModuleLoader
 
 
 class JobModuleCommandDispatcher(object):
-    JOB_META_FILE_NAMES = {
-        'job': constants.MC_JOB_FILE_NAME,
-        'job_spec': constants.JOBMAN_JOB_SPEC_FILE_NAME,
-    }
-
     def __init__(self, load_job_module_fn=None, logger=None):
         """
         Args:
@@ -58,7 +54,7 @@ class JobModuleCommandDispatcher(object):
         return job_spec
 
     def _write_job_meta_files(self, dir_=None, **kwargs):
-        for key, meta_file_name in self.JOB_META_FILE_NAMES.items():
+        for key, meta_file_name in constants.JOB_META_FILE_NAMES.items():
             path = os.path.join(dir_, meta_file_name)
             with open(path, 'w') as f: json.dump(kwargs[key], f)
         
@@ -69,11 +65,11 @@ class JobModuleCommandDispatcher(object):
             jobdir (str): path to jobdir. This dir should
                 contain: (1) the jobman job_spec file
                 '{job_spec}', and (2) the mc job file '{job}'.
-        """.format(**self.JOB_META_FILE_NAMES)
+        """.format(**constants.JOB_META_FILE_NAMES)
         job_metas = {
-            meta_key: self._load_from_jobdir_file(
+            key: self._load_from_jobdir_file(
                 jobdir=jobdir, file_name=meta_file_name)
-            for meta_key, meta_file_name in self.JOB_META_FILE_NAMES.items()
+            for key, meta_file_name in constants.JOB_META_FILE_NAMES.items()
         }
         job_module = self._load_job_module(job=job_metas['job'], cfg=None)
         return job_module.run_jobdir(**job_metas, cfg=cfg)
@@ -82,5 +78,4 @@ class JobModuleCommandDispatcher(object):
         return self.load_job_module_fn(job=job, cfg=cfg)
 
     def _load_from_jobdir_file(self, jobdir=None, file_name=None):
-        path = os.path.join(jobdir, file_name)
-        with open(path) as f: return json.load(f)
+        return utils.load_from_jobdir_file(jobdir=jobdir, file_name=file_name)

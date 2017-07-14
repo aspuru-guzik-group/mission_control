@@ -1,2 +1,4 @@
-JOBMAN_JOB_SPEC_FILE_NAME = 'job_spec.json'
-MC_JOB_FILE_NAME = 'mc_job.json'
+JOB_META_FILE_NAMES = {
+    'job': 'mc_job.json',
+    'job_spec': 'job_spec.json',
+}
