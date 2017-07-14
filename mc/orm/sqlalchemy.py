@@ -11,14 +11,14 @@ def generate_schema():
     metadata = MetaData()
     tables = collections.OrderedDict()
     tables['Mission'] = Table(
-        generate_table_name('mission'), metadata,
-        generate_key_column(),
+        generate_table_name('mission:'), metadata,
+        generate_key_column(prefix='mission:'),
         generate_label_column(),
         *generate_timestamp_columns()
     )
     tables['Flow'] = Table(
         generate_table_name('flow'), metadata,
-        generate_key_column(),
+        generate_key_column(prefix='flow:'),
         generate_label_column(),
         generate_status_column(),
         generate_json_column('cfg'),
@@ -32,7 +32,7 @@ def generate_schema():
     )
     tables['Job'] = Table(
         generate_table_name('job'), metadata,
-        generate_key_column(),
+        generate_key_column(prefix='job:'),
         generate_label_column(),
         generate_str_column('job_type', length=512),
         generate_json_column('job_params'),
@@ -46,14 +46,14 @@ def generate_schema():
     )
     tables['Queue'] = Table(
         generate_table_name('queue'), metadata,
-        generate_key_column(),
+        generate_key_column(prefix='queue:'),
         generate_label_column(),
         generate_json_column(column_name='queue_spec'),
         *generate_timestamp_columns()
     )
     tables['Lock'] = Table(
         generate_table_name('lock'), metadata,
-        generate_key_column('key'),
+        generate_key_column('key', prefix='lock:'),
         generate_key_column('lockee_key', default=None),
         generate_key_column('locker_key', default=None),
         *generate_timestamp_columns()
@@ -68,12 +68,15 @@ def generate_table_name(table_name=None):
     return '{table_ns}_{table_name}'.format(table_ns='mc_models',
                                             table_name=table_name)
 
-KEY_LENGTH = 36
-def str_uuid(): return str(uuid.uuid4())
-def generate_key_column(column_name='key', **kwargs):
+KEY_LENGTH = 60
+def key_fn_factory(prefix=''):
+    def key_fn(): return prefix + str(uuid.uuid4())
+
+def generate_key_column(column_name='key', prefix=None, **kwargs):
+    key_fn = key_fn_factory(prefix=prefix)
     return generate_str_column(
         column_name=column_name, length=KEY_LENGTH,
-        **{'primary_key': True, 'default': str_uuid, **kwargs}
+        **{'primary_key': True, 'default': key_fn, **kwargs}
     )
 
 def generate_str_column(column_name=None, length=None, **kwargs):
