@@ -1,4 +1,3 @@
-import contextlib
 import logging
 
 from mc.utils.config import Config
@@ -47,9 +46,6 @@ class Houston(object):
         stdout_content = stdout.read()
         if not mute_stdout: print(stdout_content)
         return stdout_content
-
-    @contextlib.contextmanager
-    def _noop_ctx(self): yield
 
     def _kwargs_to_unparsed_args(self, **kwargs):
         return [self._kvp_to_arg(k=k, v=v) for k, v in kwargs.items()]
