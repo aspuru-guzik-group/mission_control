@@ -9,10 +9,10 @@ class InfoSubcommand(BaseHoustonSubcommand):
         parser.add_argument('--indent', type=int, help="indent output")
 
     def _run(self):
-        key = self.kwargs.get('key')
+        key = self.parsed_args.get('key')
         if key: info = self._get_info_for_key(key=key)
         else: info = self._get_mc_record_type_summaries()
-        print(json.dumps(info, indent=self.kwargs.get('indent')))
+        print(json.dumps(info, indent=self.parsed_args.get('indent')))
 
     def _get_info_for_key(self, key=None):
         record_type = key.split(':')[0]

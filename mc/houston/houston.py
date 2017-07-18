@@ -40,7 +40,7 @@ class Houston(object):
         with _mc_test_utils.capture() as stdout:
             self._call_subcommand_fn(
                 subcommand_fn=self._get_subcommand_fn(subcommand=command),
-                args=None, kwargs=None,
+                parsed_args={},
                 unparsed_args=[*args, *self._kwargs_to_unparsed_args(**kwargs)]
             )
         stdout_content = stdout.read()
@@ -59,11 +59,11 @@ class Houston(object):
         return self.subcommands_registry[subcommand]
 
     # Override for mc.utils.comamnds.subcommand_command
-    def _call_subcommand_fn(self, subcommand_fn=None, args=None, kwargs=None,
+    def _call_subcommand_fn(self, subcommand_fn=None, parsed_args=None,
                             unparsed_args=None):
         return subcommand_fn(
             logger=self.logger,
-            args=args, kwargs=kwargs,
+            parsed_args=parsed_args,
             unparsed_args=unparsed_args,
             get_cfg=self._get_cfg,
             utils=self.utils

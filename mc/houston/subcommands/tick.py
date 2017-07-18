@@ -28,7 +28,7 @@ class TickSubcommand(BaseHoustonSubcommand):
         print(output_for_tickee)
 
     def _dispatch_on_tickee(self):
-        tickee_name = self.kwargs['tickee']
+        tickee_name = self.parsed_args['tickee']
         fn_for_tickee = self._get_fn_for_tickee(tickee_name=tickee_name)
         output_for_tickee = fn_for_tickee()
         return output_for_tickee
@@ -38,10 +38,10 @@ class TickSubcommand(BaseHoustonSubcommand):
         return fn_for_tickee
 
     def _run_for_flow_tickee(self):
-        self._update_parsed_args_for_flow_tickee()
+        self._update_args_for_flow_tickee()
         return self._run_for_flow_spec()
 
-    def _update_parsed_args_for_flow_tickee(self):
+    def _update_args_for_flow_tickee(self):
         parser = argparse.ArgumentParser()
         parser.add_argument('--indent', type=int)
         group = parser.add_mutually_exclusive_group(required=True)
@@ -51,18 +51,18 @@ class TickSubcommand(BaseHoustonSubcommand):
                            type=self._json_path)
         parser.add_argument('--until_finished', action='store_true')
         parsed, unparsed = parser.parse_known_args(self.unparsed_args)
-        self._update_parsed_args(parsed=parsed, unparsed=unparsed)
+        self._update_args(parsed=parsed, unparsed=unparsed)
 
     def _json_path(self, path):
         with open(os.path.expanduser(path)) as f: return json.load(f)
 
-    def _update_parsed_args(self, parsed=None, unparsed=None):
-        self.kwargs.update(vars(parsed))
+    def _update_args(self, parsed=None, unparsed=None):
+        self.parsed_args.update(vars(parsed))
         self.unparsed_args = unparsed
 
     def _run_for_flow_spec(self):
-        flow_spec = self.kwargs.get('flow_spec') or \
-                self.kwargs.get('flow_spec_file')
+        flow_spec = self.parsed_args.get('flow_spec') or \
+                self.parsed_args.get('flow_spec_file')
         flow = self.utils.flow_engine.flow_spec_to_flow(flow_spec=flow_spec)
         output_for_flow = self._run_for_flow(flow=flow)
         return output_for_flow
@@ -97,7 +97,8 @@ class TickSubcommand(BaseHoustonSubcommand):
         def _flow_is_unfinished():
             return get_flow().status not in {'COMPLETED', 'FAILED'}
         condition_fns.append(_flow_is_unfinished)
-        if not self.kwargs.get('until_finished') and self.kwargs.get('nticks'):
+        if not self.parsed_args.get('until_finished') and \
+           self.parsed_args.get('nticks'):
             condition_fns.append(self._tick_counter_is_lt_nticks)
         return condition_fns
 
@@ -106,7 +107,7 @@ class TickSubcommand(BaseHoustonSubcommand):
         tick_interval = self._get_tick_interval()
         while all([fn() for fn in condition_fns]):
             self.tick_counter += 1
-            if self.kwargs.get('verbose'):
+            if self.parsed_args.get('verbose'):
                 self.logger.info("{self} Tick #{tick_counter}".format(
                     self=self, tick_counter=self.tick_counter))
             self._check_max_ticks()
@@ -115,9 +116,9 @@ class TickSubcommand(BaseHoustonSubcommand):
 
     def _get_common_condition_fns(self):
         common_condition_fns = []
-        if self.kwargs.get('until_finished'):
+        if self.parsed_args.get('until_finished'):
             common_condition_fns.append(self._has_unfinished_mc_records)
-        elif self.kwargs.get('nticks'):
+        elif self.parsed_args.get('nticks'):
             common_condition_fns.append(self._tick_counter_is_lt_nticks)
         return common_condition_fns
 
@@ -125,23 +126,23 @@ class TickSubcommand(BaseHoustonSubcommand):
         return self.utils.has_unfinished_mc_records()
 
     def _tick_counter_is_lt_nticks(self):
-        return self.tick_counter < self.kwargs['nticks']
+        return self.tick_counter < self.parsed_args['nticks']
 
     def _get_tick_interval(self):
-        return self.kwargs.get('interval') or self.DEFAULT_TICK_INTERVAL
+        return self.parsed_args.get('interval') or self.DEFAULT_TICK_INTERVAL
 
     def _check_max_ticks(self):
-        max_ticks = self.kwargs['max_ticks']
+        max_ticks = self.parsed_args['max_ticks']
         if max_ticks and self.tick_counter > max_ticks:
             raise Exception("Exceed max_ticks of '%s'" % max_ticks)
 
     def _get_output_for_flow(self, flow=None):
          return json.dumps(self.utils.flow_engine.flow_to_flow_dict(flow=flow),
-                           indent=self.kwargs.get('indent'))
+                           indent=self.parsed_args.get('indent'))
 
     def _run_for_flow_runner_tickee(self):
         self._ensure_mc()
-        self._update_parsed_args_for_flow_runner_tickee()
+        self._update_args_for_flow_runner_tickee()
         self._tick_while(
             tick_fn=self._tick_flow_runner,
             condition_fns=self._get_common_condition_fns()
@@ -151,43 +152,43 @@ class TickSubcommand(BaseHoustonSubcommand):
         self.utils.ensure_db()
         self.utils.ensure_queues()
 
-    def _update_parsed_args_for_flow_runner_tickee(self):
+    def _update_args_for_flow_runner_tickee(self):
         parser = argparse.ArgumentParser()
         self._add_mc_runner_arguments(parser=parser)
         parsed, unparsed = parser.parse_known_args(self.unparsed_args)
-        self._update_parsed_args(parsed=parsed, unparsed=unparsed)
+        self._update_args(parsed=parsed, unparsed=unparsed)
 
     def _add_mc_runner_arguments(self, parser=None):
         parser.add_argument('--until_finished', action='store_true')
 
     def _run_for_job_runner_tickee(self):
         self._ensure_mc()
-        self._update_parsed_args_for_job_runner_tickee()
+        self._update_args_for_job_runner_tickee()
         self._tick_while(
             tick_fn=self._tick_job_runner,
             condition_fns=self._get_common_condition_fns()
         )
 
-    def _update_parsed_args_for_job_runner_tickee(self):
+    def _update_args_for_job_runner_tickee(self):
         parser = argparse.ArgumentParser()
         self._add_mc_runner_arguments(parser=parser)
         parsed, unparsed = parser.parse_known_args(self.unparsed_args)
-        self._update_parsed_args(parsed=parsed, unparsed=unparsed)
+        self._update_args(parsed=parsed, unparsed=unparsed)
 
     def _run_for_jobman_tickee(self):
-        self._update_parsed_args_for_jobman_tickee()
+        self._update_args_for_jobman_tickee()
         self._tick_while(
             tick_fn=self._tick_jobman,
             condition_fns=self._get_common_condition_fns()
         )
 
-    def _update_parsed_args_for_jobman_tickee(self): pass
+    def _update_args_for_jobman_tickee(self): pass
 
     def _run_for_all_tickee(self):
         for update_args_fn in [
-            self._update_parsed_args_for_flow_runner_tickee,
-            self._update_parsed_args_for_job_runner_tickee,
-            self._update_parsed_args_for_jobman_tickee,
+            self._update_args_for_flow_runner_tickee,
+            self._update_args_for_job_runner_tickee,
+            self._update_args_for_jobman_tickee,
         ]: update_args_fn()
         self._tick_while(
             tick_fn=self._tick_all,

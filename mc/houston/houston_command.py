@@ -20,9 +20,9 @@ class HoustonCommand(Houston, SubcommandCommand):
                             default=self.default_cfg_path)
         super().add_arguments(parser=parser)
 
-    def handle(self, args=None, kwargs=None, unparsed_args=None):
-        self._cfg_path = kwargs['cfg_path']
-        super().handle(args=args, kwargs=kwargs, unparsed_args=unparsed_args)
+    def handle(self, parsed_args=None, unparsed_args=None):
+        self._cfg_path = parsed_args['cfg_path']
+        super().handle(parsed_args=parsed_args, unparsed_args=unparsed_args)
 
     def _get_raw_cfg(self):
         cfg_path = self._cfg_path

@@ -15,7 +15,7 @@ class BaseTestCase(unittest.TestCase):
 
     def _call_command(self, *args, **kwargs):
         self.houston.call_command(
-            *args, **{**self.common_command_kwargs, **kwargs}
+            *args, mute_stdout=False, **{**self.common_command_kwargs, **kwargs}
         )
 
     def capture(self): return _mc_test_utils.capture()

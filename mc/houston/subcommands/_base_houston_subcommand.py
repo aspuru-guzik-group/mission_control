@@ -1,18 +1,18 @@
 import logging
 
-from mc.utils.commands.command_parser import CommandParser
+from mc.utils.commands.argument_parser import ArgumentParser
 
 
 class BaseHoustonSubcommand(object):
-    def __init__(self, logger=None, args=None, kwargs=None, unparsed_args=None,
+    def __init__(self, logger=None, parsed_args=None, unparsed_args=None,
                  get_cfg=None, utils=..., **kwargs_):
         self.logger = logger or logging.getLogger(__name__)
-        self.args = args or []
-        self.kwargs = kwargs or {}
+        self.parsed_args = parsed_args
         self.unparsed_args = unparsed_args
-        subcommand_kwargs, self.unparsed_args = \
-                self.parse_subcommand_kwargs(subcommand_argv=unparsed_args)
-        self.kwargs = {**self.kwargs, **(vars(subcommand_kwargs))}
+        subcommand_parsed_args, self.unparsed_args = \
+                self.parse_subcommand_args(subcommand_argv=unparsed_args)
+        self.parsed_args = {**self.parsed_args,
+                            **(vars(subcommand_parsed_args))}
         self.get_cfg = get_cfg
         self.utils = utils
 
@@ -28,17 +28,17 @@ class BaseHoustonSubcommand(object):
         from mc.houston import utils
         return utils.HoustonUtils(get_cfg=self.get_cfg)
 
-    def parse_subcommand_kwargs(self, subcommand_argv=None):
-        parser = CommandParser()
+    def parse_subcommand_args(self, subcommand_argv=None):
+        parser = ArgumentParser()
         self.add_arguments(parser=parser)
         return parser.parse_known_args(subcommand_argv)
 
     def add_arguments(self, parser=None): pass
 
     @classmethod
-    def run(cls, args=None, kwargs=None, unparsed_args=None, get_cfg=None,
+    def run(cls, parsed_args=None, unparsed_args=None, get_cfg=None,
             logger=None, **kwargs_):
-        instance = cls(args=args, kwargs=kwargs, unparsed_args=unparsed_args,
+        instance = cls(parsed_args=parsed_args, unparsed_args=unparsed_args,
                        get_cfg=get_cfg, logger=logger, **kwargs_)
         return instance._run()
 

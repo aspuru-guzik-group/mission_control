@@ -11,7 +11,7 @@ class JobModuleCliCommand(SubcommandCommand):
 
     subcommands = ['run_jobdir']
 
-    def run_jobdir(self, args=None, kwargs=None, unparsed_args=None):
+    def run_jobdir(self, parsed_args=None, unparsed_args=None):
         run_jobdir_kwargs = self._parse_run_jobdir_args(
             unparsed_args=unparsed_args)
         command_dispatcher = self._get_command_dispatcher()

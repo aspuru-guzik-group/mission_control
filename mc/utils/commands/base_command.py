@@ -9,16 +9,16 @@ import sys
 import mc
 from . import color
 from .errors import CommandError
-from .command_parser import CommandParser
+from .argument_parser import ArgumentParser
 
 
-def handle_default_options(options):
+def handle_default_args(args):
     """
-    Include any default options that all commands should accept here
+    Include any default args that all commands should accept here
     so that ManagementUtility can handle them before searching for
     user commands.
     """
-    if options.pythonpath: sys.path.insert(0, options.pythonpath)
+    if args.get('pythonpath'): sys.path.insert(0, args['pythonpath'])
 
 
 class OutputWrapper(io.TextIOBase):
@@ -73,7 +73,7 @@ class BaseCommand(object):
 
     2. The ``run_from_argv()`` method calls ``create_parser()`` to get
        an ``ArgumentParser`` for the arguments, parses them, performs
-       any environment changes requested by options like
+       any environment changes requested by args like
        ``pythonpath``, and then calls the ``execute()`` method,
        passing the parsed arguments.
 
@@ -100,7 +100,6 @@ class BaseCommand(object):
     """
     help = ''
 
-    _called_from_command_line = False
     def __init__(self, stdout=None, stderr=None, no_color=False, **kwargs):
         self.stdout = OutputWrapper(stdout or sys.stdout)
         self.stderr = OutputWrapper(stderr or sys.stderr)
@@ -147,7 +146,7 @@ class BaseCommand(object):
         self.add_arguments(parser=parser)
         return parser
 
-    def get_base_parser_cls(self): return CommandParser
+    def get_base_parser_cls(self): return ArgumentParser
 
     def add_arguments(self, parser=None):
         """
@@ -171,35 +170,33 @@ class BaseCommand(object):
         to stderr. If the ``--traceback`` option is present or the raised
         ``Exception`` is not ``CommandError``, raise it.
         """
-        self._called_from_command_line = True
         parser = self.create_parser(argv[0])
-        options, unparsed_args = parser.parse_known_args(args=argv[1:])
-        cmd_options = vars(options)
-        # Move positional args out of options to mimic legacy optparse
-        args = cmd_options.pop('args', ())
-        handle_default_options(options)
-        try: self.execute(unparsed_args, *args, **cmd_options)
+        parsed_args_ns, unparsed_args = parser.parse_known_args(args=argv[1:])
+        parsed_args = vars(parsed_args_ns)
+        handle_default_args(parsed_args)
+        try: self.execute(parsed_args=parsed_args, unparsed_args=unparsed_args)
         except Exception as e:
-            if options.traceback or not isinstance(e, CommandError): raise
+            if parsed_args.get('traceback') or not isinstance(e, CommandError):
+                raise
             self.stderr.write(msg='%s: %s' % (e.__class__.__name__, e))
             sys.exit(1)
 
-    def execute(self, unparsed_args, *args, **options):
+    def execute(self, parsed_args=None, unparsed_args=None):
         """Try to execute this command."""
-        if options['no_color']:
+        if parsed_args.get('no_color'):
             self.style = color.no_style()
             self.stderr.style_func = None
-        if options.get('stdout'):
-            self.stdout = OutputWrapper(options['stdout'])
-        if options.get('stderr'):
-            self.stderr = OutputWrapper(options['stderr'],
+        if parsed_args.get('stdout'):
+            self.stdout = OutputWrapper(parsed_args['stdout'])
+        if parsed_args.get('stderr'):
+            self.stderr = OutputWrapper(parsed_args['stderr'],
                                         self.stderr.style_func)
-        output = self.handle(args=args, kwargs=options,
+        output = self.handle(parsed_args=parsed_args,
                              unparsed_args=unparsed_args)
         self.stdout.write(msg=output)
         return output
 
-    def handle(self, args=None, kwargs=None, unparsed_args=None):
+    def handle(self, parsed_args=None, unparsed_args=None):
         """
         The actual logic of the command. Subclasses must implement
         this method.

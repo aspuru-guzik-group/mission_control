@@ -3,7 +3,7 @@ import argparse
 from .errors import CommandError
 
 
-class CommandParser(argparse.ArgumentParser):
+class ArgumentParser(argparse.ArgumentParser):
     """
     Customized ArgumentParser class to improve some error messages and prevent
     SystemExit in several occasions, as SystemExit is unacceptable when a

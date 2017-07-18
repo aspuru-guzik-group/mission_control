@@ -18,15 +18,13 @@ class BaseTestCase(unittest.TestCase):
 
     def _create_flow(self, flow_spec=None):
         flow_spec = flow_spec or {}
-        with self.capture() as stdout:
-            self.houston.call_command(
-                'create_flow', flow_spec=json.dumps(flow_spec))
-        return json.loads(stdout.read())
+        stdout = self.houston.call_command(
+            'create_flow', flow_spec=json.dumps(flow_spec))
+        return json.loads(stdout)
 
     def _capture_info(self, *args, **kwargs):
-        with self.capture() as stdout:
-            self.houston.call_command('info', *args, **kwargs)
-        parsed_info = json.loads(stdout.read())
+        stdout = self.houston.call_command('info', *args, **kwargs)
+        parsed_info = json.loads(stdout)
         return parsed_info
 
 class DefaultTestCase(BaseTestCase):

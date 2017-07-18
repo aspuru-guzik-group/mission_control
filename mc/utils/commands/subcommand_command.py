@@ -20,30 +20,27 @@ class SubcommandCommand(BaseCommand):
         subparsers.required = True
         for subcommand in self.subcommands: subparsers.add_parser(subcommand)
 
-    def handle(self, args=None, kwargs=None, unparsed_args=None):
-        subcommand = kwargs.get('subcommand')
-        self._run_subcommand(subcommand=subcommand, args=args, kwargs=kwargs,
+    def handle(self, parsed_args=None, unparsed_args=None):
+        self._run_subcommand(subcommand=parsed_args['subcommand'],
+                             parsed_args=parsed_args,
                              unparsed_args=unparsed_args)
 
-    def _run_subcommand(self, subcommand=None, args=None, kwargs=None,
+    def _run_subcommand(self, subcommand=None, parsed_args=None,
                         unparsed_args=None):
         try: subcommand_fn = self._get_subcommand_fn(subcommand=subcommand)
         except Exception as exc:
             raise self.InvalidSubcommandError(subcommand) from exc
         try:
-            return self._call_subcommand_fn(
-                subcommand_fn=subcommand_fn,
-                args=args,
-                kwargs=kwargs,
-                unparsed_args=unparsed_args
-            )
+            return self._call_subcommand_fn(subcommand_fn=subcommand_fn,
+                                            parsed_args=parsed_args,
+                                            unparsed_args=unparsed_args)
         except Exception as exc:
             raise self.SubcommandExecutionError(subcommand) from exc
 
     def _get_subcommand_fn(self, subcommand=None):
         return getattr(self, subcommand)
 
-    def _call_subcommand_fn(self, subcommand_fn=None, args=None, kwargs=None,
+    def _call_subcommand_fn(self, subcommand_fn=None, parsed_args=None,
                             unparsed_args=None):
-        return subcommand_fn(args=args, kwargs=kwargs,
+        return subcommand_fn(parsed_args=parsed_args,
                              unparsed_args=unparsed_args)

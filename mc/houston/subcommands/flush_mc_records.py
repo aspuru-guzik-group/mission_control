@@ -6,7 +6,7 @@ class FlushMcRecordsSubcommand(BaseHoustonSubcommand):
 
     def _run(self):
         self.utils.ensure_db()
-        record_type = self.kwargs['record_type']
+        record_type = self.parsed_args['record_type']
         if record_type == 'ALL': self._flush_all()
         elif record_type == 'flow': self._flush_flows()
         elif record_type == 'job': self._flush_jobs()
