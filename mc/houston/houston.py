@@ -1,13 +1,13 @@
 import contextlib
 import logging
 
-from .houston_cfg import HoustonCfg
+from mc.utils.config import Config
 from .utils import HoustonUtils
 from mc.utils import test_utils as _mc_test_utils
 
 
 class Houston(object):
-    class CfgError(Exception): pass
+    class ConfigError(Exception): pass
 
     def __init__(self, *args, logger=None, cfg=None, subcommands_registry=...,
                  **kwargs):
@@ -76,7 +76,7 @@ class Houston(object):
     def _get_cfg(self): 
         try:
             raw_cfg = self._get_raw_cfg()
-            return HoustonCfg(cfg=raw_cfg)
-        except Exception as exc: raise self.CfgError() from exc
+            return Config(cfg=raw_cfg)
+        except Exception as exc: raise self.ConfigError() from exc
 
     def _get_raw_cfg(self): return self.cfg

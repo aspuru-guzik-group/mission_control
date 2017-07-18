@@ -1,7 +1,11 @@
+"""Config"""
 import os
 
 
-class HoustonCfg():
+class Config(object):
+    """
+    A utility class for getting configs from different sources.
+    """
     def __init__(self, cfg=None):
         self.cfg = cfg or {}
         self.sources = [self.cfg, os.environ]
