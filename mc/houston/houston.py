@@ -1,78 +1,82 @@
-import logging
-
 from mc.utils.config import Config
+from mc.utils import logging_utils
+
 from .utils import HoustonUtils
-from mc.utils import test_utils as _mc_test_utils
 
 
 class Houston(object):
-    class ConfigError(Exception): pass
+    class ConfigError(Exception):
+        pass
 
-    def __init__(self, *args, logger=None, cfg=None, subcommands_registry=...,
-                 **kwargs):
+    def __init__(self, *args, logger=None, cfg=None, ensure_db=True, **kwargs):
         super().__init__()
-        self.logger = logger or self._get_default_logger()
-        self.cfg = cfg
-        if subcommands_registry is ...:
-            subcommands_registry = self._get_default_subcommands_registry()
-        self.subcommands_registry = subcommands_registry
+        self.logger = logger or logging_utils.get_default_logger(name=__name__)
+        if cfg:
+            self.set_cfg(cfg=cfg)
+        if ensure_db:
+            self.utils.db.ensure_tables()
+
+    def set_cfg(self, cfg=None):
+        self.cfg = Config(cfg=cfg)
 
     @property
     def utils(self):
         if not hasattr(self, '_utils'):
-            self._utils = HoustonUtils(get_cfg=self._get_cfg)
+            self._utils = HoustonUtils(houston=self)
         return self._utils
 
     @utils.setter
     def utils(self, new_value): self._utils = new_value
-        
-    def _get_default_logger(self):
-        logger = logging.getLogger(__name__)
-        logger.addHandler(logging.StreamHandler())
-        logger.setLevel(logging.INFO)
-        return logger
 
-    def _get_default_subcommands_registry(self):
+    @property
+    def subcommands(self):
+        if not hasattr(self, '_subcommands'):
+            self._subcommands = self._get_default_subcommands()
+        return self._subcommands
+
+    @subcommands.setter
+    def subcommands(self, value): self._subcommands = value
+
+    def _get_default_subcommands(self):
         from .subcommands._registry import SubcommandRegistry
         return SubcommandRegistry()
 
-    def call_command(self, command, *args, mute_stdout=True, **kwargs):
-        with _mc_test_utils.capture() as stdout:
-            self._call_subcommand_fn(
-                subcommand_fn=self._get_subcommand_fn(subcommand=command),
-                parsed_args={},
-                unparsed_args=[*args, *self._kwargs_to_unparsed_args(**kwargs)]
-            )
-        stdout_content = stdout.read()
-        if not mute_stdout: print(stdout_content)
-        return stdout_content
-
-    def _kwargs_to_unparsed_args(self, **kwargs):
-        return [self._kvp_to_arg(k=k, v=v) for k, v in kwargs.items()]
-
-    def _kvp_to_arg(self, k=None, v=None):
-        if isinstance(v, bool): return '--{k}'.format(k=k)
-        else: return '--{k}={v}'.format(k=k, v=v)
-
-    # Override for mc.utils.comamnds.subcommand_command
-    def _get_subcommand_fn(self, subcommand=None):
-        return self.subcommands_registry[subcommand]
-
-    # Override for mc.utils.comamnds.subcommand_command
-    def _call_subcommand_fn(self, subcommand_fn=None, parsed_args=None,
-                            unparsed_args=None):
-        return subcommand_fn(
-            logger=self.logger,
-            parsed_args=parsed_args,
-            unparsed_args=unparsed_args,
-            get_cfg=self._get_cfg,
-            utils=self.utils
+    def call_command(self, command, *args, **kwargs):
+        subcommand = self._get_subcommand(subcommand=command)
+        return self._call_subcommand(
+            subcommand,
+            parsed_args={},
+            unparsed_args=[*args, *self._kwargs_to_unparsed_args(**kwargs)]
         )
 
-    def _get_cfg(self): 
-        try:
-            raw_cfg = self._get_raw_cfg()
-            return Config(cfg=raw_cfg)
-        except Exception as exc: raise self.ConfigError() from exc
+    def _kwargs_to_unparsed_args(self, **kwargs):
+        args = []
+        for k, v in kwargs.items():
+            args.extend(self._kvp_to_args(k=k, v=v))
+        return args
 
-    def _get_raw_cfg(self): return self.cfg
+    def _kvp_to_args(self, k=None, v=None):
+        if isinstance(v, bool):
+            args = ['--{k}'.format(k=k)]
+        elif isinstance(v, list):
+            args = []
+            for item in v:
+                args.extend(self._kvp_to_args(k=k, v=item))
+        else:
+            args = ['--{k}={v}'.format(k=k, v=v)]
+        return args
+
+    def _get_subcommand(self, subcommand=None):
+        return self.subcommands[subcommand]
+
+    def _call_subcommand(self, subcommand, parsed_args=None,
+                         unparsed_args=None):
+        return subcommand.call(houston=self, parsed_args=parsed_args,
+                               unparsed_args=unparsed_args)
+
+    def run_command(self, command, *args, **kwargs):
+        subcommand = self._get_subcommand(subcommand=command)
+        return self._run_subcommand(subcommand, *args, **kwargs)
+
+    def _run_subcommand(self, subcommand=None, *args, **kwargs):
+        return subcommand.run(*args, houston=self, **kwargs)

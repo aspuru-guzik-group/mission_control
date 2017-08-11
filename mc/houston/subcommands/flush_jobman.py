@@ -1,6 +1,5 @@
-from ._base_houston_subcommand import BaseHoustonSubcommand
+from ._base_subcommand import BaseSubcommand
 
-class FlushJobmanSubcommand(BaseHoustonSubcommand):
+
+class Subcommand(BaseSubcommand):
     def _run(self): self.utils.jobman.flush()
-
-Subcommand = FlushJobmanSubcommand

@@ -1,26 +1,14 @@
-import json
 import unittest
 
 from mc.houston.houston import Houston
-from mc.houston import test_utils as _houston_test_utils
-from mc.utils import test_utils as _mc_test_utils
+from mc.houston.tests import utils as _houston_test_utils
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.houston = Houston(cfg=self._generate_cfg())
-        self.houston.utils.ensure_db()
         self.houston.utils.ensure_queues()
         self.common_command_kwargs = {'interval': .01, 'max_ticks': int(1e2)}
-
-    def _call_command(self, *args, **kwargs):
-        self.houston.call_command(
-            *args, mute_stdout=False, **{**self.common_command_kwargs, **kwargs}
-        )
-
-    def capture(self): return _mc_test_utils.capture()
-    def capture_std_streams(self, streams=None):
-        return _mc_test_utils.capture_std_streams(streams=streams)
 
     def _generate_cfg(self):
         return _houston_test_utils.generate_test_cfg()
@@ -52,22 +40,26 @@ class BaseTestCase(unittest.TestCase):
             job_kwargs=job_kwargs)
         return job_record
 
+    def _run_tick_command(self, **kwargs):
+        return self.houston.run_command(
+            'tick', **{**self.common_command_kwargs, **kwargs})
+
+
 class TickFlowSpecTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.flow_spec = self._generate_flow_spec()
 
     def test_runs_single_tick(self):
-        with self.capture_std_streams(streams=['stdout', 'stderr']) as streams:
-            self._call_command(
-                'tick', 'flow', flow_spec=json.dumps(self.flow_spec))
+        output = self._run_tick_command(tickee='flow',
+                                        flow_spec=self.flow_spec)
         expected_flow = self.houston.utils.flow_engine.flow_spec_to_flow(
             flow_spec=self.flow_spec)
         self.houston.utils.flow_engine.tick_flow(flow=expected_flow)
         expected_flow_dict = self.houston.utils.flow_engine.flow_to_flow_dict(
             flow=expected_flow)
-        output = streams['stdout'].read()
-        self.assertEqual(json.loads(output), expected_flow_dict)
+        self.assertEqual(output, expected_flow_dict)
+
 
 class TickFlowRunnerTestCase(BaseTestCase):
     def setUp(self):
@@ -76,10 +68,11 @@ class TickFlowRunnerTestCase(BaseTestCase):
         self.flow_record = self._create_flow_record(flow_spec=self.flow_spec)
 
     def test_runs_for_nticks(self):
-        self._call_command('tick', 'flow_runner', nticks=3)
+        self._run_tick_command(tickee='flow_runner', nticks=3)
 
     def test_runs_until_finished(self):
-        self._call_command('tick', 'flow_runner', until_finished=True)
+        self._run_tick_command(tickee='flow_runner', until_finished=True)
+
 
 class TickJobRunnerTestCase(BaseTestCase):
     def setUp(self):
@@ -87,26 +80,28 @@ class TickJobRunnerTestCase(BaseTestCase):
 
     def test_runs_for_nticks(self):
         self.job_record = self._create_job_record()
-        self._call_command('tick', 'job_runner', nticks=3)
+        self._run_tick_command(tickee='job_runner', nticks=3)
 
     def test_runs_until_finished(self):
         self.skipTest('RETURN TO THIS LATER!')
         self.job_record = self._create_job_record({'status': 'COMPLETED'})
-        self._call_command('tick', 'job_runner', until_finished=True)
+        self._run_tick_command(tickee='job_runner', until_finished=True)
+
 
 class TickJobManTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
 
     def test_runs_for_nticks(self):
-        self._call_command('tick', 'jobman', nticks=3)
+        self._run_tick_command(tickee='jobman', nticks=3)
+
 
 class TickAllTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
 
     def test_runs_for_nticks(self):
-        self._call_command('tick', 'all', nticks=3)
+        self._run_tick_command(tickee='all', nticks=3)
 
     def test_runs_unfil_finished(self):
-        self._call_command('tick', 'all', until_finished=True)
+        self._run_tick_command(tickee='all', until_finished=True)

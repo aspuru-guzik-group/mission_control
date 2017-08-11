@@ -1,6 +1,7 @@
 import importlib
 import os
 
+
 class SubcommandRegistry(object):
     def __init__(self, setup=True):
         self._setup()
@@ -30,7 +31,7 @@ class SubcommandRegistry(object):
     def _get_subcommand_fn(self, subcommand=None):
         subcommand_module = self._load_subcommand_module(subcommand=subcommand)
         subcommand_cls = getattr(subcommand_module, 'Subcommand')
-        return subcommand_cls.run
+        return subcommand_cls
 
     def _load_subcommand_module(self, subcommand=None):
         return importlib.import_module('.' + subcommand, __package__)

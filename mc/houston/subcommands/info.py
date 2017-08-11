@@ -1,12 +1,9 @@
-import json
-
-from ._base_houston_subcommand import BaseHoustonSubcommand
+from ._base_subcommand import BaseSubcommand
 
 
-class InfoSubcommand(BaseHoustonSubcommand):
+class Subcommand(BaseSubcommand):
     def add_arguments(self, parser=None):
         parser.add_argument('--key', help="key for a single object")
-        parser.add_argument('--indent', type=int, help="indent output")
 
     def _run(self):
         key = self.parsed_args.get('key')
@@ -14,13 +11,13 @@ class InfoSubcommand(BaseHoustonSubcommand):
             info = self._get_info_for_key(key=key)
         else:
             info = self._get_mc_record_type_summaries()
-        print(json.dumps(info, indent=self.parsed_args.get('indent')))
+        return info
 
     def _get_info_for_key(self, key=None):
         record_type = key.split(':')[0]
         if record_type not in ['flow', 'job', 'queue', 'lock']:
             raise Exception("Invalid key '%s'" % key)
-        return self.utils.mc_db.get_item_by_key(
+        return self.utils.db.get_item_by_key(
             item_type=record_type, key=key)
 
     def _get_mc_record_type_summaries(self):
@@ -33,9 +30,6 @@ class InfoSubcommand(BaseHoustonSubcommand):
 
     def _get_mc_record_type_summary(self, record_type=None):
         summary = {
-            'count': len(self.utils.mc_db.get_items(item_type=record_type))
+            'count': len(self.utils.db.get_items(item_type=record_type))
         }
         return summary
-
-
-Subcommand = InfoSubcommand

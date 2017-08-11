@@ -1,7 +1,7 @@
-from ._base_houston_subcommand import BaseHoustonSubcommand
+from ._base_subcommand import BaseSubcommand
 
 
-class FlushMcRecordsSubcommand(BaseHoustonSubcommand):
+class Subcommand(BaseSubcommand):
     def add_arguments(self, parser=None):
         parser.add_argument('--record_type', required=True)
 
@@ -20,13 +20,10 @@ class FlushMcRecordsSubcommand(BaseHoustonSubcommand):
             raise Exception("Unknown record type '{record_type}'".format(
                 record_type=record_type))
 
-    def _flush_all(self): self.utils.mc_db.flush_mc_db()
+    def _flush_all(self): self.utils.db.flush()
 
-    def _flush_flows(self): self.utils.mc_db.delete_items(item_type='flow')
+    def _flush_flows(self): self.utils.db.delete_items(item_type='flow')
 
-    def _flush_jobs(self): self.utils.mc_db.delete_items(item_type='job')
+    def _flush_jobs(self): self.utils.db.delete_items(item_type='job')
 
-    def _flush_queues(self): self.utils.mc_db.delete_items(item_type='queue')
-
-
-Subcommand = FlushMcRecordsSubcommand
+    def _flush_queues(self): self.utils.db.delete_items(item_type='queue')

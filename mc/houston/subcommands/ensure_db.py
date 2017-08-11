@@ -1,12 +1,7 @@
-import json
-
-from ._base_houston_subcommand import BaseHoustonSubcommand
+from ._base_subcommand import BaseSubcommand
 
 
-class EnsureDbSubcommand(BaseHoustonSubcommand):
+class Subcommand(BaseSubcommand):
     def _run(self):
         self.utils.ensure_db()
-        print(json.dumps({'msg': 'ensured dbs'}))
-
-
-Subcommand = EnsureDbSubcommand
+        return {'msg': 'ensured dbs'}

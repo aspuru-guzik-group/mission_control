@@ -18,7 +18,8 @@ class SubcommandCommand(BaseCommand):
         subparsers = parser.add_subparsers(title='subcommand',
                                            dest='subcommand')
         subparsers.required = True
-        for subcommand in self.subcommands: subparsers.add_parser(subcommand)
+        for subcommand in self.subcommands:
+            subparsers.add_parser(subcommand)
 
     def handle(self, parsed_args=None, unparsed_args=None):
         self._run_subcommand(subcommand=parsed_args['subcommand'],
@@ -27,7 +28,8 @@ class SubcommandCommand(BaseCommand):
 
     def _run_subcommand(self, subcommand=None, parsed_args=None,
                         unparsed_args=None):
-        try: subcommand_fn = self._get_subcommand_fn(subcommand=subcommand)
+        try:
+            subcommand_fn = self._get_subcommand_fn(subcommand=subcommand)
         except Exception as exc:
             raise self.InvalidSubcommandError(subcommand) from exc
         try:

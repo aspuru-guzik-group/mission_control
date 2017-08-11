@@ -1,7 +1,5 @@
-from ._base_houston_subcommand import BaseHoustonSubcommand
+from ._base_subcommand import BaseSubcommand
 
 
-class SanityCheckSubcommand(BaseHoustonSubcommand):
+class Subcommand(BaseSubcommand):
     def _run(self): print("sane!")
-
-Subcommand = SanityCheckSubcommand
