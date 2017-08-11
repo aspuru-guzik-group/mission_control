@@ -10,7 +10,6 @@ dependencies = [
         for simple_dependency in [
             'dill',
             'jinja2',
-            'marshmallow',
             'sqlalchemy',
         ]
     ],
