@@ -13,16 +13,25 @@ class QueryBuilder(object):
         '>': lambda f, a: f.__gt__(a),
         '<=': lambda f, a: f.__le__(a),
         '>=': lambda f, a: f.__ge__(a),
-        'in': lambda f, a: f.in_(a),
-        'ends_with': lambda f, a: f.like('%' + a),
-        'starts_with': lambda f, a: f.like(a + '%'),
-        'contains': lambda f, a: f.contains(a),
-        'is_null': lambda f: f.is_(None),
-        'between': lambda f, a: f.between(a[0], a[1])
+        'IN': lambda f, a: f.in_(a),
+        'CONTAINS': lambda f, a: f.contains(a),
+        'IS NULL': lambda f: f.is_(None),
+        'BETWEEN': lambda f, a: f.between(a[0], a[1])
     }
 
     def __init__(self, operators=None):
         self.operators = operators or self.OPERATORS
+
+    def alter_query_per_query_spec(self, query=None, query_spec=None):
+        query_spec = query_spec or {}
+        for spec_component in ['filters', 'limit', 'order_by']:
+            if spec_component in query_spec:
+                alter_fn = getattr(self, 'alter_query_per_%s' % spec_component)
+                query = alter_fn(
+                    query=query,
+                    **{spec_component: query_spec[spec_component]}
+                )
+        return query
 
     def alter_query_per_filters(self, query=None, filters=None):
         clause = self._generate_clause_for_filter(

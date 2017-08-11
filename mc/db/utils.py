@@ -20,6 +20,10 @@ def _created_or_time(context):
     return context.current_parameters.get('created') or _time()
 
 
+def generate_int_column(*args, length=None, **kwargs):
+    return _sqla.Column(*args, _sqla.types.Integer, **kwargs)
+
+
 def generate_str_column(*args, length=None, **kwargs):
     return _sqla.Column(*args, _sqla.types.String(length=length), **kwargs)
 

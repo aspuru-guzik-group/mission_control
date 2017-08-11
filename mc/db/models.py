@@ -1,6 +1,8 @@
 import sqlalchemy as _sqla
 
 from mc.utils import hash_utils
+
+from . import constants
 from . import utils
 
 
@@ -9,7 +11,10 @@ common_supers = [utils.KeyedMixin, utils.TimestampMixin, utils.PropsMixin,
 
 
 class Flow(*common_supers):
+    label = utils.generate_str_column()
     claimed = utils.generate_boolean_column()
+    status = utils.generate_status_column()
+    parent_key = utils.generate_str_column(length=constants.KEY_LENGTH)
     cfg = utils.generate_json_column()
     data = utils.generate_json_column()
     graph = utils.generate_json_column()
@@ -18,11 +23,13 @@ class Flow(*common_supers):
 
 
 class Job(*common_supers):
-    HASH_COMPONENTS = ['params', 'job_type']
+    HASH_COMPONENTS = ['job_type', 'job_params']
+    label = utils.generate_str_column()
     claimed = utils.generate_boolean_column()
     status = utils.generate_status_column()
+    parent_key = utils.generate_str_column(length=constants.KEY_LENGTH)
     job_type = utils.generate_str_column()
-    params = utils.generate_json_column()
+    job_params = utils.generate_json_column()
     cfg = utils.generate_json_column()
     data = utils.generate_json_column()
     artifact_meta = utils.generate_json_column()
@@ -56,9 +63,10 @@ for component_name in Job.HASH_COMPONENTS:
 
 
 class Queue(*common_supers):
+    label = utils.generate_str_column()
     queue_spec = utils.generate_json_column()
 
 
 class Lock(*common_supers):
-    lockee_key = utils.generate_key_column('lockee_key', default=None)
-    locker_key = utils.generate_key_column('locker_key', default=None)
+    lockee_key = utils.generate_str_column(length=constants.KEY_LENGTH)
+    locker_key = utils.generate_str_column(length=constants.KEY_LENGTH)
