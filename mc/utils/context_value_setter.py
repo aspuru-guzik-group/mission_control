@@ -29,11 +29,11 @@ class ContextValueSetter(object):
                 ::
 
                     {
-                        <value|source>: a value or source string,
-                        [transform]: an optional transform to apply. See
-                            :module:`transform_value_for_value_spec`
-                        <dest>: a dot string specifying where to put the set
-                            value
+                        value|source: a value or source string,
+                        transform (optional): an optional transform to apply.
+                            See :module:`transform_value_for_value_spec`
+                        dest: a dot string specifying where to put
+                            the set value
                     }
 
             context (dict): an object to use as the 'ctx' root for dot strings.

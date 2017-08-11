@@ -15,7 +15,7 @@ class CreateFlowSubcommand(BaseHoustonSubcommand):
 
     def _run(self):
         flow_spec = self.parsed_args.get('flow_spec')
-        if flow_spec is None: self.parsed_args.get('flow_spec_file')
+        if flow_spec is None: flow_spec = self.parsed_args.get('flow_spec_file')
         flow_dict = Flow.from_flow_spec(flow_spec=flow_spec).to_flow_dict()
         flow_record = self.utils.mc_dao.create_item(
             item_type='flow', item_kwargs=flow_dict)

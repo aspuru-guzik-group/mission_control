@@ -1,4 +1,3 @@
-import abc
 from .base_task_handler import BaseTaskHandler
 
 
@@ -22,7 +21,6 @@ class BaseProxyingTaskHandler(BaseTaskHandler):
     def intermediate_tick(self, *args, **kwargs):
         self.on_proxied_task_finished()
 
-    @abc.abstractmethod
     def generate_proxied_task(self, *args, **kwargs):
         raise NotImplementedError()
 
