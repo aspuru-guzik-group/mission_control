@@ -10,16 +10,18 @@ class InfoSubcommand(BaseHoustonSubcommand):
 
     def _run(self):
         key = self.parsed_args.get('key')
-        if key: info = self._get_info_for_key(key=key)
-        else: info = self._get_mc_record_type_summaries()
+        if key:
+            info = self._get_info_for_key(key=key)
+        else:
+            info = self._get_mc_record_type_summaries()
         print(json.dumps(info, indent=self.parsed_args.get('indent')))
 
     def _get_info_for_key(self, key=None):
         record_type = key.split(':')[0]
         if record_type not in ['flow', 'job', 'queue', 'lock']:
             raise Exception("Invalid key '%s'" % key)
-        return self.utils.mc_dao.get_item_by_key(item_type=record_type,
-                                                 key=key)
+        return self.utils.mc_db.get_item_by_key(
+            item_type=record_type, key=key)
 
     def _get_mc_record_type_summaries(self):
         summaries = {
@@ -31,7 +33,7 @@ class InfoSubcommand(BaseHoustonSubcommand):
 
     def _get_mc_record_type_summary(self, record_type=None):
         summary = {
-            'count': len(self.utils.mc_dao.get_items(item_type=record_type))
+            'count': len(self.utils.mc_db.get_items(item_type=record_type))
         }
         return summary
 

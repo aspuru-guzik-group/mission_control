@@ -3,7 +3,7 @@ from jobman.jobman import JobMan
 from mc.clients.job_record_client import JobRecordClient
 from mc.clients.flow_record_client import FlowRecordClient
 from mc.flows.flow_engine import FlowEngine
-from mc.daos.sqlalchemy_dao import SqlAlchemyDao as _McSqlAlchemyDao
+from mc.db.db import Db
 from mc.job_module_utils.job_module_command_dispatcher import (
     JobModuleCommandDispatcher)
 from mc.runners.flow_runner import FlowRunner
@@ -15,7 +15,7 @@ class HoustonUtils(object):
         self.get_cfg = get_cfg
 
         self._cfg = ...
-        self._mc_dao = ...
+        self._mc_db = ...
         self._flow_runner = ...
         self._flow_record_client = ...
         self._job_record_client = ...
@@ -27,20 +27,22 @@ class HoustonUtils(object):
 
     @property
     def cfg(self):
-        if self._cfg is ...: self._cfg = self.get_cfg()
+        if self._cfg is ...:
+            self._cfg = self.get_cfg()
         return self._cfg
 
-    def ensure_db(self): self.mc_dao.ensure_tables()
+    def ensure_db(self): self.mc_db.ensure_tables()
 
     def ensure_queues(self):
         self.ensure_queue(queue_cfg=self.cfg['FLOW_QUEUE'])
         self.ensure_queue(queue_cfg=self.cfg['JOB_QUEUE'])
 
     def ensure_queue(self, queue_cfg=None):
-        try: self.mc_dao.get_item_by_key(item_type='queue',
-                                         key=queue_cfg['key'])
-        except self.mc_dao.ItemNotFoundError:
-            self.mc_dao.create_item(
+        try:
+            self.mc_db.get_item_by_key(
+                item_type='queue', key=queue_cfg['key'])
+        except self.mc_db.ItemNotFoundError:
+            self.mc_db.create_item(
                 item_type='queue',
                 item_kwargs={
                     'key': queue_cfg['key'],
@@ -49,17 +51,17 @@ class HoustonUtils(object):
             )
 
     @property
-    def mc_dao(self):
-        if self._mc_dao is ...: 
-            self._mc_dao = _McSqlAlchemyDao(db_uri=self.cfg['MC_DB_URI'])
-        return self._mc_dao
+    def mc_db(self):
+        if self._mc_db is ...:
+            self._mc_db = Db(db_uri=self.cfg['MC_DB_URI'])
+        return self._mc_db
 
-    @mc_dao.setter
-    def mc_dao(self, new_value): self._mc_dao = new_value
+    @mc_db.setter
+    def mc_db(self, new_value): self._mc_db = new_value
 
     @property
     def flow_runner(self):
-        if self._flow_runner is ...: 
+        if self._flow_runner is ...:
             self._flow_runner = FlowRunner(
                 flow_engine=self.flow_engine,
                 flow_record_client=self.flow_record_client,
@@ -72,7 +74,6 @@ class HoustonUtils(object):
 
     @flow_runner.setter
     def flow_runner(self, new_value): self._flow_runner = new_value
-
 
     @property
     def flow_engine(self):
@@ -101,11 +102,13 @@ class HoustonUtils(object):
 
     def _get_mc_client(self, record_type=None):
         client_cls = None
-        if record_type == 'flow': client_cls = FlowRecordClient
-        elif record_type == 'job': client_cls = JobRecordClient
+        if record_type == 'flow':
+            client_cls = FlowRecordClient
+        elif record_type == 'job':
+            client_cls = JobRecordClient
         assert client_cls is not None
         queue_cfg = self.cfg[record_type.upper() + '_QUEUE']
-        return client_cls(mc_dao=self.mc_dao,
+        return client_cls(mc_db=self.mc_db,
                           use_locks=self.cfg.get('USE_LOCKS', True),
                           queue_key=queue_cfg['key'])
 
@@ -137,14 +140,17 @@ class HoustonUtils(object):
     def jobman(self, new_value): self._jobman = new_value
 
     def build_jobdir(self, *args, **kwargs):
-        try: build_jobdir_fn = self.cfg['BUILD_JOBDIR_FN']
-        except: build_jobdir_fn = JobModuleCommandDispatcher().build_jobdir
+        try:
+            build_jobdir_fn = self.cfg['BUILD_JOBDIR_FN']
+        except:
+            build_jobdir_fn = JobModuleCommandDispatcher().build_jobdir
         return build_jobdir_fn(*args, **kwargs)
 
     def has_unfinished_mc_records(self):
         unfinished_records = self.get_unfinished_mc_records()
         for record_type, records in unfinished_records.items():
-            if len(records) > 0: return True
+            if len(records) > 0:
+                return True
         return False
 
     def get_unfinished_mc_records(self):
@@ -154,9 +160,9 @@ class HoustonUtils(object):
         }
 
     def _get_unfinished_mc_items(self, item_type=None):
-        return self.mc_dao.get_items(item_type=item_type, query={
+        return self.mc_db.get_items(item_type=item_type, query={
             'filters': [
-                {'prop': 'status', 'op': '! IN',
+                {'field': 'status', 'op': '! IN',
                  'arg': ['FAILED', 'COMPLETED']}
             ]
         })

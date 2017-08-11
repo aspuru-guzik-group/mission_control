@@ -5,7 +5,7 @@ from .. import db
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.db = db.Db(db_uri='sqlite://', ensure=True)
+        self.db = db.Db(db_uri='sqlite://', ensure_tables=True)
 
 
 class FlowTestCase(BaseTestCase):

@@ -11,14 +11,15 @@ class Db(object):
     class ItemNotFoundError(Exception):
         pass
 
-    def __init__(self, engine=None, db_uri=None, schema=None, ensure=False):
+    def __init__(self, engine=None, db_uri=None, schema=None,
+                 ensure_tables=False):
         if engine:
             self.engine = engine
         else:
             self.db_uri = db_uri
         self.schema = schema or self._get_default_schema()
-        if ensure:
-            self.ensure_db()
+        if ensure_tables:
+            self.ensure_tables()
         self.query_builder = QueryBuilder()
 
     def _get_default_schema(self):
@@ -55,7 +56,7 @@ class Db(object):
     @Session.setter
     def Session(self, value): self._Session = value
 
-    def ensure_db(self):
+    def ensure_tables(self):
         self.schema.metadata.create_all(self.engine)
 
     @property

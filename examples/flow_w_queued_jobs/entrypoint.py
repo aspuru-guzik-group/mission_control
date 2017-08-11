@@ -8,10 +8,12 @@ def main():
         flow_spec=flow_spec)
     while sandbox.has_incomplete_items():
         sandbox.flow_runner.tick()
-        claimed_jobs = sandbox.mc_dao.claim_queue_items(
+        claimed_jobs = sandbox.mc_db.claim_queue_items(
             queue_key=sandbox.queues['job']['key'])['items']
-        for job in claimed_jobs: run_job(job=job, mc_dao=sandbox.mc_dao)
+        for job in claimed_jobs:
+            run_job(job=job, mc_db=sandbox.mc_db)
     print("No more flows to claim.")
+
 
 def generate_flow_spec():
     flow_spec = {
@@ -28,12 +30,15 @@ def generate_flow_spec():
         })
     return flow_spec
 
-def run_job(job=None, mc_dao=None):
+
+def run_job(job=None, mc_db=None):
     print("running job '{job_type}'".format(job_type=job['job_type']))
     job['status'] = 'COMPLETED'
-    mc_dao.patch_item(item_type='job', key=job['key'], patches={
+    mc_db.patch_item(item_type='job', key=job['key'], patches={
         'data': job['data'],
         'status': job['status'],
     })
 
-if __name__ == '__main__': main()
+
+if __name__ == '__main__':
+    main()
