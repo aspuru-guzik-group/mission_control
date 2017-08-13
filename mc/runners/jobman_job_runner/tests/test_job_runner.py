@@ -405,7 +405,7 @@ class SubmitMcJobTestCase(BaseTestCase):
         self.assertEqual(
             self.job_runner.jobman.submit_job_spec.call_args,
             call(job_spec=self.job_runner.build_jobdir.return_value,
-                 source=self.job_runner.jobman_source_key,
+                 source_key=self.job_runner.jobman_source_key,
                  source_meta={'mc_job': self.mc_job})
         )
 

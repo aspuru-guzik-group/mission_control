@@ -209,7 +209,7 @@ class JobRunner(object):
     def submit_mc_job(self, mc_job=None):
         self.jobman.submit_job_spec(
             job_spec=self.build_jobdir(mc_job=mc_job),
-            source=self.jobman_source_key,
+            source_key=self.jobman_source_key,
             source_meta={'mc_job': mc_job}
         )
 
