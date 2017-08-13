@@ -68,7 +68,7 @@ class McSandbox(object):
     def get_incomplete_items(self, item_type=None):
         incomplete_filter = {'field': 'status', 'op': '! IN',
                              'arg': ['COMPLETED', 'FAILED']}
-        return self.mc_db.get_items(
+        return self.mc_db.query_items(
             item_type=item_type, query={'filters':  [incomplete_filter]})
 
     def has_incomplete_jobs(self):
@@ -102,7 +102,7 @@ class McSandbox(object):
     def print_items(self, item_type=None, keys_to_exclude=None, filters=None):
         print('==== ' + item_type.upper() + ' ====')
         keys_to_exclude = keys_to_exclude or {}
-        for item in self.mc_db.get_items(item_type=item_type):
+        for item in self.mc_db.query_items(item_type=item_type):
             if not all([filter_(item) for filter_ in (filters or [])]):
                 continue
             for key, value in item.items():

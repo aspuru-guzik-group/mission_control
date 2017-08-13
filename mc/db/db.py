@@ -73,7 +73,7 @@ class Db(object):
     def get_model_for_item_type(self, item_type):
         return getattr(self.models, item_type.title())
 
-    def get_items(self, item_type=None, query=None):
+    def query_items(self, item_type=None, query=None):
         """Get items of item_type that match the given query.
 
         Args:
@@ -161,7 +161,7 @@ class Db(object):
             ItemNotFoundError
         """
         try:
-            return self.get_items(item_type=item_type, query={
+            return self.query_items(item_type=item_type, query={
                 'filters': [{'field': 'key', 'op': '=', 'arg': key}]
             })[0]
         except IndexError as exc:
@@ -273,7 +273,7 @@ class Db(object):
             items (list): a list of items that match the combination of the
                 filters and the queue's queue_spec.
         """
-        return self.get_items(
+        return self.query_items(
             item_type=queue['queue_spec']['item_type'],
             query={'filters': self.get_default_claiming_filters()}
         )

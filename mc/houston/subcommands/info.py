@@ -30,6 +30,6 @@ class Subcommand(BaseSubcommand):
 
     def _get_mc_record_type_summary(self, record_type=None):
         summary = {
-            'count': len(self.utils.db.get_items(item_type=record_type))
+            'count': len(self.utils.db.query_items(item_type=record_type))
         }
         return summary

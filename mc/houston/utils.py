@@ -145,7 +145,7 @@ class HoustonUtils(object):
         }
 
     def _get_unfinished_mc_items(self, item_type=None):
-        return self.db.get_items(item_type=item_type, query={
+        return self.db.query_items(item_type=item_type, query={
             'filters': [
                 {'field': 'status', 'op': '! IN',
                  'arg': ['FAILED', 'COMPLETED']}
