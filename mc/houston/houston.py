@@ -1,8 +1,6 @@
 from mc.utils.config import Config
 from mc.utils import logging_utils
 
-from .utils import HoustonUtils
-
 
 class Houston(object):
     class ConfigError(Exception):
@@ -25,6 +23,7 @@ class Houston(object):
     @property
     def utils(self):
         if not hasattr(self, '_utils'):
+            from .utils import HoustonUtils
             self._utils = HoustonUtils(houston=self)
         return self._utils
 
