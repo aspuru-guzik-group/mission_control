@@ -33,14 +33,14 @@ class Job(*common_supers):
     cfg = utils.generate_json_column()
     data = utils.generate_json_column()
     artifact_meta = utils.generate_json_column()
-    hash = utils.generate_str_column(length=63, unique=True, nullable=True)
+    job_hash = utils.generate_str_column(length=63, unique=True, nullable=True)
 
     @classmethod
     def _receive_hash_component(cls, component_name=None, target=None,
                                 value=None, oldvalue=None, **kwargs):
         if value == oldvalue:
             return
-        if component_name == 'module' and value is None:
+        if component_name == 'job_type' and value is None:
             return
         components = {
             component_name: value,
@@ -50,7 +50,7 @@ class Job(*common_supers):
                 if other_component_name != component_name
             }
         }
-        target.hash = hash_utils.hash_obj(components)
+        target.job_hash = hash_utils.hash_obj(components)
 
 
 for component_name in Job.HASH_COMPONENTS:
