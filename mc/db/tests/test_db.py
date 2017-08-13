@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import call, MagicMock
 
 from .. import db
 
@@ -165,3 +166,52 @@ class FlowQueueTestCase(BaseTestCase):
     def assert_flow_lists_match(self, flows_a, flows_b):
         self.assertEqual(sorted([flow['key'] for flow in flows_a]),
                          sorted([flow['key'] for flow in flows_b]))
+
+
+class UpsertTestCase(BaseTestCase):
+    def setUp(self):
+        super().setUp()
+        self.ent_type = 'some_ent_type'
+        self.key_body = 'some_key_body'
+        self.key = ':'.join(['ent', self.ent_type, self.key_body])
+        self.updates = [
+            ('props.a', '$set', 'updated_a'),
+            ('props.b', '$set', 1),
+            ('props.b', '$add', 1),
+            ('tags', '$addToSet', ['tag_1', 'tag_2']),
+        ]
+
+    def test_creates_if_not_exists(self):
+        self.db.upsert(key=self.key, updates=self.updates)
+        ents = self.db.session.query(self.db.models.Ent).all()
+        self.assertEqual(len(ents), 1)
+        ent = ents[0]
+        self.assertEqual(ent.key, self.key)
+        self.assertEqual(ent.ent_type, self.ent_type)
+        self.assertEqual(ent.props, {'a': 'updated_a', 'b': 2})
+        self.assertEqual(ent.tags, {'tag_1', 'tag_2'})
+
+    def test_updates_if_exists(self):
+        orig_ent = self.db.models.Ent(
+            ent_type='some_ent_type',
+            key=self.key,
+            props={'a': 'orig_a'}, tags={'tag_1', 'tag_3'}
+        )
+        self.db.session.add(orig_ent)
+        self.db.session.commit()
+        self.db.upsert(key=self.key, updates=self.updates)
+        ents = self.db.session.query(self.db.models.Ent).all()
+        self.assertEqual(len(ents), 1)
+        ent = ents[0]
+        self.assertEqual(ent.key, self.key)
+        self.assertEqual(ent.props, {'a': 'updated_a', 'b': 2})
+        self.assertEqual(ent.tags, {'tag_1', 'tag_2', 'tag_3'})
+
+
+class ExecuteActionTestCase(BaseTestCase):
+    def test_executes_upsert_action(self):
+        self.db.upsert = MagicMock()
+        action = {'type': 'upsert', 'params': {'k1': 'v1', 'k2': 'v2'}}
+        self.db.execute_action(action=action)
+        self.assertEqual(self.db.upsert.call_args,
+                         call(**action['params'], commit=False))

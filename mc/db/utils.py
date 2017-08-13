@@ -3,7 +3,7 @@ import uuid
 import time
 
 import sqlalchemy as _sqla
-import sqlalchemy.orm as _sqla_orm
+import sqlalchemy.orm as _orm
 from sqlalchemy.ext.associationproxy import association_proxy
 from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
@@ -82,6 +82,90 @@ class KeyedMixin(object):
     def __repr__(self):
         return '<{cls}|ID:{id}|KEY:{key}>'.format(
             cls=self.__class__.__name__, id=id(self), key=self.key)
+
+
+parent_child = _sqla.Table(
+    "parent_child", Base.metadata,
+    _sqla.Column("parent_node_key", _sqla.String,
+                 _sqla.ForeignKey("node.node_key"), primary_key=True),
+    _sqla.Column("child_node_key", _sqla.String,
+                 _sqla.ForeignKey("node.node_key"), primary_key=True)
+)
+
+
+ancestor_descendant = _sqla.Table(
+    "ancestor_descendant", Base.metadata,
+    _sqla.Column("ancestor_node_key", _sqla.String,
+                 _sqla.ForeignKey("node.node_key"), primary_key=True),
+    _sqla.Column("descendant_node_key", _sqla.String,
+                 _sqla.ForeignKey("node.node_key"), primary_key=True)
+)
+
+
+class Node(Base):
+    node_key = generate_str_column(
+        length=constants.KEY_LENGTH,
+        **{
+            'primary_key': True,
+            'default': KeyedMixin.get_key_generator(prefix='node')
+        }
+    )
+    node_type = generate_str_column('node_type')
+    child_nodes = _orm.relationship(
+        'Node',
+        secondary=parent_child,
+        primaryjoin=(node_key == parent_child.c.parent_node_key),
+        secondaryjoin=(node_key == parent_child.c.child_node_key),
+        backref='parent_nodes'
+    )
+    descendant_nodes = _orm.relationship(
+        'Node',
+        secondary=ancestor_descendant,
+        primaryjoin=(node_key == ancestor_descendant.c.ancestor_node_key),
+        secondaryjoin=(node_key == ancestor_descendant.c.descendant_node_key),
+        backref='ancestor_nodes'
+    )
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'node',
+        'polymorphic_on': 'node_type',
+    }
+
+    def child_nodes_of_type(self, type_=None):
+        return [child_node for child_node in self.child_nodes
+                if child_node.__class__.__name__ == type_]
+
+    def parent_nodes_of_type(self, type_=None):
+        return [parent_node for parent_node in self.parent_nodes
+                if parent_node.__class__.__name__ == type_]
+
+
+class NodeSubclassMixin(object):
+    @declared_attr
+    def node_ref(cls):
+        return _sqla.Column(
+            _sqla.String(length=constants.KEY_LENGTH),
+            _sqla.ForeignKey('node.node_key'),
+        )
+
+    # These add_*_by_key  methods are here for update actions, when we
+    # only have a serialized key for a relationship instead of an instance.
+    def add_parents_by_key(self, session=None, keys=None):
+        with session.begin_nested():
+            for key in keys:
+                parent = self._get_entity_by_key(session=session, key=key)
+                self.parents.append(parent)
+
+    def _get_entity_by_key(self, session=None, key=None):
+        entity_type = key.split(':')[0].title()
+        EntityModel = globals()[entity_type]
+        return session.query(EntityModel).filter_by(key=key).first()
+
+    def add_ancestors_by_key(self, session=None, keys=None):
+        with session.begin_nested():
+            for key in keys:
+                ancestor = self._get_entity_by_key(session=session, key=key)
+                self.ancestors.append(ancestor)
 
 
 class TimestampMixin(object):
@@ -186,10 +270,10 @@ class PropsMixin(object):
                     _sqla.ForeignKey("%s.key" % cls.__tablename__),
                     primary_key=True
                 ),
-                'parent': _sqla_orm.relationship(cls)
+                'parent': _orm.relationship(cls)
             }
         )
-        return _sqla_orm.relationship(
+        return _orm.relationship(
             cls.Prop,
             collection_class=attribute_mapped_collection('key'),
             cascade='all, delete-orphan'
@@ -220,10 +304,10 @@ class TagsMixin(object):
                     _sqla.String(length=constants.KEY_LENGTH),
                     _sqla.ForeignKey("%s.key" % cls.__tablename__)
                 ),
-                'parent': _sqla_orm.relationship(cls)
+                'parent': _orm.relationship(cls)
             }
         )
-        return _sqla_orm.relationship(cls.Tag, collection_class=set)
+        return _orm.relationship(cls.Tag, collection_class=set)
 
     @declared_attr
     def tags(cls):
@@ -242,3 +326,7 @@ class ToDictMixin(object):
                 continue
             dict_[c.name] = getattr(self, c.name)
         return dict_
+
+
+common_supers = [KeyedMixin, TimestampMixin, PropsMixin, TagsMixin,
+                 ToDictMixin, NodeSubclassMixin, Node]

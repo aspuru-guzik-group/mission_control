@@ -2,6 +2,7 @@ import sqlalchemy as _sqla
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from mc.utils import update_helper
 from .query_builder import QueryBuilder
 
 
@@ -56,8 +57,13 @@ class Db(object):
     @Session.setter
     def Session(self, value): self._Session = value
 
-    def ensure_tables(self):
+    def ensure_tables(self): self.create_tables()
+
+    def create_tables(self):
         self.schema.metadata.create_all(self.engine)
+
+    def drop_tables(self):
+        self.schema.metadata.drop_all(self.engine)
 
     @property
     def models(self):
@@ -310,3 +316,69 @@ class Db(object):
                 ]
             }
         )
+
+    def upsert(self, key=None, updates=None, model_type=None, commit=True):
+        model_type = key.split(':')[0].title()
+        model = getattr(self.models, model_type)
+        instance, created = self.get_or_create_instance(key=key, model=model)
+        updates = self._alter_updates(updates)
+        update_helper.update(instance, updates)
+        self.session.merge(instance)
+        if commit:
+            self.session.commit()
+
+    def _alter_updates(self, updates):
+        return [self._alter_update(update) for update in updates]
+
+    def _alter_update(self, update):
+        calls_that_need_session = ['add_parents_by_key',
+                                   'add_ancestors_by_key']
+        if (
+            update[1] == '$call' and
+            update[0].split('.')[-1] in calls_that_need_session
+        ):
+            altered_update = self._alter_update_that_needs_session(update)
+        else:
+            altered_update = update
+        return altered_update
+
+    def _alter_update_that_needs_session(self, update):
+        session_kwargs = {'session': self.session}
+        params = [*update[2:]]
+        if len(params) == 0:
+            params = [[], session_kwargs]
+        elif len(params) == 1:
+            params.append(session_kwargs)
+        elif len(params) == 2:
+            params[1] = {**params[1], **session_kwargs}
+        altered_update = [update[0], update[1], *params]
+        return altered_update
+
+    def get_or_create_instance(self, key=None, model=None):
+        instance = self.session.query(model).filter_by(key=key).first()
+        if instance:
+            return instance, False
+        else:
+            model_kwargs = {'key': key}
+            if model is self.models.Ent:
+                _, ent_type, key_body = key.split(':', maxsplit=2)
+                model_kwargs = {'key': key, 'ent_type': ent_type}
+            instance = model(**model_kwargs)
+            self.session.add(instance)
+            return instance, True
+
+    def execute_actions(self, actions=None):
+        results = []
+        with self.session.begin_nested():
+            for action in actions or []:
+                result = self.execute_action(action=action, commit=False)
+                results.append(result)
+        self.session.commit()
+        return results
+
+    def execute_action(self, action=None, commit=False):
+        params = action.get('params', {})
+        if action['type'] == 'upsert':
+            fn = self.upsert
+            params = {**params, 'commit': commit}
+        return fn(**params)
