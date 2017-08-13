@@ -11,6 +11,8 @@ from mc.runners.jobman_job_runner.job_runner import JobRunner
 
 
 class HoustonUtils(object):
+    JOBS_SUBDIRS = ['pending', 'queued', 'executed', 'archive']
+
     def __init__(self, houston=None):
         self.houston = houston
 

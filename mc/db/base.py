@@ -8,4 +8,5 @@ class Base(object):
         return cls.__name__.lower()
 
 
-Base = declarative_base(cls=Base)
+class_registry = {}
+Base = declarative_base(cls=Base, class_registry=class_registry)

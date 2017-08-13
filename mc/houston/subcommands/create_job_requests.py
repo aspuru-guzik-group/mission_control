@@ -69,24 +69,24 @@ class Subcommand(BaseSubcommand):
             return tallies
         jobs_by_request = {
             request: self.Job(
-                module=request.params['job_module'],
-                params=request.params['job_params']
+                job_type=request.params['job_type'],
+                job_params=request.params['job_params']
             )
             for request in requests
         }
-        jobs_by_hash = {job.hash: job for job in jobs_by_request.values()}
+        jobs_by_hash = {job.job_hash: job for job in jobs_by_request.values()}
         existing_jobs = (
             self.session.query(self.Job)
-            .filter(self.Job.hash.in_(jobs_by_hash.keys()))
+            .filter(self.Job.job_hash.in_(jobs_by_hash.keys()))
             .all()
         )
-        existing_jobs_by_hash = {job.hash: job for job in existing_jobs}
+        existing_jobs_by_hash = {job.job_hash: job for job in existing_jobs}
         for request, job in jobs_by_request.items():
-            if job.hash in existing_jobs_by_hash:
-                job = existing_jobs_by_hash[job.hash]
+            if job.job_hash in existing_jobs_by_hash:
+                job = existing_jobs_by_hash[job.job_hash]
                 tallies['num_existing_jobs_linked'] += 1
             else:
-                job = jobs_by_hash[job.hash]
+                job = jobs_by_hash[job.job_hash]
                 tallies['num_jobs_created'] += 1
             request.child_nodes.append(job)
             request.status = 'PROVISIONED'

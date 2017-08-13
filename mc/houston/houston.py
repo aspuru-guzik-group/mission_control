@@ -82,3 +82,6 @@ class Houston(object):
 
     def _run_subcommand(self, subcommand=None, *args, **kwargs):
         return subcommand.run(*args, houston=self, **kwargs)
+
+    @property
+    def db(self): return self.utils.db  # shortcut

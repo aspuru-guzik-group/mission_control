@@ -91,7 +91,7 @@ class Subcommand(BaseSubcommand):
             job.error = evaluation.get('error', '<unknown error>')
         elif job.status == 'COMPLETED':
             if not self.parsed_args['dry_run']:
-                job.archive_meta = self.houston.utils.archiver.ingest(
+                job.artifact_meta = self.houston.utils.archiver.ingest(
                     src=job_dir)
         self._update_requests_related_to_job(job)
         self.session.add(job)

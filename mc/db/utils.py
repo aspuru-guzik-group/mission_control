@@ -9,7 +9,7 @@ from sqlalchemy.ext.declarative import declared_attr
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm.collections import attribute_mapped_collection
 
-from .base import Base
+from .base import class_registry, Base
 from . import constants
 
 
@@ -153,18 +153,17 @@ class NodeSubclassMixin(object):
     def add_parents_by_key(self, session=None, keys=None):
         with session.begin_nested():
             for key in keys:
-                parent = self._get_entity_by_key(session=session, key=key)
+                parent = self._get_instance_by_key(session=session, key=key)
                 self.parents.append(parent)
 
-    def _get_entity_by_key(self, session=None, key=None):
-        entity_type = key.split(':')[0].title()
-        EntityModel = globals()[entity_type]
-        return session.query(EntityModel).filter_by(key=key).first()
+    def _get_instance_by_key(self, session=None, key=None):
+        Cls = class_registry[key.split(':')[0].title()]
+        return session.query(Cls).filter_by(key=key).first()
 
     def add_ancestors_by_key(self, session=None, keys=None):
         with session.begin_nested():
             for key in keys:
-                ancestor = self._get_entity_by_key(session=session, key=key)
+                ancestor = self._get_instance_by_key(session=session, key=key)
                 self.ancestors.append(ancestor)
 
 

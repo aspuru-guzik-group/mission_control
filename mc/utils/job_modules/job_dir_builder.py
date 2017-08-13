@@ -40,8 +40,9 @@ class JobDirBuilder(object):
     def _build_work_dir(self):
         try:
             work_dir_meta = self.dispatcher.dispatch(
-                module_name=self.job_dict['module'], command='build_work_dir',
-                params=self.job_dict['params'],
+                module_name=self.job_dict['job_type'],
+                command='build_work_dir',
+                params=self.job_dict['job_params'],
                 output_dir=utils.get_job_dir_component_path(
                     job_dir=self.output_dir, component_name='work_dir')
             )
