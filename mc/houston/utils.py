@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from jobman.jobman import JobMan
 
 from mc.clients.job_record_client import JobRecordClient
@@ -151,3 +153,45 @@ class HoustonUtils(object):
                  'arg': ['FAILED', 'COMPLETED']}
             ]
         })
+
+    def ensure_job_dirs(self):
+        for dir in self.job_dirs.values():
+            Path(dir).mkdir(parents=True, exist_ok=True)
+
+    @property
+    def job_dirs(self):
+        if not hasattr(self, '_job_dirs'):
+            self._job_dirs = {'root': self.cfg.get('job_dirs_root', None)}
+            for jobs_subdir in self.JOBS_SUBDIRS:
+                self._job_dirs[jobs_subdir] = str(Path(self._job_dirs['root'],
+                                                       jobs_subdir))
+        return self._job_dirs
+
+    @job_dirs.setter
+    def job_dirs(self, value): self._job_dirs = value
+
+    @property
+    def archiver(self):
+        if not hasattr(self, '_archiver'):
+            self._archiver = self._generate_archiver()
+        return self._archiver
+
+    def _generate_archiver(self):
+        from mc.utils.archivers.dir_archiver import DirArchiver
+        return DirArchiver(root_dir=self.job_dirs['archive'])
+
+    @property
+    def entity_selector(self):
+        if not hasattr(self, '_entity_selector'):
+            from mc.utils.selectors.basic_entity_selector import (
+                BasicEntitySelector)
+            self._entity_selector = BasicEntitySelector(db=self.db)
+        return self._entity_selector
+
+    @property
+    def request_selector(self):
+        if not hasattr(self, '_request_selector'):
+            from mc.utils.selectors.basic_request_selector import (
+                BasicRequestSelector)
+            self._request_selector = BasicRequestSelector(db=self.db)
+        return self._request_selector

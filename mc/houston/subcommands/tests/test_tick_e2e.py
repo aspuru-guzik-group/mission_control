@@ -19,7 +19,7 @@ class BaseTestCase(unittest.TestCase):
             'tasks': [
                 {
                     'key': 'task_%s' % i,
-                    'task_type': 'log',
+                    'task_type': 'noop',
                     'task_params': {'msg': 'msg_%s' % i}
                 }
                 for i in range(3)

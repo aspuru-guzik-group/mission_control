@@ -29,9 +29,9 @@ class Subcommand(BaseSubcommand):
 
         parser.add_argument(
             '--output_dir',
-            help=("Where to put created job dirs. If dest does not exist it"
-                  " will be created. By default it goes to"
-                  " space_shuttle.job_dirs['pending'].")
+            help=("Where to put created job dirs. If dir does not exist it"
+                  " will be created."),
+            default=defaults['output_dir']
         )
 
         parser.add_argument(
@@ -59,6 +59,7 @@ class Subcommand(BaseSubcommand):
             'dry_run': False,
             'limit': 100,
             'job_dir_tpl': '{timestamp}.{key}',
+            'output_dir': self.houston.utils.job_dirs['pending'],
             'parent_request_tags': [],
             'tags': [],
         }
@@ -85,8 +86,7 @@ class Subcommand(BaseSubcommand):
         }
 
     def _get_output_dir(self):
-        output_dir = (self.parsed_args.get('output_dir')
-                      or self.space_shuttle.job_dirs['pending'])
+        output_dir = self.parsed_args['output_dir']
         if not self.parsed_args['dry_run']:
             Path(output_dir).mkdir(parents=True, exist_ok=True)
         return output_dir
@@ -136,10 +136,10 @@ class Subcommand(BaseSubcommand):
         return claimed_jobs
 
     @property
-    def Job(self): return self.space_shuttle.db.models.Job
+    def Job(self): return self.db.models.Job
 
     @property
-    def Request(self): return self.space_shuttle.db.models.Request
+    def Request(self): return self.db.models.Request
 
     def _build_jobs(self, jobs=None, output_dir=None):
         num_built = 0

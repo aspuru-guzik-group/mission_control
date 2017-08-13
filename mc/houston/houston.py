@@ -8,13 +8,16 @@ class Houston(object):
     class ConfigError(Exception):
         pass
 
-    def __init__(self, *args, logger=None, cfg=None, ensure_db=True, **kwargs):
+    def __init__(self, *args, logger=None, cfg=None, ensure_db=True,
+                 ensure_job_dirs=False, **kwargs):
         super().__init__()
         self.logger = logger or logging_utils.get_default_logger(name=__name__)
         if cfg:
             self.set_cfg(cfg=cfg)
         if ensure_db:
             self.utils.db.ensure_tables()
+        if ensure_job_dirs:
+            self.utils.ensure_job_dirs()
 
     def set_cfg(self, cfg=None):
         self.cfg = Config(cfg=cfg)
