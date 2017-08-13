@@ -2,7 +2,7 @@ import unittest
 
 
 from mc.houston.houston import Houston
-from mc.utils import test_utils as _mc_test_utils
+from mc.utils import testing as _mc_test_utils
 
 from . import utils as _utils
 
