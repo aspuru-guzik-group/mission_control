@@ -16,7 +16,7 @@ class Subcommand(BaseSubcommand):
         }
 
     def _run(self):
-        from a2g2_v2.utils.job_modules.job_dir_runner import JobDirRunner
+        from mc.utils.job_modules.job_dir_runner import JobDirRunner
         runner = JobDirRunner()
         runner.run_job_dir(
             job_dir=self.parsed_args['job_dir'],

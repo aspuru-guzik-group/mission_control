@@ -156,7 +156,7 @@ class Subcommand(BaseSubcommand):
         return {'num_built': num_built, 'errors': errors}
 
     def _get_job_dir_builder(self):
-        from a2g2_v2.utils.job_modules.job_dir_builder import JobDirBuilder
+        from mc.utils.job_modules.job_dir_builder import JobDirBuilder
         return JobDirBuilder()
 
     def _build_job(self, job=None, job_dir_builder=None,

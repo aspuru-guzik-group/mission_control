@@ -14,7 +14,7 @@ class Subcommand(BaseSubcommand):
                                   " will be added to this dir."))
 
     def _run(self):
-        from a2g2_v2.utils.job_modules.job_dir_builder import JobDirBuilder
+        from mc.utils.job_modules.job_dir_builder import JobDirBuilder
         builder = JobDirBuilder()
         output_dir = self._get_output_dir()
         builder.build_job_dir(job_dict=self.parsed_args['job_dict'],

@@ -1,6 +1,6 @@
 import traceback
 
-from a2g2_v2.utils.dispatcher import Dispatcher
+from mc.utils.dispatcher import Dispatcher
 
 from . import utils
 

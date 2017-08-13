@@ -1,4 +1,4 @@
-_prefix = 'A2G2__'
+_prefix = 'MC__'
 
 JOB_DIR_COMPONENT_PATHS = {
     'job_key': _prefix + 'JOB_KEY',

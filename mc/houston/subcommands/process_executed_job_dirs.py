@@ -2,7 +2,7 @@ import glob
 import itertools
 import traceback
 
-from a2g2_v2.utils.job_modules import utils as _jmu_utils
+from mc.utils.job_modules import utils as _jmu_utils
 from ._base_subcommand import BaseSubcommand
 
 

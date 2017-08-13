@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 import textwrap
 
-from a2g2_v2.utils.dispatcher import Dispatcher
+from mc.utils.dispatcher import Dispatcher
 
 from . import constants
 from . import utils
