@@ -81,6 +81,14 @@ mc\.task\_handlers\.mc\_default\_task\_handler module
     :undoc-members:
     :show-inheritance:
 
+mc\.task\_handlers\.spread\_task\_handler module
+------------------------------------------------
+
+.. automodule:: mc.task_handlers.spread_task_handler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 mc\.task\_handlers\.switch\_task\_handler module
 ------------------------------------------------
 

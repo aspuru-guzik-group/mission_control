@@ -24,15 +24,12 @@ class HoustonCommand(SubcommandCommand):
             cfg = self._load_cfg_from_path(parsed_args['cfg_path'])
             self.houston = Houston(cfg=cfg)
         else:
-            self.houston = self._generate_minimal_houston()
+            self.houston = Houston.minimal()
         super().handle(parsed_args=parsed_args, unparsed_args=unparsed_args)
 
     def _load_cfg_from_path(self, cfg_path=None):
         cfg_module = import_utils.load_module_from_path(path=cfg_path)
         return cfg_module.__dict__
-
-    def _generate_minimal_houston(self):
-        return Houston(cfg={}, ensure_db=False, ensure_job_dirs=False)
 
     def _get_subcommand_fn(self, subcommand=None):
         subcommand = self.houston._get_subcommand(subcommand)

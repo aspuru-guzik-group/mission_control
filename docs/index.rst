@@ -5,10 +5,6 @@
 
 .. title:: Introduction to MissionControl (workflow software)
 
-.. image:: _static/mc_logo.png
-   :width: 300 px
-   :alt: MissionControl (workflow software)
-
 MissionControl is a library for creating jobs and workflows.
 
 =========================
@@ -65,43 +61,22 @@ Flows
 Getting Started
 ===============
 
-Quickstart
-==========
-
-Start with our installation and quickstart tutorials:
-
 .. toctree::
    :maxdepth: 1
 
-   installation
    quickstart
-
-Examples
-========
-
-After you complete the quickstart checkout the examples
-
-.. toctree::
-   :maxdepth: 1
-
+   user_guide
    examples
-
-
-====================================
-Contributing / Contact / Bug Reports
-====================================
-
-Want to see something added or changed? There are many ways to make that a reality! Some ways to get involved are:
-
-* Help us improve the documentation - tell us where you got 'stuck' and improve the install process for everyone.
-* Let us know if you need support for a queueing system or certain features.
-* Point us to areas of the code that are difficult to understand or use.
-* Contribute code! If you are interested in this option, please see our :doc:`contribution guidelines</contributing>`.
 
 
 =================
 API Documentation
 =================
+
+.. toctree::
+   :maxdepth: 1
+
+   api
 
 * :ref:`genindex`
 * :ref:`modindex`

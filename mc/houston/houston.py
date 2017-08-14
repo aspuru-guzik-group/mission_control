@@ -20,6 +20,10 @@ class Houston(object):
     def set_cfg(self, cfg=None):
         self.cfg = Config(cfg=cfg)
 
+    @classmethod
+    def minimal(cls):
+        return cls(cfg={}, ensure_db=False, ensure_job_dirs=False)
+
     @property
     def utils(self):
         if not hasattr(self, '_utils'):

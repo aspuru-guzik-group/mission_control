@@ -4,4 +4,4 @@ MissionControl User Guide
 .. toctree::
    :glob:
 
-   guide/*
+   user_guide/*

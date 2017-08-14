@@ -1,4 +1,5 @@
 import argparse
+import copy
 import json
 import time
 
@@ -66,9 +67,9 @@ class Subcommand(BaseSubcommand):
     def _run_for_flow_spec(self):
         flow_spec = (self.parsed_args.get('flow_spec')
                      or self.parsed_args.get('flow_spec_file'))
+        flow_spec = copy.deepcopy(flow_spec)
         flow = self.utils.flow_engine.flow_spec_to_flow(flow_spec=flow_spec)
-        output_for_flow = self._run_for_flow(flow=flow)
-        return output_for_flow
+        return self._run_for_flow(flow=flow)
 
     def _run_for_flow(self, flow=None):
         flow_ref = {'flow': flow}
@@ -86,8 +87,7 @@ class Subcommand(BaseSubcommand):
                 get_flow=_get_flow, set_flow=_set_flow),
             condition_fns=self._get_condition_fns_for_flow(get_flow=_get_flow)
         )
-        output_for_flow = self._get_output_for_flow(flow=_get_flow())
-        return output_for_flow
+        return self._get_output_for_flow(flow=_get_flow())
 
     def _get_tick_fn_for_flow(self, get_flow=None, set_flow=None):
         def _tick_fn():
