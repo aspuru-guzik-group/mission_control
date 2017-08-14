@@ -32,7 +32,7 @@ class FlowRunner(object):
         self._ticking = False
 
 
-    def get_default_flow_engine(self, task_handler=None):
+    def get_default_flow_engine(self):
         from mc.flows.flow_engine import FlowEngine
         return FlowEngine()
 

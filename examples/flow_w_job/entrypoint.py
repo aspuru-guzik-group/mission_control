@@ -10,15 +10,13 @@ def main():
                 'key': 'task_1',
                 'task_type': 'print',
                 'task_params': {'msg': 'I am task_1.'},
-                'precursors': ['ROOT'],
             },
             {
                 'key': 'task_2',
                 'task_type': 'mc.tasks.job',
                 'task_params': {
-                    'job_spec': 'some job spec'
+                    'job_type': 'some.job.type'
                 },
-                'precursors': ['task_1'],
             },
         ]
     }

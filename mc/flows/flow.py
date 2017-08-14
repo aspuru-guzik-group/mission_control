@@ -8,7 +8,8 @@ class Flow(object):
     """
     ROOT_TASK_KEY = 'ROOT'
 
-    SIMPLE_ATTRS = {'key', 'cfg', 'data', 'label', 'status', 'depth'}
+    SIMPLE_ATTRS = {'key', 'cfg', 'data', 'label', 'status', 'depth',
+                    'parent_key'}
 
     @staticmethod
     def sanitize_flow_kwargs(flow_kwargs):
@@ -17,7 +18,8 @@ class Flow(object):
         return {k: v for k, v in flow_kwargs.items() if k not in special_keys}
 
     def __init__(self, key=None, cfg=None, data=None, label=None,
-                 status=None, depth=0, add_root_task=True, **kwargs):
+                 status=None, depth=0, parent_key=None, add_root_task=True,
+                 **kwargs):
         """
         Args:
             key (str): a key to identify the flow.
@@ -35,6 +37,7 @@ class Flow(object):
         self.label = label
         self.status = status or 'PENDING'
         self.depth = depth or 0
+        self.parent_key = parent_key
         
         self.tasks = {}
         self._edges = {}

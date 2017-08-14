@@ -27,7 +27,7 @@ class FlowTaskHandler(BaseFlowTaskHandler):
         flow = self.flow_engine.flow_spec_to_flow(
             flow_spec=self.task['task_params']['flow_spec'])
         flow.depth = self.task_ctx['flow'].depth + 1
-        flow.data['parent_key'] = self.task_ctx['flow'].key
+        flow.parent_key = self.task_ctx['flow'].key
         return flow
 
     @property

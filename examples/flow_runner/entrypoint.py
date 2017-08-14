@@ -6,26 +6,31 @@ from mc.runners.flow_runner import FlowRunner
 
 def main():
     sandbox = McSandbox()
-    mc_dao = sandbox.mc_dao
+    mc_db = sandbox.mc_db
     flow_engine = FlowEngine()
-    create_flows(mc_dao=mc_dao, flow_engine=flow_engine)
+    create_flows(mc_db=mc_db, flow_engine=flow_engine)
     flow_runner = FlowRunner(
         flow_engine=flow_engine,
         flow_record_client=sandbox.flow_record_client,
     )
     tick_stats = flow_runner.tick()
-    while tick_stats['claimed'] > 0: tick_stats = flow_runner.tick()
+    while tick_stats['claimed'] > 0:
+        tick_stats = flow_runner.tick()
     print("No more flows to claimed.")
 
-def create_flows(mc_dao=None, flow_engine=None, n=3):
+
+def create_flows(mc_db=None, flow_engine=None, n=3):
     for i in range(n):
         flow_spec = generate_flow_spec(params={
             'flow_id': 'flow_%s' % i,
             'num_tasks': 3
         })
         flow = flow_engine.flow_spec_to_flow(flow_spec=flow_spec)
-        mc_dao.create_item(item_type='Flow',
-                           kwargs=flow_engine.flow_to_flow_dict(flow=flow))
+        mc_db.create_item(
+            item_type='flow',
+            item_kwargs=flow_engine.flow_to_flow_dict(flow=flow)
+        )
+
 
 def generate_flow_spec(params=None):
     msg_tpl = "I am task '{task_id}' in flow '{flow_id}'"
@@ -45,4 +50,6 @@ def generate_flow_spec(params=None):
     flow_spec['tasks'] = tasks
     return flow_spec
 
-if __name__ == '__main__': main()
+
+if __name__ == '__main__':
+    main()
