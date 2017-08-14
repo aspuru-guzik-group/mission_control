@@ -25,11 +25,13 @@ class JobDirBuilder(object):
     def __init__(self, dispatcher=None):
         self.dispatcher = dispatcher or Dispatcher()
 
-    def build_job_dir(self, job_dict=None, output_dir=None):
+    def build_job_dir(self, job_dict=None, output_dir=None,
+                      build_work_dir_fn=None):
         self.job_dict = job_dict
         self.output_dir = output_dir
         self._ensure_dir(self.output_dir)
-        self.work_dir_meta = self._build_work_dir()
+        self.work_dir_meta = self._build_work_dir(
+            build_work_dir_fn=build_work_dir_fn)
         for component in self.FILE_COMPONENTS:
             self._build_file_component(component)
         return output_dir
@@ -37,15 +39,21 @@ class JobDirBuilder(object):
     def _ensure_dir(self, dir=None):
         Path(dir).mkdir(parents=True, exist_ok=True)
 
-    def _build_work_dir(self):
+    def _build_work_dir(self, build_work_dir_fn=None):
         try:
-            work_dir_meta = self.dispatcher.dispatch(
-                module_name=self.job_dict['job_type'],
-                command='build_work_dir',
-                params=self.job_dict['job_params'],
-                output_dir=utils.get_job_dir_component_path(
+            common_work_dir_kwargs = {
+                'params': self.job_dict['job_params'],
+                'output_dir': utils.get_job_dir_component_path(
                     job_dir=self.output_dir, component_name='work_dir')
-            )
+            }
+            if build_work_dir_fn:
+                work_dir_meta = build_work_dir_fn(**common_work_dir_kwargs)
+            else:
+                work_dir_meta = self.dispatcher.dispatch(
+                    module_name=self.job_dict['job_type'],
+                    command='build_work_dir',
+                    **common_work_dir_kwargs
+                )
             return work_dir_meta
         except Exception as exc:
             raise self.WorkdirError(job_dict=self.job_dict) from exc

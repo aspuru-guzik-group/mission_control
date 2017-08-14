@@ -42,6 +42,8 @@ Build a Job Dir
   job_output = subprocess.check_output([str(entrypoint_command)]).decode()
   print(job_output.strip())
 
+Expected output:
+
 .. testoutput::
 
   JOBMAN__JOB_SPEC.json

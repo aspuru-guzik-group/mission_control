@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 from mc.utils.commands.argument_parser import ArgumentParser
+from mc.utils import dot_spec_loader
 
 
 class BaseSubcommand(object):
@@ -61,3 +62,9 @@ class BaseSubcommand(object):
     def json_path_arg(self, path):
         with Path(path).expanduser().open() as f:
             return json.load(f)
+
+    def dot_spec_arg(self, dot_spec):
+        return self.load_from_dot_spec(dot_spec)
+
+    def load_from_dot_spec(self, dot_spec):
+        return dot_spec_loader.load_from_dot_spec(dot_spec)
