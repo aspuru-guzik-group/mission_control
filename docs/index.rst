@@ -5,57 +5,75 @@
 
 .. title:: Introduction to MissionControl (workflow software)
 
-MissionControl is a library for creating jobs and workflows.
+==============
+MissionControl
+==============
+A library for creating jobs and workflows.
 
 =========================
 Is MissionControl for me?
 =========================
 
-Some (but not all) of its features include:
+Features include:
 
-* A job creation framework: create small job modules that define how to build job directories.
+#. A job creation framework: create small job modules that define how to build job directories.
+#. A task sequencing framework: create flows that consist of small tasks.
+#.  A data storage framework: store data from parsed jobs, and query it to provide inputs to other jobs.
+#. A SqlAlchemy backend lets you run MissionControl with a variety of SQL environments. You can use file-based sqlite databases or server-based databases like Postgresql or MySql.
+#.  Dynamic flows: you can create flows that modify themselves or create new flows based on what happens during execution.
+#. Modular: you can customize how MissionControl works.
 
-* A task sequencing framework: create flows that consist of small tasks.
-
-* A data storage framework: store data from parsed jobs, and query it to provide inputs to other jobs.
-
-* A SqlAlchemy backend lets you run MissionControl with a variety of SQL environments. You can use file-based sqlite databases or server-based databases like Postgresql or MySql.
-
-* *Dynamic* flows: you can create flows that modify themselves or create new flows based on what happens during execution.
-
-* Modular: you can customize how MissionControl works.
-
-=================================
-High-Level View of MissionControl
-=================================
-The main components of MissionControl are:
-
-#. Jobs: a framework for creating job directories or workunits that can run on high-performance computing clusters or grid clusters.
-
-#. Requests: a framework for tracking whether various types of requests have been executed for a given set of inputs and parameters.
-
-#. EntityDB: a framework for storing results from jobs and querying these results to provide inputs to other jobs.
-
-#. Flows: a framework for defining and running sequences of tasks and jobs.
-
-You can use these components in any combination you choose. Some people only need the JobModule framework. Others only need the Flow framework.
-
-For people who want to combine components, MissionControl provides utilities to help with this.
+========
+Overview
+========
+MissionControl is a collection of several components.
 
 Jobs
 ====
+You can use MissionControl to build parameterized job directories that you can
+run locally or on a cluster.
 
-JOB MODULES HERE!
+For example, you can build directories that run a computational chemistry 
+package with different sets of inputs.
 
-Requests
-========
-
-EntityDB
-========
+See `user_guide/jobs` for more information.
 
 Flows
 =====
+You can use MissionControl to define and run task-based workflows.
 
+For example, you can define a workflow that first runs a model, and then runs
+an analysis job on the model outputs.
+
+See `user_guide/flows` for more information.
+
+Requests
+========
+You can use MissionControl to track whether a job or flow has already been
+requested with a given set of inputs. This helps you avoid running duplicate
+computations.
+
+See `user_guide/requests` for more information.
+
+EntityDB
+========
+You can use MissionControl to store data in a generalized
+`Entity-Attribute-Value Database
+<https://en.wikipedia.org/wiki/Entity%E2%80%93attribute%E2%80%93value_model>`_.
+
+This database can be useful for storing results from parsed jobs that you
+want to use as inputs for future jobs.
+
+See `user_guide/entity_db` for more information.
+
+
+Combining Components
+====================
+You can use these components in any combination you choose. Some people use 
+MissionControl only to build computing cluster jobs. Others only use
+MissionControl to define and run flows.
+
+MissionControl allows you to use components on their own, or in concert.
 
 ===============
 Getting Started

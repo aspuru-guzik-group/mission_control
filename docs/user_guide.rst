@@ -1,4 +1,4 @@
-MissionControl User Guide
+User Guide
 =========================
 
 .. toctree::
