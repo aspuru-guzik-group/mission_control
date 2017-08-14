@@ -11,15 +11,12 @@ from . import utils
 class JobDirBuilder(object):
     FILE_COMPONENTS = ['job_key', 'job_meta', 'job_spec', 'entrypoint']
 
-    class WorkdirError(Exception):
+    class BuildError(Exception):
         def __init__(self, msg=None, job_dict=None, **kwargs):
-            if not msg:
-                msg = ''
-            else:
-                msg += ' '
-            msg += (
-                "Could not build work_dir; job_dict was '{job_dict}'"
+            prelude = (
+                "Could not build job_dir; job_dict was '{job_dict}'."
             ).format(job_dict=job_dict)
+            msg = (prelude + ' Details: ' + msg) if msg else prelude
             super().__init__(msg, **kwargs)
 
     def __init__(self, dispatcher=None):
@@ -56,7 +53,10 @@ class JobDirBuilder(object):
                 )
             return work_dir_meta
         except Exception as exc:
-            raise self.WorkdirError(job_dict=self.job_dict) from exc
+            raise self.BuildError(
+                msg='Failed to build work_dir.',
+                job_dict=self.job_dict
+            ) from exc
 
     def _build_file_component(self, component=None):
         content_fn = getattr(self, '_generate_%s_content' % component)

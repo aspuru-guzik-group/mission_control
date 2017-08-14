@@ -11,10 +11,11 @@ After you read this section you should be familiar with these concepts:
 #. [ ] building job dirs
 #. [ ] job modules
 #. [ ] running jobs in different environments
+#. [ ] parsing job dirs
 #. [ ] best practices for working with jobs
 
 ==============
-What is a job?
+What Is a Job?
 ==============
 In MissionControl, a job represents an standalone computation. For example, a
 job that you want to run on a cluster computing resource.
@@ -102,7 +103,7 @@ Building Jobs
 Now we have a convention for defining jobs in terms of job_dicts. But how do we
 build a runnable artifact for a job_dict?
 
-The MissionControl :mod:`mc.utils.job_modules.job_dir_builder.JobDirBuilder`
+The MissionControl :mod:`mc.utils.job_modules.job_dir_builder`
 module defines a python class that builds a job directory for a given job_dict.
 
 In general JobDirBuilder builds a directory that contains:
@@ -219,9 +220,16 @@ command. For example:
      build_work_dir_fn=my_build_work_dir
   )
 
-======================================
+
+============
+Running Jobs
+============
+
+HERE!!! ADD NOTE ABOUT RUNNING EXTERNALLY, PROVIDING PREBAKED
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Running Jobs in Different Environments
-======================================
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Our echo job from the example above is simple and should run the same in any
 environment.
 
@@ -236,7 +244,7 @@ There are a few strategies we can use to define environment-specific
 configurations.
 
 Config Strategy A: Builder Per Environment
----------------------------------------------
+------------------------------------------
 In this strategy, we write a builder for each environment in which we expect to
 run our job.
 
@@ -286,13 +294,14 @@ use:
       build_work_dir_fn=my_chem_builder_a.build_work_dir_for_cluster_y
     )
 
-Advantages
-~~~~~~~~~~
+Pros
+~~~~
 #. It's often easier for new users of our code to add new code. "I just copy
    from the previous example!"
 
-Disadvantages
-~~~~~~~~~~
+
+Cons
+~~~~
 #. Maximizing Cluster Use:
    #. We have to know where our job will run at the time we build it. This
       means we would have to check cluster availability at job build time,
@@ -336,17 +345,16 @@ For example:
         )
         ...
 
-
-Advantages
-~~~~~~~~~~
+Pros
+~~~~
 #. Maintenance: all our logic is one place, so it's easier to maintain.
 #. We don't have to know where our job will be run when we build it. So we could
    send it to any cluster that has available resources. And we can batch
    together any collection of jobs.
 #. Testing: we only have one builder to test.
 
-Disadvantages
-~~~~~~~~~~
+Cons
+~~~~
 #. Whatever runs our job now bears the responsibility for fulfilling the config
    spec requirements.
 #. It can be harder for novice users to understand how configs get set.
@@ -359,3 +367,57 @@ testing and cluster use make up for the slightly higher barrier-to-entry for
 job module writers.
 
 
+================
+Parsing Job Dirs
+================
+Often we want to extract data from executed job dirs.
+
+The MissionControl :mod:`mc.utils.job_modules.job_dir_parser` module
+defines a python class that helps us parses a given job directory.
+
+Typically we don't interact directly with the JobDirParser. Instead we use the
+`houston` command runner to call the JobDirParser. For example:
+
+.. testcode::
+
+  from mc.houston import Houston
+  houston = Houston.minimal()
+  import tempfile
+  scratch_dir = tempfile.mkdtemp()
+  from pathlib import Path
+  job_dir_path = Path(scratch_dir, 'my_job_dir')
+  build_result = houston.run_command(
+     'build_job_dir',
+     job_dict={
+         'key': 'my_job_key',
+         'job_type': 'mc.utils.testing.echo_job_module',
+         'job_params': {'message': 'Tacos are delicious.'},
+     },
+     output_dir=str(job_dir_path)
+  )
+  built_job_dir = build_result['job_dir']
+
+
+===========================================
+Recommended Practices for Working with Jobs
+===========================================
+#. Write small functions in your modules.
+
+   This will make your job modules easier to test and understand.
+
+#. Use constants.py files in your modules.
+
+   If your parsers and builders need to refer to common paths or settings, put
+   the settings in a constants.py module that both your parsers and builders
+   can access. Then, if you need to change these settings, you only need to
+   change them in one place.
+
+#. Write tests for your job modules.
+
+#. Define a runner with prebaked outputs.
+
+   This will make your job modules easier to test, both individually and in
+   flows.
+
+#. Use the 'One Builder + Config Spec' strategy to specify requirements that
+   vary across environments.
