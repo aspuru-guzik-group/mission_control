@@ -1,6 +1,18 @@
 Jobs
 ====
 
+=================
+Concept Checklist
+=================
+After you read this section you should be familiar with these concepts:
+
+#. [ ] job lifecycle
+#. [ ] job dicts
+#. [ ] building job dirs
+#. [ ] job modules
+#. [ ] running jobs in different environments
+#. [ ] best practices for working with jobs
+
 ==============
 What is a job?
 ==============
@@ -164,15 +176,17 @@ In the example above, we specified a job_type of
 'mc.utils.test.echo_job_module'. When we ran the 'build_job_dir' command,
 MissionControl looked at the job_type component, and saw that it should try to
 dispatch to a module named 'mc.utils.testing.echo_job_module'. This module is a
-small utility module that is part of MissionControl
-(:mod:`mc.utils.testing.echo_job_module`) .
+small utility module that is included in MissionControl:
+:mod:`mc.utils.testing.echo_job_module` .
 
 It contains a function :mod:`mc.utils.testing.echo_job_module.build_work_dir`
 which defines how to build a work_dir.
 
 By convention, MissionControl will look for a function named 'build_work_dir'
-in python module that has the same name as the job_type. But you can also
-specify a specific builder when you call the 'build_job_dir'
+in python module that has the same name as the job_type. This function
+will receive the job_params and an output_dir as kwargs.
+
+You can also specify a specific builder when you call the 'build_job_dir'
 command. For example:
 
 .. testcode ::
@@ -204,3 +218,144 @@ command. For example:
      },
      build_work_dir_fn=my_build_work_dir
   )
+
+======================================
+Running Jobs in Different Environments
+======================================
+Our echo job from the example above is simple and should run the same in any
+environment.
+
+But what if want to run jobs that do need special configurations, depending on
+the environment in which they run?
+
+For example, what if we want to run job that requires a specific version of a
+quantum chemistry library? What if we want to run this job on two different
+clusters, cluster X and cluster Y?
+
+There are a few strategies we can use to define environment-specific
+configurations.
+
+Config Strategy A: Builder Per Environment
+---------------------------------------------
+In this strategy, we write a builder for each environment in which we expect to
+run our job.
+
+For example, our code might look something like this:
+  ::
+
+    # <chem_builder_a.py>
+    def build_work_dir_for_cluster_x(...):
+      # define configs for cluster X
+      chem_lib_executable = '/cluster/x/software/my_chem_lib-1.0.1'
+      entrypoint = _write_entrypoint(chem_lib_executable)
+      return {'entrypoint': entrypoint}
+      ...
+
+    def build_work_dir_cluster_x(...): ...
+      chem_lib_executable = '/cluster/y/bin/my_chem_lib-1.0.1'
+      entrypoint = _write_entrypoint(chem_lib_executable)
+      return {'entrypoint': entrypoint}
+      ...
+
+    def write_entrypoint(chem_lib_executable):
+        entrypoint_content = textwrap.dedent(
+          '''
+          #!/bin/bash
+          CHEM_LIB_EXE="{chem_lib_executable}"
+          $CHEM_LIB_EXE my_chem_command
+          '''
+        ).format(chem_lib_executable=chem_lib_excutable)
+        ...
+
+And then when we build our job directories, we just specify which builder to
+use:
+
+  ::
+    import my_chem_builder_a
+    # for cluster x
+    houston.run_command(
+      'build_job_dir',
+      job_dict={...},
+      build_work_dir_fn=my_chem_builder_a.build_work_dir_for_cluster_x
+    )
+
+    # for cluster y
+    houston.run_command(
+      'build_job_dir',
+      job_dict={...},
+      build_work_dir_fn=my_chem_builder_a.build_work_dir_for_cluster_y
+    )
+
+Advantages
+~~~~~~~~~~
+#. It's often easier for new users of our code to add new code. "I just copy
+   from the previous example!"
+
+Disadvantages
+~~~~~~~~~~
+#. Maximizing Cluster Use:
+   #. We have to know where our job will run at the time we build it. This
+      means we would have to check cluster availability at job build time,
+      rather than at job run time.
+   #. We can't make batches of heterogenous jobs ahead of run time, because
+      we would have to check that all the jobs have been built for the same
+      cluster.
+#. Maintenance:
+   #. If our '_generate_common_content' function signature changes,
+      we will have to find all the places where is called.
+   #. If another type of job uses the same chemstry library, we will have to
+      repeat our configurations in the builder for that type of job.
+#. Testing: we have to test each of our builders.
+
+
+Config Strategy B: One Builder + Config Spec
+---------------------------------------------
+Another strategy is to define one builder, and output a 'config spec' along
+with the job_dir. The config spec describes what things this job needs to run.
+
+For example:
+  ::
+
+    # <my_chem_builder_b.py>
+    def build_work_dir(...):
+        # define config spec
+        config_spec = {
+            'chem_lib_executable': {
+                'required': True,
+                'env_var': 'CHEM_LIB_EXE'
+            }
+        }
+        return {'entrypoint': entrypoint, 'config_spec': config_spec}
+
+    def write_entrypoint():
+        entrypoint_content = textwrap.dedent(
+          '''
+          #!/bin/bash
+          $CHEM_LIB_EXE my_chem_command
+          '''
+        )
+        ...
+
+
+Advantages
+~~~~~~~~~~
+#. Maintenance: all our logic is one place, so it's easier to maintain.
+#. We don't have to know where our job will be run when we build it. So we could
+   send it to any cluster that has available resources. And we can batch
+   together any collection of jobs.
+#. Testing: we only have one builder to test.
+
+Disadvantages
+~~~~~~~~~~
+#. Whatever runs our job now bears the responsibility for fulfilling the config
+   spec requirements.
+#. It can be harder for novice users to understand how configs get set.
+
+
+A vs. B: Which One to Choose?
+-----------------------------
+In general, the MissionControl authors recommend strategy B. The advantages in
+testing and cluster use make up for the slightly higher barrier-to-entry for
+job module writers.
+
+
