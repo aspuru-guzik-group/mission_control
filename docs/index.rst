@@ -11,9 +11,9 @@
 
 MissionControl is a library for creating jobs and workflows.
 
-====================
+=========================
 Is MissionControl for me?
-====================
+=========================
 
 Some (but not all) of its features include:
 
@@ -29,9 +29,9 @@ Some (but not all) of its features include:
 
 * Modular: you can customize how MissionControl works.
 
-==============================
+=================================
 High-Level View of MissionControl
-==============================
+=================================
 The main components of MissionControl are:
 
 #. Jobs: a framework for creating job directories or workunits that can run on high-performance computing clusters or grid clusters.
@@ -99,9 +99,9 @@ Want to see something added or changed? There are many ways to make that a reali
 * Contribute code! If you are interested in this option, please see our :doc:`contribution guidelines</contributing>`.
 
 
-===========================
+=================
 API Documentation
-===========================
+=================
 
 * :ref:`genindex`
 * :ref:`modindex`
