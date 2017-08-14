@@ -7,7 +7,7 @@ class Houston(object):
         pass
 
     def __init__(self, *args, logger=None, cfg=None, ensure_db=True,
-                 ensure_job_dirs=False, **kwargs):
+                 ensure_job_dirs=True, **kwargs):
         super().__init__()
         self.logger = logger or logging_utils.get_default_logger(name=__name__)
         if cfg:

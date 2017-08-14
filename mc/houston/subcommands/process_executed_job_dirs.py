@@ -7,7 +7,7 @@ from ._base_subcommand import BaseSubcommand
 
 
 class Subcommand(BaseSubcommand):
-    help = "Build dirs for pending jobs."
+    help = "Process executed job dirs and ingest them to an archive."
 
     def add_arguments(self, parser):
         defaults = self._get_defaults()

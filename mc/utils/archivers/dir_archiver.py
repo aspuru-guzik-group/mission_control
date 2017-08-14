@@ -28,7 +28,8 @@ class DirArchiver(BaseArchiver):
         path_components = []
         if self.time_components_generator:
             path_components.extend(self.time_components_generator(src=src))
-        path_components.extend(self.PATH_COMPONENT_SEPARATOR.split(src))
+        basename = str(Path(src).name)
+        path_components.extend(basename.split(self.PATH_COMPONENT_SEPARATOR))
         return path_components
 
     def _default_time_components_generator(self, src=None):
@@ -43,9 +44,6 @@ class DirArchiver(BaseArchiver):
 
     def _generate_rel_dest_path(self, src=None):
         return Path(*self.path_components_generator(src=src))
-
-    def _get_path_components_for_src(self, src=None):
-        return self.path_component_separator.split(src)
 
     def materialize_as_path(self, meta=None):
         return (self.root_path / meta['key'])

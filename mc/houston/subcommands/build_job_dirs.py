@@ -153,6 +153,8 @@ class Subcommand(BaseSubcommand):
                 num_built += 1
             except:
                 errors.append(traceback.format_exc())
+        with self.session.begin(subtransactions=True):
+            self.session.add_all(jobs)
         return {'num_built': num_built, 'errors': errors}
 
     def _get_job_dir_builder(self):
@@ -167,6 +169,7 @@ class Subcommand(BaseSubcommand):
                 output_dir=self._get_job_output_dir(job=job,
                                                     parent_dir=output_dir)
             )
+            job.status = 'BUILT'
         except Exception as exc:
             job.status = 'FAILED'
             raise
