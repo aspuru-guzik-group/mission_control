@@ -81,7 +81,7 @@ class CreateFlowTestCase(BaseTestCase):
                          self.task_ctx['flow'].depth + 1)
 
     def test_sets_parent_key(self):
-        self.assertEqual(self.expected_flow.data['parent_key'],
+        self.assertEqual(self.expected_flow.parent_key,
                          self.task_ctx['flow'].key)
 
     def test_returns_flow(self):

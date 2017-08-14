@@ -51,8 +51,8 @@ class CreateJobRecordTestCase(BaseTestCase):
         self.assertEqual(
             self.task_handler.job_record_client.create_job_record.call_args,
             call(job_kwargs={
-                'job_spec': self.task['task_params']['job_spec'],
-                'data': {'parent_key': self.task_ctx['flow'].key}
+                **self.task['task_params'],
+                'parent_key': self.task_ctx['flow'].key
             })
         )
         self.assertEqual(
@@ -69,7 +69,7 @@ class IntermediateTickMixin(object):
             return_value=self.job_record)
         self.initial_task = {
             'data': {'_job_task_job_meta': self.job_record['key']},
-            'task_params': {'job_spec': 'some job spec'},
+            'task_params': {'job_type': 'some.job_type'},
             'status': 'some_status'
         }
         self.task_handler.task = defaultdict(MagicMock, **self.initial_task)

@@ -48,4 +48,5 @@ class SpreadTaskHandler(BaseProxyingTaskHandler):
         super().on_proxied_task_finished()
         self.task['data'] = self.proxied_task.get('flow_data')
 
+
 TaskHandler = SpreadTaskHandler

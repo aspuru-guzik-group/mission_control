@@ -123,6 +123,14 @@ class GetHandlerForTaskCtxTestCase(BaseTestCase):
         handler = self._get_handler(task={'task_type': task_type})
         self.assertEqual(handler, expected_handler)
 
+    def test_flow(self):
+        self.assert_task_type_to_handler(
+            'flow', mc_default_task_handler.FlowTaskHandler)
+
+    def test_job(self):
+        self.assert_task_type_to_handler(
+            'job', mc_default_task_handler.JobTaskHandler)
+
     def test_log(self):
         self.assert_task_type_to_handler(
             'log', mc_default_task_handler.LogTaskHandler)

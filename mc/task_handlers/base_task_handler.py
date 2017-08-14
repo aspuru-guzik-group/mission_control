@@ -1,4 +1,3 @@
-import abc
 import logging
 import traceback
 
@@ -70,7 +69,6 @@ class BaseTaskHandler(object):
 
     def validate_task_params(self): pass
 
-    @abc.abstractmethod
     def initial_tick(self, task=None, **kwargs): raise NotImplementedError
 
     def intermediate_tick(self, task=None, **kwargs): raise NotImplementedError
