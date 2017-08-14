@@ -7,7 +7,7 @@ Install
 
 #. Install via pip::
 
-   pip install mission_control
+   pip install git+https://github.com/aspuru-guzik-group/mission_control.git
 
 #. Verify the install:
 

@@ -33,13 +33,14 @@ class Houston(object):
     @property
     def subcommands(self):
         if not hasattr(self, '_subcommands'):
-            self._subcommands = self._get_default_subcommands()
+            self._subcommands = self.get_default_subcommands()
         return self._subcommands
 
     @subcommands.setter
     def subcommands(self, value): self._subcommands = value
 
-    def _get_default_subcommands(self):
+    @classmethod
+    def get_default_subcommands(cls):
         from .subcommands._registry import SubcommandRegistry
         return SubcommandRegistry()
 

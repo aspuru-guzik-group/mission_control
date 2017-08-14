@@ -15,6 +15,8 @@ class SubcommandRegistry(object):
 
     def keys(self): return self._subcommands.keys()
 
+    def __iter__(self): return iter(self.keys())
+
     def __getitem__(self, key):
         if self._subcommands[key] is ...:
             self._subcommands[key] = self._get_subcommand_fn(subcommand=key)

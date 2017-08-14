@@ -18,7 +18,8 @@ def handle_default_args(args):
     so that ManagementUtility can handle them before searching for
     user commands.
     """
-    if args.get('pythonpath'): sys.path.insert(0, args['pythonpath'])
+    if args.get('pythonpath'):
+        sys.path.insert(0, args['pythonpath'])
 
 
 class OutputWrapper(io.TextIOBase):
@@ -48,10 +49,13 @@ class OutputWrapper(io.TextIOBase):
         return hasattr(self._out, 'isatty') and self._out.isatty()
 
     def write(self, msg=None, style_func=None, ending=None):
-        if not msg: return
-        if not isinstance(msg, str): msg = str(msg)
+        if not msg:
+            return
+        if not isinstance(msg, str):
+            msg = str(msg)
         ending = self.ending if ending is None else ending
-        if ending and not msg.endswith(ending): msg += ending
+        if ending and not msg.endswith(ending):
+            msg += ending
         style_func = style_func or self.style_func
         self._out.write(style_func(msg))
 
@@ -103,14 +107,15 @@ class BaseCommand(object):
     def __init__(self, stdout=None, stderr=None, no_color=False, **kwargs):
         self.stdout = OutputWrapper(stdout or sys.stdout)
         self.stderr = OutputWrapper(stderr or sys.stderr)
-        if no_color: self.style = color.no_style()
+        if no_color:
+            self.style = color.no_style()
         else:
             self.style = color.color_style()
             self.stderr.style_func = self.style.ERROR
 
     @classmethod
     def run(cls, argv=None):
-        if argv is None: argv = sys.argv
+        argv = argv if argv is not None else sys.argv
         command = cls()
         command.run_from_argv(argv)
 
@@ -174,7 +179,8 @@ class BaseCommand(object):
         parsed_args_ns, unparsed_args = parser.parse_known_args(args=argv[1:])
         parsed_args = vars(parsed_args_ns)
         handle_default_args(parsed_args)
-        try: self.execute(parsed_args=parsed_args, unparsed_args=unparsed_args)
+        try:
+            self.execute(parsed_args=parsed_args, unparsed_args=unparsed_args)
         except Exception as e:
             if parsed_args.get('traceback') or not isinstance(e, CommandError):
                 raise
