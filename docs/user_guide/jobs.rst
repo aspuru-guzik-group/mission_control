@@ -315,18 +315,39 @@ It depends. In general, choose whichever strategy is easiest to get started
 with first.
 
 
-================
-Configuring Jobs
-================
+========================
+Configuring How Jobs Run
+========================
 
-FILL IN HERE!
+Often we want to specify how jobs should run. Common run parameters include:
 
-=================================================
-Configuring Jobs To Run In Different Environments
-=================================================
+#. How much memory should be allocated for a job?
+#. How many cores can a job use?
+#. Can a job be batched with other jobs?
+#. Which specific executables should a job use?
 
-Our echo job from the example above is simple and should run the same in any
-environment.
+These parameters are different from job parameters. Job parameters
+specify what a job should run ('run model X for three iterations'). Whereas
+run parameters specify how a job should run ('run the job using 4 cores').
+
+MissionControl has a convention for specifying run parameters. When
+MissionControl builds a job dir, it outputs a 'run_params' metadata file.
+This metadata file is a generic JSON file. Various job runners can read this
+file and then translate the given run parameters into parameters specific to a
+given run environment.
+
+For example, a job runner that runs job dirs in a Slurm environment can
+translate parameters for memory and cores into Slurm-specific parameters.
+
+By default MissionControl generates a run_params file that is compatible with
+the `Jobman` meta-scheduler. 
+
+-----------------------------------
+Environment-Specific Configurations
+-----------------------------------
+
+Let's think about our echo job from the examples above. It is simple and should
+run the same in any environment.
 
 But what if want to run jobs that need special configurations. What if these
 configurations depend on the environment the job runs in?
@@ -338,9 +359,9 @@ clusters, cluster X and cluster Y?
 There are a few strategies we can use to define environment-specific
 configurations.
 
-------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Strategy A: Builder Per Environment
-------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In this strategy, we write a builder for each environment in which we expect to
 run our job.
 
@@ -413,9 +434,9 @@ Cons
 #. Testing: we have to test each of our builders.
 
 
---------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Strategy B: One Builder + Config Spec
---------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Another strategy is to define one builder, and output a 'config spec' along
 with the job_dir. The config spec describes what things this job needs to run.
 
@@ -456,9 +477,9 @@ Cons
    spec requirements.
 #. It can be harder for novice users to understand how configs get set.
 
-
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 A vs. B: Which One to Choose?
------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In general, the MissionControl authors recommend strategy B. The advantages in
 testing and cluster use make up for the slightly higher barrier-to-entry for
 job module writers.
@@ -581,7 +602,9 @@ Recommended Practices for Working with Jobs
 #. Define a runner with prebaked outputs.
 
    This will make your job modules easier to test, both individually and in
-   flows.
+   the context of flows.
 
 #. Use the 'One Builder + Config Spec' strategy to specify requirements that
    vary across environments.
+
+#. Write tests for your job modules.
