@@ -5,10 +5,11 @@ from .module_loader import ModuleLoader
 
 class Dispatcher(object):
     def __init__(self, load_module_fn=None, logger=None):
-        """
+        """Dispatches commands to dynamically-loaded modules.
+
         Args:
             load_module_fn (fn): A fn to use for loading modules. See
-                :meth:`_default_load_module_fn for more info.
+                :meth:`_default_load_module_fn` for more info.
             logger: (logging.Logger): a logger.
         """
         self.logger = logger or logging

@@ -93,3 +93,7 @@ class DotSpecLoader(object):
 
 def load_from_dot_spec(dot_spec=None):
     return DotSpecLoader.load_from_dot_spec(dot_spec=dot_spec)
+
+
+def get_attr_or_item(obj=None, key=None):
+    return DotSpecLoader.get_attr_or_item(obj=obj, key=key)

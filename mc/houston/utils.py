@@ -163,7 +163,7 @@ class HoustonUtils(object):
     @property
     def job_dirs(self):
         if not hasattr(self, '_job_dirs'):
-            self._job_dirs = {'root': self.cfg.get('job_dirs_root', None)}
+            self._job_dirs = {'root': self.cfg.get('JOB_DIRS_ROOT', None)}
             for jobs_subdir in self.JOBS_SUBDIRS:
                 self._job_dirs[jobs_subdir] = str(Path(self._job_dirs['root'],
                                                        jobs_subdir))
