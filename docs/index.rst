@@ -30,41 +30,40 @@ MissionControl is a collection of several components.
 
 Jobs
 ====
-You can use MissionControl to build parameterized job directories that you can
-run locally or on a cluster.
+You can build parameterized jobs that you can run locally or on a cluster.
 
-For example, you can build directories that run a computational chemistry 
-package with different sets of inputs.
+For example, you can build a set of jobs that run a computational chemistry 
+model with different parameters.
 
-See `user_guide/jobs` for more information.
+See `user_guide/jobs`.
 
-Flows
+Work Flows
 =====
-You can use MissionControl to define and run task-based workflows.
+You can use define and run task-based workflows.
 
 For example, you can define a workflow that first runs a model, and then runs
 an analysis job on the model outputs.
 
-See `user_guide/flows` for more information.
+See `user_guide/flows`.
 
 Requests
 ========
-You can use MissionControl to track whether a job or flow has already been
-requested with a given set of inputs. This helps you avoid running duplicate
+You can track whether a job or flow has already been
+executed with a given set of inputs. This prevents the running of duplicate
 computations.
 
-See `user_guide/requests` for more information.
+See `user_guide/requests`.
 
 EntityDB
 ========
-You can use MissionControl to store data in a generalized
+You can store data in a generalized
 `Entity-Attribute-Value Database
 <https://en.wikipedia.org/wiki/Entity%E2%80%93attribute%E2%80%93value_model>`_.
 
-This database can be useful for storing results from parsed jobs that you
+This database can store results from parsed jobs that you
 want to use as inputs for future jobs.
 
-See `user_guide/entity_db` for more information.
+See `user_guide/entity_db`.
 
 
 Combining Components

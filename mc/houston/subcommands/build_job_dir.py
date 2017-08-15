@@ -37,13 +37,10 @@ class Subcommand(BaseSubcommand):
     def _run(self):
         from mc.utils.job_modules.job_dir_builder import JobDirBuilder
         builder = JobDirBuilder()
-        output_dir = self._get_output_dir()
+        output_dir = self.parsed_args.get('output_dir') or tempfile.mkdtemp()
         builder.build_job_dir(
             job_dict=self.parsed_args['job_dict'],
             output_dir=output_dir,
             build_work_dir_fn=self.parsed_args.get('build_work_dir_fn')
         )
         return {'job_dir': output_dir}
-
-    def _get_output_dir(self):
-        return self.parsed_args.get('output_dir') or tempfile.mkdtemp()

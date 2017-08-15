@@ -4,7 +4,7 @@ Jobs
 =================
 Concept Checklist
 =================
-After you read this section you should be familiar with these concepts:
+This page covers these concepts:
 
 #. [ ] job lifecycle
 #. [ ] job dicts
@@ -12,20 +12,21 @@ After you read this section you should be familiar with these concepts:
 #. [ ] job modules
 #. [ ] running jobs in different environments
 #. [ ] parsing job dirs
+#. [ ] testing job modules
 #. [ ] best practices for working with jobs
 
 ==============
 What Is a Job?
 ==============
-In MissionControl, a job represents an standalone computation. For example, a
-job that you want to run on a cluster computing resource.
+A MissionControl job represents a standalone computation. For example, a
+single run of computational chemistry model.
 
 ============
 Job Lifecyle
 ============
 In general the lifecycle of a job is like this:
 
-#. Define a job in temrs of an abstract recipe. For example, a dictionary that
+#. Define a job in terms of an abstract recipe. Example: a dictionary that
    specifies a job type and parameters:
    ::
 
@@ -38,8 +39,9 @@ In general the lifecycle of a job is like this:
      }
 
 #. Generate a runnable artifact that executes computations based on the
-   recipe. For example, a directory that contains inputs and a set of commands:
+   recipe. Example: a directory that contains inputs and a set of commands:
    ::
+
      taco_job_dir/
        inputs/
          fillings.txt
@@ -50,17 +52,17 @@ In general the lifecycle of a job is like this:
      #!/bin/bash
      /bin/taco_maker --fillings="inputs/fillings.txt" wrapper="inputs/wrapper.txt"
 
-#. Run the artifact, usually on a computing cluster. For example:
+#. Run the artifact locally or on a computing cluster. Example:
    ::
 
      slurm sbatch my_taco_job_dir/entrypoint.sh
 
-#. Store the executed artifact. For example:
+#. Store the executed artifact. Example:
    ::
 
      mv my_taco_job_dir completed_jobs_archive/
 
-#. Parse the executed artifact and store the results in a db. For example:
+#. Parse the executed artifact and store the results in a db. Example:
    ::
 
      /bin/taco_parser completed_jobs_archive/my_taco_job_dir | /bin/taco_client upload
@@ -78,8 +80,8 @@ job_type
   dispatch to specific handlers during the job lifecyle.
   
   For example, you could specify a job with a job_type of
-  'my_modules.my_taco_module' to tell MissionControl to use the code in a module
-  named 'my_modules.my_taco_module' when it tries to build and parse the job.
+  'my_modules.my_taco_module'. Then MissionControl tries to build and parse the
+  job, it would know to use code in a module named 'my_modules.my_taco_module'.
 
 job_parameters
   A dict of parameters. For example, for our taco job, we could specify
@@ -94,7 +96,7 @@ job_parameters
 key
   Often you will also want a key to uniquely identify a job. For example, a
   UUID. This key is useful for tracking job statuses, and for avoiding name
-  collisions when you are creating and moving multiple job directories.
+  collisions when you create and move multiple jobs.
 
 
 =============
@@ -106,7 +108,7 @@ build a runnable artifact for a job_dict?
 The MissionControl :mod:`mc.utils.job_modules.job_dir_builder`
 module defines a python class that builds a job directory for a given job_dict.
 
-In general JobDirBuilder builds a directory that contains:
+JobDirBuilder builds a directory that contains:
 
 #. A work_dir that contains scripts and inputs needed to run the job.
 #. An entrypoint script to run the work_dir
@@ -114,7 +116,7 @@ In general JobDirBuilder builds a directory that contains:
 #. metadata file(s) that specify what resources or environment variables a job
    needs to run.
 
-Typically we don't interact directly with the JobDirBuilder. Instead we use the
+We usually don't interact directly with the JobDirBuilder. Instead we use the
 `houston` command runner to call the JobDirBuilder. For example:
 
 .. testcode::
@@ -138,13 +140,13 @@ Typically we don't interact directly with the JobDirBuilder. Instead we use the
   print(Path(built_job_dir).name)
 
 The above code creates a Houston instance, and then runs the command
-'build_job_dir'. The output of this command is the path to a job dir:
+'build_job_dir'. The output of the above example is the path to a job dir:
 
 .. testoutput::
 
   my_job_dir
 
-Let's look at what is inside the job_dir:
+Let's look at the contents of the job_dir:
 
 .. testcode::
 
@@ -170,22 +172,28 @@ We see a list of metadata files and the work_dir .
 ===========
 Job Modules
 ===========
-How did MissionControl know how to build this job dir? The key is the
-'job_type' component of the job_dict.
+How did MissionControl know how to build the job dir in the example abeove?
+The key is the 'job_type' component of the job_dict.
 
-In the example above, we specified a job_type of
-'mc.utils.test.echo_job_module'. When we ran the 'build_job_dir' command,
-MissionControl looked at the job_type component, and saw that it should try to
-dispatch to a module named 'mc.utils.testing.echo_job_module'. This module is a
-small utility module that is included in MissionControl:
-:mod:`mc.utils.testing.echo_job_module` .
+Here is what happend:
 
-It contains a function :mod:`mc.utils.testing.echo_job_module.build_work_dir`
-which defines how to build a work_dir.
+#. In our job_dict we specified a job_type of
+'mc.utils.test.echo_job_module'.
 
-By convention, MissionControl will look for a function named 'build_work_dir'
-in python module that has the same name as the job_type. This function
-will receive the job_params and an output_dir as kwargs.
+#. When we ran the 'build_job_dir' command, MissionControl looked at the
+   job_type component, and saw that it should try to dispatch to a module named
+   'mc.utils.testing.echo_job_module'. This module is a small utility module
+   that is included in MissionControl: :mod:`mc.utils.testing.echo_job_module` . 
+   It contains a function :mod:`mc.utils.testing.echo_job_module.build_work_dir`
+   which defines how to build a work_dir.
+
+#. By convention, MissionControl loaded a function named 'build_work_dir'
+   in the python module that has the same name as the job_type. This function
+   received the job_params and an output_dir as kwargs.  
+
+#. MissionControl executed the 'build_work_dir' function
+
+#. The 'build_work_dir' function created the job directory.
 
 You can also specify a specific builder when you call the 'build_job_dir'
 command. For example:
@@ -225,16 +233,103 @@ command. For example:
 Running Jobs
 ============
 
-HERE!!! ADD NOTE ABOUT RUNNING EXTERNALLY, PROVIDING PREBAKED
+Once you have built a job how can you run it?
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Running Jobs in Different Environments
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+There are several ways to run a job. We outline a few here.
+
+-----------------------
+Strategy A: Run Locally
+-----------------------
+In this strategy, you simply execute bash commands to execute a job. Example:
+  ::
+
+    bash my_job_dir/entrypoint.sh
+
+~~~~
+Pros
+~~~~
+#. This is the simplest strategy. It requires no coordination with external
+   systems.
+
+~~~~
+Cons
+~~~~
+#. Your jobs are limited by the resources of your local environment. This may
+   make it difficult to run large numbers of jobs, or to run jobs that require
+   lots of CPUs or special software.
+
+---------------------------------------------------
+Strategy B: Run on an External Computation Resource 
+---------------------------------------------------
+In this strategy, you submit jobs directly to an external resource, such as 
+a computing cluster, or an EC2 instance. Example:
+  ::
+
+    scp my_job_dir me@cluster_x:my_jobs
+    ssh me@cluster_x 'cd my_jobs/my_job_dir && sbatch entrypoint.sh'
+
+~~~~
+Pros
+~~~~
+#. You can take advantage of cluster nodes to run large numbers of jobs.
+#. You can use special hardware and software provided by a cluster.
+
+~~~~
+Cons
+~~~~
+#. You need to coordinate submissions with an external resource.
+#. You need to monitor job progress.
+#. It can take time to transfer job files to and from the external resource.
+
+--------------------------------------
+Strategy C: Submit to a meta-scheduler
+--------------------------------------
+
+In this strategy, you submit jobs directly to a meta-scheduler, such as
+`jobman.` The meta-scheduler runs jobs locally or submits them to external
+resources, depending on what resources are available. The meta-scheduler can
+also create batches of jobs and optimize file transfers.
+  ::
+
+    python -m jobman.cli submit_job_dir my_job_dir
+
+~~~~
+Pros
+~~~~
+#. You can use simultaneously use multiple clusters.
+#. You only have to coordinate with the meta-scheduler, as opposed to
+   coordinating with several different clusters.
+#. You can run jobs more efficiently if the meta-scheduler can make batches
+   of jobs.
+
+~~~~
+Cons
+~~~~
+#. You need to coordinate with the meta-scheduler.
+#. You need to configure the meta-scheduler.
+
+-------------------------
+Which Strategy To Choose?
+-------------------------
+It depends. In general, choose whichever strategy is easiest to get started
+with first.
+
+
+================
+Configuring Jobs
+================
+
+FILL IN HERE!
+
+=================================================
+Configuring Jobs To Run In Different Environments
+=================================================
+
 Our echo job from the example above is simple and should run the same in any
 environment.
 
-But what if want to run jobs that do need special configurations, depending on
-the environment in which they run?
+But what if want to run jobs that need special configurations. What if these
+configurations depend on the environment the job runs in?
 
 For example, what if we want to run job that requires a specific version of a
 quantum chemistry library? What if we want to run this job on two different
@@ -243,7 +338,8 @@ clusters, cluster X and cluster Y?
 There are a few strategies we can use to define environment-specific
 configurations.
 
-Config Strategy A: Builder Per Environment
+------------------------------------------
+Strategy A: Builder Per Environment
 ------------------------------------------
 In this strategy, we write a builder for each environment in which we expect to
 run our job.
@@ -277,8 +373,8 @@ For example, our code might look something like this:
 
 And then when we build our job directories, we just specify which builder to
 use:
-
   ::
+
     import my_chem_builder_a
     # for cluster x
     houston.run_command(
@@ -317,8 +413,9 @@ Cons
 #. Testing: we have to test each of our builders.
 
 
-Config Strategy B: One Builder + Config Spec
----------------------------------------------
+--------------------------------------------
+Strategy B: One Builder + Config Spec
+--------------------------------------------
 Another strategy is to define one builder, and output a 'config spec' along
 with the job_dir. The config spec describes what things this job needs to run.
 
@@ -396,6 +493,73 @@ Typically we don't interact directly with the JobDirParser. Instead we use the
      output_dir=str(job_dir_path)
   )
   built_job_dir = build_result['job_dir']
+
+  # Here we execute a 'fake' run, using prebaked output.
+  # This often a useful strategy for testing parsers.
+  houston.run_command(
+     'run_job_dir',
+     job_dir=built_job_dir,
+     fake=True
+  )
+
+  parse_results = houston.run_command(
+     'parse_job_dir',
+     job_dir=built_job_dir,
+  )
+  print(parse_results)
+
+Expected output:
+
+.. testoutput::
+
+  {'output': 'Tacos are delicious.\n'}
+
+
+--------------
+Parser Outputs
+--------------
+What should a parser return as outputs? It depends.
+
+MissionControl has no requirements on what a parser must return.
+
+Often what you want a parser to return is some set of update specs that you can
+pass to a database client, in order to update records in a database.
+
+The MissionControl `EntityDb` can help you with this type of parsing. See
+ `examples.entity_db_parse_and_load`.
+
+
+===================
+Testing Job Modules
+===================
+The MissionControl authors strongly recommend writing tests for your job module
+functions, for several reasons:
+
+#. Debugging is easier in the context of small, isolated tests. Debugging is
+   much harder when you have many jobs running in different environments.
+
+#. Tests act as a form of documentation for your code.
+
+#. Tests let you change your code with confidence.
+
+For examples of how to test job module functions, see the source of
+:mod:`mc.utils.testing.tests.test_echo_job_module`.
+
+--------------------------
+Including Prebaked Outputs
+--------------------------
+Something that is often helpful for testing jobs is including prebaked outputs
+with your job module code. Example: including the output file of a long-running
+computational chemistry model alongside your job module code.
+
+Prebaked outputs are helpful for several reasons:
+
+#. prebaked outputs can help with testing parsers.
+#. prebaked outputs make it easier to test your jobs in the context of flows
+   and pipelines.
+
+For an example of one way to include prebaked outputs, see the source of
+:mod:`mc.utils.testing.echo_job_module`.
 
 
 ===========================================
