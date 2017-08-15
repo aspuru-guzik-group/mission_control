@@ -117,7 +117,7 @@ JobDirBuilder builds a directory that contains:
    needs to run.
 
 We usually don't interact directly with the JobDirBuilder. Instead we use the
-`houston` command runner to call the JobDirBuilder. For example:
+:doc:`houston` command runner to call the JobDirBuilder. For example:
 
 .. testcode::
 
@@ -494,7 +494,7 @@ The MissionControl :mod:`mc.utils.job_modules.job_dir_parser` module
 defines a python class that helps us parses a given job directory.
 
 Typically we don't interact directly with the JobDirParser. Instead we use the
-`houston` command runner to call the JobDirParser. For example:
+:doc:`houston` command runner to call the JobDirParser. For example:
 
 .. testcode::
 

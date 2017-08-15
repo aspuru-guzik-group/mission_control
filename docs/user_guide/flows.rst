@@ -1,77 +1,157 @@
+Flows
+=====
+
+==============
 What Is a Flow?
-===============
+==============
+A MissionControl flow represents a set of tasks run in a specific sequence,
+based on the state of other tasks.
 
-A flow is a collection of *tasks* which should execute in a specific *sequence*.
+============
+Flow Lifecyle
+============
+In general the lifecycle of a flow is like this:
 
-Modeling Flows: Flows as DAGs
------------------------------
+#. Define a flow in terms of an abstract spec. Example: a dictionary that
+   specifies a list of tasks:
+   ::
 
-In MissionControl, we think about flows as *Directed Acyclic Graphs*, or *DAGs*.
-(For more on DAGs, see <https://en.wikipedia.org/wiki/Directed_acyclic_graph>`_.) In our DAG the nodes are our tasks; the edges define the sequence.
+     flow_spec = {
+         'label': 'example_flow',
+         'tasks': [
+             {
+                 'key': 'task_1',
+                 'task_type': 'print',
+                 'task_params': {'msg': 'I am task_1.'},
+             },
+             {
+                 'key': 'task_2',
+                 'task_type': 'print',
+                 'task_params': {'msg': 'I am task_2.'},
+             },
+         ]
+     }
 
-Modeling flows as DAG allows us to define many types of flows. For example, we can define a flow that is a simpler linear sequence:
+#. Convert the flow spec into a python Flow object:
+   ::
 
-.. todo::
+     flow = flow_spec_to_flow(flow_spec)
 
-  - MAKE LINEAR FLOW GRAPHIC
+#. Tick the flow until it fails, or until all of its tasks are finished:
+   ::
 
-Or, we can define a flow that has branches that run in parallel:
+     while flow.status not in {'FAILED', 'COMPLETED'}:
+         tick_flow(flow)
 
-.. todo::
+MissionControl defines conventions and commands to help manage the
+flow lifecycle.
 
-  - MAKE PARALEL FLOW GRAPHIC
+==============
+Defining Flows
+==============
+MissionControl defines abstract flow specs as dictionaries with a few primary
+components:
 
-Representing Flows
-------------------
-So now we know how we can model flows. But how can we represent a flow? That is, how can we write a flow?
+label
+  a human-readable label for the flow
 
-One way to represent a flow is as a drawing. For example:
+key
+  Often you will want to have a key that uniquely identifies a flow.
+  For example, a UUID. This key is useful for tracking flow statuses, and for
+  avoiding name collisions when you work with multiple flows.
 
-.. todo::
+cfg
+  Configuration parameters for how the flow should run. For example, if one
+  task fails should the entire flow fail?
 
-  - MAKE FLOW DRAWING
+data
+  Initial data that the flow should have.
 
-Drawings are often the representation we use when we first design a flow. 
+tasks
+  A list of task_specs. More on task_specs below.
 
-Ideally we could make a drawing, and then show that drawing to a computer and have it run our flow.
-But one of the problems with drawings is that they are hard for computers to understand.
+Example:
+   ::
 
-.. note::
+     my_flow_spec = {
+         'label': 'example_flow',
+         'key': 'some-unique-key-12345',
+         'cfg': {
+           'fail_fast': False
+         },
+         'tasks': [
+             {
+                 'key': 'task_1',
+                 'task_type': 'print',
+                 'task_params': {'msg': 'I am task_1.'},
+             },
+             {
+                 'key': 'task_2',
+                 'task_type': 'print',
+                 'task_params': {'msg': 'I am task_2.'},
+             },
+         ]
+     }
 
-  A challenging exercise for the enterprising reader: make a tool that converts
-  a drawing of a flow into a text representation.
+==============
+Building Flows
+==============
+Now we can define flow specs. But how do turn our flow_spec into a Flow object?
 
-Since we want to make our flows readable by computers, we use other representations.
+We use :mod:`FlowEngine<mc.flows.flow_engine.FlowEngine>` . FlowEngine is
+a class which contains methods for converting between flow formats and for
+ticking flows.
 
-One way we can represent a flow is as a list of tasks and edges.
+To convert our flow_spec into a flow object we call
+:meth:`mc.flows.flow_engine.FlowEngine.flow_spec_to_flow`.
 
-Another way we can represent a flow is as a list of tasks and edges.
+We get back an instance of :class:`mc.flows.flow.Flow`. This class contains
+methods for querying flow tasks and manipulating a flow's underlying
+attributes.
 
-Going From a Drawing to a Flow
-------------------------------
-How do we go from a drawing to a running flow? We break it down.
+=============
+Running Flows
+=============
+Now that we have a Flow object, we can run our flow with the FlowEngine.
 
-There are a few ways to do this breakdown. One way is to make a complete
-skeleton of our flow, and then fill it in. Another is way is to add tasks one at
-a time, testing them and building them up along the way.
+.. testcode:
 
-Both approaches have merits, and you can even use a combination of the two.
+    print()
 
-The key thing is not to get bogged down! Remember, you can always change your
-flow later. So just write as much as you know now, and fill in the rest later.
+.. testoutput
 
-One way is to start by making a skeleton flow that represents the sequencing
-of our flow. In this skeleton flow our tasks don't do anything yet. They just print out a message.
+   foo
 
-.. todo:
+==============
+Storing Flows
+==============
 
-   - MAKE SKELETON FLOW EXAMPLE
-   - MAKE INCREMENTAL EXAMPLE
+=====
+Tasks
+=====
 
-This skeleton gives us a starting point. We can check that the sequence of our flow works as expected. And then we can fill logic in as needed.
+============================================
+Recommended Practices for Working with Flows
+============================================
+#. Write small functions in your modules.
 
-The next step is implementing a task.
+   This will make your job modules easier to test and understand.
 
-.. todo:
+#. Use constants.py files in your modules.
 
-   - MAKE LINK FOR IMPLEMENTING A TASK
+   If your parsers and builders need to refer to common paths or settings, put
+   the settings in a constants.py module that both your parsers and builders
+   can access. Then, if you need to change these settings, you only need to
+   change them in one place.
+
+#. Write tests for your job modules.
+
+#. Define a runner with prebaked outputs.
+
+   This will make your job modules easier to test, both individually and in
+   the context of flows.
+
+#. Use the 'One Builder + Config Spec' strategy to specify requirements that
+   vary across environments.
+
+#. Write tests for your job modules.
