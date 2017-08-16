@@ -3,13 +3,15 @@ import logging
 import time
 import traceback
 
+
 class FlowRunner(object):
     """
     A FlowRunner encapsulates logic related to claiming and ticking flows.
     """
 
-    def __init__(self, flow_record_client=None, flow_engine=None, task_ctx=None,
-                 tick_interval=120, max_flows_per_tick=3, logger=None):
+    def __init__(self, flow_record_client=None, flow_engine=None,
+                 task_ctx=None, tick_interval=120, max_flows_per_tick=3,
+                 logger=None):
         """
         Args:
             flow_record_client (mc.clients.flow_record_client): a client for
@@ -31,7 +33,6 @@ class FlowRunner(object):
         self.tick_counter = 0
         self._ticking = False
 
-
     def get_default_flow_engine(self):
         from mc.flows.flow_engine import FlowEngine
         return FlowEngine()
@@ -44,10 +45,10 @@ class FlowRunner(object):
         """Run indefinitely or for several ticks.
 
         Args:
-            ntimes (int, optional): if specified, run this many ticks. If empty, run
-                indefinitely. Default: None.
-            tick_interval (int, optional): run with this tick interval. Default:
-                self.tick_interval.
+            ntimes (int, optional): if specified, run this many ticks. If
+                empty, run indefinitely. Default: None.
+            tick_interval (int, optional): run with this tick interval.
+                Default: self.tick_interval.
         """
         self._ticking = True
         if ntimes:
@@ -62,7 +63,8 @@ class FlowRunner(object):
         self._ticking = False
 
     def _tick_and_sleep(self, tick_interval=None):
-        if tick_interval is None: tick_interval = self.tick_interval
+        if tick_interval is None:
+            tick_interval = self.tick_interval
         self.tick()
         time.sleep(tick_interval)
 
@@ -103,9 +105,7 @@ class FlowRunner(object):
         self.flow_engine.tick_flow_until_has_no_pending(
             flow=flow, task_ctx=self.task_ctx)
         updated_flow_dict = self.flow_engine.flow_to_flow_dict(flow=flow)
-        patches = {**updated_flow_dict,
-                   'num_tickable_tasks': len(flow.get_tickable_tasks())}
-        return patches
+        return updated_flow_dict
 
     def flow_record_to_flow(self, flow_record=None):
         return self.flow_engine.flow_dict_to_flow(flow_dict=flow_record)

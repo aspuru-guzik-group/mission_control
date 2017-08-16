@@ -17,7 +17,8 @@ class FlowEngine(object):
             msg = "\n".join([str(err) for err in flow.data.get('errors', [])])
             super().__init__(msg, *args, **kwargs)
 
-    class TaskError(Exception): pass
+    class TaskError(Exception):
+        pass
 
     def __init__(self, task_handler=None, logger=None, max_msg_len=None,
                  debug=False):
@@ -50,8 +51,8 @@ class FlowEngine(object):
         Uses mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler
         as the default task handler.
         """
-        from mc.task_handlers.mc_default_task_handler import \
-                McDefaultTaskHandler
+        from mc.task_handlers.mc_default_task_handler import (
+            McDefaultTaskHandler)
         return McDefaultTaskHandler()
 
     @classmethod
@@ -74,7 +75,7 @@ class FlowEngine(object):
         """
         Tick flow until its status is 'COMPLETED' or 'FAILED'.
         If it failed, raise a FlowError.
-        
+
         Args:
             flow (flow): flow to tick
             task_ctx (dict, optional): task_ctx to include when ticking flow
@@ -86,11 +87,15 @@ class FlowEngine(object):
         tick_counter = 0
         while flow.status not in completed_statuses:
             tick_counter += 1
-            if self.debug: self.logger.debug("tick #{}".format(tick_counter))
+            if self.debug:
+                self.logger.debug("tick #{}".format(tick_counter))
             self.tick_flow(flow=flow, task_ctx=task_ctx)
-            if tick_counter > max_ticks: raise Exception("Exceeed max ticks")
-        if flow.status == 'FAILED': raise self.FlowError(flow=flow)
-        if self.debug: self.logger.debug("complete")
+            if tick_counter > max_ticks:
+                raise Exception("Exceeed max ticks")
+        if flow.status == 'FAILED':
+            raise self.FlowError(flow=flow)
+        if self.debug:
+            self.logger.debug("complete")
 
     def tick_flow(self, flow=None, task_ctx=None):
         """Tick a flow.
@@ -103,16 +108,20 @@ class FlowEngine(object):
         try:
             flow.data.setdefault('_tick_counter', 0)
             flow.data['_tick_counter'] += 1
-            if flow.status == 'PENDING': self.start_flow(flow=flow)
+            if flow.status == 'PENDING':
+                self.start_flow(flow=flow)
             self.start_nearest_tickable_pending_tasks(flow=flow)
             self.tick_running_tasks(flow=flow, task_ctx=task_ctx)
-            if not flow.has_incomplete_tasks(): self.complete_flow(flow=flow)
+            if not flow.has_incomplete_tasks():
+                self.complete_flow(flow=flow)
         except Exception as exception:
             fail_flow = True
             self.append_flow_error(flow=flow, error=traceback.format_exc())
             if isinstance(exception, self.TaskError):
-                if not flow.cfg.get('fail_fast', True): fail_flow = False
-            if fail_flow: self.fail_flow(flow=flow)
+                if not flow.cfg.get('fail_fast', True):
+                    fail_flow = False
+            if fail_flow:
+                self.fail_flow(flow=flow)
 
     def tick_flow_until_has_no_pending(self, flow=None, task_ctx=None):
         """Tick a flow until it has no tickable pending tasks.
@@ -122,8 +131,10 @@ class FlowEngine(object):
             task_ctx (dict, optional): task_ctx to include when ticking flow
         """
         self.tick_flow(flow=flow, task_ctx=task_ctx)
-        while (flow.status in {'PENDING', 'RUNNING'}
-               and len(flow.get_nearest_tickable_pending_tasks()) > 0):
+        while (
+            flow.status in {'PENDING', 'RUNNING'}
+            and len(flow.get_nearest_tickable_pending_tasks()) > 0
+        ):
             self.tick_flow(flow=flow, task_ctx=task_ctx)
 
     def start_flow(self, flow=None):
@@ -132,8 +143,10 @@ class FlowEngine(object):
 
     def start_nearest_tickable_pending_tasks(self, flow=None):
         for task in flow.get_nearest_tickable_pending_tasks():
-            try: self.start_task(flow=flow, task=task)
-            except: self.fail_task(task=task, error=traceback.format_exc())
+            try:
+                self.start_task(flow=flow, task=task)
+            except:
+                self.fail_task(task=task, error=traceback.format_exc())
 
     def start_task(self, flow=None, task=None):
         self.debug_locals()
@@ -143,8 +156,10 @@ class FlowEngine(object):
         for task in flow.get_tasks_by_status(status='RUNNING'):
             if self.task_is_running(task=task):
                 self.tick_task(task=task, flow=flow, task_ctx=task_ctx)
-            else: self.complete_task(task=task)
-            if flow.status == 'COMPLETED': break
+            else:
+                self.complete_task(task=task)
+            if flow.status == 'COMPLETED':
+                break
 
     def task_is_running(self, task=None):
         return task['status'] == 'RUNNING'
@@ -204,7 +219,8 @@ class FlowEngine(object):
         raise self.TaskError(msg)
 
     def fail_flow(self, flow=None, error=None):
-        if error: self.append_flow_error(flow=flow, error=error)
+        if error:
+            self.append_flow_error(flow=flow, error=error)
         flow.status = 'FAILED'
 
     def append_flow_error(self, flow=None, error=None):
@@ -221,5 +237,7 @@ class FlowEngine(object):
         task['status'] = 'COMPLETED'
 
     def complete_flow(self, flow=None):
-        if flow.data.get('errors'): self.fail_flow(flow=flow)
-        else: flow.status = 'COMPLETED'
+        if flow.data.get('errors'):
+            self.fail_flow(flow=flow)
+        else:
+            flow.status = 'COMPLETED'

@@ -38,13 +38,13 @@ class Flow(object):
         self.status = status or 'PENDING'
         self.depth = depth or 0
         self.parent_key = parent_key
-        
         self.tasks = {}
         self._edges = {}
         self._edges_by_key = collections.defaultdict(
             lambda: collections.defaultdict(dict))
         self._last_added_task = None
-        if add_root_task: self.add_root_task()
+        if add_root_task:
+            self.add_root_task()
 
     def add_root_task(self):
         self.add_task(task={'key': self.ROOT_TASK_KEY, 'status': 'COMPLETED'},
@@ -82,10 +82,11 @@ class Flow(object):
         If task has no precursors or successors given, use last task added
         as precursor.
         """
-        if ('precursors' not in task and 'successors' not in task
-            and self._last_added_task is not None
-            and task['key'] != self.ROOT_TASK_KEY
-           ):
+        if (
+            ('precursors' not in task and 'successors' not in task)
+            and (self._last_added_task is not None)
+            and (task['key'] != self.ROOT_TASK_KEY)
+        ):
             task['precursors'] = [self._last_added_task['key']]
 
     def add_edge(self, edge=None):
@@ -94,7 +95,7 @@ class Flow(object):
 
         Args:
             edge (dict): dict in this shape: ::
-                
+
                 {'src_key': <>, 'dest_key': <>}
         """
         src_key, dest_key = (edge['src_key'], edge['dest_key'])
@@ -121,8 +122,10 @@ class Flow(object):
         graph = flow_dict.get('graph', {})
         for task in graph.get('tasks', {}).values():
             flow.add_task(task=task, add_default_connections=False)
-        for edge in graph.get('edges', []): flow.add_edge(edge=edge)
-        if flow.ROOT_TASK_KEY not in flow.tasks: flow.add_root_task()
+        for edge in graph.get('edges', []):
+            flow.add_edge(edge=edge)
+        if flow.ROOT_TASK_KEY not in flow.tasks:
+            flow.add_root_task()
         return flow
 
     def to_flow_dict(self):
@@ -132,9 +135,11 @@ class Flow(object):
             'graph': {
                 'tasks': {key: task for key, task in self.tasks.items()},
                 'edges': [edge for edge in self._edges.values()],
-            }
+            },
+            'num_tickable_tasks': len(self.get_tickable_tasks())
         }
-        if 'key' in flow_dict and flow_dict['key'] is None: del flow_dict['key']
+        if 'key' in flow_dict and flow_dict['key'] is None:
+            del flow_dict['key']
         return flow_dict
 
     def has_edge(self, src_key=None, dest_key=None):
@@ -148,7 +153,7 @@ class Flow(object):
 
     def get_successors(self, task=None):
         task_edges = self._edges_by_key[task['key']]
-        successors = [self.tasks[edge['dest_key']] 
+        successors = [self.tasks[edge['dest_key']]
                       for edge in task_edges['outgoing'].values()]
         return successors
 
@@ -195,12 +200,12 @@ class Flow(object):
         return result
 
     def get_tasks_by_status(self, status=None):
-        status_filter = lambda task: task['status'] == status
+        def status_filter(task): return task['status'] == status
         return self.filter_tasks(filters=[status_filter])
 
     def has_incomplete_tasks(self):
         dead_statuses = ['COMPLETED', 'FAILED']
-        filter_fn = lambda task: task['status'] not in dead_statuses
+        def filter_fn(task): return task['status'] not in dead_statuses  # noqa
         incomplete_tasks = self.filter_tasks(filters=[filter_fn])
         return len(incomplete_tasks) > 0
 

@@ -4,13 +4,13 @@ Flows
 ==============
 What Is a Flow?
 ==============
-A MissionControl flow represents a set of tasks run in a specific sequence,
-based on the state of other tasks.
+A MissionControl Flow represents a set of tasks that run in a specific
+sequence.
 
 ============
 Flow Lifecyle
 ============
-In general the lifecycle of a flow is like this:
+The lifecycle of a flow is like this:
 
 #. Define a flow in terms of an abstract spec. Example: a dictionary that
    specifies a list of tasks:
@@ -37,7 +37,7 @@ In general the lifecycle of a flow is like this:
 
      flow = flow_spec_to_flow(flow_spec)
 
-#. Tick the flow until it fails, or until all of its tasks are finished:
+#. Tick the flow until either (A) it fails, or (B) all of its tasks finish:
    ::
 
      while flow.status not in {'FAILED', 'COMPLETED'}:
@@ -49,14 +49,14 @@ flow lifecycle.
 ==============
 Defining Flows
 ==============
-MissionControl defines abstract flow specs as dictionaries with a few primary
+Abstract flow specs are defined as dictionaries with a few primary
 components:
 
 label
   a human-readable label for the flow
 
 key
-  Often you will want to have a key that uniquely identifies a flow.
+  A key that uniquely identifies a flow.
   For example, a UUID. This key is useful for tracking flow statuses, and for
   avoiding name collisions when you work with multiple flows.
 
@@ -68,7 +68,7 @@ data
   Initial data that the flow should have.
 
 tasks
-  A list of task_specs. More on task_specs below.
+  A list of task_specs. See :doc:`tasks`.
 
 Example:
    ::
@@ -96,11 +96,7 @@ Example:
 ==============
 Building Flows
 ==============
-Now we can define flow specs. But how do turn our flow_spec into a Flow object?
-
-We use :mod:`FlowEngine<mc.flows.flow_engine.FlowEngine>` . FlowEngine is
-a class which contains methods for converting between flow formats and for
-ticking flows.
+Now we can define flow_specs. But how do turn our flow_spec into a Flow object?
 
 To convert our flow_spec into a flow object we call
 :meth:`mc.flows.flow_engine.FlowEngine.flow_spec_to_flow`.
@@ -112,46 +108,230 @@ attributes.
 =============
 Running Flows
 =============
-Now that we have a Flow object, we can run our flow with the FlowEngine.
+Now that we have a Flow object, we can run it.  We use
+:class:`FlowEngine<mc.flows.flow_engine.FlowEngine>` to run flows. FlowEngine
+is a class which contains methods for ticking flows. It also provides wrappers
+for the Flow conversion methods.
 
-.. testcode:
+.. testcode::
 
-    print()
+     flow_spec = {
+         'label': 'example_flow',
+         'tasks': [
+             {
+                 'key': 'task_1',
+                 'task_type': 'print',
+                 'task_params': {'msg': 'I am task_1.'},
+             },
+             {
+                 'key': 'task_2',
+                 'task_type': 'print',
+                 'task_params': {'msg': 'I am task_2.'},
+             },
+         ]
+     }
+     from mc.flows.flow_engine import FlowEngine
+     my_flow_engine = FlowEngine()
+     flow = my_flow_engine.flow_spec_to_flow(flow_spec)
+     my_flow_engine.tick_flow_until_has_no_pending(flow)
+     print("flow.status:", flow.status)
 
-.. testoutput
+Expected output:
 
-   foo
+.. testoutput::
 
-==============
-Storing Flows
-==============
+   I am task_1.
+   I am task_2.
+   flow.status: COMPLETED
+
+================
+Persistent Flows
+================
+Often you will want to have several flows which persist over time.
+
+For example, you may want to have a flow runner which runs a loop like this:
+
+#. Retrieves a list of pending flows from a database.
+#. Ticks those flows until they fail or have no more pending tasks.
+#. Saves the update flows back to the database.
+
+The general lifecycle for storing flows is like this:
+
+#. Serialize a flow into a format suitable for storage.
+#. Save the serialized flow to a database.
+#. Load serialized flows from the database.
+#. Deserialize the serialized flows back to normal flows.
+
+-----------------------------------
+Serializing And Deserializing Flows
+-----------------------------------
+
+In order to save and load flows, we need to transform flow objects in data
+structures which can be stored in a database. The :class:`mc.flows.Flow`
+class has class methods for this transformation:
+
+.. testcode:: serialization_test_group
+
+     flow_spec = {
+         'label': 'example_flow',
+         'tasks': [
+             {
+                 'key': 'task_1',
+                 'task_type': 'print',
+                 'task_params': {'msg': 'I am task_1.'},
+             },
+             {
+                 'key': 'task_2',
+                 'task_type': 'print',
+                 'task_params': {'msg': 'I am task_2.'},
+             },
+         ]
+     }
+     from mc.flows.flow import Flow
+     flow = Flow.from_flow_spec(flow_spec)
+     flow_dict = flow.to_flow_dict()
+     import json
+     jsonified_flow = json.dumps(flow_dict, indent=2, sort_keys=True)
+     print("jsonified flow:\n", jsonified_flow)
+
+Expected output:
+
+.. testoutput:: serialization_test_group
+
+    jsonified flow:
+     {
+      "cfg": {
+        "fail_fast": true
+      },
+      "data": {},
+      "depth": 0,
+      "graph": {
+        "edges": [
+          {
+            "dest_key": "task_1",
+            "src_key": "ROOT"
+          },
+          {
+            "dest_key": "task_2",
+            "src_key": "task_1"
+          }
+        ],
+        "tasks": {
+          "ROOT": {
+            "key": "ROOT",
+            "status": "COMPLETED"
+          },
+          "task_1": {
+            "key": "task_1",
+            "precursors": [
+              "ROOT"
+            ],
+            "status": "PENDING",
+            "task_params": {
+              "msg": "I am task_1."
+            },
+            "task_type": "print"
+          },
+          "task_2": {
+            "key": "task_2",
+            "precursors": [
+              "task_1"
+            ],
+            "status": "PENDING",
+            "task_params": {
+              "msg": "I am task_2."
+            },
+            "task_type": "print"
+          }
+        }
+      },
+      "label": "example_flow",
+      "num_tickable_tasks": 1,
+      "parent_key": null,
+      "status": "PENDING"
+    }
+
+Notice how the serialized flow represents the flow's underlying graph.
+
+To deserialize the serialized flow, we can do something like this:
+
+.. testcode:: serialization_test_group
+
+     flow_dict = json.loads(jsonified_flow)
+     flow = Flow.from_flow_dict(flow_dict)
+     print(type(flow))
+
+.. testoutput:: serialization_test_group
+
+  <class 'mc.flows.flow.Flow'>
+
+
+------------------------
+Saving and Loading Flows
+------------------------
+MissionControl provides utilities for saving flow_dicts to a database, and
+for querying flows.
+
+These utilities are provided by MissionControl's
+:doc:`Houston <houston>` utility.
+
+~~~~~~~~~~~~
+Saving Flows
+~~~~~~~~~~~~
+
+We can save flows using SqlAlchemy actions using Houston's db utility.
+
+.. testcode:: flow_db_test_group
+
+   # Setup houston w/ an in-memory sqlite db.
+   from mc.houston import Houston
+   my_houston = Houston(
+       cfg={
+           'MC_DB_URI': 'sqlite://'
+       }
+   )
+   my_houston.db.ensure_tables()
+
+   # Create a flow.
+   flow_spec = {
+       'label': 'example_flow',
+       'tasks': [
+           {'task_type': 'print', 'task_params': {'msg': 'I am task_%s.' % i}}
+           for i in range(3)
+        ]
+   }
+   from mc.flows.flow import Flow
+   flow = Flow.from_flow_spec(flow_spec)
+
+   # Save the flow to the db.
+   db_flow_instance = my_houston.db.models.Flow(**flow.to_flow_dict())
+   my_houston.db.session.add(db_flow_instance)
+   my_houston.db.session.commit()
+   print('Has flow key:', db_flow_instance.key.startswith('flow:'))
+
+.. testoutput:: flow_db_test_group
+
+   Has flow key: True
+
+~~~~~~~~~~~~~~
+Querying Flows
+~~~~~~~~~~~~~~
+
+We can query flows using SqlAlchemy queries via Houston's db utility.
+
+.. testcode:: flow_db_test_group
+
+   flow_from_db = (
+      my_houston.db.session.query(my_houston.db.models.Flow)
+      .first()
+   )
+   print('Has flow key:', flow_from_db.key.startswith('flow:'))
+
+.. testoutput:: flow_db_test_group
+
+   Has flow key: True
 
 =====
 Tasks
 =====
-
-============================================
-Recommended Practices for Working with Flows
-============================================
-#. Write small functions in your modules.
-
-   This will make your job modules easier to test and understand.
-
-#. Use constants.py files in your modules.
-
-   If your parsers and builders need to refer to common paths or settings, put
-   the settings in a constants.py module that both your parsers and builders
-   can access. Then, if you need to change these settings, you only need to
-   change them in one place.
-
-#. Write tests for your job modules.
-
-#. Define a runner with prebaked outputs.
-
-   This will make your job modules easier to test, both individually and in
-   the context of flows.
-
-#. Use the 'One Builder + Config Spec' strategy to specify requirements that
-   vary across environments.
-
-#. Write tests for your job modules.
+Tasks are an essential component of Flows. See :doc:`tasks`.
