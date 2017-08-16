@@ -13,6 +13,7 @@ class BaseTestCase(unittest.TestCase):
             task_ctx=MagicMock()
         )
 
+
 class RunTestCase(BaseTestCase):
     @patch.object(flow_runner, 'time')
     def test_run(self, _time):
@@ -25,6 +26,7 @@ class RunTestCase(BaseTestCase):
             _time.sleep.call_args_list,
             [call(tick_interval) for tick_interval in tick_intervals]
         )
+
 
 class TickTestCase(BaseTestCase):
     def setUp(self):
@@ -49,12 +51,14 @@ class TickTestCase(BaseTestCase):
         }
         self.assertEqual(self.result, expected_tick_stats)
 
+
 class ClaimFlowRecordsTestCase(BaseTestCase):
     def test_dispatches_to_flow_record_client(self):
         self.runner.claim_flow_records()
         self.assertEqual(
             self.runner.flow_record_client.claim_flow_records.call_args,
             call())
+
 
 class TickFlowRecordsTestCase(BaseTestCase):
     def setUp(self):
@@ -75,7 +79,8 @@ class TickFlowRecordsTestCase(BaseTestCase):
         self._tick_flow_records()
         self.assertEqual(
             self.runner.tick_flow_record.call_args_list,
-            [call(flow_record=flow_record) for flow_record in self.flow_records]
+            [call(flow_record=flow_record)
+             for flow_record in self.flow_records]
         )
 
     def test_patches_and_releases_flow_records(self):
@@ -112,6 +117,7 @@ class TickFlowRecordsTestCase(BaseTestCase):
             ]
         )
 
+
 class TickFlowRecordTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
@@ -127,16 +133,12 @@ class TickFlowRecordTestCase(BaseTestCase):
             self.runner.flow_engine.tick_flow_until_has_no_pending.call_args,
             call(flow=self.expected_flow, task_ctx=self.runner.task_ctx))
 
-    def test_includes_flow_dict_and_tickable_tasks_in_result(self):
+    def test_returns_flow_dict(self):
         mock_flow_dict = {'key_%s' % i: MagicMock() for i in range(3)}
         self.runner.flow_engine.flow_to_flow_dict.return_value = mock_flow_dict
         result = self.runner.tick_flow_record(self.flow_record)
-        self.assertEqual(
-            result,
-            {**mock_flow_dict, 
-             'num_tickable_tasks': len((self.expected_flow.get_tickable_tasks
-                                        .return_value))}
-        )
+        self.assertEqual(result, mock_flow_dict)
+
 
 class FlowRecordToFlowTestCase(BaseTestCase):
     def test_to_flow(self):
@@ -146,9 +148,10 @@ class FlowRecordToFlowTestCase(BaseTestCase):
             self.runner.flow_engine.flow_dict_to_flow.call_args,
             call(flow_dict=flow_record)
         )
-        self.assertEqual(flow,
-                         self.runner.flow_engine.flow_dict_to_flow.return_value)
-        
+        self.assertEqual(
+            flow, self.runner.flow_engine.flow_dict_to_flow.return_value)
+
+
 class PatchAndReleaseFlowRecordTestCase(BaseTestCase):
     def test_patch_flow_record(self):
         flow_record = MagicMock()

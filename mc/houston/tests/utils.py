@@ -1,6 +1,8 @@
 from unittest.mock import MagicMock
 from jobman.engines.local_engine import LocalEngine
 
+from .. houston import Houston
+
 
 def generate_test_cfg():
     cfg = {
@@ -25,3 +27,14 @@ def generate_test_cfg():
         'BUILD_JOBDIR_FN': MagicMock(return_value={}),
     }
     return cfg
+
+
+def generate_test_houston(cfg_overrides=None, houston_kwargs=None,
+                          ensure_tables=True, ensure_queues=True):
+    cfg = {**generate_test_cfg(), **(cfg_overrides or {})}
+    houston = Houston(cfg=cfg, **(houston_kwargs or {}))
+    if ensure_tables:
+        houston.db.ensure_tables()
+    if ensure_queues:
+        houston.utils.ensure_queues()
+    return houston

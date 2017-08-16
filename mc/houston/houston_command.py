@@ -25,6 +25,8 @@ class HoustonCommand(SubcommandCommand):
             self.houston = Houston(cfg=cfg)
         else:
             self.houston = Houston.minimal()
+        if self.subcommands:
+            self.houston.subcommands = self.subcommands
         super().handle(parsed_args=parsed_args, unparsed_args=unparsed_args)
 
     def _load_cfg_from_path(self, cfg_path=None):

@@ -1,17 +1,12 @@
 import unittest
 
-from mc.houston.houston import Houston
 from mc.houston.tests import utils as _houston_test_utils
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.houston = Houston(cfg=self._generate_cfg())
-        self.houston.utils.ensure_queues()
+        self.houston = _houston_test_utils.generate_test_houston()
         self.common_command_kwargs = {'interval': .01, 'max_ticks': int(1e2)}
-
-    def _generate_cfg(self):
-        return _houston_test_utils.generate_test_cfg()
 
     def _generate_flow_spec(self, flow_spec=None):
         flow_spec = flow_spec or {

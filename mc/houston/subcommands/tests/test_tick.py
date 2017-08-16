@@ -11,14 +11,17 @@ class BaseTestCase(unittest.TestCase):
         self.mockify_subcommand_attrs(attrs=['_sleep'])
 
     def mockify_subcommand_attrs(self, attrs=None):
-        for attr in attrs: setattr(self.subcommand, attr, MagicMock())
+        for attr in attrs:
+            setattr(self.subcommand, attr, MagicMock())
 
     def mockify_module_attrs(self, attrs=None, module=tick):
-        if not hasattr(self, 'modmocks'): self.modmocks = {}
-        for attr in attrs: 
+        if not hasattr(self, 'modmocks'):
+            self.modmocks = {}
+        for attr in attrs:
             patcher = patch.object(module, attr)
             self.addCleanup(patcher.stop)
             self.modmocks[attr] = patcher.start()
+
 
 class _RunTestCase(BaseTestCase):
     def setUp(self):
@@ -34,6 +37,7 @@ class _RunTestCase(BaseTestCase):
 
     def test_dispatches_on_tickee(self):
         self.assertEqual(self.subcommand._dispatch_on_tickee.call_args, call())
+
 
 class _DispatchOnTickeeTestCase(BaseTestCase):
     def setUp(self):
@@ -52,10 +56,13 @@ class _DispatchOnTickeeTestCase(BaseTestCase):
             call()
         )
 
+
 class _GetFnForTickeeTestCase(BaseTestCase):
     def test_gets_fns_for_tickee_choices(self):
-        self.assertEqual(self.subcommand.TICKEE_NAMES,
-                         ['flow', 'flow_runner', 'job_runner', 'jobman', 'all'])
+        self.assertEqual(
+            self.subcommand.TICKEE_NAMES,
+            ['flow', 'flow_runner', 'job_runner', 'jobman', 'all']
+        )
         expected_tickee_fns = [
             getattr(self.subcommand, '_run_for_%s_tickee' % tickee_name)
             for tickee_name in self.subcommand.TICKEE_NAMES
@@ -65,6 +72,7 @@ class _GetFnForTickeeTestCase(BaseTestCase):
             for tickee_name in self.subcommand.TICKEE_NAMES
         ]
         self.assertEqual(actual_tickee_fns, expected_tickee_fns)
+
 
 class _RunForFlowTickeeTestCase(BaseTestCase):
     def setUp(self):
@@ -92,6 +100,7 @@ class _RunForFlowTickeeTestCase(BaseTestCase):
         self._run_for_flow_tickee()
         self.assertEqual(self.subcommand._run_for_flow_key.call_args, call())
 
+
 class _RunForFlowSpecTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
@@ -110,6 +119,7 @@ class _RunForFlowSpecTestCase(BaseTestCase):
             call(flow=self.subcommand.flow_engine.flow_spec_to_flow
                  .return_value)
         )
+
 
 class _RunForFlowTestCase(BaseTestCase):
     def setUp(self):
@@ -136,6 +146,7 @@ class _RunForFlowTestCase(BaseTestCase):
             )
         )
 
+
 class _RunForFlowKeyTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
@@ -148,17 +159,21 @@ class _RunForFlowKeyTestCase(BaseTestCase):
             call(flow_key=self.subcommand.kwargs['flow_key'])
         )
 
+
 class _RunForFlowRunnerTickeeTestCase(BaseTestCase):
     def test_something(self):
         self.fail()
+
 
 class _RunForJobRunnerTickeeTestCase(BaseTestCase):
     def test_something(self):
         self.fail()
 
+
 class _RunForJobmanTickee(BaseTestCase):
     def test_something(self):
         self.fail()
+
 
 class _RunForAllTestCase(BaseTestCase):
     def setUp(self):
@@ -177,6 +192,7 @@ class _RunForAllTestCase(BaseTestCase):
     def test_ticks_jobman(self):
         self.assertEqual(self.subcommand._tick_jobman.call_args, call())
 
+
 class _TickFlowRunnerTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
@@ -185,6 +201,7 @@ class _TickFlowRunnerTestCase(BaseTestCase):
     def test_ticks_flow_runner(self):
         self.assertEqual(self.subcommand.utils.flow_runner.tick.call_args,
                          call())
+
 
 class _TickJobRunnerTestCase(BaseTestCase):
     def setUp(self):
@@ -195,6 +212,7 @@ class _TickJobRunnerTestCase(BaseTestCase):
         self.assertEqual(self.subcommand.utils.job_runner.tick.call_args,
                          call())
 
+
 class _TickJobManTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
@@ -202,6 +220,7 @@ class _TickJobManTestCase(BaseTestCase):
 
     def test_ticks_jobman(self):
         self.assertEqual(self.subcommand.utils.jobman.tick.call_args, call())
+
 
 class NTicksTestCase(BaseTestCase):
     def setUp(self):
@@ -214,17 +233,20 @@ class NTicksTestCase(BaseTestCase):
         self.assertEqual(len(self.subcommand._tick.call_args_list),
                          self.subcommand.kwargs['nticks'])
 
+
 class MaxTicksTestCase(BaseTestCase):
     def setUp(self):
         super().setUp()
         self.mockify_subcommand_attrs(attrs=['_tick'])
         self.subcommand.kwargs['nticks'] = 3
-        self.subcommand.kwargs['max_ticks'] = \
-                self.subcommand.kwargs['nticks'] - 1
+        self.subcommand.kwargs['max_ticks'] = (
+            self.subcommand.kwargs['nticks'] - 1
+        )
 
     def test_raises_if_exceeds_max_ticks(self):
         with self.assertRaises(Exception):
             self.subcommand._run()
+
 
 class IntervalTestCase(BaseTestCase):
     def setUp(self):

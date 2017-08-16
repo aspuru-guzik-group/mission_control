@@ -1,12 +1,11 @@
 import unittest
 
-from mc.houston.houston import Houston
 from mc.houston.tests import utils as _houston_test_utils
 
 
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
-        self.houston = Houston(cfg=self._generate_cfg())
+        self.houston = _houston_test_utils.generate_test_houston()
 
     def _generate_cfg(self):
         return _houston_test_utils.generate_test_cfg()
