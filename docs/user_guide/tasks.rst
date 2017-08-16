@@ -80,6 +80,8 @@ key
   'my_task' is a valid key, while 'my.task' is not.
 
 task_type
+  .. _task_type:
+
   An identifier for the type of task. MissionControl's default task handler
   will look up an appropriate handler for the task by dispatching on the value
   of task_type.
@@ -123,7 +125,7 @@ simple linear flows of tasks concisely.
 =============
 Running Tasks
 =============
-Now that we can define tasks, we can think about how to run them. 
+Now that we can define tasks we can think about how to run them. 
 
 We use tick functions to run tasks. The only requirements for a tick function
 is to have a signature like this:
@@ -135,3 +137,79 @@ is to have a signature like this:
 
 Where 'task_ctx' is a dict that typically has 'task', 'flow', and other
 user-specified items.
+
+Per task_type_ above, MissionControl defines a default convention
+for loading tick functions.
+
+==============
+Tasks Handlers
+==============
+There are often reasons to define tick functions in the context of a class.
+MissionControl calls these classes 'TaskHandlers'.
+
+Some common reasons to define a TaskHandler class instead of a plain tick
+function include:
+
+#. the logic for ticking a task is better expressed as a collection of
+   functions, rather than as one long function.
+
+#. multiple tick functions share common setup/teardown logic.
+
+#. multiple tick functions share common logic for handling exceptions.
+
+#. multiple tick functions share common helper utilities.
+
+MissionControl provides a few base TaskHandler classes which you can use as
+base classes for your own TaskHandlers.
+
+See :class:`mc.task_handlers.base_task_handler` to find out more about these 
+base TaskHandler classes.
+
+Usually you will want to inherit from
+:class:`mc.task_handlers.base_task_handler.BaseTaskHandler` and then define
+implementations for the methods
+:meth:`mc.task_handlers.base_task_handler.BaseTaskHandler.initial_tick` and
+:meth:`mc.task_handlers.base_task_handler.BaseTaskHandler.intermediate_tick`.
+
+Example:
+
+.. testcode:: task_handler_test_group
+
+   from mc.task_handlers.base_task_handler import BaseTaskHandler
+
+   class CountdownTaskHandler(BaseTaskHandler):
+       def initial_tick(self, *args, task_ctx=None, **kwargs):
+           self.task['data']['countdown'] = (
+               self.task['task_params']['countdown_start']
+           )
+           print("Starting countdown for task with key '%s'" % self.task['key'])
+           self.intermediate_tick(*args, task_ctx=task_ctx, **kwargs)
+       
+       def intermediate_tick(self, *args, task_ctx=None, **kwargs):
+           countdown = self.task['data']['countdown']
+           if countdown > 0:
+               print("T minus %s" % countdown)
+               self.task['data']['countdown'] -= 1
+           else:
+               print("Houston, we have lift off.")
+               self.task['data']['my_result'] = 'Lift off!'
+               self.task['status'] = 'COMPLETED'
+
+   my_countdown_task = {
+       'task_params': {
+           'countdown_start': 3
+       },
+       'data': {},
+   }
+
+   while my_countdown_task.get('status') != 'COMPLETED':
+       CountdownTaskHandler.tick_task(task_ctx={'task': my_countdown_task})
+
+Expected output:
+
+.. testoutput:: task_handler_test_group
+
+   T minus 3
+   T minus 2
+   T minus 1
+   Houston, we have lift off.

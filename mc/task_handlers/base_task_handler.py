@@ -3,6 +3,7 @@ import traceback
 
 from . import constants
 
+
 class BaseTaskHandler(object):
     """An abstract base class to help with common task_handler logic.
 
@@ -15,7 +16,7 @@ class BaseTaskHandler(object):
        - self.task => task_ctx['task']
 
     Subclasses should at least implement initial_tick method.
-    
+
     """
     TaskStatuses = constants.TaskStatuses
 
@@ -24,8 +25,11 @@ class BaseTaskHandler(object):
             msg = (msg or '') + "\ntask: '{task}'".format(task=task)
             super().__init__(msg, **kwargs)
 
-    class InvalidTaskCtxError(InvalidTaskError): pass
-    class InvalidTaskParamsError(InvalidTaskError): pass
+    class InvalidTaskCtxError(InvalidTaskError):
+        pass
+
+    class InvalidTaskParamsError(InvalidTaskError):
+        pass
 
     def __init__(self, task_ctx=None, logger=None, **kwargs):
         self.task_ctx = task_ctx
@@ -44,18 +48,22 @@ class BaseTaskHandler(object):
     def _tick_task(self, **kwargs):
         try:
             self._ensure_task()
-            try: self.validate_task_ctx()
-            except Exception as exc: raise self.InvalidTaskCtxError() from exc
+            try:
+                self.validate_task_ctx()
+            except Exception as exc:
+                raise self.InvalidTaskCtxError() from exc
             self.increment_tick_counter()
             if self.task['data']['_tick_counter'] == 1:
                 self.task['status'] = 'RUNNING'
-                try: self.validate_task_params()
+                try:
+                    self.validate_task_params()
                 except Exception as exc:
                     raise self.InvalidTaskParamsError() from exc
-                self.initial_tick(**kwargs) 
-            else: self.intermediate_tick(**kwargs)
+                self.initial_tick(**kwargs)
+            else:
+                self.intermediate_tick(**kwargs)
         except Exception as exception:
-            self.logger.exception(self.__class__.__name__ +".tick_task")
+            self.logger.exception(self.__class__.__name__ + ".tick_task")
             self.task['status'] = 'FAILED'
             self.task['data']['error'] = traceback.format_exc()
 
