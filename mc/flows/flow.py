@@ -1,4 +1,5 @@
 import collections
+import copy
 from uuid import uuid4
 
 
@@ -107,10 +108,12 @@ class Flow(object):
         self._edges_by_key[dest_key]['incoming'][edge_key] = edge
 
     @classmethod
-    def from_flow_spec(cls, flow_spec=None):
+    def from_flow_spec(cls, flow_spec=None, deep_copy_tasks=True):
         """Create flow from flow_spec."""
         flow = Flow(**Flow.sanitize_flow_kwargs(flow_spec))
         for i, task in enumerate(flow_spec.get('tasks', [])):
+            if deep_copy_tasks:
+                task = copy.deepcopy(task)
             flow.add_task(task=task)
         return flow
 

@@ -51,4 +51,5 @@ class FlowTaskHandler(BaseFlowTaskHandler):
         return self.flow_record_client.get_flow_record(
             flow_meta=self.task['data']['_flow_task_flow_meta'])
 
+
 TaskHandler = FlowTaskHandler

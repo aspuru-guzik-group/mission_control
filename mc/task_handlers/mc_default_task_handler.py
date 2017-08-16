@@ -140,12 +140,16 @@ class McDefaultTaskHandler(BaseTaskHandler):
             dot_spec=dot_spec)
 
     def tick_task_ctx(self, *args, task_ctx=None, **kwargs):
-        tick_fn = self.get_tick_fn_for_task_ctx(task_ctx=task_ctx)
+        tick_fn = self.get_tick_fn_for_task_ctx(task_ctx=task_ctx, **kwargs)
         tick_fn(*args, task_ctx=task_ctx, **kwargs)
 
-    def get_tick_fn_for_task_ctx(self, task_ctx=None):
+    def get_tick_fn_for_task_ctx(self, task_ctx=None,
+                                 tick_fn_for_task_ctx_overrides=None,
+                                 **kwargs):
         task_type = self.get_task_type(task_ctx=task_ctx)
-        if task_type == 'flow':
+        if task_type in (tick_fn_for_task_ctx_overrides or {}):
+            tick_fn = tick_fn_for_task_ctx_overrides[task_type]
+        elif task_type == 'flow':
             tick_fn = FlowTaskHandler.tick_task
         elif task_type == 'job':
             tick_fn = JobTaskHandler.tick_task

@@ -9,7 +9,7 @@ class WireTaskHandler(BaseTaskHandler):
 
     task_params:
         wirings: a list of value_specs,
-            per :meth:`mc.utils.context_value_setter.set_context_value`
+        per :meth:`mc.utils.context_value_setter.set_context_value`
     """
 
     def validate_task_params(self):
@@ -23,5 +23,6 @@ class WireTaskHandler(BaseTaskHandler):
     def process_wiring(self, wiring=None):
         context_value_setter.set_context_value(value_spec=wiring,
                                                context=self.task_ctx)
+
 
 TaskHandler = WireTaskHandler

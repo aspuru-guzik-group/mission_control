@@ -71,7 +71,8 @@ class FlowEngine(object):
         flow = Flow.from_flow_spec(flow_spec=flow_spec)
         return cls.flow_to_flow_dict(flow=flow)
 
-    def run_flow(self, flow=None, task_ctx=None, max_ticks=5e2):
+    def run_flow(self, flow=None, task_ctx=None, max_ticks=5e2,
+                 tick_kwargs=None):
         """
         Tick flow until its status is 'COMPLETED' or 'FAILED'.
         If it failed, raise a FlowError.
@@ -89,7 +90,7 @@ class FlowEngine(object):
             tick_counter += 1
             if self.debug:
                 self.logger.debug("tick #{}".format(tick_counter))
-            self.tick_flow(flow=flow, task_ctx=task_ctx)
+            self.tick_flow(flow=flow, task_ctx=task_ctx, **(tick_kwargs or {}))
             if tick_counter > max_ticks:
                 raise Exception("Exceeed max ticks")
         if flow.status == 'FAILED':
@@ -97,12 +98,13 @@ class FlowEngine(object):
         if self.debug:
             self.logger.debug("complete")
 
-    def tick_flow(self, flow=None, task_ctx=None):
+    def tick_flow(self, flow=None, task_ctx=None, **tick_kwargs):
         """Tick a flow.
 
         Args:
             flow (flow): flow to tick
             task_ctx (dict, optional): task_ctx to include when ticking flow
+            **tick_kwargs: kwargs to pass to the tick_task call.
         """
         self.debug_locals()
         try:
@@ -111,7 +113,8 @@ class FlowEngine(object):
             if flow.status == 'PENDING':
                 self.start_flow(flow=flow)
             self.start_nearest_tickable_pending_tasks(flow=flow)
-            self.tick_running_tasks(flow=flow, task_ctx=task_ctx)
+            self.tick_running_tasks(flow=flow, task_ctx=task_ctx,
+                                    **tick_kwargs)
             if not flow.has_incomplete_tasks():
                 self.complete_flow(flow=flow)
         except Exception as exception:
@@ -123,19 +126,22 @@ class FlowEngine(object):
             if fail_flow:
                 self.fail_flow(flow=flow)
 
-    def tick_flow_until_has_no_pending(self, flow=None, task_ctx=None):
+    def tick_flow_until_has_no_pending(self, flow=None, task_ctx=None,
+                                       tick_kwargs=None):
         """Tick a flow until it has no tickable pending tasks.
 
         Args:
             flow (flow): flow to tick
             task_ctx (dict, optional): task_ctx to include when ticking flow
         """
-        self.tick_flow(flow=flow, task_ctx=task_ctx)
+        tick_flow_kwargs = {'flow': flow, 'task_ctx': task_ctx,
+                            **(tick_kwargs or {})}
+        self.tick_flow(**tick_flow_kwargs)
         while (
             flow.status in {'PENDING', 'RUNNING'}
             and len(flow.get_nearest_tickable_pending_tasks()) > 0
         ):
-            self.tick_flow(flow=flow, task_ctx=task_ctx)
+            self.tick_flow(**tick_flow_kwargs)
 
     def start_flow(self, flow=None):
         self.debug_locals()
@@ -152,10 +158,11 @@ class FlowEngine(object):
         self.debug_locals()
         task['status'] = 'RUNNING'
 
-    def tick_running_tasks(self, flow=None, task_ctx=None):
+    def tick_running_tasks(self, flow=None, task_ctx=None, **tick_kwargs):
         for task in flow.get_tasks_by_status(status='RUNNING'):
             if self.task_is_running(task=task):
-                self.tick_task(task=task, flow=flow, task_ctx=task_ctx)
+                self.tick_task(task=task, flow=flow, task_ctx=task_ctx,
+                               **tick_kwargs)
             else:
                 self.complete_task(task=task)
             if flow.status == 'COMPLETED':
@@ -164,7 +171,7 @@ class FlowEngine(object):
     def task_is_running(self, task=None):
         return task['status'] == 'RUNNING'
 
-    def tick_task(self, task=None, flow=None, task_ctx=None):
+    def tick_task(self, task=None, flow=None, task_ctx=None, **tick_kwargs):
         """Tick a task.
 
         If task is a proxying task, we will tick the proxied task.
@@ -179,11 +186,12 @@ class FlowEngine(object):
         try:
             if self.is_proxying_task(task=task):
                 self.tick_proxying_task(proxying_task=task, flow=flow,
-                                        task_ctx=task_ctx)
+                                        task_ctx=task_ctx, **tick_kwargs)
             else:
                 self.task_handler.tick_task(
                     task_ctx={'flow_engine': self, **task_ctx,
-                              'task': task, 'flow': flow}
+                              'task': task, 'flow': flow},
+                    **tick_kwargs
                 )
             if task.get('status') == 'COMPLETED':
                 self.complete_task(flow=flow, task=task)
@@ -205,9 +213,11 @@ class FlowEngine(object):
             (task['proxied_task'].get('status') not in {'COMPLETED', 'FAILED'})
         )
 
-    def tick_proxying_task(self, proxying_task=None, flow=None, task_ctx=None):
+    def tick_proxying_task(self, proxying_task=None, flow=None, task_ctx=None,
+                           **tick_kwargs):
         proxied_task = proxying_task['proxied_task']
-        self.tick_task(task=proxied_task, flow=flow, task_ctx=task_ctx)
+        self.tick_task(task=proxied_task, flow=flow, task_ctx=task_ctx,
+                       **tick_kwargs)
 
     def fail_task(self, task=None, error=None):
         task['error'] = error
