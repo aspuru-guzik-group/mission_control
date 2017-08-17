@@ -270,27 +270,20 @@ task finishes, a FlowEngine would pass whatever is in the finished task's
 This strategy is what many unix command-line tools use. A command takes input
 on stdin and then produces output on stdout and stderr.
 
-~~~~~
-PROS:
-~~~~~
-#. Conceptually simple.
-#. Works well for simple linear flows.
+Pros:
+  #. Conceptually simple.
+  #. Works well for simple linear flows.
 
-~~~~~
-CONS:
-~~~~~
-#. Hard to get inputs from multiple sources.
-#. Hard to get inputs from previous tasks which are not direct precursors.
-#. Obscures how outputs from one task are wired to inputs. Transformations
-   must be described within a task's tick function, rather than in a task's
-   definition.
-#. We need to make intermediate 'adapter' tasks to transform outputs from one
-   task into a suitable input format for later tasks.
-#. Tasks have to choose what to expose as outputs. If a task does not expose
-   a value as an output, a later task cannot access that value.
-
-
-.. 
+Cons:
+  #. Hard to get inputs from multiple sources.
+  #. Hard to get inputs from previous tasks which are not direct precursors.
+  #. Obscures how outputs from one task are wired to inputs. Transformations
+     must be described within a task's tick function, rather than in a task's
+     definition.
+  #. We need to make intermediate 'adapter' tasks to transform outputs from one
+     task into a suitable input format for later tasks.
+  #. Tasks have to choose what to expose as outputs. If a task does not expose
+     a value as an output, a later task cannot access that value.
 
 ------------------------------------------
 Strategy B: Tasks Push Inputs To Sucessors
@@ -298,17 +291,13 @@ Strategy B: Tasks Push Inputs To Sucessors
 In this strategy a task sets inputs on its successors. That is, a task has
 references to its successors, and it can set values on its successors.
 
-~~~~~
-PROS:
-~~~~~
-#. No need for adapter tasks. A task controls exactly what gets passed
-   to its successors.
+Pros:
+  #. No need for adapter tasks. A task controls exactly what gets passed
+     to its successors.
 
-~~~~~
-CONS:
-~~~~~
-#. A task has to know what inputs its successors expect. This leads to a high
-   degree of coupling, making it hard to reuse or modify tasks.
+Cons:
+  #. A task has to know what inputs its successors expect. This leads to a high
+     degree of coupling, making it hard to reuse or modify tasks.
 
 #. Tasks have to receive or be able to lookup references to their successors.
    This couples tasks to the lookup system.
@@ -337,26 +326,22 @@ can be reused and modified without having to worry about other work tasks.
 In addition, our wirings are explicit in the definitions of the wiring tasks.
 So we can see them in our flows.
 
-~~~~~
-PROS:
-~~~~~
-#. Work Task Simplicity: A work task's definition can focus exclusively on the
-   work its need to do; work tasks no longer need to worry about formatting
-   inputs and setting outputs.
+Pros:
+  #. Work Task Simplicity: A work task's definition can focus exclusively on the
+     work its need to do; work tasks no longer need to worry about formatting
+     inputs and setting outputs.
 
-#. Decoupling: work tasks can be reused and modified without worrying about
-   breaking other work tasks.
+  #. Decoupling: work tasks can be reused and modified without worrying about
+     breaking other work tasks.
 
-#. Multiple Input Sources: a wiring task can aggregate data from multiple
-   work tasks into one input.
+  #. Multiple Input Sources: a wiring task can aggregate data from multiple
+     work tasks into one input.
 
-#. Explicit Connections in Flow Definitions: a wiring task's definition shows
-   how data moves through flow, making our flows easier to understand.
+  #. Explicit Connections in Flow Definitions: a wiring task's definition shows
+     how data moves through flow, making our flows easier to understand.
 
-~~~~~
-CONS:
-~~~~~
-#. We need to define the intermediate wiring tasks, which can add verbosity.
+Cons:
+  #. We need to define the intermediate wiring tasks, which can add verbosity.
 
 ----------------------
 Which Strategy to Use?
@@ -580,5 +565,7 @@ Recommended Practices for Tasks
 #. Use TaskHandler classes for non-trivial tick functions.
 
 #. Test your tick functions and task handlers.
+
+#. Use intermediate wiring tasks to move data between tasks.
 
 #. Use proxying tasks to abstract complex task logic and create reusable tasks.
