@@ -9,3 +9,4 @@ User Guide
    user_guide/tasks
    user_guide/houston
    user_guide/entity_db
+   user_guide/requests
