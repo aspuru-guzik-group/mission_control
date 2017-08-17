@@ -24,18 +24,6 @@ MissionControl includes EntityDB for several reasons:
    provides a system for defining abstract ingestion 'actions', so that job
    parsers can run without needing database connections.
 
-===================
-EntityDB Quickstart
-===================
-
-Enough talk. Let's see it!
-
-.. testcode
-
-   raise NotImplementedError('write inline entity db quickstart example')
-
-Now let's dig into how it works.
-
 ======
 Schema
 ======
@@ -45,8 +33,8 @@ is, the way it organizes data.
 ---
 Ent
 ---
-The central component of EntityDB's schema is the :class:`mc.db.models.Ent`. An 
-Ent represents a 'thing'.
+The central component of EntityDB's schema is the :class:`mc.db.models.Ent`
+class. An Ent represents a 'thing'.
 
 However, when we think about data, we
 usually think in more specific terms.  We think about things specific using
@@ -532,12 +520,54 @@ Querying by ancestors:
     family_1:child_1
     family_1:child_2
 
+
+======================================
+Updating an EntityDB via Actions
+======================================
+EntityDB allows you to describe updates to a db as a list of dicts. We call
+these dicts 'actions'.
+
+An action is a dict with keys for 'type' and 'params'.
+
+Actions are useful because they allow a program to generate a set of updates
+without needing a DB connection. This is allows us to do things like:
+
+#. Define parsers for job artifacts that can run without a DB connection.
+
+#. Test parse results by in terms of expected actions, rather than expected DB
+   state.
+
+#. Batch together DB writes into chunks, for more efficient write performance.
+
+--------------
+Upsert Actions
+--------------
+
+Currently the only valid type is 'upsert'.
+
+The general idea of an upsert action is to get or create an ent, and then
+run a series of updates to that ent.
+
+See :meth:`mc.db.Db.upsert` for how
+the parameters that an upsert action can take.
+
+.. testcode ::
+
+  raise NotImplementedError('link upsert action example')
+
 ========================================
 Recommended Practices for Using EntityDB 
 ========================================
 
-.. testcode ::
+#. Think carefully about your schema before you start creating large numbers of
+   entities.
 
-  raise NotImplementedError('add entity db practices')
+   #. Can you design queries that get the correct answers for your questions?
+      
+   #. What kind of lineage relationships do you need to track?
 
+   #. What kind of properties do you expect to store? Will you need to filter
+      on these properties?
 
+#. Test your schema on a small scale before you start creating large numbers of
+   entities.

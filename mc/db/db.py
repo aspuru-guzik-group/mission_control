@@ -318,7 +318,7 @@ class Db(object):
         )
 
     def upsert(self, key=None, updates=None, model_type=None, commit=True):
-        model_type = key.split(':')[0].title()
+        model_type = model_type or key.split(':')[0].title()
         model = getattr(self.models, model_type)
         instance, created = self.get_or_create_instance(key=key, model=model)
         updates = self._alter_updates(updates)
