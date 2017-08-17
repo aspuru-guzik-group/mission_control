@@ -11,7 +11,7 @@ runs a computation. For example, a task that transforms a JSON string
 into a YAML string.
 
 In other cases a task defines logic for how a workflow
-should proceed. For example, a task that 
+should proceed. For example, a task that monitors an
 optimization computation and decides whether to keep optimizing or go forward.
 
 In other cases a task wires inputs from one task to another. For example, a task
@@ -23,7 +23,7 @@ Task Lifecyle
 =============
 The lifecycle of a task is like this:
 
-#. We define a task as a dict within in a flow_spec:
+#. We define a task as a dict in a flow_spec:
 
    .. code-block:: python
 
@@ -35,35 +35,33 @@ The lifecycle of a task is like this:
                  'task_type': 'print',
                  'task_params': {'msg': 'I am task_1.'},
              },
-             # ...
+             ...
          ]
      }
 
-#. We build a flow from the flow_spec and run it with a FlowEngine. Eventually
-   the flow reaches a state when it's time for our task to run. At this point
-   the FlowEngine ticks our task.
+#. We convert the flow_spec into a flow and run it with a FlowEngine.
+   
+#. Eventually the flow reaches our task and the FlowEngine ticks our task:
 
    .. code-block:: python
 
-     flow_engine.tick_task(task, flow, task_ctx)
+     flow_engine.tick_task(task, flow, task_ctx_extras)
 
-#. When the FlowEngine ticks our task it calls a top-level TaskHandler. The
-   TaskHandler calls its tick method with a 'task_ctx' dict that contains the
+#. The FlowEngine calls the tick method of a top-level TaskHandler, and passes
+   it the task and the task's context. This context includes the
    task and its parent flow, as well as other user-provided items.
 
    .. code-block:: python
 
-     task_handler.tick_task(task_ctx={'task': task, 'flow': flow, ...})
+     task_ctx = {'task': task, 'flow': flow, **task_ctx_extras}
+     task_handler.tick_task(task_ctx)
 
 #. The TaskHandler's tick_task method looks up a task-specific tick function
-   and calls it.
+   and calls it with the task_ctx.
 
-#. The the tick function performs some set of actions based on the task_ctx.
-   The tick method often also updates a task's status to indicate whether it
+#. The tick function performs actions based on the task_ctx.
+   The tick method often updates a task's status to indicate whether the task 
    is still running, or whether it has failed or completed.
-
-MissionControl defines conventions and provides utilities to help define tasks
-and run them.
 
 ==============
 Defining Tasks
@@ -122,17 +120,17 @@ Example:
   }
 
 A special note on precursors and successors: if neither precursors or
-successors is specified, then when a task is added to a flow, it will have the
-last task added to the flow set as its precursor. This makes it easy to define
-simple linear flows of tasks concisely.
+successors is specified when a task is added to a flow, then the task will
+have its precursor set to be the task most recently added to the flow. This
+default behavior makes it easier to concisely define simple linear flows.
 
 =============
 Running Tasks
 =============
 Now that we can define tasks we can think about how to run them. 
 
-We use tick functions to run tasks. The only requirements for a tick function
-is to have a signature like this:
+We use tick functions to run tasks. A tick function's only requirement is to
+have a signature like this:
 
 .. code-block:: python
 
@@ -143,16 +141,14 @@ Where 'task_ctx' is a dict that typically has 'task', 'flow', and other
 user-specified items.
 
 Per task_type_ above, MissionControl defines a default convention
-for loading tick functions.
+for loading tick functions based on values in task_ctx.
 
 ==============
 Tasks Handlers
 ==============
-There are often reasons to define tick functions in the context of a class.
-MissionControl calls these classes 'TaskHandlers'.
+There are often reasons to define a tick function as a method of a class.
 
-Some common reasons to define a TaskHandler class instead of a plain tick
-function include:
+Some of these reasons are:
 
 #. the logic for ticking a task is better expressed as a collection of
    functions, rather than as one long function.
@@ -161,9 +157,11 @@ function include:
 
 #. multiple tick functions share common logic for handling exceptions.
 
-#. multiple tick functions share common helper utilities.
+#. multiple tick functions share common helper utilities and shortcuts.
 
-MissionControl provides a few base TaskHandler classes which you can use as
+MissionControl calls a class which defines a tick function a 'TaskHandler'.
+
+MissionControl provides a few classes which you can use as
 base classes for your own TaskHandlers.
 
 See :class:`mc.task_handlers.base_task_handler` to find out more about these 
@@ -224,7 +222,7 @@ Expected output:
 =====================
 Built-In TaskHandlers
 =====================
-MissionControl provides several basic TaskHandlers:
+MissionControl provides a few built-in TaskHandlers for common operations:
 
 .. autoclass:: mc.task_handlers.flow_task_handler.FlowTaskHandler
 
@@ -234,27 +232,182 @@ MissionControl provides several basic TaskHandlers:
 
 .. autoclass:: mc.task_handlers.mc_default_task_handler.PrintTaskHandler
 
+.. autoclass:: mc.task_handlers.mc_default_task_handler.NoOpTaskHandler
+
 .. autoclass:: mc.task_handlers.spread_task_handler.SpreadTaskHandler
 
 .. autoclass:: mc.task_handlers.switch_task_handler.SwitchTaskHandler
 
-.. autoclass:: mc.task_handlers.wire_task_handler.WireTaskHandler
+======
+Wiring
+======
+How do we share data betwen tasks?
 
-============
-Wiring Tasks
-============
+What do we mean by wiring? We mean transferring data. But this needs some more
+explanation.
+
+For example, say we want to have a flow like this:
+
+#. Get records from a database.
+
+#. For each record: create a subflow.
+
+We could create (1) a task that gets the database records, and (2) a task that
+creates subflows. But how would we connect the output of our database task to
+our subflow task?
+
+Let's think about some of the strategies we could use.
+
+---------------------------------------
+Strategy A: Standard Input/Output Hooks
+---------------------------------------
+In this strategy we have a convention of using standard input/output hooks.
+That is, every
+task could have an 'inputs' property and and 'outputs' property. Then, when a
+task finishes, a FlowEngine would pass whatever is in the finished task's
+'outputs' property to the next task.
+
+This strategy is what many unix command-line tools use. A command takes input
+on stdin and then produces output on stdout and stderr.
+
+~~~~~
+PROS:
+~~~~~
+#. Conceptually simple.
+#. Works well for simple linear flows.
+
+~~~~~
+CONS:
+~~~~~
+#. Hard to get inputs from multiple sources.
+#. Hard to get inputs from previous tasks which are not direct precursors.
+#. Obscures how outputs from one task are wired to inputs. Transformations
+   must be described within a task's tick function, rather than in a task's
+   definition.
+#. We need to make intermediate 'adapter' tasks to transform outputs from one
+   task into a suitable input format for later tasks.
+#. Tasks have to choose what to expose as outputs. If a task does not expose
+   a value as an output, a later task cannot access that value.
+
+
+.. 
+
+------------------------------------------
+Strategy B: Tasks Push Inputs To Sucessors
+------------------------------------------
+In this strategy a task sets inputs on its successors. That is, a task has
+references to its successors, and it can set values on its successors.
+
+~~~~~
+PROS:
+~~~~~
+#. No need for adapter tasks. A task controls exactly what gets passed
+   to its successors.
+
+~~~~~
+CONS:
+~~~~~
+#. A task has to know what inputs its successors expect. This leads to a high
+   degree of coupling, making it hard to reuse or modify tasks.
+
+#. Tasks have to receive or be able to lookup references to their successors.
+   This couples tasks to the lookup system.
+
+.. _wiring_strategy:
+
+-------------------------------------
+Strategy C: Intermediate Wiring Tasks
+-------------------------------------
+In this strategy we have two categories of tasks: 'work' tasks that do the work
+of our flow, and 'wiring' tasks that pipe data between 'work' tasks.
+
+Our work tasks are ignorant and don't know where their inputs come from.
+And they don't make any decisions about what outputs to expose. Their logic only
+deals with how to do their work.
+
+On the other hand, our wiring tasks are knowledgeable. They know which
+work tasks they pull data from, and what shape of data those source work tasks
+expose. Our wiring tasks also know which work tasks they push data to, and what
+data formats those target tasks expect.
+
+There is coupling between the wiring tasks and work tasks,
+but not between work tasks and other work tasks.  This means that work tasks
+can be reused and modified without having to worry about other work tasks.
+
+In addition, our wirings are explicit in the definitions of the wiring tasks.
+So we can see them in our flows.
+
+~~~~~
+PROS:
+~~~~~
+#. Work Task Simplicity: A work task's definition can focus exclusively on the
+   work its need to do; work tasks no longer need to worry about formatting
+   inputs and setting outputs.
+
+#. Decoupling: work tasks can be reused and modified without worrying about
+   breaking other work tasks.
+
+#. Multiple Input Sources: a wiring task can aggregate data from multiple
+   work tasks into one input.
+
+#. Explicit Connections in Flow Definitions: a wiring task's definition shows
+   how data moves through flow, making our flows easier to understand.
+
+~~~~~
+CONS:
+~~~~~
+#. We need to define the intermediate wiring tasks, which can add verbosity.
+
+----------------------
+Which Strategy to Use?
+----------------------
+The MissionControl authors recommend the wiring strategy. We think that this
+strategy gives the most control, and makes it easier to reuse and compose
+tasks. In addition, we think wiring tasks make flows more comprehensible by
+explicitly showing how data moves from one task to another.
+
+To help with creating wiring tasks, MissionControl provides a special
+TaskHandler,
+the :class:`WireTaskHandler <mc.task_handlers.wire_task_handler.WireTaskHandler>`.
+
+To learn more about wirings see the documentation for  
+:class:`WireTaskHandler <mc.task_handlers.wire_task_handler.WireTaskHandler>`, 
+and look at the wiring examples.
 
 .. testcode::
 
-  raise NotImplementedError
+  raise NotImplementedError('link to wiring examples')
+
 
 ==============
 Interpolations
 ==============
+The primary con of the wiring strategy is that it adds verbosity to a flow.
+
+For example, a simple wiring like 'connect task_a.prop_1 to task_b.prop_2'
+requires an entire task definition:
 
 .. testcode::
 
-  raise NotImplementedError
+  raise NotImplementedError('make verbose definition')
+
+
+MissionControl provides a utility called 'interpolation' to help reduce this
+verbosity for simple wirings.
+
+.. testcode::
+
+  raise NotImplementedError('Make inline interpolation example')
+
+The logic for interpolation is defined in the
+:class:`mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler` class.
+See the :meth:`mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler.get_interpolated_task_ctx` method,
+and the interpolation examples.
+
+.. testcode::
+
+  raise NotImplementedError('Link to interpolation examples')
+
 
 ==============
 Proxying Tasks

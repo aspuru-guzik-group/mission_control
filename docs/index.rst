@@ -8,7 +8,7 @@
 ==============
 MissionControl
 ==============
-A library for creating jobs and workflows.
+MissionControl: A library for jobs and workflows.
 
 =========================
 Is MissionControl for me?
@@ -18,7 +18,7 @@ Features include:
 
 #. A job creation framework: create small job modules that define how to build job directories.
 #. A task sequencing framework: create flows that consist of small tasks.
-#.  A data storage framework: store data from parsed jobs, and query it to provide inputs to other jobs.
+#. A data storage framework: store data from parsed jobs, and query it to provide inputs to other jobs.
 #. A SqlAlchemy backend lets you run MissionControl with a variety of SQL environments. You can use file-based sqlite databases or server-based databases like Postgresql or MySql.
 #.  Dynamic flows: you can create flows that modify themselves or create new flows based on what happens during execution.
 #. Modular: you can customize how MissionControl works.
@@ -35,7 +35,7 @@ You can build parameterized jobs that you can run locally or on a cluster.
 For example, you can build a set of jobs that run a computational chemistry 
 model with different parameters.
 
-See `user_guide/jobs`.
+See :doc:`user_guide/jobs` .
 
 Work Flows
 =====
@@ -44,7 +44,7 @@ You can use define and run task-based workflows.
 For example, you can define a workflow that first runs a model, and then runs
 an analysis job on the model outputs.
 
-See `user_guide/flows`.
+See :doc:`user_guide/flows` and :doc:`user_guide/tasks` .
 
 Requests
 ========
@@ -52,7 +52,7 @@ You can track whether a job or flow has already been
 executed with a given set of inputs. This prevents the running of duplicate
 computations.
 
-See `user_guide/requests`.
+See :doc:`user_guide/requests` .
 
 EntityDB
 ========
@@ -63,7 +63,7 @@ You can store data in a generalized
 This database can store results from parsed jobs that you
 want to use as inputs for future jobs.
 
-See `user_guide/entity_db`.
+See :doc:`user_guide/entity_db` .
 
 
 Combining Components
