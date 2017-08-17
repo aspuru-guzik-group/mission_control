@@ -225,9 +225,11 @@ you can build.
 See http://docs.sqlalchemy.org/en/latest/orm/query.html#sqlalchemy.orm.query.Query.join
 to understand the 'join' line.
 
+
 -----
 Tags
 -----
+
 Often we want a way to group ents into collections, or to quickly find
 specific ents. EntityDB provides a tagging mechanism to help us do these things.
 
@@ -367,6 +369,168 @@ In the following example we filter for ents that lack a tag.
 .. testoutput :: ent_filter_tags_test_group
 
    ['tag_2|tag_3']
+
+-------
+Lineage
+-------
+You can organize ents in relationship hierarchies using the attributes
+
+- :attr:`mc.db.models.Ent.parents`
+- :attr:`mc.db.models.Ent.children`
+- :attr:`mc.db.models.Ent.ancestors`
+- :attr:`mc.db.models.Ent.descendants`
+
+Let's see an example.
+
+.. testcode :: ent_lineage_test_group
+
+   # Setup a Houston instance with a db.
+   from mc.houston import Houston
+   houston = Houston(cfg={'MC_DB_URI': 'sqlite://'})
+   houston.db.ensure_tables()
+
+   # shortcut, to save some typing :p
+   Ent = houston.db.models.Ent
+
+   # Setup helper methods
+
+   def create_families(num_families=2):
+       families = {}
+       for i in range(1, 1 + num_families):
+           family_key = ('family_%s' % i)
+           families[family_key] = create_family(family_key=family_key)
+           return families
+
+   def create_family(family_key=None):
+       common_props = {'family_key': family_key}
+       grandparents = [
+           Ent(
+               key=('%s:grandparent_%s' % (family_key, i)),
+               props={**common_props, 'generation': 'grandparents'}
+           )
+           for i in range(4)
+       ]
+       grandparent_pairs = [
+           [grandparents[0], grandparents[1]],
+           [grandparents[2], grandparents[3]]
+       ]
+       parents = []
+       for i, grandparent_pair in enumerate(grandparent_pairs):
+           parents.append(
+               Ent(
+                   key=('%s:parent_%s' % (family_key, i)),
+                   props={**common_props, 'generation': 'parents'},
+                   parents=grandparent_pair,
+                   ancestors=grandparent_pair
+               )
+           )
+       children = [
+           Ent(
+               key=('%s:child_%s' % (family_key, i)),
+               props={**common_props, 'generation': 'children'},
+               parents=parents,
+               ancestors=(grandparents + parents)
+           )
+           for i in range(3)
+       ]
+       houston.db.session.add_all(grandparents + parents + children)
+       houston.db.session.commit()
+       family = {
+           'grandparents': grandparents,
+           'grandparent_pairs': grandparent_pairs,
+           'parents': parents,
+           'children': children
+       }
+       return family
+
+   def keys_for_ents(ents): return sorted(set([ent.key for ent in ents]))
+
+   families = create_families(2)
+   family_1 = families['family_1']
+   individuals = {
+       'grandparent': family_1['grandparents'][0],
+       'parent': family_1['parents'][0],
+       'child': family_1['children'][0]
+   }
+   for generation, individual in individuals.items():
+       for attr in ['parents', 'children', 'ancestors', 'descendants']:
+           label = '{generation}.{attr}: '.format(
+               generation=generation, attr=attr)
+           key_set = keys_for_ents(getattr(individual, attr))
+           print(label, key_set)
+
+.. testoutput :: ent_lineage_test_group
+
+   grandparent.parents:  []
+   grandparent.children:  ['family_1:parent_0']
+   grandparent.ancestors:  []
+   grandparent.descendants:  ['family_1:child_0', 'family_1:child_1', 'family_1:child_2', 'family_1:parent_0']
+   parent.parents:  ['family_1:grandparent_0', 'family_1:grandparent_1']
+   parent.children:  ['family_1:child_0', 'family_1:child_1', 'family_1:child_2']
+   parent.ancestors:  ['family_1:grandparent_0', 'family_1:grandparent_1']
+   parent.descendants:  ['family_1:child_0', 'family_1:child_1', 'family_1:child_2']
+   child.parents:  ['family_1:parent_0', 'family_1:parent_1']
+   child.children:  []
+   child.ancestors:  ['family_1:grandparent_0', 'family_1:grandparent_1', 'family_1:grandparent_2', 'family_1:grandparent_3', 'family_1:parent_0', 'family_1:parent_1']
+   child.descendants:  []
+
+~~~~~~~~~~~~~~~~~
+Filtering by Lineage
+~~~~~~~~~~~~~~~~~
+We can filter ents by their lineage.
+
+Note that unlike props or tags, we filter on the direct lineage attributes. The
+reason for this is technical: props and tags are SqlAlchemy association_proxies,
+whereas lineage attributes are SqlAlchemy relationships.
+
+Here are some examples.
+
+Querying by parents:
+
+.. testcode :: ent_lineage_test_group
+
+   grandparent_pair_0 = family_1['grandparent_pairs'][0]
+   children_of_grandparent_pair_0 = (
+       houston.db.session.query(Ent)
+       .join(Ent.parents, aliased=True, from_joinpoint=True)
+       .filter(
+           Ent.key.in_([
+               grandparent.key
+               for grandparent in grandparent_pair_0
+           ])
+       )
+       .reset_joinpoint()
+       .all()
+   )
+   print("\n".join(keys_for_ents(children_of_grandparent_pair_0)))
+
+.. testoutput :: ent_lineage_test_group
+
+   family_1:parent_0
+
+Querying by ancestors:
+
+.. testcode :: ent_lineage_test_group
+
+   descendants = (
+       houston.db.session.query(Ent)
+       .filter(
+           Ent.props_set.any(key='generation', value='children')
+       )
+       .join(Ent.ancestors, aliased=True, from_joinpoint=True)
+       .filter(
+           Ent.props_set.any(key='family_key', value='family_1')
+       )
+       .reset_joinpoint()
+       .all()
+   )
+   print("\n".join(keys_for_ents(descendants)))
+
+.. testoutput :: ent_lineage_test_group
+
+    family_1:child_0
+    family_1:child_1
+    family_1:child_2
 
 ========================================
 Recommended Practices for Using EntityDB 
