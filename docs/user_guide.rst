@@ -5,5 +5,7 @@ User Guide
    :glob:
 
    user_guide/jobs
-   user_guide/designing_flows
+   user_guide/flows
+   user_guide/tasks
    user_guide/houston
+   user_guide/entity_db
