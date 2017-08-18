@@ -1,0 +1,255 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.utils.artifact_processors package &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mc.utils.commands package" href="mc.utils.commands.html" />
+    <link rel="prev" title="mc.utils.archivers package" href="mc.utils.archivers.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.utils.commands.html" title="mc.utils.commands package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mc.utils.archivers.html" title="mc.utils.archivers package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="mc.utils.html" accesskey="U">mc.utils package</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-mc.utils.artifact_processors">
+<span id="mc-utils-artifact-processors-package"></span><h1>mc.utils.artifact_processors package<a class="headerlink" href="#module-mc.utils.artifact_processors" title="Permalink to this headline">¶</a></h1>
+<p>Artifact processors define logic for converting directories &lt;=&gt; artifact
+dicts.</p>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-mc.utils.artifact_processors.base_artifact_processor">
+<span id="mc-utils-artifact-processors-base-artifact-processor-module"></span><h2>mc.utils.artifact_processors.base_artifact_processor module<a class="headerlink" href="#module-mc.utils.artifact_processors.base_artifact_processor" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor">
+<em class="property">class </em><code class="descclassname">mc.utils.artifact_processors.base_artifact_processor.</code><code class="descname">BaseArtifactProcessor</code><a class="reference internal" href="../_modules/mc/utils/artifact_processors/base_artifact_processor.html#BaseArtifactProcessor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">abc.ABC</span></code></p>
+<p>Abstract base class for artifact processors.</p>
+<dl class="attribute">
+<dt id="mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor.ARTIFACT_TYPE">
+<code class="descname">ARTIFACT_TYPE</code><em class="property"> = None</em><a class="headerlink" href="#mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor.ARTIFACT_TYPE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor.InvalidArtifactError">
+<em class="property">exception </em><code class="descname">InvalidArtifactError</code><a class="reference internal" href="../_modules/mc/utils/artifact_processors/base_artifact_processor.html#BaseArtifactProcessor.InvalidArtifactError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor.InvalidArtifactError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor.artifact_to_dir">
+<code class="descname">artifact_to_dir</code><span class="sig-paren">(</span><em>artifact=None</em>, <em>dest=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/artifact_processors/base_artifact_processor.html#BaseArtifactProcessor.artifact_to_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor.artifact_to_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor.dir_to_artifact">
+<code class="descname">dir_to_artifact</code><span class="sig-paren">(</span><em>dir=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/artifact_processors/base_artifact_processor.html#BaseArtifactProcessor.dir_to_artifact"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor.dir_to_artifact" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-mc.utils.artifact_processors.dispatch_artifact_processor">
+<span id="mc-utils-artifact-processors-dispatch-artifact-processor-module"></span><h2>mc.utils.artifact_processors.dispatch_artifact_processor module<a class="headerlink" href="#module-mc.utils.artifact_processors.dispatch_artifact_processor" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mc.utils.artifact_processors.dispatch_artifact_processor.DispatchArtifactProcessor">
+<em class="property">class </em><code class="descclassname">mc.utils.artifact_processors.dispatch_artifact_processor.</code><code class="descname">DispatchArtifactProcessor</code><span class="sig-paren">(</span><em>processors=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/artifact_processors/dispatch_artifact_processor.html#DispatchArtifactProcessor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.artifact_processors.dispatch_artifact_processor.DispatchArtifactProcessor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor" title="mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor"><code class="xref py py-class docutils literal"><span class="pre">mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor</span></code></a></p>
+<p>ArtifactProcessor that dispatches to subprocessors, based on
+artifact type.</p>
+<dl class="method">
+<dt id="mc.utils.artifact_processors.dispatch_artifact_processor.DispatchArtifactProcessor.artifact_to_dir">
+<code class="descname">artifact_to_dir</code><span class="sig-paren">(</span><em>artifact=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/artifact_processors/dispatch_artifact_processor.html#DispatchArtifactProcessor.artifact_to_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.artifact_processors.dispatch_artifact_processor.DispatchArtifactProcessor.artifact_to_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.artifact_processors.dispatch_artifact_processor.DispatchArtifactProcessor.dir_to_artifact">
+<code class="descname">dir_to_artifact</code><span class="sig-paren">(</span><em>artifact_type=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/artifact_processors/dispatch_artifact_processor.html#DispatchArtifactProcessor.dir_to_artifact"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.artifact_processors.dispatch_artifact_processor.DispatchArtifactProcessor.dir_to_artifact" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.artifact_processors.dispatch_artifact_processor.DispatchArtifactProcessor.get_processor_for_artifact_type">
+<code class="descname">get_processor_for_artifact_type</code><span class="sig-paren">(</span><em>artifact_type=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/artifact_processors/dispatch_artifact_processor.html#DispatchArtifactProcessor.get_processor_for_artifact_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.artifact_processors.dispatch_artifact_processor.DispatchArtifactProcessor.get_processor_for_artifact_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-mc.utils.artifact_processors.local_path_artifact_processor">
+<span id="mc-utils-artifact-processors-local-path-artifact-processor-module"></span><h2>mc.utils.artifact_processors.local_path_artifact_processor module<a class="headerlink" href="#module-mc.utils.artifact_processors.local_path_artifact_processor" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mc.utils.artifact_processors.local_path_artifact_processor.LocalPathArtifactProcessor">
+<em class="property">class </em><code class="descclassname">mc.utils.artifact_processors.local_path_artifact_processor.</code><code class="descname">LocalPathArtifactProcessor</code><a class="reference internal" href="../_modules/mc/utils/artifact_processors/local_path_artifact_processor.html#LocalPathArtifactProcessor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.artifact_processors.local_path_artifact_processor.LocalPathArtifactProcessor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor" title="mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor"><code class="xref py py-class docutils literal"><span class="pre">mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor</span></code></a></p>
+<p>ArtifactProcessor that records local path to dir.</p>
+<dl class="attribute">
+<dt id="mc.utils.artifact_processors.local_path_artifact_processor.LocalPathArtifactProcessor.ARTIFACT_TYPE">
+<code class="descname">ARTIFACT_TYPE</code><em class="property"> = ‘local_path’</em><a class="headerlink" href="#mc.utils.artifact_processors.local_path_artifact_processor.LocalPathArtifactProcessor.ARTIFACT_TYPE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.artifact_processors.local_path_artifact_processor.LocalPathArtifactProcessor.artifact_to_dir">
+<code class="descname">artifact_to_dir</code><span class="sig-paren">(</span><em>artifact=None</em>, <em>dest=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/artifact_processors/local_path_artifact_processor.html#LocalPathArtifactProcessor.artifact_to_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.artifact_processors.local_path_artifact_processor.LocalPathArtifactProcessor.artifact_to_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.artifact_processors.local_path_artifact_processor.LocalPathArtifactProcessor.dir_to_artifact">
+<code class="descname">dir_to_artifact</code><span class="sig-paren">(</span><em>dir_=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/artifact_processors/local_path_artifact_processor.html#LocalPathArtifactProcessor.dir_to_artifact"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.artifact_processors.local_path_artifact_processor.LocalPathArtifactProcessor.dir_to_artifact" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-mc.utils.artifact_processors.tgz_artifact_processor">
+<span id="mc-utils-artifact-processors-tgz-artifact-processor-module"></span><h2>mc.utils.artifact_processors.tgz_artifact_processor module<a class="headerlink" href="#module-mc.utils.artifact_processors.tgz_artifact_processor" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mc.utils.artifact_processors.tgz_artifact_processor.TgzArtifactProcessor">
+<em class="property">class </em><code class="descclassname">mc.utils.artifact_processors.tgz_artifact_processor.</code><code class="descname">TgzArtifactProcessor</code><a class="reference internal" href="../_modules/mc/utils/artifact_processors/tgz_artifact_processor.html#TgzArtifactProcessor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.artifact_processors.tgz_artifact_processor.TgzArtifactProcessor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor" title="mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor"><code class="xref py py-class docutils literal"><span class="pre">mc.utils.artifact_processors.base_artifact_processor.BaseArtifactProcessor</span></code></a></p>
+<p>ArtifactProcessor that converts dir &lt;=&gt; inline compressed bytes.</p>
+<dl class="attribute">
+<dt id="mc.utils.artifact_processors.tgz_artifact_processor.TgzArtifactProcessor.ARTIFACT_TYPE">
+<code class="descname">ARTIFACT_TYPE</code><em class="property"> = ‘tgz:bytes’</em><a class="headerlink" href="#mc.utils.artifact_processors.tgz_artifact_processor.TgzArtifactProcessor.ARTIFACT_TYPE" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.artifact_processors.tgz_artifact_processor.TgzArtifactProcessor.artifact_to_dir_">
+<code class="descname">artifact_to_dir_</code><span class="sig-paren">(</span><em>artifact=None</em>, <em>dest=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/artifact_processors/tgz_artifact_processor.html#TgzArtifactProcessor.artifact_to_dir_"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.artifact_processors.tgz_artifact_processor.TgzArtifactProcessor.artifact_to_dir_" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.artifact_processors.tgz_artifact_processor.TgzArtifactProcessor.dir_to_artifact">
+<code class="descname">dir_to_artifact</code><span class="sig-paren">(</span><em>dir_=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/artifact_processors/tgz_artifact_processor.html#TgzArtifactProcessor.dir_to_artifact"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.artifact_processors.tgz_artifact_processor.TgzArtifactProcessor.dir_to_artifact" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.artifact_processors.tgz_artifact_processor.TgzArtifactProcessor.dir_to_tgz_bytes">
+<code class="descname">dir_to_tgz_bytes</code><span class="sig-paren">(</span><em>dir_=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/artifact_processors/tgz_artifact_processor.html#TgzArtifactProcessor.dir_to_tgz_bytes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.artifact_processors.tgz_artifact_processor.TgzArtifactProcessor.dir_to_tgz_bytes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.artifact_processors.tgz_artifact_processor.TgzArtifactProcessor.tgz_bytes_to_dir_">
+<code class="descname">tgz_bytes_to_dir_</code><span class="sig-paren">(</span><em>tgz_bytes=None</em>, <em>dest=None</em>, <em>encoding=’base64’</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/artifact_processors/tgz_artifact_processor.html#TgzArtifactProcessor.tgz_bytes_to_dir_"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.artifact_processors.tgz_artifact_processor.TgzArtifactProcessor.tgz_bytes_to_dir_" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">mc.utils.artifact_processors package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-mc.utils.artifact_processors.base_artifact_processor">mc.utils.artifact_processors.base_artifact_processor module</a></li>
+<li><a class="reference internal" href="#module-mc.utils.artifact_processors.dispatch_artifact_processor">mc.utils.artifact_processors.dispatch_artifact_processor module</a></li>
+<li><a class="reference internal" href="#module-mc.utils.artifact_processors.local_path_artifact_processor">mc.utils.artifact_processors.local_path_artifact_processor module</a></li>
+<li><a class="reference internal" href="#module-mc.utils.artifact_processors.tgz_artifact_processor">mc.utils.artifact_processors.tgz_artifact_processor module</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mc.utils.archivers.html"
+                        title="previous chapter">mc.utils.archivers package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mc.utils.commands.html"
+                        title="next chapter">mc.utils.commands package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/mc.utils.artifact_processors.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.utils.commands.html" title="mc.utils.commands package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mc.utils.archivers.html" title="mc.utils.archivers package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="mc.utils.html" >mc.utils package</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

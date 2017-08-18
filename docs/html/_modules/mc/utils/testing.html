@@ -1,0 +1,202 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.utils.testing &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mc.utils.testing</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">contextlib</span> <span class="k">import</span> <span class="n">contextmanager</span>
+<span class="kn">import</span> <span class="nn">difflib</span>
+<span class="kn">import</span> <span class="nn">filecmp</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">unittest.mock</span> <span class="k">import</span> <span class="n">Mock</span>
+
+
+<div class="viewcode-block" id="capture"><a class="viewcode-back" href="../../../api/mc.utils.testing.html#mc.utils.testing.capture">[docs]</a><span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">capture</span><span class="p">():</span>
+    <span class="k">with</span> <span class="n">capture_std_streams</span><span class="p">(</span><span class="n">streams</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;stdout&#39;</span><span class="p">])</span> <span class="k">as</span> <span class="n">captured_streams</span><span class="p">:</span>
+        <span class="k">yield</span> <span class="n">captured_streams</span><span class="p">[</span><span class="s1">&#39;stdout&#39;</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="capture_std_streams"><a class="viewcode-back" href="../../../api/mc.utils.testing.html#mc.utils.testing.capture_std_streams">[docs]</a><span class="k">def</span> <span class="nf">capture_std_streams</span><span class="p">(</span><span class="n">streams</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">stream_keys</span> <span class="o">=</span> <span class="n">streams</span> <span class="ow">or</span> <span class="p">[</span><span class="s1">&#39;stdout&#39;</span><span class="p">]</span>
+    <span class="n">stream_cfgs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">stream_key</span> <span class="ow">in</span> <span class="n">stream_keys</span><span class="p">:</span>
+        <span class="k">def</span> <span class="nf">_get_setter</span><span class="p">(</span><span class="n">stream_key_</span><span class="p">):</span>
+            <span class="k">return</span> <span class="k">lambda</span> <span class="n">new_stream</span><span class="p">:</span> <span class="nb">setattr</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">stream_key_</span><span class="p">,</span> <span class="n">new_stream</span><span class="p">)</span>
+        <span class="n">stream_cfgs</span><span class="p">[</span><span class="n">stream_key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;original&#39;</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">sys</span><span class="p">,</span> <span class="n">stream_key</span><span class="p">),</span>
+                                   <span class="s1">&#39;setter&#39;</span><span class="p">:</span> <span class="n">_get_setter</span><span class="p">(</span><span class="n">stream_key</span><span class="p">)}</span>
+    <span class="k">return</span> <span class="n">capture_streams</span><span class="p">(</span><span class="n">stream_cfgs</span><span class="o">=</span><span class="n">stream_cfgs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="capture_streams"><a class="viewcode-back" href="../../../api/mc.utils.testing.html#mc.utils.testing.capture_streams">[docs]</a><span class="nd">@contextmanager</span>
+<span class="k">def</span> <span class="nf">capture_streams</span><span class="p">(</span><span class="n">stream_cfgs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">stream_cfgs</span> <span class="o">=</span> <span class="n">stream_cfgs</span> <span class="ow">or</span> <span class="p">{}</span>
+    <span class="n">originals</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">stream_cfg</span><span class="p">[</span><span class="s1">&#39;original&#39;</span><span class="p">]</span>
+                 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">stream_cfg</span> <span class="ow">in</span> <span class="n">stream_cfgs</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">tmp_streams</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">stream_cfg</span> <span class="ow">in</span> <span class="n">stream_cfgs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">tmp_streams</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">()</span>
+            <span class="n">stream_cfg</span><span class="p">[</span><span class="s1">&#39;setter&#39;</span><span class="p">](</span><span class="n">tmp_streams</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
+        <span class="k">yield</span> <span class="n">tmp_streams</span>
+        <span class="k">for</span> <span class="n">tmp_stream</span> <span class="ow">in</span> <span class="n">tmp_streams</span><span class="o">.</span><span class="n">values</span><span class="p">():</span> <span class="n">tmp_stream</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">original_stream</span> <span class="ow">in</span> <span class="n">originals</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">stream_cfgs</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s1">&#39;setter&#39;</span><span class="p">](</span><span class="n">original_stream</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="assert_dirs_equal"><a class="viewcode-back" href="../../../api/mc.utils.testing.html#mc.utils.testing.assert_dirs_equal">[docs]</a><span class="k">def</span> <span class="nf">assert_dirs_equal</span><span class="p">(</span><span class="n">test</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ignore_patterns</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">json_patterns</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">ignore_patterns</span> <span class="o">=</span> <span class="n">ignore_patterns</span> <span class="ow">or</span> <span class="p">[]</span>
+    <span class="n">json_patterns</span> <span class="o">=</span> <span class="n">json_patterns</span> <span class="ow">or</span> <span class="p">[</span><span class="sa">r</span><span class="s1">&#39;\.json$&#39;</span><span class="p">]</span>
+    <span class="n">cmp_result</span> <span class="o">=</span> <span class="n">filecmp</span><span class="o">.</span><span class="n">dircmp</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
+    <span class="n">test</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">cmp_result</span><span class="o">.</span><span class="n">left_only</span><span class="p">),</span> <span class="nb">set</span><span class="p">())</span>
+    <span class="n">test</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">cmp_result</span><span class="o">.</span><span class="n">right_only</span><span class="p">),</span> <span class="nb">set</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">differing_file</span> <span class="ow">in</span> <span class="n">cmp_result</span><span class="o">.</span><span class="n">diff_files</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">ignore_pattern</span> <span class="ow">in</span> <span class="n">ignore_patterns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">ignore_pattern</span><span class="p">,</span> <span class="n">differing_file</span><span class="p">):</span> <span class="k">continue</span>
+        <span class="n">left_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">differing_file</span><span class="p">)</span>
+        <span class="n">right_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">right</span><span class="p">,</span> <span class="n">differing_file</span><span class="p">)</span>
+        <span class="n">check_as_json</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">for</span> <span class="n">json_pattern</span> <span class="ow">in</span> <span class="n">json_patterns</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">json_pattern</span><span class="p">,</span> <span class="n">differing_file</span><span class="p">):</span>
+                <span class="n">check_as_json</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="k">break</span>
+        <span class="k">if</span> <span class="n">check_as_json</span><span class="p">:</span>
+            <span class="n">assert_json_files_equal</span><span class="p">(</span><span class="n">test</span><span class="o">=</span><span class="n">test</span><span class="p">,</span> <span class="n">left_file</span><span class="o">=</span><span class="n">left_file</span><span class="p">,</span>
+                                    <span class="n">right_file</span><span class="o">=</span><span class="n">right_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">test</span><span class="o">.</span><span class="n">fail</span><span class="p">(</span><span class="s2">&quot;Files differ:</span><span class="se">\n</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">diff</span><span class="p">(</span><span class="n">left_file</span><span class="o">=</span><span class="n">left_file</span><span class="p">,</span> <span class="n">right_file</span><span class="o">=</span><span class="n">right_file</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="assert_json_files_equal"><a class="viewcode-back" href="../../../api/mc.utils.testing.html#mc.utils.testing.assert_json_files_equal">[docs]</a><span class="k">def</span> <span class="nf">assert_json_files_equal</span><span class="p">(</span><span class="n">test</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">left_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">right_file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">test</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">left_file</span><span class="p">)),</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">right_file</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="diff"><a class="viewcode-back" href="../../../api/mc.utils.testing.html#mc.utils.testing.diff">[docs]</a><span class="k">def</span> <span class="nf">diff</span><span class="p">(</span><span class="n">left_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">right_file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">diff_lines</span> <span class="o">=</span> <span class="n">difflib</span><span class="o">.</span><span class="n">unified_diff</span><span class="p">(</span>
+        <span class="nb">open</span><span class="p">(</span><span class="n">left_file</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">(),</span> <span class="nb">open</span><span class="p">(</span><span class="n">right_file</span><span class="p">)</span><span class="o">.</span><span class="n">readlines</span><span class="p">(),</span>
+        <span class="n">fromfile</span><span class="o">=</span><span class="n">left_file</span><span class="p">,</span> <span class="n">tofile</span><span class="o">=</span><span class="n">right_file</span><span class="p">)</span>
+    <span class="k">return</span> <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">line</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">diff_lines</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="patch_request_client"><a class="viewcode-back" href="../../../api/mc.utils.testing.html#mc.utils.testing.patch_request_client">[docs]</a><span class="k">def</span> <span class="nf">patch_request_client</span><span class="p">(</span><span class="n">request_client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                         <span class="n">methods_to_patch</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;get&#39;</span><span class="p">,</span> <span class="s1">&#39;patch&#39;</span><span class="p">,</span> <span class="s1">&#39;put&#39;</span><span class="p">,</span> <span class="s1">&#39;post&#39;</span><span class="p">]):</span>
+    <span class="k">for</span> <span class="n">method_name</span> <span class="ow">in</span> <span class="n">methods_to_patch</span><span class="p">:</span>
+        <span class="n">patch_client_method</span><span class="p">(</span><span class="n">client</span><span class="o">=</span><span class="n">request_client</span><span class="p">,</span> <span class="n">method_name</span><span class="o">=</span><span class="n">method_name</span><span class="p">)</span>
+    <span class="n">request_client</span><span class="o">.</span><span class="n">raise_for_status</span> <span class="o">=</span> <span class="n">Mock</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="patch_client_method"><a class="viewcode-back" href="../../../api/mc.utils.testing.html#mc.utils.testing.patch_client_method">[docs]</a><span class="k">def</span> <span class="nf">patch_client_method</span><span class="p">(</span><span class="n">client</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">method_name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">orig_method</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">method_name</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">patched_method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">files</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="s1">&#39;json&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">method_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s1">&#39;get&#39;</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;json&#39;</span><span class="p">])</span>
+                <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;content_type&#39;</span><span class="p">:</span> <span class="s1">&#39;application/json&#39;</span><span class="p">}</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">data</span> <span class="ow">or</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="s1">&#39;params&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">requests_file</span> <span class="ow">in</span> <span class="p">(</span><span class="n">files</span> <span class="ow">or</span> <span class="p">[]):</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">_requests_file_to_file_handle</span><span class="p">(</span><span class="n">requests_file</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">data</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">response</span> <span class="o">=</span>  <span class="n">orig_method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">raise_for_status</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">str</span><span class="p">(</span><span class="n">response</span><span class="o">.</span><span class="n">status_code</span><span class="p">)</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;2&#39;</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Bad response: &quot;</span><span class="p">,</span> <span class="n">response</span><span class="p">)</span>
+        <span class="n">response</span><span class="o">.</span><span class="n">raise_for_status</span> <span class="o">=</span> <span class="n">raise_for_status</span>
+        <span class="k">return</span> <span class="n">response</span>
+    <span class="nb">setattr</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">method_name</span><span class="p">,</span> <span class="n">patched_method</span><span class="p">)</span></div>
+
+<span class="k">def</span> <span class="nf">_requests_file_to_file_handle</span><span class="p">(</span><span class="n">requests_file</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">,</span> <span class="n">file_data</span><span class="p">,</span> <span class="n">content_type</span> <span class="o">=</span> <span class="n">requests_file</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">file_data</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+        <span class="n">file_handle</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">file_data</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">file_handle</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">StringIO</span><span class="p">(</span><span class="n">file_data</span><span class="p">)</span>
+    <span class="n">file_handle</span><span class="o">.</span><span class="n">content_type</span> <span class="o">=</span> <span class="n">content_type</span>
+    <span class="k">return</span> <span class="n">file_handle</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

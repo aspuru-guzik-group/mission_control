@@ -1,0 +1,177 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.utils.archivers package &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mc.utils.artifact_processors package" href="mc.utils.artifact_processors.html" />
+    <link rel="prev" title="mc.utils package" href="mc.utils.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.utils.artifact_processors.html" title="mc.utils.artifact_processors package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mc.utils.html" title="mc.utils package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="mc.utils.html" accesskey="U">mc.utils package</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-mc.utils.archivers">
+<span id="mc-utils-archivers-package"></span><h1>mc.utils.archivers package<a class="headerlink" href="#module-mc.utils.archivers" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-mc.utils.archivers.base_archiver">
+<span id="mc-utils-archivers-base-archiver-module"></span><h2>mc.utils.archivers.base_archiver module<a class="headerlink" href="#module-mc.utils.archivers.base_archiver" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mc.utils.archivers.base_archiver.BaseArchiver">
+<em class="property">class </em><code class="descclassname">mc.utils.archivers.base_archiver.</code><code class="descname">BaseArchiver</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/archivers/base_archiver.html#BaseArchiver"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.archivers.base_archiver.BaseArchiver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="mc.utils.archivers.base_archiver.BaseArchiver.ingest_dir">
+<code class="descname">ingest_dir</code><span class="sig-paren">(</span><em>dir_=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/archivers/base_archiver.html#BaseArchiver.ingest_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.archivers.base_archiver.BaseArchiver.ingest_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.archivers.base_archiver.BaseArchiver.materialize_as_path">
+<code class="descname">materialize_as_path</code><span class="sig-paren">(</span><em>meta=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/archivers/base_archiver.html#BaseArchiver.materialize_as_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.archivers.base_archiver.BaseArchiver.materialize_as_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-mc.utils.archivers.dir_archiver">
+<span id="mc-utils-archivers-dir-archiver-module"></span><h2>mc.utils.archivers.dir_archiver module<a class="headerlink" href="#module-mc.utils.archivers.dir_archiver" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mc.utils.archivers.dir_archiver.DirArchiver">
+<em class="property">class </em><code class="descclassname">mc.utils.archivers.dir_archiver.</code><code class="descname">DirArchiver</code><span class="sig-paren">(</span><em>*args</em>, <em>root_dir=None</em>, <em>ensure_root=True</em>, <em>path_components_generator=None</em>, <em>time_components_generator=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/archivers/dir_archiver.html#DirArchiver"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.archivers.dir_archiver.DirArchiver" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mc.utils.archivers.base_archiver.BaseArchiver" title="mc.utils.archivers.base_archiver.BaseArchiver"><code class="xref py py-class docutils literal"><span class="pre">mc.utils.archivers.base_archiver.BaseArchiver</span></code></a></p>
+<dl class="attribute">
+<dt id="mc.utils.archivers.dir_archiver.DirArchiver.PATH_COMPONENT_SEPARATOR">
+<code class="descname">PATH_COMPONENT_SEPARATOR</code><em class="property"> = ‘__’</em><a class="headerlink" href="#mc.utils.archivers.dir_archiver.DirArchiver.PATH_COMPONENT_SEPARATOR" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.archivers.dir_archiver.DirArchiver.ingest">
+<code class="descname">ingest</code><span class="sig-paren">(</span><em>src=None</em>, <em>transfer_fn=&lt;function move&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/archivers/dir_archiver.html#DirArchiver.ingest"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.archivers.dir_archiver.DirArchiver.ingest" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.archivers.dir_archiver.DirArchiver.materialize_as_path">
+<code class="descname">materialize_as_path</code><span class="sig-paren">(</span><em>meta=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/archivers/dir_archiver.html#DirArchiver.materialize_as_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.archivers.dir_archiver.DirArchiver.materialize_as_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">mc.utils.archivers package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-mc.utils.archivers.base_archiver">mc.utils.archivers.base_archiver module</a></li>
+<li><a class="reference internal" href="#module-mc.utils.archivers.dir_archiver">mc.utils.archivers.dir_archiver module</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mc.utils.html"
+                        title="previous chapter">mc.utils package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mc.utils.artifact_processors.html"
+                        title="next chapter">mc.utils.artifact_processors package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/mc.utils.archivers.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.utils.artifact_processors.html" title="mc.utils.artifact_processors package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mc.utils.html" title="mc.utils package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="mc.utils.html" >mc.utils package</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

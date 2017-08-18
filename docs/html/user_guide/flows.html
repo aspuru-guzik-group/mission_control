@@ -1,0 +1,442 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Flows &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Tasks" href="tasks.html" />
+    <link rel="prev" title="Jobs" href="jobs.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tasks.html" title="Tasks"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="jobs.html" title="Jobs"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user_guide.html" accesskey="U">User Guide</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="flows">
+<h1>Flows<a class="headerlink" href="#flows" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="what-is-a-flow">
+<h2>What Is a Flow?<a class="headerlink" href="#what-is-a-flow" title="Permalink to this headline">¶</a></h2>
+<p>A MissionControl Flow represents a set of tasks that run in a specific
+sequence.</p>
+</div>
+<div class="section" id="flow-lifecyle">
+<h2>Flow Lifecyle<a class="headerlink" href="#flow-lifecyle" title="Permalink to this headline">¶</a></h2>
+<p>The lifecycle of a flow is like this:</p>
+<ol class="arabic">
+<li><p class="first">Define a flow in terms of an abstract spec. Example: a dictionary that
+specifies a list of tasks:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">flow_spec</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;example_flow&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;tasks&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;task_1&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_type&#39;</span><span class="p">:</span> <span class="s1">&#39;print&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_params&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;I am task_1.&#39;</span><span class="p">},</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;task_2&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_type&#39;</span><span class="p">:</span> <span class="s1">&#39;print&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_params&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;I am task_2.&#39;</span><span class="p">},</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Convert the flow spec into a python Flow object:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">flow</span> <span class="o">=</span> <span class="n">flow_spec_to_flow</span><span class="p">(</span><span class="n">flow_spec</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">Tick the flow until either (A) it fails, or (B) all of its tasks finish:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">while</span> <span class="n">flow</span><span class="o">.</span><span class="n">status</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;FAILED&#39;</span><span class="p">,</span> <span class="s1">&#39;COMPLETED&#39;</span><span class="p">}:</span>
+    <span class="n">tick_flow</span><span class="p">(</span><span class="n">flow</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+</ol>
+<p>MissionControl defines conventions and commands to help manage the
+flow lifecycle.</p>
+</div>
+<div class="section" id="defining-flows">
+<h2>Defining Flows<a class="headerlink" href="#defining-flows" title="Permalink to this headline">¶</a></h2>
+<p>Abstract flow specs are defined as dictionaries with a few primary
+components:</p>
+<dl class="docutils">
+<dt>label</dt>
+<dd>a human-readable label for the flow</dd>
+<dt>key</dt>
+<dd>A key that uniquely identifies a flow.
+For example, a UUID. This key is useful for tracking flow statuses, and for
+avoiding name collisions when you work with multiple flows.</dd>
+<dt>cfg</dt>
+<dd>Configuration parameters for how the flow should run. For example, if one
+task fails should the entire flow fail?</dd>
+<dt>data</dt>
+<dd>Initial data that the flow should have.</dd>
+<dt>tasks</dt>
+<dd>A list of task_specs. See <a class="reference internal" href="tasks.html"><span class="doc">Tasks</span></a>.</dd>
+<dt>Example:</dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">my_flow_spec</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;example_flow&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;some-unique-key-12345&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;cfg&#39;</span><span class="p">:</span> <span class="p">{</span>
+      <span class="s1">&#39;fail_fast&#39;</span><span class="p">:</span> <span class="kc">False</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;tasks&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;task_1&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_type&#39;</span><span class="p">:</span> <span class="s1">&#39;print&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_params&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;I am task_1.&#39;</span><span class="p">},</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;task_2&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_type&#39;</span><span class="p">:</span> <span class="s1">&#39;print&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_params&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;I am task_2.&#39;</span><span class="p">},</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+</div>
+<div class="section" id="building-flows">
+<h2>Building Flows<a class="headerlink" href="#building-flows" title="Permalink to this headline">¶</a></h2>
+<p>Now we can define flow_specs. But how do turn our flow_spec into a Flow object?</p>
+<p>To convert our flow_spec into a flow object we call
+<a class="reference internal" href="../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.flow_spec_to_flow" title="mc.flows.flow_engine.FlowEngine.flow_spec_to_flow"><code class="xref py py-meth docutils literal"><span class="pre">mc.flows.flow_engine.FlowEngine.flow_spec_to_flow()</span></code></a>.</p>
+<p>We get back an instance of <a class="reference internal" href="../api/mc.flows.html#mc.flows.flow.Flow" title="mc.flows.flow.Flow"><code class="xref py py-class docutils literal"><span class="pre">mc.flows.flow.Flow</span></code></a>. This class contains
+methods for querying flow tasks and manipulating a flow’s underlying
+attributes.</p>
+</div>
+<div class="section" id="running-flows">
+<h2>Running Flows<a class="headerlink" href="#running-flows" title="Permalink to this headline">¶</a></h2>
+<p>Now that we have a Flow object, we can run it.  We use
+<a class="reference internal" href="../api/mc.flows.html#mc.flows.flow_engine.FlowEngine" title="mc.flows.flow_engine.FlowEngine"><code class="xref py py-class docutils literal"><span class="pre">FlowEngine</span></code></a> to run flows. FlowEngine
+is a class which contains methods for ticking flows. It also provides wrappers
+for the Flow conversion methods.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">flow_spec</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;example_flow&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;tasks&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;task_1&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_type&#39;</span><span class="p">:</span> <span class="s1">&#39;print&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_params&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;I am task_1.&#39;</span><span class="p">},</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;task_2&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_type&#39;</span><span class="p">:</span> <span class="s1">&#39;print&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_params&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;I am task_2.&#39;</span><span class="p">},</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+<span class="kn">from</span> <span class="nn">mc.flows.flow_engine</span> <span class="k">import</span> <span class="n">FlowEngine</span>
+<span class="n">my_flow_engine</span> <span class="o">=</span> <span class="n">FlowEngine</span><span class="p">()</span>
+<span class="n">flow</span> <span class="o">=</span> <span class="n">my_flow_engine</span><span class="o">.</span><span class="n">flow_spec_to_flow</span><span class="p">(</span><span class="n">flow_spec</span><span class="p">)</span>
+<span class="n">my_flow_engine</span><span class="o">.</span><span class="n">tick_flow_until_has_no_pending</span><span class="p">(</span><span class="n">flow</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;flow.status:&quot;</span><span class="p">,</span> <span class="n">flow</span><span class="o">.</span><span class="n">status</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>I am task_1.
+I am task_2.
+flow.status: COMPLETED
+</pre></div>
+</div>
+</div>
+<div class="section" id="persistent-flows">
+<h2>Persistent Flows<a class="headerlink" href="#persistent-flows" title="Permalink to this headline">¶</a></h2>
+<p>Often you will want to have several flows which persist over time.</p>
+<p>For example, you may want to have a flow runner which runs a loop like this:</p>
+<ol class="arabic simple">
+<li>Retrieves a list of pending flows from a database.</li>
+<li>Ticks those flows until they fail or have no more pending tasks.</li>
+<li>Saves the update flows back to the database.</li>
+</ol>
+<p>The general lifecycle for storing flows is like this:</p>
+<ol class="arabic simple">
+<li>Serialize a flow into a format suitable for storage.</li>
+<li>Save the serialized flow to a database.</li>
+<li>Load serialized flows from the database.</li>
+<li>Deserialize the serialized flows back to normal flows.</li>
+</ol>
+<div class="section" id="serializing-and-deserializing-flows">
+<h3>Serializing And Deserializing Flows<a class="headerlink" href="#serializing-and-deserializing-flows" title="Permalink to this headline">¶</a></h3>
+<p>In order to save and load flows, we need to transform flow objects in data
+structures which can be stored in a database. The <code class="xref py py-class docutils literal"><span class="pre">mc.flows.Flow</span></code>
+class has class methods for this transformation:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">flow_spec</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;example_flow&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;tasks&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;task_1&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_type&#39;</span><span class="p">:</span> <span class="s1">&#39;print&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_params&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;I am task_1.&#39;</span><span class="p">},</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;task_2&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_type&#39;</span><span class="p">:</span> <span class="s1">&#39;print&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_params&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;I am task_2.&#39;</span><span class="p">},</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+<span class="kn">from</span> <span class="nn">mc.flows.flow</span> <span class="k">import</span> <span class="n">Flow</span>
+<span class="n">flow</span> <span class="o">=</span> <span class="n">Flow</span><span class="o">.</span><span class="n">from_flow_spec</span><span class="p">(</span><span class="n">flow_spec</span><span class="p">)</span>
+<span class="n">flow_dict</span> <span class="o">=</span> <span class="n">flow</span><span class="o">.</span><span class="n">to_flow_dict</span><span class="p">()</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="n">jsonified_flow</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">flow_dict</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;jsonified flow:</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">jsonified_flow</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>jsonified flow:
+ {
+  &quot;cfg&quot;: {
+    &quot;fail_fast&quot;: true
+  },
+  &quot;data&quot;: {},
+  &quot;depth&quot;: 0,
+  &quot;graph&quot;: {
+    &quot;edges&quot;: [
+      {
+        &quot;dest_key&quot;: &quot;task_1&quot;,
+        &quot;src_key&quot;: &quot;ROOT&quot;
+      },
+      {
+        &quot;dest_key&quot;: &quot;task_2&quot;,
+        &quot;src_key&quot;: &quot;task_1&quot;
+      }
+    ],
+    &quot;tasks&quot;: {
+      &quot;ROOT&quot;: {
+        &quot;key&quot;: &quot;ROOT&quot;,
+        &quot;status&quot;: &quot;COMPLETED&quot;
+      },
+      &quot;task_1&quot;: {
+        &quot;key&quot;: &quot;task_1&quot;,
+        &quot;precursors&quot;: [
+          &quot;ROOT&quot;
+        ],
+        &quot;status&quot;: &quot;PENDING&quot;,
+        &quot;task_params&quot;: {
+          &quot;msg&quot;: &quot;I am task_1.&quot;
+        },
+        &quot;task_type&quot;: &quot;print&quot;
+      },
+      &quot;task_2&quot;: {
+        &quot;key&quot;: &quot;task_2&quot;,
+        &quot;precursors&quot;: [
+          &quot;task_1&quot;
+        ],
+        &quot;status&quot;: &quot;PENDING&quot;,
+        &quot;task_params&quot;: {
+          &quot;msg&quot;: &quot;I am task_2.&quot;
+        },
+        &quot;task_type&quot;: &quot;print&quot;
+      }
+    }
+  },
+  &quot;label&quot;: &quot;example_flow&quot;,
+  &quot;num_tickable_tasks&quot;: 1,
+  &quot;parent_key&quot;: null,
+  &quot;status&quot;: &quot;PENDING&quot;
+}
+</pre></div>
+</div>
+<p>Notice how the serialized flow represents the flow’s underlying graph.</p>
+<p>To deserialize the serialized flow, we can do something like this:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">flow_dict</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">jsonified_flow</span><span class="p">)</span>
+<span class="n">flow</span> <span class="o">=</span> <span class="n">Flow</span><span class="o">.</span><span class="n">from_flow_dict</span><span class="p">(</span><span class="n">flow_dict</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">flow</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre><span></span>&lt;class &#39;mc.flows.flow.Flow&#39;&gt;
+</pre></div>
+</div>
+</div>
+<div class="section" id="saving-and-loading-flows">
+<h3>Saving and Loading Flows<a class="headerlink" href="#saving-and-loading-flows" title="Permalink to this headline">¶</a></h3>
+<p>MissionControl provides utilities for saving flow_dicts to a database, and
+for querying flows.</p>
+<p>These utilities are provided by MissionControl’s
+<a class="reference internal" href="houston.html"><span class="doc">Houston</span></a> utility.</p>
+<div class="section" id="saving-flows">
+<h4>Saving Flows<a class="headerlink" href="#saving-flows" title="Permalink to this headline">¶</a></h4>
+<p>We can save flows using SqlAlchemy actions using Houston’s db utility.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="c1"># Setup houston w/ an in-memory sqlite db.</span>
+<span class="kn">from</span> <span class="nn">mc.houston</span> <span class="k">import</span> <span class="n">Houston</span>
+<span class="n">my_houston</span> <span class="o">=</span> <span class="n">Houston</span><span class="p">(</span>
+    <span class="n">cfg</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;MC_DB_URI&#39;</span><span class="p">:</span> <span class="s1">&#39;sqlite://&#39;</span>
+    <span class="p">}</span>
+<span class="p">)</span>
+<span class="n">my_houston</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">ensure_tables</span><span class="p">()</span>
+
+<span class="c1"># Create a flow.</span>
+<span class="n">flow_spec</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;example_flow&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;tasks&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s1">&#39;task_type&#39;</span><span class="p">:</span> <span class="s1">&#39;print&#39;</span><span class="p">,</span> <span class="s1">&#39;task_params&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;I am task_</span><span class="si">%s</span><span class="s1">.&#39;</span> <span class="o">%</span> <span class="n">i</span><span class="p">}}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+     <span class="p">]</span>
+<span class="p">}</span>
+<span class="kn">from</span> <span class="nn">mc.flows.flow</span> <span class="k">import</span> <span class="n">Flow</span>
+<span class="n">flow</span> <span class="o">=</span> <span class="n">Flow</span><span class="o">.</span><span class="n">from_flow_spec</span><span class="p">(</span><span class="n">flow_spec</span><span class="p">)</span>
+
+<span class="c1"># Save the flow to the db.</span>
+<span class="n">db_flow_instance</span> <span class="o">=</span> <span class="n">my_houston</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">Flow</span><span class="p">(</span><span class="o">**</span><span class="n">flow</span><span class="o">.</span><span class="n">to_flow_dict</span><span class="p">())</span>
+<span class="n">my_houston</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">db_flow_instance</span><span class="p">)</span>
+<span class="n">my_houston</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Has flow key:&#39;</span><span class="p">,</span> <span class="n">db_flow_instance</span><span class="o">.</span><span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;flow:&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre><span></span>Has flow key: True
+</pre></div>
+</div>
+</div>
+<div class="section" id="querying-flows">
+<h4>Querying Flows<a class="headerlink" href="#querying-flows" title="Permalink to this headline">¶</a></h4>
+<p>We can query flows using SqlAlchemy queries via Houston’s db utility.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="n">flow_from_db</span> <span class="o">=</span> <span class="p">(</span>
+   <span class="n">my_houston</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">session</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">my_houston</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">Flow</span><span class="p">)</span>
+   <span class="o">.</span><span class="n">first</span><span class="p">()</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Has flow key:&#39;</span><span class="p">,</span> <span class="n">flow_from_db</span><span class="o">.</span><span class="n">key</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;flow:&#39;</span><span class="p">))</span>
+</pre></div>
+</div>
+<div class="highlight-none"><div class="highlight"><pre><span></span>Has flow key: True
+</pre></div>
+</div>
+</div>
+</div>
+</div>
+<div class="section" id="tasks">
+<h2>Tasks<a class="headerlink" href="#tasks" title="Permalink to this headline">¶</a></h2>
+<p>Tasks are an essential component of Flows. See <a class="reference internal" href="tasks.html"><span class="doc">Tasks</span></a>.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Flows</a><ul>
+<li><a class="reference internal" href="#what-is-a-flow">What Is a Flow?</a></li>
+<li><a class="reference internal" href="#flow-lifecyle">Flow Lifecyle</a></li>
+<li><a class="reference internal" href="#defining-flows">Defining Flows</a></li>
+<li><a class="reference internal" href="#building-flows">Building Flows</a></li>
+<li><a class="reference internal" href="#running-flows">Running Flows</a></li>
+<li><a class="reference internal" href="#persistent-flows">Persistent Flows</a><ul>
+<li><a class="reference internal" href="#serializing-and-deserializing-flows">Serializing And Deserializing Flows</a></li>
+<li><a class="reference internal" href="#saving-and-loading-flows">Saving and Loading Flows</a><ul>
+<li><a class="reference internal" href="#saving-flows">Saving Flows</a></li>
+<li><a class="reference internal" href="#querying-flows">Querying Flows</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#tasks">Tasks</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="jobs.html"
+                        title="previous chapter">Jobs</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="tasks.html"
+                        title="next chapter">Tasks</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/user_guide/flows.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="tasks.html" title="Tasks"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="jobs.html" title="Jobs"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user_guide.html" >User Guide</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

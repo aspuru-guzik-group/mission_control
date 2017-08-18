@@ -1,0 +1,343 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.flows.flow_engine &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mc.flows.flow_engine</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">traceback</span>
+
+<span class="kn">from</span> <span class="nn">mc.utils</span> <span class="k">import</span> <span class="n">debug_utils</span>
+<span class="kn">from</span> <span class="nn">.flow</span> <span class="k">import</span> <span class="n">Flow</span>
+
+
+<div class="viewcode-block" id="FlowEngine"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine">[docs]</a><span class="k">class</span> <span class="nc">FlowEngine</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A FlowEngine contains methods for ticking a flow,</span>
+<span class="sd">    and for converting between flow representations.</span>
+<span class="sd">    (https://en.wikipedia.org/wiki/Visitor_pattern)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="FlowEngine.FlowError"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.FlowError">[docs]</a>    <span class="k">class</span> <span class="nc">FlowError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">flow</span> <span class="o">=</span> <span class="n">flow</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">err</span><span class="p">)</span> <span class="k">for</span> <span class="n">err</span> <span class="ow">in</span> <span class="n">flow</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">,</span> <span class="p">[])])</span>
+            <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FlowEngine.TaskError"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.TaskError">[docs]</a>    <span class="k">class</span> <span class="nc">TaskError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+        <span class="k">pass</span></div>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task_handler</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_msg_len</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">debug</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            logger (logging.Logger, optional): logger instance</span>
+<span class="sd">            debug (bool, optional): whether to log debug statements.</span>
+<span class="sd">                Default: False</span>
+<span class="sd">            task_handler (task_handler, optional): task_handler instance.</span>
+<span class="sd">                Default: get_default_task_handler return.</span>
+<span class="sd">            max_msg_len (int, optional): maximum length of error messages.</span>
+<span class="sd">                Default: no max length.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logger</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_default_logger</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug</span> <span class="o">=</span> <span class="n">debug</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task_handler</span> <span class="o">=</span> <span class="n">task_handler</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_default_task_handler</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_msg_len</span> <span class="o">=</span> <span class="n">max_msg_len</span>
+
+<div class="viewcode-block" id="FlowEngine.debug_locals"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.debug_locals">[docs]</a>    <span class="k">def</span> <span class="nf">debug_locals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
+            <span class="n">debug_utils</span><span class="o">.</span><span class="n">debug_locals</span><span class="p">(</span><span class="n">frames_back</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FlowEngine.get_default_logger"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.get_default_logger">[docs]</a>    <span class="k">def</span> <span class="nf">get_default_logger</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">())</span>
+        <span class="k">return</span> <span class="n">logger</span></div>
+
+<div class="viewcode-block" id="FlowEngine.get_default_task_handler"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.get_default_task_handler">[docs]</a>    <span class="k">def</span> <span class="nf">get_default_task_handler</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Uses mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler</span>
+<span class="sd">        as the default task handler.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="kn">from</span> <span class="nn">mc.task_handlers.mc_default_task_handler</span> <span class="k">import</span> <span class="p">(</span>
+            <span class="n">McDefaultTaskHandler</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">McDefaultTaskHandler</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="FlowEngine.flow_spec_to_flow"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.flow_spec_to_flow">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">flow_spec_to_flow</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">flow_spec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Flow</span><span class="o">.</span><span class="n">from_flow_spec</span><span class="p">(</span><span class="n">flow_spec</span><span class="o">=</span><span class="n">flow_spec</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FlowEngine.flow_dict_to_flow"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.flow_dict_to_flow">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">flow_dict_to_flow</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">flow_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Flow</span><span class="o">.</span><span class="n">from_flow_dict</span><span class="p">(</span><span class="n">flow_dict</span><span class="o">=</span><span class="n">flow_dict</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FlowEngine.flow_to_flow_dict"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.flow_to_flow_dict">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">flow_to_flow_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span> <span class="k">return</span> <span class="n">flow</span><span class="o">.</span><span class="n">to_flow_dict</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="FlowEngine.flow_spec_to_flow_dict"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.flow_spec_to_flow_dict">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">flow_spec_to_flow_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">flow_spec</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">flow</span> <span class="o">=</span> <span class="n">Flow</span><span class="o">.</span><span class="n">from_flow_spec</span><span class="p">(</span><span class="n">flow_spec</span><span class="o">=</span><span class="n">flow_spec</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">flow_to_flow_dict</span><span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FlowEngine.run_flow"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.run_flow">[docs]</a>    <span class="k">def</span> <span class="nf">run_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task_ctx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_ticks</span><span class="o">=</span><span class="mf">5e2</span><span class="p">,</span>
+                 <span class="n">tick_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Tick flow until its status is &#39;COMPLETED&#39; or &#39;FAILED&#39;.</span>
+<span class="sd">        If it failed, raise a FlowError.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            flow (flow): flow to tick</span>
+<span class="sd">            task_ctx (dict, optional): task_ctx to include when ticking flow</span>
+<span class="sd">            max_ticks (int, optional): Fail if hit more than this number of</span>
+<span class="sd">                ticks.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug_locals</span><span class="p">()</span>
+        <span class="n">completed_statuses</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;COMPLETED&#39;</span><span class="p">,</span> <span class="s1">&#39;FAILED&#39;</span><span class="p">}</span>
+        <span class="n">tick_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="n">flow</span><span class="o">.</span><span class="n">status</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">completed_statuses</span><span class="p">:</span>
+            <span class="n">tick_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;tick #</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tick_counter</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tick_flow</span><span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span> <span class="n">task_ctx</span><span class="o">=</span><span class="n">task_ctx</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">tick_kwargs</span> <span class="ow">or</span> <span class="p">{}))</span>
+            <span class="k">if</span> <span class="n">tick_counter</span> <span class="o">&gt;</span> <span class="n">max_ticks</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Exceeed max ticks&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">flow</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s1">&#39;FAILED&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">FlowError</span><span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">debug</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;complete&quot;</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FlowEngine.tick_flow"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.tick_flow">[docs]</a>    <span class="k">def</span> <span class="nf">tick_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task_ctx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">tick_kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tick a flow.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            flow (flow): flow to tick</span>
+<span class="sd">            task_ctx (dict, optional): task_ctx to include when ticking flow</span>
+<span class="sd">            **tick_kwargs: kwargs to pass to the tick_task call.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug_locals</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">flow</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;_tick_counter&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+            <span class="n">flow</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;_tick_counter&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">flow</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s1">&#39;PENDING&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start_flow</span><span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">start_nearest_tickable_pending_tasks</span><span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tick_running_tasks</span><span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span> <span class="n">task_ctx</span><span class="o">=</span><span class="n">task_ctx</span><span class="p">,</span>
+                                    <span class="o">**</span><span class="n">tick_kwargs</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">flow</span><span class="o">.</span><span class="n">has_incomplete_tasks</span><span class="p">():</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">complete_flow</span><span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exception</span><span class="p">:</span>
+            <span class="n">fail_flow</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">append_flow_error</span><span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">exception</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">TaskError</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">flow</span><span class="o">.</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;fail_fast&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+                    <span class="n">fail_flow</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="n">fail_flow</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fail_flow</span><span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FlowEngine.tick_flow_until_has_no_pending"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.tick_flow_until_has_no_pending">[docs]</a>    <span class="k">def</span> <span class="nf">tick_flow_until_has_no_pending</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task_ctx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                       <span class="n">tick_kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tick a flow until it has no tickable pending tasks.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            flow (flow): flow to tick</span>
+<span class="sd">            task_ctx (dict, optional): task_ctx to include when ticking flow</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">tick_flow_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;flow&#39;</span><span class="p">:</span> <span class="n">flow</span><span class="p">,</span> <span class="s1">&#39;task_ctx&#39;</span><span class="p">:</span> <span class="n">task_ctx</span><span class="p">,</span>
+                            <span class="o">**</span><span class="p">(</span><span class="n">tick_kwargs</span> <span class="ow">or</span> <span class="p">{})}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tick_flow</span><span class="p">(</span><span class="o">**</span><span class="n">tick_flow_kwargs</span><span class="p">)</span>
+        <span class="k">while</span> <span class="p">(</span>
+            <span class="n">flow</span><span class="o">.</span><span class="n">status</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;PENDING&#39;</span><span class="p">,</span> <span class="s1">&#39;RUNNING&#39;</span><span class="p">}</span>
+            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">flow</span><span class="o">.</span><span class="n">get_nearest_tickable_pending_tasks</span><span class="p">())</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tick_flow</span><span class="p">(</span><span class="o">**</span><span class="n">tick_flow_kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FlowEngine.start_flow"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.start_flow">[docs]</a>    <span class="k">def</span> <span class="nf">start_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug_locals</span><span class="p">()</span>
+        <span class="n">flow</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;RUNNING&#39;</span></div>
+
+<div class="viewcode-block" id="FlowEngine.start_nearest_tickable_pending_tasks"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.start_nearest_tickable_pending_tasks">[docs]</a>    <span class="k">def</span> <span class="nf">start_nearest_tickable_pending_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">flow</span><span class="o">.</span><span class="n">get_nearest_tickable_pending_tasks</span><span class="p">():</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start_task</span><span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">fail_task</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="FlowEngine.start_task"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.start_task">[docs]</a>    <span class="k">def</span> <span class="nf">start_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug_locals</span><span class="p">()</span>
+        <span class="n">task</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;RUNNING&#39;</span></div>
+
+<div class="viewcode-block" id="FlowEngine.tick_running_tasks"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.tick_running_tasks">[docs]</a>    <span class="k">def</span> <span class="nf">tick_running_tasks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task_ctx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">tick_kwargs</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">flow</span><span class="o">.</span><span class="n">get_tasks_by_status</span><span class="p">(</span><span class="n">status</span><span class="o">=</span><span class="s1">&#39;RUNNING&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_is_running</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tick_task</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span> <span class="n">task_ctx</span><span class="o">=</span><span class="n">task_ctx</span><span class="p">,</span>
+                               <span class="o">**</span><span class="n">tick_kwargs</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">complete_task</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">flow</span><span class="o">.</span><span class="n">status</span> <span class="o">==</span> <span class="s1">&#39;COMPLETED&#39;</span><span class="p">:</span>
+                <span class="k">break</span></div>
+
+<div class="viewcode-block" id="FlowEngine.task_is_running"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.task_is_running">[docs]</a>    <span class="k">def</span> <span class="nf">task_is_running</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">task</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;RUNNING&#39;</span></div>
+
+<div class="viewcode-block" id="FlowEngine.tick_task"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.tick_task">[docs]</a>    <span class="k">def</span> <span class="nf">tick_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task_ctx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">tick_kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tick a task.</span>
+
+<span class="sd">        If task is a proxying task, we will tick the proxied task.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            task (task): task to tick</span>
+<span class="sd">            flow (flow): flow to tick</span>
+<span class="sd">            task_ctx (dict, optional): task_ctx to include when ticking flow</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">debug_locals</span><span class="p">()</span>
+        <span class="n">task_ctx</span> <span class="o">=</span> <span class="n">task_ctx</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_proxying_task</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tick_proxying_task</span><span class="p">(</span><span class="n">proxying_task</span><span class="o">=</span><span class="n">task</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span>
+                                        <span class="n">task_ctx</span><span class="o">=</span><span class="n">task_ctx</span><span class="p">,</span> <span class="o">**</span><span class="n">tick_kwargs</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">task_handler</span><span class="o">.</span><span class="n">tick_task</span><span class="p">(</span>
+                    <span class="n">task_ctx</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;flow_engine&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">task_ctx</span><span class="p">,</span>
+                              <span class="s1">&#39;task&#39;</span><span class="p">:</span> <span class="n">task</span><span class="p">,</span> <span class="s1">&#39;flow&#39;</span><span class="p">:</span> <span class="n">flow</span><span class="p">},</span>
+                    <span class="o">**</span><span class="n">tick_kwargs</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;COMPLETED&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">complete_task</span><span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">exception</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fail_task</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="FlowEngine.is_proxying_task"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.is_proxying_task">[docs]</a>    <span class="k">def</span> <span class="nf">is_proxying_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Determine if a task is a proxying task.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            task (task): task to check</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            is_proxying_task (bool)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">(</span>
+            <span class="p">(</span><span class="s1">&#39;proxied_task&#39;</span> <span class="ow">in</span> <span class="n">task</span><span class="p">)</span>
+            <span class="ow">and</span>
+            <span class="p">(</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;proxied_task&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;COMPLETED&#39;</span><span class="p">,</span> <span class="s1">&#39;FAILED&#39;</span><span class="p">})</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="FlowEngine.tick_proxying_task"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.tick_proxying_task">[docs]</a>    <span class="k">def</span> <span class="nf">tick_proxying_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">proxying_task</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task_ctx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                           <span class="o">**</span><span class="n">tick_kwargs</span><span class="p">):</span>
+        <span class="n">proxied_task</span> <span class="o">=</span> <span class="n">proxying_task</span><span class="p">[</span><span class="s1">&#39;proxied_task&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tick_task</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">proxied_task</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span> <span class="n">task_ctx</span><span class="o">=</span><span class="n">task_ctx</span><span class="p">,</span>
+                       <span class="o">**</span><span class="n">tick_kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FlowEngine.fail_task"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.fail_task">[docs]</a>    <span class="k">def</span> <span class="nf">fail_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">task</span><span class="p">[</span><span class="s1">&#39;error&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">error</span>
+        <span class="n">task</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;FAILED&#39;</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="s2">&quot;Task with key &#39;</span><span class="si">{key}</span><span class="s2">&#39; failed, error: </span><span class="si">{error}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">key</span><span class="o">=</span><span class="n">task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;unknown key&gt;&#39;</span><span class="p">),</span>
+            <span class="n">error</span><span class="o">=</span><span class="n">error</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="bp">self</span><span class="o">.</span><span class="n">TaskError</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="FlowEngine.fail_flow"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.fail_flow">[docs]</a>    <span class="k">def</span> <span class="nf">fail_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">error</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">append_flow_error</span><span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">error</span><span class="p">)</span>
+        <span class="n">flow</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;FAILED&#39;</span></div>
+
+<div class="viewcode-block" id="FlowEngine.append_flow_error"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.append_flow_error">[docs]</a>    <span class="k">def</span> <span class="nf">append_flow_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">flow</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">,</span> <span class="p">[])</span>
+        <span class="n">flow</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s1">&#39;errors&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">elide_text</span><span class="p">(</span><span class="n">error</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="FlowEngine.elide_text"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.elide_text">[docs]</a>    <span class="k">def</span> <span class="nf">elide_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_len</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">max_len</span> <span class="o">=</span> <span class="n">max_len</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_msg_len</span>
+        <span class="k">if</span> <span class="n">max_len</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_len</span><span class="p">:</span>
+            <span class="n">text</span> <span class="o">=</span> <span class="n">text</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">max_len</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;...&#39;</span>
+        <span class="k">return</span> <span class="n">text</span></div>
+
+<div class="viewcode-block" id="FlowEngine.complete_task"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.complete_task">[docs]</a>    <span class="k">def</span> <span class="nf">complete_task</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">task</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">task</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;COMPLETED&#39;</span></div>
+
+<div class="viewcode-block" id="FlowEngine.complete_flow"><a class="viewcode-back" href="../../../api/mc.flows.html#mc.flows.flow_engine.FlowEngine.complete_flow">[docs]</a>    <span class="k">def</span> <span class="nf">complete_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">flow</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;errors&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">fail_flow</span><span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">flow</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="s1">&#39;COMPLETED&#39;</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

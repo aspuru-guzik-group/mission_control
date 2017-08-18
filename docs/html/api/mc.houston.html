@@ -1,0 +1,349 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.houston package &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mc.houston.subcommands package" href="mc.houston.subcommands.html" />
+    <link rel="prev" title="mc.flows package" href="mc.flows.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.houston.subcommands.html" title="mc.houston.subcommands package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mc.flows.html" title="mc.flows package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" accesskey="U">API Documentation</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-mc.houston">
+<span id="mc-houston-package"></span><h1>mc.houston package<a class="headerlink" href="#module-mc.houston" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mc.houston.subcommands.html">mc.houston.subcommands package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.build_job_dir">mc.houston.subcommands.build_job_dir module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.build_job_dirs">mc.houston.subcommands.build_job_dirs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.create_flow">mc.houston.subcommands.create_flow module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.create_job_requests">mc.houston.subcommands.create_job_requests module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.delete_items">mc.houston.subcommands.delete_items module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.ensure_db">mc.houston.subcommands.ensure_db module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.ensure_queues">mc.houston.subcommands.ensure_queues module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.execute_job_dir">mc.houston.subcommands.execute_job_dir module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.flush_jobman">mc.houston.subcommands.flush_jobman module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.flush_mc_records">mc.houston.subcommands.flush_mc_records module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.get_or_create_job">mc.houston.subcommands.get_or_create_job module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.info">mc.houston.subcommands.info module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.parse_executed_job_requests">mc.houston.subcommands.parse_executed_job_requests module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.process_executed_job_dirs">mc.houston.subcommands.process_executed_job_dirs module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.query_items">mc.houston.subcommands.query_items module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.sanity_check">mc.houston.subcommands.sanity_check module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html#module-mc.houston.subcommands.tick">mc.houston.subcommands.tick module</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-mc.houston.cli">
+<span id="mc-houston-cli-module"></span><h2>mc.houston.cli module<a class="headerlink" href="#module-mc.houston.cli" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-mc.houston.houston">
+<span id="mc-houston-houston-module"></span><h2>mc.houston.houston module<a class="headerlink" href="#module-mc.houston.houston" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mc.houston.houston.Houston">
+<em class="property">class </em><code class="descclassname">mc.houston.houston.</code><code class="descname">Houston</code><span class="sig-paren">(</span><em>*args</em>, <em>logger=None</em>, <em>cfg=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/houston.html#Houston"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.houston.Houston" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="exception">
+<dt id="mc.houston.houston.Houston.ConfigError">
+<em class="property">exception </em><code class="descname">ConfigError</code><a class="reference internal" href="../_modules/mc/houston/houston.html#Houston.ConfigError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.houston.Houston.ConfigError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mc.houston.houston.Houston.call_command">
+<code class="descname">call_command</code><span class="sig-paren">(</span><em>command</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/houston.html#Houston.call_command"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.houston.Houston.call_command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.houston.houston.Houston.db">
+<code class="descname">db</code><a class="headerlink" href="#mc.houston.houston.Houston.db" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="mc.houston.houston.Houston.get_default_subcommands">
+<em class="property">classmethod </em><code class="descname">get_default_subcommands</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/houston.html#Houston.get_default_subcommands"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.houston.Houston.get_default_subcommands" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="mc.houston.houston.Houston.minimal">
+<em class="property">classmethod </em><code class="descname">minimal</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/houston.html#Houston.minimal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.houston.Houston.minimal" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.houston.houston.Houston.run_command">
+<code class="descname">run_command</code><span class="sig-paren">(</span><em>command</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/houston.html#Houston.run_command"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.houston.Houston.run_command" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.houston.houston.Houston.set_cfg">
+<code class="descname">set_cfg</code><span class="sig-paren">(</span><em>cfg=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/houston.html#Houston.set_cfg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.houston.Houston.set_cfg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.houston.houston.Houston.subcommands">
+<code class="descname">subcommands</code><a class="headerlink" href="#mc.houston.houston.Houston.subcommands" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.houston.houston.Houston.utils">
+<code class="descname">utils</code><a class="headerlink" href="#mc.houston.houston.Houston.utils" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-mc.houston.houston_command">
+<span id="mc-houston-houston-command-module"></span><h2>mc.houston.houston_command module<a class="headerlink" href="#module-mc.houston.houston_command" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mc.houston.houston_command.HoustonCommand">
+<em class="property">class </em><code class="descclassname">mc.houston.houston_command.</code><code class="descname">HoustonCommand</code><span class="sig-paren">(</span><em>*args</em>, <em>default_cfg_path=None</em>, <em>subcommands=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/houston_command.html#HoustonCommand"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.houston_command.HoustonCommand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="mc.utils.commands.html#mc.utils.commands.subcommand_command.SubcommandCommand" title="mc.utils.commands.subcommand_command.SubcommandCommand"><code class="xref py py-class docutils literal"><span class="pre">mc.utils.commands.subcommand_command.SubcommandCommand</span></code></a></p>
+<dl class="method">
+<dt id="mc.houston.houston_command.HoustonCommand.add_arguments">
+<code class="descname">add_arguments</code><span class="sig-paren">(</span><em>parser=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/houston_command.html#HoustonCommand.add_arguments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.houston_command.HoustonCommand.add_arguments" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.houston.houston_command.HoustonCommand.handle">
+<code class="descname">handle</code><span class="sig-paren">(</span><em>parsed_args=None</em>, <em>unparsed_args=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/houston_command.html#HoustonCommand.handle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.houston_command.HoustonCommand.handle" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-mc.houston.utils">
+<span id="mc-houston-utils-module"></span><h2>mc.houston.utils module<a class="headerlink" href="#module-mc.houston.utils" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mc.houston.utils.HoustonUtils">
+<em class="property">class </em><code class="descclassname">mc.houston.utils.</code><code class="descname">HoustonUtils</code><span class="sig-paren">(</span><em>houston=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/utils.html#HoustonUtils"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.utils.HoustonUtils" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="mc.houston.utils.HoustonUtils.JOBS_SUBDIRS">
+<code class="descname">JOBS_SUBDIRS</code><em class="property"> = [‘pending’, ‘queued’, ‘executed’, ‘archive’]</em><a class="headerlink" href="#mc.houston.utils.HoustonUtils.JOBS_SUBDIRS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.houston.utils.HoustonUtils.archiver">
+<code class="descname">archiver</code><a class="headerlink" href="#mc.houston.utils.HoustonUtils.archiver" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.houston.utils.HoustonUtils.build_jobdir">
+<code class="descname">build_jobdir</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/utils.html#HoustonUtils.build_jobdir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.utils.HoustonUtils.build_jobdir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.houston.utils.HoustonUtils.cfg">
+<code class="descname">cfg</code><a class="headerlink" href="#mc.houston.utils.HoustonUtils.cfg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.houston.utils.HoustonUtils.db">
+<code class="descname">db</code><a class="headerlink" href="#mc.houston.utils.HoustonUtils.db" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.houston.utils.HoustonUtils.ensure_job_dirs">
+<code class="descname">ensure_job_dirs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/utils.html#HoustonUtils.ensure_job_dirs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.utils.HoustonUtils.ensure_job_dirs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.houston.utils.HoustonUtils.ensure_queue">
+<code class="descname">ensure_queue</code><span class="sig-paren">(</span><em>queue_cfg=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/utils.html#HoustonUtils.ensure_queue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.utils.HoustonUtils.ensure_queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.houston.utils.HoustonUtils.ensure_queues">
+<code class="descname">ensure_queues</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/utils.html#HoustonUtils.ensure_queues"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.utils.HoustonUtils.ensure_queues" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.houston.utils.HoustonUtils.entity_selector">
+<code class="descname">entity_selector</code><a class="headerlink" href="#mc.houston.utils.HoustonUtils.entity_selector" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.houston.utils.HoustonUtils.flow_engine">
+<code class="descname">flow_engine</code><a class="headerlink" href="#mc.houston.utils.HoustonUtils.flow_engine" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.houston.utils.HoustonUtils.flow_record_client">
+<code class="descname">flow_record_client</code><a class="headerlink" href="#mc.houston.utils.HoustonUtils.flow_record_client" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.houston.utils.HoustonUtils.flow_runner">
+<code class="descname">flow_runner</code><a class="headerlink" href="#mc.houston.utils.HoustonUtils.flow_runner" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.houston.utils.HoustonUtils.generate_db">
+<code class="descname">generate_db</code><span class="sig-paren">(</span><em>db_uri=None</em>, <em>schema=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/utils.html#HoustonUtils.generate_db"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.utils.HoustonUtils.generate_db" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.houston.utils.HoustonUtils.get_unfinished_mc_records">
+<code class="descname">get_unfinished_mc_records</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/utils.html#HoustonUtils.get_unfinished_mc_records"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.utils.HoustonUtils.get_unfinished_mc_records" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.houston.utils.HoustonUtils.has_unfinished_mc_records">
+<code class="descname">has_unfinished_mc_records</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/houston/utils.html#HoustonUtils.has_unfinished_mc_records"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.houston.utils.HoustonUtils.has_unfinished_mc_records" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.houston.utils.HoustonUtils.job_dirs">
+<code class="descname">job_dirs</code><a class="headerlink" href="#mc.houston.utils.HoustonUtils.job_dirs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.houston.utils.HoustonUtils.job_record_client">
+<code class="descname">job_record_client</code><a class="headerlink" href="#mc.houston.utils.HoustonUtils.job_record_client" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.houston.utils.HoustonUtils.job_runner">
+<code class="descname">job_runner</code><a class="headerlink" href="#mc.houston.utils.HoustonUtils.job_runner" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.houston.utils.HoustonUtils.jobman">
+<code class="descname">jobman</code><a class="headerlink" href="#mc.houston.utils.HoustonUtils.jobman" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.houston.utils.HoustonUtils.request_selector">
+<code class="descname">request_selector</code><a class="headerlink" href="#mc.houston.utils.HoustonUtils.request_selector" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">mc.houston package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-mc.houston.cli">mc.houston.cli module</a></li>
+<li><a class="reference internal" href="#module-mc.houston.houston">mc.houston.houston module</a></li>
+<li><a class="reference internal" href="#module-mc.houston.houston_command">mc.houston.houston_command module</a></li>
+<li><a class="reference internal" href="#module-mc.houston.utils">mc.houston.utils module</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mc.flows.html"
+                        title="previous chapter">mc.flows package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mc.houston.subcommands.html"
+                        title="next chapter">mc.houston.subcommands package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/mc.houston.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.houston.subcommands.html" title="mc.houston.subcommands package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mc.flows.html" title="mc.flows package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

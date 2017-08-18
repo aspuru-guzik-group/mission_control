@@ -1,0 +1,199 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Requests &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Examples" href="../examples.html" />
+    <link rel="prev" title="EntityDB" href="entity_db.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../examples.html" title="Examples"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="entity_db.html" title="EntityDB"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user_guide.html" accesskey="U">User Guide</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="requests">
+<h1>Requests<a class="headerlink" href="#requests" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="what-is-a-request">
+<h2>What Is a Request?<a class="headerlink" href="#what-is-a-request" title="Permalink to this headline">¶</a></h2>
+<p>A request represents a placeholder for some work to be done.</p>
+<p>For example, we could have a request that specifies we want to run a certain
+type of job.  Or we could have a request that indicates we want to run a specific flow.</p>
+</div>
+<div class="section" id="why-requests">
+<h2>Why Requests?<a class="headerlink" href="#why-requests" title="Permalink to this headline">¶</a></h2>
+<p>Requests can help us in several ways:</p>
+<ol class="arabic simple">
+<li>They help us avoid duplicate work by allowing programs to request work,
+without having to know whether that work has already been done. For example:<ol class="arabic">
+<li>A computational chemistry flow makes a request, ‘request_a’, to generate
+conformers for a molecule.</li>
+<li>We process request_a and create a conformer job.</li>
+<li>We execute the job and save the job’s output.</li>
+<li>We save a reference to the job in request_a and mark request_a as
+completed.</li>
+<li>Later, a second flow makes a request, ‘request_b’, to generate conformers
+for the same molecule as before.</li>
+<li>When we process request_b, we see that the job it would have created
+alread exists.  Instead of creating the job again we just save a
+reference to it in request_b and mark request_b as completed.</li>
+</ol>
+</li>
+<li>They allow programs to request computations without having to know how those
+computations should be executed. For example, a computational chemistry
+program can request that we generate conformers. All the chemistry program
+needs to know is how to create a request. We can handle the details of how
+to process that request in a separate system.</li>
+<li>They allow us to group and organize computations. We can tag requests
+so that multiple projects can share the same database.</li>
+</ol>
+</div>
+<div class="section" id="request-lifecyle">
+<h2>Request Lifecyle<a class="headerlink" href="#request-lifecyle" title="Permalink to this headline">¶</a></h2>
+<p>This is the typical request lifecycle.</p>
+<ol class="arabic simple">
+<li>Some program calls a MissionControl command.  For example, a chemistry
+program calls the
+<a class="reference internal" href="../api/mc.houston.subcommands.html#mc.houston.subcommands.create_job_requests.Subcommand" title="mc.houston.subcommands.create_job_requests.Subcommand"><code class="xref py py-class docutils literal"><span class="pre">mc.houston.subcommands.create_job_requests.Subcommand</span></code></a> command via
+<a class="reference internal" href="houston.html"><span class="doc">Houston</span></a> .</li>
+</ol>
+<dl class="docutils">
+<dt># The command creates <a class="reference internal" href="../api/mc.db.html#mc.db.models.Request" title="mc.db.models.Request"><code class="xref py py-class docutils literal"><span class="pre">mc.db.models.Request</span></code></a> instances in the</dt>
+<dd>MissionControl DB.</dd>
+</dl>
+<ol class="arabic simple">
+<li>A program calls another MissionControl command that updates the request.
+For example, a program calls the
+<a class="reference internal" href="../api/mc.houston.subcommands.html#mc.houston.subcommands.process_executed_job_dirs.Subcommand" title="mc.houston.subcommands.process_executed_job_dirs.Subcommand"><code class="xref py py-class docutils literal"><span class="pre">mc.houston.subcommands.process_executed_job_dirs.Subcommand</span></code></a> command,
+which ingests executed job dirs and updates requests that refer to the
+job dirs’ related jobs.</li>
+</ol>
+<p>This is just one lifecycle. Some users may want to use the Request independently
+of other parts of MissionControl. For example, to track whether an order has
+already been sent to a chemistry robot.</p>
+</div>
+<div class="section" id="the-request-model">
+<h2>The Request Model<a class="headerlink" href="#the-request-model" title="Permalink to this headline">¶</a></h2>
+<p>Refer to the documentation for the <a class="reference internal" href="../api/mc.db.html#mc.db.models.Request" title="mc.db.models.Request"><code class="xref py py-class docutils literal"><span class="pre">mc.db.models.Request</span></code></a> class.</p>
+</div>
+<div class="section" id="querying-requests">
+<h2>Querying Requests<a class="headerlink" href="#querying-requests" title="Permalink to this headline">¶</a></h2>
+<p>Usually you won’t have to query for requests directly. But if you do, you may
+find it useful to look at the code and documentation for the
+<a class="reference internal" href="../api/mc.utils.selectors.html#mc.utils.selectors.basic_request_selector.BasicRequestSelector" title="mc.utils.selectors.basic_request_selector.BasicRequestSelector"><code class="xref py py-class docutils literal"><span class="pre">mc.utils.selectors.basic_request_selector.BasicRequestSelector</span></code></a> class.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Requests</a><ul>
+<li><a class="reference internal" href="#what-is-a-request">What Is a Request?</a></li>
+<li><a class="reference internal" href="#why-requests">Why Requests?</a></li>
+<li><a class="reference internal" href="#request-lifecyle">Request Lifecyle</a></li>
+<li><a class="reference internal" href="#the-request-model">The Request Model</a></li>
+<li><a class="reference internal" href="#querying-requests">Querying Requests</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="entity_db.html"
+                        title="previous chapter">EntityDB</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="../examples.html"
+                        title="next chapter">Examples</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/user_guide/requests.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="../examples.html" title="Examples"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="entity_db.html" title="EntityDB"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user_guide.html" >User Guide</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

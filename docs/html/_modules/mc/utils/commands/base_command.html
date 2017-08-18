@@ -1,0 +1,301 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.utils.commands.base_command &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mc.utils.commands.base_command</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Base classes for writing commands.</span>
+<span class="sd">Adapted from django.core.management.base.py</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">io</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">import</span> <span class="nn">mc</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">color</span>
+<span class="kn">from</span> <span class="nn">.errors</span> <span class="k">import</span> <span class="n">CommandError</span>
+<span class="kn">from</span> <span class="nn">.argument_parser</span> <span class="k">import</span> <span class="n">ArgumentParser</span>
+
+
+<div class="viewcode-block" id="handle_default_args"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.base_command.handle_default_args">[docs]</a><span class="k">def</span> <span class="nf">handle_default_args</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Include any default args that all commands should accept here</span>
+<span class="sd">    so that ManagementUtility can handle them before searching for</span>
+<span class="sd">    user commands.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pythonpath&#39;</span><span class="p">):</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">args</span><span class="p">[</span><span class="s1">&#39;pythonpath&#39;</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="OutputWrapper"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.base_command.OutputWrapper">[docs]</a><span class="k">class</span> <span class="nc">OutputWrapper</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">TextIOBase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Wrapper around stdout/stderr</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">style_func</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_style_func</span>
+
+    <span class="nd">@style_func</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">style_func</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">style_func</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">style_func</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">isatty</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_style_func</span> <span class="o">=</span> <span class="n">style_func</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_style_func</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">out</span><span class="p">,</span> <span class="n">style_func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ending</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out</span> <span class="o">=</span> <span class="n">out</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">style_func</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ending</span> <span class="o">=</span> <span class="n">ending</span>
+
+    <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_out</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+
+<div class="viewcode-block" id="OutputWrapper.isatty"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.base_command.OutputWrapper.isatty">[docs]</a>    <span class="k">def</span> <span class="nf">isatty</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_out</span><span class="p">,</span> <span class="s1">&#39;isatty&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_out</span><span class="o">.</span><span class="n">isatty</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="OutputWrapper.write"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.base_command.OutputWrapper.write">[docs]</a>    <span class="k">def</span> <span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">style_func</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">ending</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">msg</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">msg</span><span class="p">)</span>
+        <span class="n">ending</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ending</span> <span class="k">if</span> <span class="n">ending</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">ending</span>
+        <span class="k">if</span> <span class="n">ending</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">msg</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="n">ending</span><span class="p">):</span>
+            <span class="n">msg</span> <span class="o">+=</span> <span class="n">ending</span>
+        <span class="n">style_func</span> <span class="o">=</span> <span class="n">style_func</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">style_func</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">style_func</span><span class="p">(</span><span class="n">msg</span><span class="p">))</span></div></div>
+
+
+<div class="viewcode-block" id="BaseCommand"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.base_command.BaseCommand">[docs]</a><span class="k">class</span> <span class="nc">BaseCommand</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A base class for common command logic.</span>
+
+<span class="sd">    Use this class if you want access to all of the mechanisms which</span>
+<span class="sd">    parse the command-line arguments and work out what code to call in</span>
+<span class="sd">    response; if you don&#39;t need to change any of that behavior,</span>
+<span class="sd">    consider using one of the subclasses defined in this file.</span>
+
+<span class="sd">    If you are interested in overriding/customizing various aspects of</span>
+<span class="sd">    the command-parsing and -execution behavior, the normal flow works</span>
+<span class="sd">    as follows:</span>
+
+<span class="sd">    1. Something loads the command class and calls its ``run()`` method.</span>
+
+<span class="sd">    2. The ``run_from_argv()`` method calls ``create_parser()`` to get</span>
+<span class="sd">       an ``ArgumentParser`` for the arguments, parses them, performs</span>
+<span class="sd">       any environment changes requested by args like</span>
+<span class="sd">       ``pythonpath``, and then calls the ``execute()`` method,</span>
+<span class="sd">       passing the parsed arguments.</span>
+
+<span class="sd">    3. The ``execute()`` method attempts to carry out the command by</span>
+<span class="sd">       calling the ``handle()`` method with the parsed arguments; any</span>
+<span class="sd">       output produced by ``handle()`` will be printed to standard</span>
+<span class="sd">       output.</span>
+
+<span class="sd">    4. If ``handle()`` or ``execute()`` raised any exception (e.g.</span>
+<span class="sd">       ``CommandError``), ``run_from_argv()`` will  instead print an error</span>
+<span class="sd">       message to ``stderr``.</span>
+
+<span class="sd">    Thus, the ``handle()`` method is typically the starting point for</span>
+<span class="sd">    subclasses; many built-in commands and command types either place</span>
+<span class="sd">    all of their logic in ``handle()``, or perform some additional</span>
+<span class="sd">    parsing work in ``handle()`` and then delegate from it to more</span>
+<span class="sd">    specialized methods as needed.</span>
+
+<span class="sd">    Several attributes affect behavior at various steps along the way:</span>
+
+<span class="sd">    ``help``</span>
+<span class="sd">        A short description of the command, which will be printed in</span>
+<span class="sd">        help messages.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">help</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">no_color</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">OutputWrapper</span><span class="p">(</span><span class="n">stdout</span> <span class="ow">or</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stderr</span> <span class="o">=</span> <span class="n">OutputWrapper</span><span class="p">(</span><span class="n">stderr</span> <span class="ow">or</span> <span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">no_color</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">no_style</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">color_style</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">style_func</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">style</span><span class="o">.</span><span class="n">ERROR</span>
+
+<div class="viewcode-block" id="BaseCommand.run"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.base_command.BaseCommand.run">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">argv</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">argv</span> <span class="o">=</span> <span class="n">argv</span> <span class="k">if</span> <span class="n">argv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span>
+        <span class="n">command</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
+        <span class="n">command</span><span class="o">.</span><span class="n">run_from_argv</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BaseCommand.get_version"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.base_command.BaseCommand.get_version">[docs]</a>    <span class="k">def</span> <span class="nf">get_version</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the MC version, which should be correct for all built-in</span>
+<span class="sd">        MC commands. User-supplied commands can override this method to</span>
+<span class="sd">        return their own version.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">mc</span><span class="o">.</span><span class="n">get_version</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BaseCommand.create_parser"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.base_command.BaseCommand.create_parser">[docs]</a>    <span class="k">def</span> <span class="nf">create_parser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prog_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create and return the ``ArgumentParser`` which will be used to</span>
+<span class="sd">        parse the arguments to this command.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parser_cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_base_parser_cls</span><span class="p">()</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="n">parser_cls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prog</span><span class="o">=</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">prog_name</span><span class="p">)),</span>
+                            <span class="n">description</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">help</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--version&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;version&#39;</span><span class="p">,</span>
+                            <span class="n">version</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">get_version</span><span class="p">())</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+            <span class="s1">&#39;--pythonpath&#39;</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;A directory to add to the Python path,&#39;</span>
+                  <span class="s1">&#39; e.g. &quot;/home/myproject&quot;.&#39;</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--traceback&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+                            <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Raise on CommandError exceptions&#39;</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span>
+            <span class="s1">&#39;--no-color&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="s1">&#39;no_color&#39;</span><span class="p">,</span>
+            <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Don&#39;t colorize the command output.&quot;</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_arguments</span><span class="p">(</span><span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">parser</span></div>
+
+<div class="viewcode-block" id="BaseCommand.get_base_parser_cls"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.base_command.BaseCommand.get_base_parser_cls">[docs]</a>    <span class="k">def</span> <span class="nf">get_base_parser_cls</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="n">ArgumentParser</span></div>
+
+<div class="viewcode-block" id="BaseCommand.add_arguments"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.base_command.BaseCommand.add_arguments">[docs]</a>    <span class="k">def</span> <span class="nf">add_arguments</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parser</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Entry point for subclassed commands to add custom arguments.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+
+<div class="viewcode-block" id="BaseCommand.print_help"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.base_command.BaseCommand.print_help">[docs]</a>    <span class="k">def</span> <span class="nf">print_help</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prog_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Print the help message for this command, derived from</span>
+<span class="sd">        ``self.usage()``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_parser</span><span class="p">(</span><span class="n">prog_name</span><span class="p">)</span>
+        <span class="n">parser</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="BaseCommand.run_from_argv"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.base_command.BaseCommand.run_from_argv">[docs]</a>    <span class="k">def</span> <span class="nf">run_from_argv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">argv</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Set up any environment changes requested (e.g., Python path settings),</span>
+<span class="sd">         then run this command. If the</span>
+<span class="sd">        command raises a ``CommandError``, intercept it and print it sensibly</span>
+<span class="sd">        to stderr. If the ``--traceback`` option is present or the raised</span>
+<span class="sd">        ``Exception`` is not ``CommandError``, raise it.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parser</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_parser</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">parsed_args_ns</span><span class="p">,</span> <span class="n">unparsed_args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_known_args</span><span class="p">(</span><span class="n">args</span><span class="o">=</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="n">parsed_args</span> <span class="o">=</span> <span class="nb">vars</span><span class="p">(</span><span class="n">parsed_args_ns</span><span class="p">)</span>
+        <span class="n">handle_default_args</span><span class="p">(</span><span class="n">parsed_args</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">parsed_args</span><span class="o">=</span><span class="n">parsed_args</span><span class="p">,</span> <span class="n">unparsed_args</span><span class="o">=</span><span class="n">unparsed_args</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">parsed_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;traceback&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">e</span><span class="p">,</span> <span class="n">CommandError</span><span class="p">):</span>
+                <span class="k">raise</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="o">=</span><span class="s1">&#39;</span><span class="si">%s</span><span class="s1">: </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">e</span><span class="p">))</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="BaseCommand.execute"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.base_command.BaseCommand.execute">[docs]</a>    <span class="k">def</span> <span class="nf">execute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parsed_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unparsed_args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Try to execute this command.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">parsed_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;no_color&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">style</span> <span class="o">=</span> <span class="n">color</span><span class="o">.</span><span class="n">no_style</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">style_func</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">parsed_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;stdout&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span> <span class="o">=</span> <span class="n">OutputWrapper</span><span class="p">(</span><span class="n">parsed_args</span><span class="p">[</span><span class="s1">&#39;stdout&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">parsed_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;stderr&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stderr</span> <span class="o">=</span> <span class="n">OutputWrapper</span><span class="p">(</span><span class="n">parsed_args</span><span class="p">[</span><span class="s1">&#39;stderr&#39;</span><span class="p">],</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">stderr</span><span class="o">.</span><span class="n">style_func</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle</span><span class="p">(</span><span class="n">parsed_args</span><span class="o">=</span><span class="n">parsed_args</span><span class="p">,</span>
+                             <span class="n">unparsed_args</span><span class="o">=</span><span class="n">unparsed_args</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">msg</span><span class="o">=</span><span class="n">output</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">output</span></div>
+
+<div class="viewcode-block" id="BaseCommand.handle"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.base_command.BaseCommand.handle">[docs]</a>    <span class="k">def</span> <span class="nf">handle</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parsed_args</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unparsed_args</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        The actual logic of the command. Subclasses must implement</span>
+<span class="sd">        this method.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;subclasses of BaseCommand must provide a&#39;</span>
+                                  <span class="s1">&#39;handle() method&#39;</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

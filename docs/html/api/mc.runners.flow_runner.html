@@ -1,0 +1,229 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.runners.flow_runner package &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mc.runners.jobman_job_runner package" href="mc.runners.jobman_job_runner.html" />
+    <link rel="prev" title="mc.runners package" href="mc.runners.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.runners.jobman_job_runner.html" title="mc.runners.jobman_job_runner package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mc.runners.html" title="mc.runners package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="mc.runners.html" accesskey="U">mc.runners package</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-mc.runners.flow_runner">
+<span id="mc-runners-flow-runner-package"></span><h1>mc.runners.flow_runner package<a class="headerlink" href="#module-mc.runners.flow_runner" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-mc.runners.flow_runner.flow_runner">
+<span id="mc-runners-flow-runner-flow-runner-module"></span><h2>mc.runners.flow_runner.flow_runner module<a class="headerlink" href="#module-mc.runners.flow_runner.flow_runner" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mc.runners.flow_runner.flow_runner.FlowRunner">
+<em class="property">class </em><code class="descclassname">mc.runners.flow_runner.flow_runner.</code><code class="descname">FlowRunner</code><span class="sig-paren">(</span><em>flow_record_client=None</em>, <em>flow_engine=None</em>, <em>task_ctx=None</em>, <em>tick_interval=120</em>, <em>max_flows_per_tick=3</em>, <em>logger=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/flow_runner/flow_runner.html#FlowRunner"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.flow_runner.flow_runner.FlowRunner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A FlowRunner encapsulates logic related to claiming and ticking flows.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>flow_record_client</strong> (<a class="reference internal" href="mc.clients.html#module-mc.clients.flow_record_client" title="mc.clients.flow_record_client"><em>mc.clients.flow_record_client</em></a>) – a client for
+doing flow_record operations.</li>
+<li><strong>flow_engine</strong> (<a class="reference internal" href="mc.flows.html#module-mc.flows.flow_engine" title="mc.flows.flow_engine"><em>mc.flows.flow_engine</em></a>) – flow_engine to use for ticking
+flows.  Default: mc.flows.flow_engine.FlowEngine instance.</li>
+<li><strong>task_ctx</strong> (<em>dict</em><em>, </em><em>optional</em>) – extra ctx to pass to tasks.</li>
+<li><strong>tick_interval</strong> (<em>int</em><em>, </em><em>optional</em>) – how often to run a tick, in seconds.
+Default: 120.</li>
+<li><strong>max_flows_per_tick</strong> (<em>int</em><em>, </em><em>optional</em>) – maximum number of flows to
+claim per tick. Default: 3.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="mc.runners.flow_runner.flow_runner.FlowRunner.claim_flow_records">
+<code class="descname">claim_flow_records</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/flow_runner/flow_runner.html#FlowRunner.claim_flow_records"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.flow_runner.flow_runner.FlowRunner.claim_flow_records" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.flow_runner.flow_runner.FlowRunner.decorate_task_ctx">
+<code class="descname">decorate_task_ctx</code><span class="sig-paren">(</span><em>task_ctx=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/flow_runner/flow_runner.html#FlowRunner.decorate_task_ctx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.flow_runner.flow_runner.FlowRunner.decorate_task_ctx" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.flow_runner.flow_runner.FlowRunner.flow_record_to_flow">
+<code class="descname">flow_record_to_flow</code><span class="sig-paren">(</span><em>flow_record=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/flow_runner/flow_runner.html#FlowRunner.flow_record_to_flow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.flow_runner.flow_runner.FlowRunner.flow_record_to_flow" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.flow_runner.flow_runner.FlowRunner.get_default_flow_engine">
+<code class="descname">get_default_flow_engine</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/flow_runner/flow_runner.html#FlowRunner.get_default_flow_engine"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.flow_runner.flow_runner.FlowRunner.get_default_flow_engine" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.flow_runner.flow_runner.FlowRunner.patch_and_release_flow_record">
+<code class="descname">patch_and_release_flow_record</code><span class="sig-paren">(</span><em>flow_record=None</em>, <em>patches=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/flow_runner/flow_runner.html#FlowRunner.patch_and_release_flow_record"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.flow_runner.flow_runner.FlowRunner.patch_and_release_flow_record" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.flow_runner.flow_runner.FlowRunner.run">
+<code class="descname">run</code><span class="sig-paren">(</span><em>ntimes=None</em>, <em>tick_interval=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/flow_runner/flow_runner.html#FlowRunner.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.flow_runner.flow_runner.FlowRunner.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run indefinitely or for several ticks.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>ntimes</strong> (<em>int</em><em>, </em><em>optional</em>) – if specified, run this many ticks. If
+empty, run indefinitely. Default: None.</li>
+<li><strong>tick_interval</strong> (<em>int</em><em>, </em><em>optional</em>) – run with this tick interval.
+Default: self.tick_interval.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.flow_runner.flow_runner.FlowRunner.stop">
+<code class="descname">stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/flow_runner/flow_runner.html#FlowRunner.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.flow_runner.flow_runner.FlowRunner.stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop ticking.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.flow_runner.flow_runner.FlowRunner.tick">
+<code class="descname">tick</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/flow_runner/flow_runner.html#FlowRunner.tick"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.flow_runner.flow_runner.FlowRunner.tick" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run one claim-and-tick-flows cycle.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.flow_runner.flow_runner.FlowRunner.tick_flow_record">
+<code class="descname">tick_flow_record</code><span class="sig-paren">(</span><em>flow_record=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/flow_runner/flow_runner.html#FlowRunner.tick_flow_record"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.flow_runner.flow_runner.FlowRunner.tick_flow_record" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.flow_runner.flow_runner.FlowRunner.tick_flow_records">
+<code class="descname">tick_flow_records</code><span class="sig-paren">(</span><em>flow_records=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/flow_runner/flow_runner.html#FlowRunner.tick_flow_records"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.flow_runner.flow_runner.FlowRunner.tick_flow_records" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">mc.runners.flow_runner package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-mc.runners.flow_runner.flow_runner">mc.runners.flow_runner.flow_runner module</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mc.runners.html"
+                        title="previous chapter">mc.runners package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mc.runners.jobman_job_runner.html"
+                        title="next chapter">mc.runners.jobman_job_runner package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/mc.runners.flow_runner.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.runners.jobman_job_runner.html" title="mc.runners.jobman_job_runner package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mc.runners.html" title="mc.runners package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="mc.runners.html" >mc.runners package</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>
