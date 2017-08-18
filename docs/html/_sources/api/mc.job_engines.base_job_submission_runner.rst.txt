@@ -1,7 +1,0 @@
-mc\.job\_engines\.base\_job\_submission\_runner module
-======================================================
-
-.. automodule:: mc.job_engines.base_job_submission_runner
-    :members:
-    :undoc-members:
-    :show-inheritance:

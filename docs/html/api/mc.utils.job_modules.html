@@ -1,60 +1,223 @@
 
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>mc.utils.job_modules package &#8212; MissionControl 0.0.1 documentation</title>
-    
-    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
-    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    '../',
-        VERSION:     '0.0.1',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true,
-        SOURCELINK_SUFFIX: '.txt'
-      };
-    </script>
-    <script type="text/javascript" src="../_static/jquery.js"></script>
-    <script type="text/javascript" src="../_static/underscore.js"></script>
-    <script type="text/javascript" src="../_static/doctools.js"></script>
-    <link rel="index" title="Index" href="../genindex.html" />
-    <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="mc.utils.selectors package" href="mc.utils.selectors.html" />
-    <link rel="prev" title="mc.utils.commands package" href="mc.utils.commands.html" /> 
-  </head>
-  <body>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="mc.utils.selectors.html" title="mc.utils.selectors package"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="mc.utils.commands.html" title="mc.utils.commands package"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li>
-          <li class="nav-item nav-item-2"><a href="mc.utils.html" accesskey="U">mc.utils package</a> &#187;</li> 
-      </ul>
-    </div>  
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>mc.utils.job_modules package &mdash; MissionControl 0.0.1 documentation</title>
+  
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../genindex.html"/>
+        <link rel="search" title="Search" href="../search.html"/>
+    <link rel="top" title="MissionControl 0.0.1 documentation" href="../index.html"/>
+        <link rel="up" title="mc.utils package" href="mc.utils.html"/>
+        <link rel="next" title="mc.utils.selectors package" href="mc.utils.selectors.html"/>
+        <link rel="prev" title="mc.utils.commands package" href="mc.utils.commands.html"/> 
+
+  
+  <script src="../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../index.html" class="icon icon-home"> MissionControl
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0.0.1
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <ul>
+<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
+</ul>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="../api.html">API Documentation</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="mc.clients.html">mc.clients package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.db.html">mc.db package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.flows.html">mc.flows package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.html">mc.houston package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.houston.subcommands.html">mc.houston.subcommands package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.runners.html">mc.runners package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.runners.flow_runner.html">mc.runners.flow_runner package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.runners.jobman_job_runner.html">mc.runners.jobman_job_runner package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.task_handlers.html">mc.task_handlers package</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="mc.utils.html">mc.utils package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="mc.utils.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="mc.utils.archivers.html">mc.utils.archivers package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mc.utils.artifact_processors.html">mc.utils.artifact_processors package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mc.utils.commands.html">mc.utils.commands package</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">mc.utils.job_modules package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mc.utils.selectors.html">mc.utils.selectors package</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mc.utils.testing.html">mc.utils.testing package</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="mc.utils.html#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mc.utils.html#module-mc.utils.config">mc.utils.config module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mc.utils.html#module-mc.utils.context_value_setter">mc.utils.context_value_setter module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mc.utils.html#module-mc.utils.debug_utils">mc.utils.debug_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mc.utils.html#module-mc.utils.dispatcher">mc.utils.dispatcher module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mc.utils.html#module-mc.utils.dot_spec_loader">mc.utils.dot_spec_loader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mc.utils.html#module-mc.utils.hash_utils">mc.utils.hash_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mc.utils.html#module-mc.utils.import_utils">mc.utils.import_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mc.utils.html#module-mc.utils.logging_utils">mc.utils.logging_utils module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mc.utils.html#module-mc.utils.mc_sandbox">mc.utils.mc_sandbox module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mc.utils.html#module-mc.utils.module_loader">mc.utils.module_loader module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="mc.utils.html#module-mc.utils.update_helper">mc.utils.update_helper module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mc.utils.archivers.html">mc.utils.archivers package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.utils.artifact_processors.html">mc.utils.artifact_processors package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.utils.commands.html">mc.utils.commands package</a></li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">mc.utils.job_modules package</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mc.utils.job_modules.constants">mc.utils.job_modules.constants module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mc.utils.job_modules.job_dir_builder">mc.utils.job_modules.job_dir_builder module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mc.utils.job_modules.job_dir_parser">mc.utils.job_modules.job_dir_parser module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mc.utils.job_modules.job_dir_runner">mc.utils.job_modules.job_dir_runner module</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#module-mc.utils.job_modules.utils">mc.utils.job_modules.utils module</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mc.utils.selectors.html">mc.utils.selectors package</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.utils.testing.html">mc.utils.testing package</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">MissionControl</a>
+        
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../api.html">API Documentation</a> &raquo;</li>
+        
+          <li><a href="mc.utils.html">mc.utils package</a> &raquo;</li>
+        
+      <li>mc.utils.job_modules package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            
+              <!-- User defined GitHub URL -->
+              <a href="https://github.com/aspuru-guzik-group/mission_control/edit/master/docs/sphinx/api/mc.utils.job_modules.rst" class="fa fa-github"> Edit on GitHub</a>
+            
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
             
   <div class="section" id="module-mc.utils.job_modules">
 <span id="mc-utils-job-modules-package"></span><h1>mc.utils.job_modules package<a class="headerlink" href="#module-mc.utils.job_modules" title="Permalink to this headline">¶</a></h1>
@@ -150,74 +313,75 @@
 </div>
 
 
+           </div>
+           <div class="articleComments">
+            
+           </div>
           </div>
-        </div>
-      </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="../index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">mc.utils.job_modules package</a><ul>
-<li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-mc.utils.job_modules.constants">mc.utils.job_modules.constants module</a></li>
-<li><a class="reference internal" href="#module-mc.utils.job_modules.job_dir_builder">mc.utils.job_modules.job_dir_builder module</a></li>
-<li><a class="reference internal" href="#module-mc.utils.job_modules.job_dir_parser">mc.utils.job_modules.job_dir_parser module</a></li>
-<li><a class="reference internal" href="#module-mc.utils.job_modules.job_dir_runner">mc.utils.job_modules.job_dir_runner module</a></li>
-<li><a class="reference internal" href="#module-mc.utils.job_modules.utils">mc.utils.job_modules.utils module</a></li>
-</ul>
-</li>
-</ul>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="mc.utils.selectors.html" class="btn btn-neutral float-right" title="mc.utils.selectors package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="mc.utils.commands.html" class="btn btn-neutral" title="mc.utils.commands package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
 
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="mc.utils.commands.html"
-                        title="previous chapter">mc.utils.commands package</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="mc.utils.selectors.html"
-                        title="next chapter">mc.utils.selectors package</a></p>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="../_sources/api/mc.utils.job_modules.rst.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <form class="search" action="../search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2017, A. Dorsk.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
         </div>
       </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="mc.utils.selectors.html" title="mc.utils.selectors package"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="mc.utils.commands.html" title="mc.utils.commands package"
-             >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
-          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li>
-          <li class="nav-item nav-item-2"><a href="mc.utils.html" >mc.utils package</a> &#187;</li> 
-      </ul>
-    </div>
-    <div class="footer" role="contentinfo">
-        &#169; Copyright 2017, A. Dorsk.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
-    </div>
-  </body>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../',
+            VERSION:'0.0.1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true,
+            SOURCELINK_SUFFIX: '.txt'
+        };
+    </script>
+      <script type="text/javascript" src="../_static/jquery.js"></script>
+      <script type="text/javascript" src="../_static/underscore.js"></script>
+      <script type="text/javascript" src="../_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
 </html>

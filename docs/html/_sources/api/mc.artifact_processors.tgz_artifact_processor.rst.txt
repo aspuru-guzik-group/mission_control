@@ -1,7 +1,0 @@
-mc\.artifact\_processors\.tgz\_artifact\_processor module
-=========================================================
-
-.. automodule:: mc.artifact_processors.tgz_artifact_processor
-    :members:
-    :undoc-members:
-    :show-inheritance:

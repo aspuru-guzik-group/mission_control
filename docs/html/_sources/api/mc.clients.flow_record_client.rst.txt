@@ -1,7 +1,0 @@
-mc\.clients\.flow\_record\_client module
-========================================
-
-.. automodule:: mc.clients.flow_record_client
-    :members:
-    :undoc-members:
-    :show-inheritance:

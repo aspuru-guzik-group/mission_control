@@ -1,7 +1,0 @@
-mc\.artifact\_processors\.base\_artifact\_processor module
-==========================================================
-
-.. automodule:: mc.artifact_processors.base_artifact_processor
-    :members:
-    :undoc-members:
-    :show-inheritance:

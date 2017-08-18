@@ -1,7 +1,0 @@
-mc\.artifact\_processors\.local\_path\_artifact\_processor module
-=================================================================
-
-.. automodule:: mc.artifact_processors.local_path_artifact_processor
-    :members:
-    :undoc-members:
-    :show-inheritance:

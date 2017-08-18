@@ -1,7 +1,0 @@
-mc\.job\_engines\.cli module
-============================
-
-.. automodule:: mc.job_engines.cli
-    :members:
-    :undoc-members:
-    :show-inheritance:

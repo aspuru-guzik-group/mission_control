@@ -20,6 +20,7 @@ import os
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 sys.path.insert(0, os.path.abspath('../..'))
+sys.path.insert(0, os.path.abspath('_ext'))
 
 # -- General configuration ------------------------------------------------
 
@@ -36,7 +37,14 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
+    'edit_on_github'
 ]
+
+edit_on_github_project = 'aspuru-guzik-group/mission_control'
+edit_on_github_branch = 'master'
+edit_on_github_repo_root_abs_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), '..', '..')
+)
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -121,7 +129,8 @@ todo_include_todos = False
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-html_theme = 'classic'
+import sphinx_rtd_theme
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the

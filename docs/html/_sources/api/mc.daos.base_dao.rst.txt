@@ -1,7 +1,0 @@
-mc\.daos\.base\_dao module
-==========================
-
-.. automodule:: mc.daos.base_dao
-    :members:
-    :undoc-members:
-    :show-inheritance:

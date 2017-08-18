@@ -1,7 +1,0 @@
-mc\.clients\.job\_record\_client module
-=======================================
-
-.. automodule:: mc.clients.job_record_client
-    :members:
-    :undoc-members:
-    :show-inheritance:

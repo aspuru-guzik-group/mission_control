@@ -1,7 +1,0 @@
-mc\.utils\.dot\_spec\_loader module
-===================================
-
-.. automodule:: mc.utils.dot_spec_loader
-    :members:
-    :undoc-members:
-    :show-inheritance:

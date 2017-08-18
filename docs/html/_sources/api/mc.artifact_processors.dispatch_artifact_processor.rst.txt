@@ -1,7 +1,0 @@
-mc\.artifact\_processors\.dispatch\_artifact\_processor module
-==============================================================
-
-.. automodule:: mc.artifact_processors.dispatch_artifact_processor
-    :members:
-    :undoc-members:
-    :show-inheritance:
