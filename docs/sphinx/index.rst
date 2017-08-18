@@ -10,69 +10,164 @@ MissionControl
 ==============
 MissionControl: A library for jobs and workflows.
 
-=========================
-Is MissionControl for me?
-=========================
-
-Features include:
-
-#. A job creation framework: create small job modules that define how to build job directories.
-#. A task sequencing framework: create flows that consist of small tasks.
-#. A data storage framework: store data from parsed jobs, and query it to provide inputs to other jobs.
-#. A SqlAlchemy backend lets you run MissionControl with a variety of SQL environments. You can use file-based sqlite databases or server-based databases like Postgresql or MySql.
-#.  Dynamic flows: you can create flows that modify themselves or create new flows based on what happens during execution.
-#. Modular: you can customize how MissionControl works.
-
 ========
-Overview
+Features
 ========
-MissionControl is a collection of several components.
 
-Jobs
-====
-You can build parameterized jobs that you can run locally or on a cluster.
+#. Generate jobs for computing clusters: write job modules that
+   build and parse submissions for computing clusters.
+#. WorkFlows: create dynamic workflows that run tasks.
+#. Flexible Database Backend: use any SqlAlchemy-compatible database to track
+   jobs and workflows. Use server-based databases like Postgresql or MySql,
+   or store your data in a file or in memory with Sqlite.
+#. Store and Query Domain Data: Use an EAV data model to store and query a wide
+   range of records.
+#. Modular: Use any combination of MissionControl components you want.
 
-For example, you can build a set of jobs that run a computational chemistry 
-model with different parameters.
+==========
+Quickstart
+==========
 
-See :doc:`user_guide/jobs` .
+-------
+Install
+-------
 
-Work Flows
-=====
-You can use define and run task-based workflows.
+#. Install via pip:
+   ::
+     pip install git+https://github.com/aspuru-guzik-group/mission_control.git
 
-For example, you can define a workflow that first runs a model, and then runs
-an analysis job on the model outputs.
+#. Verify the install:
 
-See :doc:`user_guide/flows` and :doc:`user_guide/tasks` .
-
-Requests
-========
-You can track whether a job or flow has already been
-executed with a given set of inputs. This prevents the running of duplicate
-computations.
-
-See :doc:`user_guide/requests` .
-
-EntityDB
-========
-You can store data in a generalized
-`Entity-Attribute-Value Database
-<https://en.wikipedia.org/wiki/Entity%E2%80%93attribute%E2%80%93value_model>`_.
-
-This database can store results from parsed jobs that you
-want to use as inputs for future jobs.
-
-See :doc:`user_guide/entity_db` .
+   python -m mc.houston.cli sanity_check
 
 
-Combining Components
-====================
-You can use these components in any combination you choose. Some people use 
-MissionControl only to build computing cluster jobs. Others only use
-MissionControl to define and run flows.
+---------------
+Build a Job Dir
+---------------
 
-MissionControl allows you to use components on their own, or in concert.
+.. testcode::
+
+  from mc.houston import Houston
+  houston = Houston.minimal()
+  build_result = houston.run_command(
+     'build_job_dir',
+     job_dict={
+         'key': 'some_job_key',
+         'job_type': 'mc.utils.testing.echo_job_module',
+         'job_params': {'message': 'Tacos are delicious.'},
+     }
+  )
+  from pathlib import Path
+  job_dir_path = Path(build_result['job_dir'])
+  import subprocess
+  entrypoint_command = job_dir_path / 'work_dir' / 'entrypoint.sh'
+  job_output = subprocess.check_output([str(entrypoint_command)]).decode()
+  print("= JOB OUTPUT =")
+  print(job_output)
+  print("= JOB DIR CONTENTS =")
+  job_dir_items = [
+     str(item_path.relative_to(job_dir_path))
+     for item_path in job_dir_path.glob('**/*')
+  ]
+  print("\n".join(sorted(job_dir_items)))
+
+Output:
+
+.. testoutput::
+
+  = JOB OUTPUT =
+  Tacos are delicious.
+
+  = JOB DIR CONTENTS =
+  MC__JOB_KEY
+  MC__JOB_META.json
+  entrypoint.sh
+  job_spec.json
+  work_dir
+  work_dir/echo_job.out
+  work_dir/entrypoint.sh
+
+-----------
+Run a Flow
+-----------
+
+.. testcode::
+
+  from mc.houston import Houston
+  houston = Houston.minimal()
+  flow_spec = {
+     'tasks': [
+         {
+             'key': 'task_0',
+             'task_type': 'print',
+             'task_params': {'msg': 'Hello from task_0'}
+         },
+         {
+             'key': 'task_1',
+             'task_type': 'print',
+             'task_params': {'msg': 'Hello from task_1'},
+             'data': {
+                 'my_msg': 'Message for task_2, from task_1.data'
+             }
+         },
+         {
+             'key': 'task_2',
+             'task_type': 'print',
+             'task_params': {'msg': '$ctx.flow.tasks.task_1.data.my_msg'}
+         }
+     ]
+  }
+  completed_flow_dict = houston.run_command(
+     'tick', tickee='flow',
+     flow_spec=flow_spec,
+     until_finished=True,
+     interval=.01,
+  )
+  print(completed_flow_dict['status'])
+
+.. testoutput::
+
+  Hello from task_0
+  Hello from task_1
+  Message for task_2, from task_1.data
+  COMPLETED
+
+---------------------------
+Store and Query Domain Data
+---------------------------
+
+.. testcode::
+
+  from mc.houston import Houston
+  houston = Houston(cfg={'MC_DB_URI': 'sqlite://'})
+  houston.db.ensure_tables()
+
+  molecules = []
+  Ent = houston.db.models.Ent
+  for i in range(1, 4):
+      molecule = Ent(
+          ent_type='molecule',
+          props={'num_atoms': i}
+      )
+      molecules.append(molecule)
+  houston.db.session.add_all(molecules)
+  houston.db.session.commit()
+
+  molecules_w_multiple_atoms = (
+      houston.db.session.query(Ent)
+      .join(Ent.Prop, aliased=True, from_joinpoint=True)
+      .filter(Ent.Prop.key == 'num_atoms')
+      .filter(Ent.Prop.value > 1)
+      .order_by(Ent.Prop.value)
+      .all()
+  )
+  for molecule in molecules_w_multiple_atoms:
+     print('num_atoms:', molecule.props['num_atoms'])
+
+.. testoutput ::
+
+  num_atoms: 2
+  num_atoms: 3
 
 ===============
 Getting Started
@@ -81,7 +176,6 @@ Getting Started
 .. toctree::
    :maxdepth: 1
 
-   quickstart
    user_guide
    examples
 

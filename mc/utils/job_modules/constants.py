@@ -3,7 +3,7 @@ _prefix = 'MC__'
 JOB_DIR_COMPONENT_PATHS = {
     'job_key': _prefix + 'JOB_KEY',
     'job_meta': _prefix + 'JOB_META.json',
-    'job_spec': 'JOBMAN__JOB_SPEC.json',
+    'job_spec': 'job_spec.json',
     'entrypoint': 'entrypoint.sh',
     'work_dir': 'work_dir',
     'executed_checkpoint': _prefix + 'EXECUTED',

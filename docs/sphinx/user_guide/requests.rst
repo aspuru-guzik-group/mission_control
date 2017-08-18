@@ -1,9 +1,6 @@
 Requests
 ========
 
-==================
-What Is a Request?
-==================
 A request represents a placeholder for some work to be done.
 
 For example, we could have a request that specifies we want to run a certain

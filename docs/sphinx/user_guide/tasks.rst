@@ -1,9 +1,6 @@
 Tasks
 =====
 
-===============
-What Is a Task?
-===============
 A MissionControl Task represents a step in a workflow.
 
 A task can do many things. In some cases a task

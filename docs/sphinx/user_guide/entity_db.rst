@@ -1,9 +1,6 @@
 EntityDB
 ========
 
-=================
-What Is EntityDB?
-=================
 EntityDB is a framework for storing and querying data in a SQL database.
 
 It provides a SQL implementation of an `EAV Data Model <https://en.wikipedia.org/wiki/Entity%E2%80%93attribute%E2%80%93value_model>`_ . It uses SqlAlchemy to provide python classes and utilities

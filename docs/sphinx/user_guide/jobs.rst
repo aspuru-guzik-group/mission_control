@@ -1,23 +1,6 @@
 Jobs
 ====
 
-=================
-Concept Checklist
-=================
-This page covers these concepts:
-
-#. [ ] job lifecycle
-#. [ ] job dicts
-#. [ ] building job dirs
-#. [ ] job modules
-#. [ ] running jobs in different environments
-#. [ ] parsing job dirs
-#. [ ] testing job modules
-#. [ ] best practices for working with jobs
-
-==============
-What Is a Job?
-==============
 A MissionControl job represents a standalone computation. For example, a
 single run of computational chemistry model.
 

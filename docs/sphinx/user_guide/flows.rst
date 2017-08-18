@@ -1,9 +1,6 @@
 Flows
 =====
 
-==============
-What Is a Flow?
-==============
 A MissionControl Flow represents a set of tasks that run in a specific
 sequence.
 
