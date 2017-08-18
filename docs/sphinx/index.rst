@@ -10,6 +10,12 @@ MissionControl
 ==============
 MissionControl: A library for jobs and workflows.
 
+======
+Source
+======
+
+Main repo: https://github.com/aspuru-guzik-group/mission_control
+
 ========
 Features
 ========
