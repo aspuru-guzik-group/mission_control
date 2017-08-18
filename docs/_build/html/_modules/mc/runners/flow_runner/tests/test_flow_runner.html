@@ -1,0 +1,257 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.runners.flow_runner.tests.test_flow_runner &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mc.runners.flow_runner.tests.test_flow_runner</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">defaultdict</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">unittest</span>
+<span class="kn">from</span> <span class="nn">unittest.mock</span> <span class="k">import</span> <span class="n">call</span><span class="p">,</span> <span class="n">MagicMock</span><span class="p">,</span> <span class="n">patch</span>
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">flow_runner</span>
+
+
+<div class="viewcode-block" id="BaseTestCase"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.BaseTestCase">[docs]</a><span class="k">class</span> <span class="nc">BaseTestCase</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="BaseTestCase.setUp"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.BaseTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runner</span> <span class="o">=</span> <span class="n">flow_runner</span><span class="o">.</span><span class="n">FlowRunner</span><span class="p">(</span>
+            <span class="n">flow_record_client</span><span class="o">=</span><span class="n">MagicMock</span><span class="p">(),</span>
+            <span class="n">flow_engine</span><span class="o">=</span><span class="n">MagicMock</span><span class="p">(),</span>
+            <span class="n">task_ctx</span><span class="o">=</span><span class="n">MagicMock</span><span class="p">()</span>
+        <span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="RunTestCase"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.RunTestCase">[docs]</a><span class="k">class</span> <span class="nc">RunTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="RunTestCase.test_run"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.RunTestCase.test_run">[docs]</a>    <span class="nd">@patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">flow_runner</span><span class="p">,</span> <span class="s1">&#39;time&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">test_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_time</span><span class="p">):</span>
+        <span class="n">tick_intervals</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">tick_interval</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="k">for</span> <span class="n">tick_interval</span> <span class="ow">in</span> <span class="n">tick_intervals</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">tick_interval</span> <span class="o">=</span> <span class="n">tick_interval</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">ntimes</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="n">_time</span><span class="o">.</span><span class="n">sleep</span><span class="o">.</span><span class="n">call_args_list</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">call</span><span class="p">(</span><span class="n">tick_interval</span><span class="p">)</span> <span class="k">for</span> <span class="n">tick_interval</span> <span class="ow">in</span> <span class="n">tick_intervals</span><span class="p">]</span>
+        <span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="TickTestCase"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.TickTestCase">[docs]</a><span class="k">class</span> <span class="nc">TickTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="TickTestCase.setUp"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.TickTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">claim_flow_records</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">tick_flow_records</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">tick</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="TickTestCase.test_claims_flow_records"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.TickTestCase.test_claims_flow_records">[docs]</a>    <span class="k">def</span> <span class="nf">test_claims_flow_records</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">claim_flow_records</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span> <span class="n">call</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="TickTestCase.test_ticks_claimed_flow_records"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.TickTestCase.test_ticks_claimed_flow_records">[docs]</a>    <span class="k">def</span> <span class="nf">test_ticks_claimed_flow_records</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">tick_flow_records</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="n">flow_records</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">claim_flow_records</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="TickTestCase.test_returns_tick_stats"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.TickTestCase.test_returns_tick_stats">[docs]</a>    <span class="k">def</span> <span class="nf">test_returns_tick_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">expected_tick_stats</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;claimed&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">claim_flow_records</span><span class="p">),</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">tick_flow_records</span><span class="o">.</span><span class="n">return_value</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="n">expected_tick_stats</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="ClaimFlowRecordsTestCase"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.ClaimFlowRecordsTestCase">[docs]</a><span class="k">class</span> <span class="nc">ClaimFlowRecordsTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="ClaimFlowRecordsTestCase.test_dispatches_to_flow_record_client"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.ClaimFlowRecordsTestCase.test_dispatches_to_flow_record_client">[docs]</a>    <span class="k">def</span> <span class="nf">test_dispatches_to_flow_record_client</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">claim_flow_records</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">flow_record_client</span><span class="o">.</span><span class="n">claim_flow_records</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">())</span></div></div>
+
+<div class="viewcode-block" id="TickFlowRecordsTestCase"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.TickFlowRecordsTestCase">[docs]</a><span class="k">class</span> <span class="nc">TickFlowRecordsTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="TickFlowRecordsTestCase.setUp"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.TickFlowRecordsTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flow_records</span> <span class="o">=</span> <span class="p">[</span><span class="n">MagicMock</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">tick_flow_record</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">patch_and_release_flow_record</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">CRITICAL</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TickFlowRecordsTestCase.tearDown"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.TickFlowRecordsTestCase.tearDown">[docs]</a>    <span class="k">def</span> <span class="nf">tearDown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">tearDown</span><span class="p">()</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">disable</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">NOTSET</span><span class="p">)</span></div>
+
+    <span class="k">def</span> <span class="nf">_tick_flow_records</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">tick_flow_records</span><span class="p">(</span><span class="n">flow_records</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">flow_records</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TickFlowRecordsTestCase.test_ticks_flow_records"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.TickFlowRecordsTestCase.test_ticks_flow_records">[docs]</a>    <span class="k">def</span> <span class="nf">test_ticks_flow_records</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tick_flow_records</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">tick_flow_record</span><span class="o">.</span><span class="n">call_args_list</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">call</span><span class="p">(</span><span class="n">flow_record</span><span class="o">=</span><span class="n">flow_record</span><span class="p">)</span> <span class="k">for</span> <span class="n">flow_record</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">flow_records</span><span class="p">]</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="TickFlowRecordsTestCase.test_patches_and_releases_flow_records"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.TickFlowRecordsTestCase.test_patches_and_releases_flow_records">[docs]</a>    <span class="k">def</span> <span class="nf">test_patches_and_releases_flow_records</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tick_flow_records</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">patch_and_release_flow_record</span><span class="o">.</span><span class="n">call_args_list</span><span class="p">,</span>
+            <span class="p">[</span>
+                <span class="n">call</span><span class="p">(</span><span class="n">flow_record</span><span class="o">=</span><span class="n">flow_record</span><span class="p">,</span>
+                     <span class="n">patches</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">tick_flow_record</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">flow_record</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">flow_records</span>
+            <span class="p">]</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="TickFlowRecordsTestCase.test_returns_tick_stats"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.TickFlowRecordsTestCase.test_returns_tick_stats">[docs]</a>    <span class="k">def</span> <span class="nf">test_returns_tick_stats</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tick_flow_records</span><span class="p">()</span>
+        <span class="n">expected_tick_stats</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">flow_record</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flow_records</span><span class="p">):</span>
+            <span class="n">expected_status</span> <span class="o">=</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">tick_flow_record</span><span class="o">.</span><span class="n">return_value</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span>
+            <span class="n">expected_tick_stats</span><span class="p">[</span><span class="n">expected_status</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">expected_tick_stats</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TickFlowRecordsTestCase.test_patches_with_failed_status_for_tick_error"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.TickFlowRecordsTestCase.test_patches_with_failed_status_for_tick_error">[docs]</a>    <span class="nd">@patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">flow_runner</span><span class="p">,</span> <span class="s1">&#39;traceback&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">test_patches_with_failed_status_for_tick_error</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mock_traceback</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">tick_flow_record</span><span class="o">.</span><span class="n">side_effect</span> <span class="o">=</span> <span class="ne">Exception</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tick_flow_records</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">patch_and_release_flow_record</span><span class="o">.</span><span class="n">call_args_list</span><span class="p">,</span>
+            <span class="p">[</span>
+                <span class="n">call</span><span class="p">(</span><span class="n">flow_record</span><span class="o">=</span><span class="n">flow_record</span><span class="p">,</span>
+                     <span class="n">patches</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;status&#39;</span><span class="p">:</span> <span class="s1">&#39;FAILED&#39;</span><span class="p">,</span>
+                              <span class="s1">&#39;error&#39;</span><span class="p">:</span> <span class="n">mock_traceback</span><span class="o">.</span><span class="n">format_exc</span><span class="o">.</span><span class="n">return_value</span><span class="p">})</span>
+                <span class="k">for</span> <span class="n">flow_record</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">flow_records</span>
+            <span class="p">]</span>
+        <span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="TickFlowRecordTestCase"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.TickFlowRecordTestCase">[docs]</a><span class="k">class</span> <span class="nc">TickFlowRecordTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="TickFlowRecordTestCase.setUp"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.TickFlowRecordTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flow_record</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">flow_record_to_flow</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_flow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">flow_record_to_flow</span><span class="o">.</span><span class="n">return_value</span></div>
+
+<div class="viewcode-block" id="TickFlowRecordTestCase.test_calls_engine_tick_with_flow_record_to_flow_result"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.TickFlowRecordTestCase.test_calls_engine_tick_with_flow_record_to_flow_result">[docs]</a>    <span class="k">def</span> <span class="nf">test_calls_engine_tick_with_flow_record_to_flow_result</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">tick_flow_record</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flow_record</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">flow_record_to_flow</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="n">flow_record</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">flow_record</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">flow_engine</span><span class="o">.</span><span class="n">tick_flow_until_has_no_pending</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_flow</span><span class="p">,</span> <span class="n">task_ctx</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">task_ctx</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="TickFlowRecordTestCase.test_includes_flow_dict_and_tickable_tasks_in_result"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.TickFlowRecordTestCase.test_includes_flow_dict_and_tickable_tasks_in_result">[docs]</a>    <span class="k">def</span> <span class="nf">test_includes_flow_dict_and_tickable_tasks_in_result</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">mock_flow_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;key_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">i</span><span class="p">:</span> <span class="n">MagicMock</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">flow_engine</span><span class="o">.</span><span class="n">flow_to_flow_dict</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> <span class="n">mock_flow_dict</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">tick_flow_record</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">flow_record</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="n">result</span><span class="p">,</span>
+            <span class="p">{</span><span class="o">**</span><span class="n">mock_flow_dict</span><span class="p">,</span> 
+             <span class="s1">&#39;num_tickable_tasks&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_flow</span><span class="o">.</span><span class="n">get_tickable_tasks</span>
+                                        <span class="o">.</span><span class="n">return_value</span><span class="p">))}</span>
+        <span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="FlowRecordToFlowTestCase"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.FlowRecordToFlowTestCase">[docs]</a><span class="k">class</span> <span class="nc">FlowRecordToFlowTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="FlowRecordToFlowTestCase.test_to_flow"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.FlowRecordToFlowTestCase.test_to_flow">[docs]</a>    <span class="k">def</span> <span class="nf">test_to_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">flow_record</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="n">flow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">flow_record_to_flow</span><span class="p">(</span><span class="n">flow_record</span><span class="o">=</span><span class="n">flow_record</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">flow_engine</span><span class="o">.</span><span class="n">flow_dict_to_flow</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="n">flow_dict</span><span class="o">=</span><span class="n">flow_record</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">flow</span><span class="p">,</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">flow_engine</span><span class="o">.</span><span class="n">flow_dict_to_flow</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span></div></div>
+        
+<div class="viewcode-block" id="PatchAndReleaseFlowRecordTestCase"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.PatchAndReleaseFlowRecordTestCase">[docs]</a><span class="k">class</span> <span class="nc">PatchAndReleaseFlowRecordTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="PatchAndReleaseFlowRecordTestCase.test_patch_flow_record"><a class="viewcode-back" href="../../../../../api/mc.runners.flow_runner.tests.html#mc.runners.flow_runner.tests.test_flow_runner.PatchAndReleaseFlowRecordTestCase.test_patch_flow_record">[docs]</a>    <span class="k">def</span> <span class="nf">test_patch_flow_record</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">flow_record</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="n">patches</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">patch_and_release_flow_record</span><span class="p">(</span><span class="n">flow_record</span><span class="o">=</span><span class="n">flow_record</span><span class="p">,</span>
+                                                  <span class="n">patches</span><span class="o">=</span><span class="n">patches</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">runner</span><span class="o">.</span><span class="n">flow_record_client</span><span class="o">.</span><span class="n">patch_and_release_flow_record</span>
+             <span class="o">.</span><span class="n">call_args</span><span class="p">),</span>
+            <span class="n">call</span><span class="p">(</span><span class="n">flow_record</span><span class="o">=</span><span class="n">flow_record</span><span class="p">,</span> <span class="n">patches</span><span class="o">=</span><span class="n">patches</span><span class="p">)</span>
+        <span class="p">)</span></div></div>
+
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">unittest</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

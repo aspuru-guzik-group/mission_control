@@ -1,0 +1,7 @@
+mc\.job\_engines\.base\_job\_submission\_builder module
+=======================================================
+
+.. automodule:: mc.job_engines.base_job_submission_builder
+    :members:
+    :undoc-members:
+    :show-inheritance:

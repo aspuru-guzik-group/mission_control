@@ -1,0 +1,7 @@
+mc\.task\_handlers\.switch\_task\_handler module
+================================================
+
+.. automodule:: mc.task_handlers.switch_task_handler
+    :members:
+    :undoc-members:
+    :show-inheritance:

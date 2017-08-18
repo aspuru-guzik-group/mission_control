@@ -1,0 +1,394 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.daos.tests.test_sa_dao &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mc.daos.tests.test_sa_dao</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">unittest</span>
+<span class="kn">from</span> <span class="nn">unittest.mock</span> <span class="k">import</span> <span class="n">call</span><span class="p">,</span> <span class="n">MagicMock</span><span class="p">,</span> <span class="n">patch</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">sa_dao</span>
+
+
+<div class="viewcode-block" id="BaseTestCase"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.BaseTestCase">[docs]</a><span class="k">class</span> <span class="nc">BaseTestCase</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="BaseTestCase.setUp"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.BaseTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_type</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">query</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span> <span class="o">=</span> <span class="n">sa_dao</span><span class="o">.</span><span class="n">SaDao</span><span class="p">(</span>
+            <span class="n">db_uri</span><span class="o">=</span><span class="n">MagicMock</span><span class="p">(),</span>
+            <span class="n">sa_schema</span><span class="o">=</span><span class="n">MagicMock</span><span class="p">(),</span>
+            <span class="n">marsh_schemas</span><span class="o">=</span><span class="n">MagicMock</span><span class="p">(),</span>
+            <span class="n">engine</span><span class="o">=</span><span class="n">MagicMock</span><span class="p">(),</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="BaseTestCase.setup_module_mocks"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.BaseTestCase.setup_module_mocks">[docs]</a>    <span class="k">def</span> <span class="nf">setup_module_mocks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">module</span><span class="o">=</span><span class="n">sa_dao</span><span class="p">):</span>
+        <span class="n">patchers</span> <span class="o">=</span> <span class="p">{</span><span class="n">attr</span><span class="p">:</span> <span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span> <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">}</span>
+        <span class="n">mocks</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">patcher</span> <span class="ow">in</span> <span class="n">patchers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">addCleanup</span><span class="p">(</span><span class="n">patcher</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
+            <span class="n">mocks</span><span class="p">[</span><span class="n">attr</span><span class="p">]</span> <span class="o">=</span> <span class="n">patcher</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">mocks</span></div>
+
+<div class="viewcode-block" id="BaseTestCase.setup_dao_mocks"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.BaseTestCase.setup_dao_mocks">[docs]</a>    <span class="k">def</span> <span class="nf">setup_dao_mocks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mock_factory</span><span class="o">=</span><span class="n">MagicMock</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span> <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">mock_factory</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="BaseTestCase.generate_mocks"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.BaseTestCase.generate_mocks">[docs]</a>    <span class="k">def</span> <span class="nf">generate_mocks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span> <span class="k">return</span> <span class="p">[</span><span class="n">MagicMock</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">)]</span></div></div>
+
+<div class="viewcode-block" id="CreateItemTestCase"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.CreateItemTestCase">[docs]</a><span class="k">class</span> <span class="nc">CreateItemTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="CreateItemTestCase.setUp"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.CreateItemTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_dao_mocks</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;get_item_table&#39;</span><span class="p">,</span> <span class="s1">&#39;get_item_by_key&#39;</span><span class="p">,</span>
+                                    <span class="s1">&#39;execute&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_item_table</span><span class="o">.</span><span class="n">return_value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">create_item</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_type</span><span class="p">,</span>
+                                           <span class="n">kwargs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CreateItemTestCase.test_gets_item_table"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.CreateItemTestCase.test_gets_item_table">[docs]</a>    <span class="k">def</span> <span class="nf">test_gets_item_table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_item_table</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_type</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="CreateItemTestCase.test_creates_insert_statement"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.CreateItemTestCase.test_creates_insert_statement">[docs]</a>    <span class="k">def</span> <span class="nf">test_creates_insert_statement</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expected_table</span><span class="o">.</span><span class="n">insert</span><span class="o">.</span><span class="n">return_value</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="CreateItemTestCase.test_executes_insert_statement"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.CreateItemTestCase.test_executes_insert_statement">[docs]</a>    <span class="k">def</span> <span class="nf">test_executes_insert_statement</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">expected_statement</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected_table</span><span class="o">.</span><span class="n">insert</span><span class="o">.</span><span class="n">return_value</span>\
+                <span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">return_value</span><span class="o">.</span><span class="n">return_defaults</span><span class="o">.</span><span class="n">return_value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">execute</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="n">expected_statement</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="CreateItemTestCase.test_returns_fetched_item"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.CreateItemTestCase.test_returns_fetched_item">[docs]</a>    <span class="k">def</span> <span class="nf">test_returns_fetched_item</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">expected_key</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">execute</span><span class="o">.</span><span class="n">return_value</span><span class="o">.</span><span class="n">inserted_primary_key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_item_by_key</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_type</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">expected_key</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_item_by_key</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="GetItemTableTestCase"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetItemTableTestCase">[docs]</a><span class="k">class</span> <span class="nc">GetItemTableTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="GetItemTableTestCase.test_gets_table_from_dict"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetItemTableTestCase.test_gets_table_from_dict">[docs]</a>    <span class="k">def</span> <span class="nf">test_gets_table_from_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_item_table</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">sa_schema</span><span class="p">[</span><span class="s1">&#39;tables&#39;</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">item_type</span><span class="p">])</span></div></div>
+
+<div class="viewcode-block" id="EngineTestCase"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.EngineTestCase">[docs]</a><span class="k">class</span> <span class="nc">EngineTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="EngineTestCase.test_gets_engine_if_set"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.EngineTestCase.test_gets_engine_if_set">[docs]</a>    <span class="k">def</span> <span class="nf">test_gets_engine_if_set</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">_engine</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">_engine</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="EngineTestCase.test_creates_engine_if_not_set"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.EngineTestCase.test_creates_engine_if_not_set">[docs]</a>    <span class="nd">@patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">sa_dao</span><span class="p">,</span> <span class="s1">&#39;_sqla&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">test_creates_engine_if_not_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_sqla</span><span class="p">):</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">_engine</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">engine</span><span class="p">,</span> <span class="n">_sqla</span><span class="o">.</span><span class="n">create_engine</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="EngineTestCase.test_sets_engine"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.EngineTestCase.test_sets_engine">[docs]</a>    <span class="k">def</span> <span class="nf">test_sets_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">_engine</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="GetItemsTestCase"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetItemsTestCase">[docs]</a><span class="k">class</span> <span class="nc">GetItemsTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="GetItemsTestCase.setUp"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetItemsTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_dao_mocks</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;get_items_statement&#39;</span><span class="p">,</span>
+                                    <span class="s1">&#39;statement_to_dicts&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_items</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_type</span><span class="p">,</span>
+                                         <span class="n">query</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="GetItemsTestCase.test_gets_items_statement"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetItemsTestCase.test_gets_items_statement">[docs]</a>    <span class="k">def</span> <span class="nf">test_gets_items_statement</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_items_statement</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_type</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="GetItemsTestCase.test_returns_results"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetItemsTestCase.test_returns_results">[docs]</a>    <span class="k">def</span> <span class="nf">test_returns_results</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">statement_to_dicts</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="n">statement</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_items_statement</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">statement_to_dicts</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="GetItemsStatementTestCase"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetItemsStatementTestCase">[docs]</a><span class="k">class</span> <span class="nc">GetItemsStatementTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="GetItemsStatementTestCase.setUp"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetItemsStatementTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_dao_mocks</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;get_item_table&#39;</span><span class="p">,</span>
+                                    <span class="s1">&#39;add_wheres_to_statement&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_item_table</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">add_wheres_to_statement</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_items_statement</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_type</span><span class="p">,</span>
+                                                   <span class="n">query</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="GetItemsStatementTestCase.test_gets_item_table"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetItemsStatementTestCase.test_gets_item_table">[docs]</a>    <span class="k">def</span> <span class="nf">test_gets_item_table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_item_table</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_type</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="GetItemsStatementTestCase.test_returns_statement_with_wheres"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetItemsStatementTestCase.test_returns_statement_with_wheres">[docs]</a>    <span class="k">def</span> <span class="nf">test_returns_statement_with_wheres</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">expected_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_item_table</span><span class="o">.</span><span class="n">return_value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">add_wheres_to_statement</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="n">statement</span><span class="o">=</span><span class="n">expected_table</span><span class="o">.</span><span class="n">select</span><span class="p">(),</span>
+                 <span class="n">query</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">,</span>
+                 <span class="n">columns</span><span class="o">=</span><span class="n">expected_table</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">,</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">add_wheres_to_statement</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="StatementToDictsTestCase"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.StatementToDictsTestCase">[docs]</a><span class="k">class</span> <span class="nc">StatementToDictsTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="StatementToDictsTestCase.setUp"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.StatementToDictsTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">statement</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_dao_mocks</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;row_to-dict&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mock_rows</span> <span class="o">=</span> <span class="p">[</span><span class="n">MagicMock</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">execute</span><span class="o">.</span><span class="n">return_value</span><span class="o">.</span><span class="n">fetchall</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">mock_rows</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">statement_to_dicts</span><span class="p">(</span><span class="n">statement</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">statement</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="StatementToDictsTestCase.test_executes_statement"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.StatementToDictsTestCase.test_executes_statement">[docs]</a>    <span class="k">def</span> <span class="nf">test_executes_statement</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">execute</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">statement</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="StatementToDictsTestCase.test_returns_rows_as_dicts"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.StatementToDictsTestCase.test_returns_rows_as_dicts">[docs]</a>    <span class="k">def</span> <span class="nf">test_returns_rows_as_dicts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">expected_items</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">row_to_dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">execute</span><span class="o">.</span><span class="n">return_value</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="n">expected_items</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="PatchItemTestCase"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.PatchItemTestCase">[docs]</a><span class="k">class</span> <span class="nc">PatchItemTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="PatchItemTestCase.setUp"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.PatchItemTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">patches</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_dao_mocks</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;get_item_table&#39;</span><span class="p">,</span> <span class="s1">&#39;get_item_by_key&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">patch_item</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_type</span><span class="p">,</span>
+                                          <span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="n">patches</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">patches</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="PatchItemTestCase.test_gets_table"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.PatchItemTestCase.test_gets_table">[docs]</a>    <span class="k">def</span> <span class="nf">test_gets_table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_item_table</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_type</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="PatchItemTestCase.test_updates_item_row"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.PatchItemTestCase.test_updates_item_row">[docs]</a>    <span class="k">def</span> <span class="nf">test_updates_item_row</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">expected_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_item_table</span><span class="o">.</span><span class="n">return_value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">expected_table</span><span class="o">.</span><span class="n">update</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="n">expected_table</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="n">expected_table</span><span class="o">.</span><span class="n">update</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="o">.</span><span class="n">return_value</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">patches</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">execute</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="n">expected_table</span><span class="o">.</span><span class="n">update</span><span class="p">()</span><span class="o">.</span><span class="n">where</span><span class="o">.</span><span class="n">return_value</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="PatchItemTestCase.test_returns_updated_row"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.PatchItemTestCase.test_returns_updated_row">[docs]</a>    <span class="k">def</span> <span class="nf">test_returns_updated_row</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_item_by_key</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_type</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_item_by_key</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="FlushTestCase"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.FlushTestCase">[docs]</a><span class="k">class</span> <span class="nc">FlushTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="FlushTestCase.setUp"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.FlushTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_dao_mocks</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;get_item_table&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">flush_mc_db</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="FlushTestCase.test_calls_delete_for_each_item_table"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.FlushTestCase.test_calls_delete_for_each_item_table">[docs]</a>    <span class="k">def</span> <span class="nf">test_calls_delete_for_each_item_table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">item_type</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">ITEM_TYPES</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_item_table</span><span class="o">.</span><span class="n">call_args_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                             <span class="n">call</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="n">item_type</span><span class="p">))</span>
+            <span class="n">expected_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_item_table</span><span class="o">.</span><span class="n">return_value</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">execute</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                             <span class="n">call</span><span class="p">(</span><span class="n">expected_table</span><span class="o">.</span><span class="n">delete</span><span class="p">()))</span></div></div>
+
+<div class="viewcode-block" id="DeleteItemsTestCase"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.DeleteItemsTestCase">[docs]</a><span class="k">class</span> <span class="nc">DeleteItemsTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="DeleteItemsTestCase.setUp"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.DeleteItemsTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_dao_mocks</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;get_item_table&#39;</span><span class="p">,</span> <span class="s1">&#39;get_items_statement&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item_type</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">query</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">delete_items</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_type</span><span class="p">,</span>
+                                            <span class="n">query</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="DeleteItemsTestCase.test_gets_item_table"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.DeleteItemsTestCase.test_gets_item_table">[docs]</a>    <span class="k">def</span> <span class="nf">test_gets_item_table</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_item_table</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_type</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="DeleteItemsTestCase.test_gets_items_statement"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.DeleteItemsTestCase.test_gets_items_statement">[docs]</a>    <span class="k">def</span> <span class="nf">test_gets_items_statement</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_items_statement</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item_type</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="DeleteItemsTestCase.test_builds_and_executes_delete_statement"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.DeleteItemsTestCase.test_builds_and_executes_delete_statement">[docs]</a>    <span class="k">def</span> <span class="nf">test_builds_and_executes_delete_statement</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">expected_item_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_item_table</span><span class="o">.</span><span class="n">return_value</span>
+        <span class="n">expected_items_statement</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_items_statement</span><span class="o">.</span><span class="n">return_value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">expected_items_statement</span><span class="o">.</span><span class="n">with_only_columns</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">([</span><span class="n">expected_item_table</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">key</span><span class="p">]))</span>
+        <span class="n">expected_keys_subq</span> <span class="o">=</span> <span class="p">(</span><span class="n">expected_items_statement</span><span class="o">.</span><span class="n">with_only_columns</span>
+                              <span class="o">.</span><span class="n">return_value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="n">expected_item_table</span><span class="o">.</span><span class="n">delete</span><span class="o">.</span><span class="n">return_value</span><span class="o">.</span><span class="n">where</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="n">expected_item_table</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">key</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">expected_keys_subq</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="n">expected_delete_statement</span> <span class="o">=</span> <span class="p">(</span><span class="n">expected_item_table</span><span class="o">.</span><span class="n">delete</span><span class="o">.</span><span class="n">return_value</span>
+                                     <span class="o">.</span><span class="n">where</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">execute</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="n">expected_delete_statement</span><span class="p">))</span></div></div>
+
+<div class="viewcode-block" id="GetFlowQueueItemsToClaim"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetFlowQueueItemsToClaim">[docs]</a><span class="k">class</span> <span class="nc">GetFlowQueueItemsToClaim</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="GetFlowQueueItemsToClaim.setUp"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetFlowQueueItemsToClaim.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+
+        <span class="k">class</span> <span class="nc">MagicMockWithGt</span><span class="p">(</span><span class="n">MagicMock</span><span class="p">):</span>
+            <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">_self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+                <span class="nb">super</span><span class="p">(</span><span class="n">MagicMock</span><span class="p">,</span> <span class="n">_self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+                <span class="k">def</span> <span class="nf">mock_gt</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span> <span class="k">return</span> <span class="n">_self</span><span class="o">.</span><span class="n">cls</span><span class="p">()</span>
+                <span class="n">_self</span><span class="o">.</span><span class="fm">__gt__</span> <span class="o">=</span> <span class="n">mock_gt</span>
+
+        <span class="n">mock_factory</span> <span class="o">=</span> <span class="n">MagicMockWithGt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_dao_mocks</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;get_items_statement&#39;</span><span class="p">,</span>
+                                    <span class="s1">&#39;get_default_claiming_filters&#39;</span><span class="p">,</span>
+                                    <span class="s1">&#39;get_lock_count_subq&#39;</span><span class="p">,</span>
+                                    <span class="s1">&#39;statement_to_dicts&#39;</span><span class="p">],</span>
+                             <span class="n">mock_factory</span><span class="o">=</span><span class="n">mock_factory</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_module_mocks</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;_sqla&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queue</span> <span class="o">=</span> <span class="n">mock_factory</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_items_statement</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_items_statement</span><span class="o">.</span><span class="n">return_value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_lock_subq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_lock_count_subq</span><span class="o">.</span><span class="n">return_value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_flow_queue_items_to_claim</span><span class="p">(</span><span class="n">queue</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="GetFlowQueueItemsToClaim.test_gets_claiming_filters"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetFlowQueueItemsToClaim.test_gets_claiming_filters">[docs]</a>    <span class="k">def</span> <span class="nf">test_gets_claiming_filters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_default_claiming_filters</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="GetFlowQueueItemsToClaim.test_gets_items_statement"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetFlowQueueItemsToClaim.test_gets_items_statement">[docs]</a>    <span class="k">def</span> <span class="nf">test_gets_items_statement</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_items_statement</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">queue</span><span class="p">[</span><span class="s1">&#39;queue_spec&#39;</span><span class="p">][</span><span class="s1">&#39;item_type&#39;</span><span class="p">],</span>
+                 <span class="n">query</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_default_claiming_filters</span><span class="p">()}</span>
+                <span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="GetFlowQueueItemsToClaim.test_gets_lock_count_subq"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetFlowQueueItemsToClaim.test_gets_lock_count_subq">[docs]</a>    <span class="k">def</span> <span class="nf">test_gets_lock_count_subq</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">get_lock_count_subq</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span> <span class="n">call</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="GetFlowQueueItemsToClaim.test_joins_items_statement_and_lock_subq"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetFlowQueueItemsToClaim.test_joins_items_statement_and_lock_subq">[docs]</a>    <span class="k">def</span> <span class="nf">test_joins_items_statement_and_lock_subq</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">expected_items_statement</span><span class="o">.</span><span class="n">join</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_lock_subq</span><span class="p">,</span>
+                 <span class="n">isouter</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">onclause</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_items_statement</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> \
+                           <span class="bp">self</span><span class="o">.</span><span class="n">expected_lock_subq</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">lockee_key</span><span class="p">)</span>
+                <span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="GetFlowQueueItemsToClaim.test_selects_from_join_with_where_conditions"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetFlowQueueItemsToClaim.test_selects_from_join_with_where_conditions">[docs]</a>    <span class="k">def</span> <span class="nf">test_selects_from_join_with_where_conditions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">expected_join</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected_items_statement</span><span class="o">.</span><span class="n">join</span><span class="o">.</span><span class="n">return_value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mocks</span><span class="p">[</span><span class="s1">&#39;_sqla&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">select</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span> <span class="n">call</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">))</span>
+        <span class="n">expected_select</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mocks</span><span class="p">[</span><span class="s1">&#39;_sqla&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">select</span><span class="o">.</span><span class="n">return_value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">expected_select</span><span class="o">.</span><span class="n">select_from</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="n">expected_join</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="n">expected_select</span><span class="o">.</span><span class="n">select_from</span><span class="o">.</span><span class="n">return_value</span><span class="o">.</span><span class="n">where</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">expected_join</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">num_tickable_tasks</span> <span class="o">==</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="o">|</span> <span class="p">(</span><span class="n">expected_join</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">lock_count</span> <span class="o">==</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="o">|</span> <span class="p">(</span><span class="n">expected_join</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">num_tickable_tasks</span> <span class="o">&gt;</span> \
+                   <span class="n">expected_join</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">lock_count</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="GetFlowQueueItemsToClaim.test_returns_dicts"><a class="viewcode-back" href="../../../../api/mc.daos.tests.html#mc.daos.tests.test_sa_dao.GetFlowQueueItemsToClaim.test_returns_dicts">[docs]</a>    <span class="k">def</span> <span class="nf">test_returns_dicts</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">statement_to_dicts</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="n">statement</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mocks</span><span class="p">[</span><span class="s1">&#39;_sqla&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">select</span><span class="o">.</span><span class="n">return_value</span><span class="o">.</span><span class="n">select_from</span>
+                            <span class="o">.</span><span class="n">return_value</span><span class="o">.</span><span class="n">where</span><span class="o">.</span><span class="n">return_value</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dao</span><span class="o">.</span><span class="n">statement_to_dicts</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span></div></div>
+
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">unittest</span><span class="o">.</span><span class="n">main</span><span class="p">()</span>
+
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

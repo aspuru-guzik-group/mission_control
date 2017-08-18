@@ -1,0 +1,7 @@
+mc\.constants module
+====================
+
+.. automodule:: mc.constants
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -1,0 +1,289 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.runners.jobman_job_runner package &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mc.task_handlers package" href="mc.task_handlers.html" />
+    <link rel="prev" title="mc.runners.flow_runner package" href="mc.runners.flow_runner.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.task_handlers.html" title="mc.task_handlers package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mc.runners.flow_runner.html" title="mc.runners.flow_runner package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="mc.runners.html" accesskey="U">mc.runners package</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-mc.runners.jobman_job_runner">
+<span id="mc-runners-jobman-job-runner-package"></span><h1>mc.runners.jobman_job_runner package<a class="headerlink" href="#module-mc.runners.jobman_job_runner" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-mc.runners.jobman_job_runner.cli">
+<span id="mc-runners-jobman-job-runner-cli-module"></span><h2>mc.runners.jobman_job_runner.cli module<a class="headerlink" href="#module-mc.runners.jobman_job_runner.cli" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mc.runners.jobman_job_runner.cli.JobClient">
+<em class="property">class </em><code class="descclassname">mc.runners.jobman_job_runner.cli.</code><code class="descname">JobClient</code><span class="sig-paren">(</span><em>mc_client=None</em>, <em>queue_key=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/cli.html#JobClient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.cli.JobClient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.cli.JobClient.claim_jobs">
+<code class="descname">claim_jobs</code><span class="sig-paren">(</span><em>params=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/cli.html#JobClient.claim_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.cli.JobClient.claim_jobs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="mc.runners.jobman_job_runner.cli.build_job_runner_per_cfg">
+<code class="descclassname">mc.runners.jobman_job_runner.cli.</code><code class="descname">build_job_runner_per_cfg</code><span class="sig-paren">(</span><em>cfg=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/cli.html#build_job_runner_per_cfg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.cli.build_job_runner_per_cfg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mc.runners.jobman_job_runner.cli.get_cli_args">
+<code class="descclassname">mc.runners.jobman_job_runner.cli.</code><code class="descname">get_cli_args</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/cli.html#get_cli_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.cli.get_cli_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mc.runners.jobman_job_runner.cli.load_cfg_from_file">
+<code class="descclassname">mc.runners.jobman_job_runner.cli.</code><code class="descname">load_cfg_from_file</code><span class="sig-paren">(</span><em>file_path=None</em>, <em>file_type=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/cli.html#load_cfg_from_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.cli.load_cfg_from_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mc.runners.jobman_job_runner.cli.load_module_from_file_path">
+<code class="descclassname">mc.runners.jobman_job_runner.cli.</code><code class="descname">load_module_from_file_path</code><span class="sig-paren">(</span><em>file_path=None</em>, <em>module_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/cli.html#load_module_from_file_path"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.cli.load_module_from_file_path" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="mc.runners.jobman_job_runner.cli.main">
+<code class="descclassname">mc.runners.jobman_job_runner.cli.</code><code class="descname">main</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/cli.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.cli.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-mc.runners.jobman_job_runner.job_runner">
+<span id="mc-runners-jobman-job-runner-job-runner-module"></span><h2>mc.runners.jobman_job_runner.job_runner module<a class="headerlink" href="#module-mc.runners.jobman_job_runner.job_runner" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner">
+<em class="property">class </em><code class="descclassname">mc.runners.jobman_job_runner.job_runner.</code><code class="descname">JobRunner</code><span class="sig-paren">(</span><em>job_record_client=None</em>, <em>build_jobdir_fn=None</em>, <em>jobman=None</em>, <em>max_claims_per_tick=None</em>, <em>logger=None</em>, <em>logging_cfg=None</em>, <em>jobman_source_key=None</em>, <em>artifact_handler=None</em>, <em>jobdirs_dir=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.PROCESSED_TAG">
+<code class="descname">PROCESSED_TAG</code><em class="property"> = ‘PROCESSED’</em><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.PROCESSED_TAG" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="exception">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.SubmissionError">
+<em class="property">exception </em><code class="descname">SubmissionError</code><span class="sig-paren">(</span><em>*args</em>, <em>cause=None</em>, <em>mc_job=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.SubmissionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.SubmissionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.build_jobdir">
+<code class="descname">build_jobdir</code><span class="sig-paren">(</span><em>mc_job=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.build_jobdir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.build_jobdir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.fill_jobman_queue">
+<code class="descname">fill_jobman_queue</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.fill_jobman_queue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.fill_jobman_queue" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.finalize_jobman_jobs">
+<code class="descname">finalize_jobman_jobs</code><span class="sig-paren">(</span><em>jobman_jobs=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.finalize_jobman_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.finalize_jobman_jobs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.get_claim_limit">
+<code class="descname">get_claim_limit</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.get_claim_limit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.get_claim_limit" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.get_jobdir_prefix">
+<code class="descname">get_jobdir_prefix</code><span class="sig-paren">(</span><em>mc_job=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.get_jobdir_prefix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.get_jobdir_prefix" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.get_std_log_contents_for_jobman_job">
+<code class="descname">get_std_log_contents_for_jobman_job</code><span class="sig-paren">(</span><em>jobman_job=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.get_std_log_contents_for_jobman_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.get_std_log_contents_for_jobman_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.get_unprocessed_finished_jobman_jobs">
+<code class="descname">get_unprocessed_finished_jobman_jobs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.get_unprocessed_finished_jobman_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.get_unprocessed_finished_jobman_jobs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.parse_jobman_job">
+<code class="descname">parse_jobman_job</code><span class="sig-paren">(</span><em>jobman_job=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.parse_jobman_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.parse_jobman_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.parse_jobman_jobs">
+<code class="descname">parse_jobman_jobs</code><span class="sig-paren">(</span><em>jobman_jobs=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.parse_jobman_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.parse_jobman_jobs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.parsed_jobman_job_to_patch">
+<code class="descname">parsed_jobman_job_to_patch</code><span class="sig-paren">(</span><em>parsed_jobman_job=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.parsed_jobman_job_to_patch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.parsed_jobman_job_to_patch" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.parsed_jobman_jobs_to_keyed_patches">
+<code class="descname">parsed_jobman_jobs_to_keyed_patches</code><span class="sig-paren">(</span><em>parsed_jobman_jobs=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.parsed_jobman_jobs_to_keyed_patches"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.parsed_jobman_jobs_to_keyed_patches" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.patch_job_records">
+<code class="descname">patch_job_records</code><span class="sig-paren">(</span><em>keyed_patches=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.patch_job_records"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.patch_job_records" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.patch_job_records_per_submission_outcome">
+<code class="descname">patch_job_records_per_submission_outcome</code><span class="sig-paren">(</span><em>job_records_by_submission_outcome=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.patch_job_records_per_submission_outcome"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.patch_job_records_per_submission_outcome" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.prepare_job_inputs">
+<code class="descname">prepare_job_inputs</code><span class="sig-paren">(</span><em>mc_job=None</em>, <em>jobdir=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.prepare_job_inputs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.prepare_job_inputs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.process_finished_jobs">
+<code class="descname">process_finished_jobs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.process_finished_jobs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.process_finished_jobs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.read_jobdir_log">
+<code class="descname">read_jobdir_log</code><span class="sig-paren">(</span><em>job_spec=None</em>, <em>log=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.read_jobdir_log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.read_jobdir_log" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.read_jobdir_logs">
+<code class="descname">read_jobdir_logs</code><span class="sig-paren">(</span><em>job_spec=None</em>, <em>logs=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.read_jobdir_logs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.read_jobdir_logs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.submit_mc_job">
+<code class="descname">submit_mc_job</code><span class="sig-paren">(</span><em>mc_job=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.submit_mc_job"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.submit_mc_job" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.runners.jobman_job_runner.job_runner.JobRunner.tick">
+<code class="descname">tick</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/runners/jobman_job_runner/job_runner.html#JobRunner.tick"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.runners.jobman_job_runner.job_runner.JobRunner.tick" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">mc.runners.jobman_job_runner package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-mc.runners.jobman_job_runner.cli">mc.runners.jobman_job_runner.cli module</a></li>
+<li><a class="reference internal" href="#module-mc.runners.jobman_job_runner.job_runner">mc.runners.jobman_job_runner.job_runner module</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mc.runners.flow_runner.html"
+                        title="previous chapter">mc.runners.flow_runner package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mc.task_handlers.html"
+                        title="next chapter">mc.task_handlers package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/mc.runners.jobman_job_runner.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.task_handlers.html" title="mc.task_handlers package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mc.runners.flow_runner.html" title="mc.runners.flow_runner package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="mc.runners.html" >mc.runners package</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

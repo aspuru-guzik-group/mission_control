@@ -1,0 +1,30 @@
+mc.examples.interpolations package
+==================================
+
+Submodules
+----------
+
+mc.examples.interpolations.entrypoint module
+--------------------------------------------
+
+.. automodule:: mc.examples.interpolations.entrypoint
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+mc.examples.interpolations.test_example module
+----------------------------------------------
+
+.. automodule:: mc.examples.interpolations.test_example
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: mc.examples.interpolations
+    :members:
+    :undoc-members:
+    :show-inheritance:

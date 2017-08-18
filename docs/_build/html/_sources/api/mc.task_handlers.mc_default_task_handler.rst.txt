@@ -1,0 +1,7 @@
+mc\.task\_handlers\.mc\_default\_task\_handler module
+=====================================================
+
+.. automodule:: mc.task_handlers.mc_default_task_handler
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -1,0 +1,216 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.utils.mc_sandbox &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mc.utils.mc_sandbox</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">from</span> <span class="nn">mc.db.db</span> <span class="k">import</span> <span class="n">Db</span>
+<span class="kn">from</span> <span class="nn">mc.clients.job_record_client</span> <span class="k">import</span> <span class="n">JobRecordClient</span>
+<span class="kn">from</span> <span class="nn">mc.clients.flow_record_client</span> <span class="k">import</span> <span class="n">FlowRecordClient</span>
+<span class="kn">from</span> <span class="nn">mc.flows.flow_engine</span> <span class="k">import</span> <span class="n">FlowEngine</span>
+<span class="kn">from</span> <span class="nn">mc.runners.flow_runner</span> <span class="k">import</span> <span class="n">FlowRunner</span>
+
+
+<div class="viewcode-block" id="McSandbox"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox">[docs]</a><span class="k">class</span> <span class="nc">McSandbox</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A facade for playing with parts of the MissionControl framework.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mc_db_uri</span><span class="o">=</span><span class="s1">&#39;sqlite://&#39;</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logger</span> <span class="ow">or</span> <span class="n">logging</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mc_db</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_mc_db</span><span class="p">(</span><span class="n">mc_db_uri</span><span class="o">=</span><span class="n">mc_db_uri</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">queues</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_queues</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flow_record_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_flow_record_client</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">job_record_client</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_job_record_client</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flow_engine</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_flow_engine</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task_ctx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_task_ctx</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">flow_runner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_flow_runner</span><span class="p">()</span>
+
+<div class="viewcode-block" id="McSandbox.setup_mc_db"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.setup_mc_db">[docs]</a>    <span class="k">def</span> <span class="nf">setup_mc_db</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mc_db_uri</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">mc_db</span> <span class="o">=</span> <span class="n">Db</span><span class="p">(</span><span class="n">db_uri</span><span class="o">=</span><span class="n">mc_db_uri</span><span class="p">)</span>
+        <span class="n">mc_db</span><span class="o">.</span><span class="n">ensure_tables</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">mc_db</span></div>
+
+<div class="viewcode-block" id="McSandbox.setup_queues"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.setup_queues">[docs]</a>    <span class="k">def</span> <span class="nf">setup_queues</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">item_type</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">mc_db</span><span class="o">.</span><span class="n">create_item</span><span class="p">(</span>
+                <span class="n">item_type</span><span class="o">=</span><span class="s1">&#39;queue&#39;</span><span class="p">,</span>
+                <span class="n">item_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;queue_spec&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;item_type&#39;</span><span class="p">:</span> <span class="n">item_type</span><span class="p">}}</span>
+            <span class="p">)</span>
+            <span class="k">for</span> <span class="n">item_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;flow&#39;</span><span class="p">,</span> <span class="s1">&#39;job&#39;</span><span class="p">]</span>
+        <span class="p">}</span></div>
+
+<div class="viewcode-block" id="McSandbox.setup_task_ctx"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.setup_task_ctx">[docs]</a>    <span class="k">def</span> <span class="nf">setup_task_ctx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">task_ctx</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;mc.job_record_client&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">job_record_client</span><span class="p">,</span>
+            <span class="s1">&#39;mc.flow_record_client&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">flow_record_client</span><span class="p">,</span>
+        <span class="p">}</span>
+        <span class="k">return</span> <span class="n">task_ctx</span></div>
+
+<div class="viewcode-block" id="McSandbox.setup_flow_record_client"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.setup_flow_record_client">[docs]</a>    <span class="k">def</span> <span class="nf">setup_flow_record_client</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">FlowRecordClient</span><span class="p">(</span><span class="n">mc_db</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mc_db</span><span class="p">,</span>
+                                <span class="n">queue_key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">queues</span><span class="p">[</span><span class="s1">&#39;flow&#39;</span><span class="p">][</span><span class="s1">&#39;key&#39;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="McSandbox.setup_job_record_client"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.setup_job_record_client">[docs]</a>    <span class="k">def</span> <span class="nf">setup_job_record_client</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">JobRecordClient</span><span class="p">(</span><span class="n">mc_db</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mc_db</span><span class="p">,</span>
+                               <span class="n">queue_key</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">queues</span><span class="p">[</span><span class="s1">&#39;job&#39;</span><span class="p">][</span><span class="s1">&#39;key&#39;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="McSandbox.setup_flow_engine"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.setup_flow_engine">[docs]</a>    <span class="k">def</span> <span class="nf">setup_flow_engine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">FlowEngine</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="McSandbox.setup_flow_runner"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.setup_flow_runner">[docs]</a>    <span class="k">def</span> <span class="nf">setup_flow_runner</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">FlowRunner</span><span class="p">(</span><span class="n">flow_engine</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">flow_engine</span><span class="p">,</span>
+                          <span class="n">flow_record_client</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">flow_record_client</span><span class="p">,</span>
+                          <span class="n">task_ctx</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">task_ctx</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="McSandbox.has_incomplete_items"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.has_incomplete_items">[docs]</a>    <span class="k">def</span> <span class="nf">has_incomplete_items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_incomplete_flows</span><span class="p">()</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_incomplete_jobs</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="McSandbox.has_incomplete_flows"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.has_incomplete_flows">[docs]</a>    <span class="k">def</span> <span class="nf">has_incomplete_flows</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_incomplete_items</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="s1">&#39;flow&#39;</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="McSandbox.get_incomplete_items"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.get_incomplete_items">[docs]</a>    <span class="k">def</span> <span class="nf">get_incomplete_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">incomplete_filter</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;field&#39;</span><span class="p">:</span> <span class="s1">&#39;status&#39;</span><span class="p">,</span> <span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="s1">&#39;! IN&#39;</span><span class="p">,</span>
+                             <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;COMPLETED&#39;</span><span class="p">,</span> <span class="s1">&#39;FAILED&#39;</span><span class="p">]}</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">mc_db</span><span class="o">.</span><span class="n">query_items</span><span class="p">(</span>
+            <span class="n">item_type</span><span class="o">=</span><span class="n">item_type</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;filters&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="n">incomplete_filter</span><span class="p">]})</span></div>
+
+<div class="viewcode-block" id="McSandbox.has_incomplete_jobs"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.has_incomplete_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">has_incomplete_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_incomplete_items</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="s1">&#39;job&#39;</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span></div>
+
+<div class="viewcode-block" id="McSandbox.run_until_completed"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.run_until_completed">[docs]</a>    <span class="k">def</span> <span class="nf">run_until_completed</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_ticks</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">tick_interval</span><span class="o">=.</span><span class="mi">1</span><span class="p">,</span>
+                            <span class="n">log_ticks</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">job_runner</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">tick_counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">has_incomplete_flows</span><span class="p">()</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_incomplete_jobs</span><span class="p">()):</span>
+            <span class="n">tick_counter</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">log_msg</span> <span class="o">=</span> <span class="s1">&#39;t</span><span class="si">{tick_counter}</span><span class="s1">:&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">tick_counter</span><span class="o">=</span><span class="n">tick_counter</span><span class="p">)</span>
+            <span class="n">flow_tick_stats</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flow_runner</span><span class="o">.</span><span class="n">tick</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">flow_tick_stats</span><span class="p">[</span><span class="s1">&#39;claimed&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">log_msg</span> <span class="o">+=</span> <span class="s1">&#39;F&#39;</span>
+            <span class="k">if</span> <span class="n">job_runner</span><span class="p">:</span>
+                <span class="n">job_tick_stats</span> <span class="o">=</span> <span class="n">job_runner</span><span class="o">.</span><span class="n">tick</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">job_tick_stats</span><span class="p">[</span><span class="s1">&#39;claimed&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">log_msg</span> <span class="o">+=</span> <span class="s1">&#39;J&#39;</span>
+            <span class="n">log_msg</span> <span class="o">+=</span> <span class="s1">&#39; | &#39;</span>
+            <span class="k">if</span> <span class="n">log_ticks</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">log_msg</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">tick_counter</span> <span class="o">&gt;</span> <span class="n">max_ticks</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="s2">&quot;Exceed max_ticks&quot;</span><span class="p">)</span>
+            <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">tick_interval</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="McSandbox.print_jobs"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.print_jobs">[docs]</a>    <span class="k">def</span> <span class="nf">print_jobs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s1">&#39;keys_to_exclude&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;keys_to_exclude&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;data&#39;</span><span class="p">}}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">print_items</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="s1">&#39;job&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="McSandbox.print_items"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.print_items">[docs]</a>    <span class="k">def</span> <span class="nf">print_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">keys_to_exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filters</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;==== &#39;</span> <span class="o">+</span> <span class="n">item_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">+</span> <span class="s1">&#39; ====&#39;</span><span class="p">)</span>
+        <span class="n">keys_to_exclude</span> <span class="o">=</span> <span class="n">keys_to_exclude</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mc_db</span><span class="o">.</span><span class="n">query_items</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="n">item_type</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">filter_</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">filter_</span> <span class="ow">in</span> <span class="p">(</span><span class="n">filters</span> <span class="ow">or</span> <span class="p">[])]):</span>
+                <span class="k">continue</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">item</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">keys_to_exclude</span><span class="p">:</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{key}</span><span class="s2">: </span><span class="si">{value}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">value</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;-&#39;</span> <span class="o">*</span> <span class="mi">10</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="McSandbox.print_flows"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.print_flows">[docs]</a>    <span class="k">def</span> <span class="nf">print_flows</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">if</span> <span class="s1">&#39;keys_to_exclude&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="n">kwargs</span><span class="p">,</span> <span class="s1">&#39;keys_to_exclude&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;graph&#39;</span><span class="p">}}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">print_items</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="s1">&#39;flow&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="McSandbox.print_locks"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.print_locks">[docs]</a>    <span class="k">def</span> <span class="nf">print_locks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">print_items</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="s1">&#39;lock&#39;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="McSandbox.create_flow"><a class="viewcode-back" href="../../../api/mc.utils.html#mc.utils.mc_sandbox.McSandbox.create_flow">[docs]</a>    <span class="k">def</span> <span class="nf">create_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">flow_spec</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">flow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flow_engine</span><span class="o">.</span><span class="n">flow_spec_to_flow</span><span class="p">(</span><span class="n">flow_spec</span><span class="o">=</span><span class="n">flow_spec</span><span class="p">)</span>
+        <span class="n">flow_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">flow_engine</span><span class="o">.</span><span class="n">flow_to_flow_dict</span><span class="p">(</span><span class="n">flow</span><span class="o">=</span><span class="n">flow</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">flow_record_client</span><span class="o">.</span><span class="n">create_flow_record</span><span class="p">(</span>
+            <span class="n">flow_kwargs</span><span class="o">=</span><span class="n">flow_dict</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

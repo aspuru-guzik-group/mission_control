@@ -1,0 +1,7 @@
+mc\.daos\.sa\_dao module
+========================
+
+.. automodule:: mc.daos.sa_dao
+    :members:
+    :undoc-members:
+    :show-inheritance:

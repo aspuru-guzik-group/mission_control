@@ -1,0 +1,173 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.orm.marshmallow &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mc.orm.marshmallow</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">marshmallow</span>
+<span class="kn">import</span> <span class="nn">sqlalchemy.types</span> <span class="k">as</span> <span class="nn">_sa_types</span>
+
+<span class="kn">from</span> <span class="nn">mc</span> <span class="k">import</span> <span class="n">constants</span> <span class="k">as</span> <span class="n">_mc_constants</span>
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">custom_sa_types</span> <span class="k">as</span> <span class="n">_custom_sa_types</span>
+
+<div class="viewcode-block" id="sa_schema_to_marsh_schemas"><a class="viewcode-back" href="../../../api/mc.orm.html#mc.orm.marshmallow.sa_schema_to_marsh_schemas">[docs]</a><span class="k">def</span> <span class="nf">sa_schema_to_marsh_schemas</span><span class="p">(</span><span class="n">sa_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">Schema</span><span class="o">=</span><span class="n">marshmallow</span><span class="o">.</span><span class="n">Schema</span><span class="p">,</span>
+                               <span class="n">fields</span><span class="o">=</span><span class="n">marshmallow</span><span class="o">.</span><span class="n">fields</span><span class="p">):</span>
+    <span class="n">marshmallow_schemas</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">sa_column</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">field_cls</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">field_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">sa_column</span><span class="o">.</span><span class="n">type</span><span class="p">)</span> <span class="ow">is</span> <span class="n">_sa_types</span><span class="o">.</span><span class="n">String</span><span class="p">:</span>
+            <span class="n">field_cls</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">String</span>
+            <span class="n">field_kwargs</span><span class="p">[</span><span class="s1">&#39;max_length&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sa_column</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="n">length</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">sa_column</span><span class="o">.</span><span class="n">type</span><span class="p">)</span> <span class="ow">is</span> <span class="n">_sa_types</span><span class="o">.</span><span class="n">Integer</span><span class="p">:</span>
+            <span class="n">field_cls</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Integer</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">sa_column</span><span class="o">.</span><span class="n">type</span><span class="p">)</span> <span class="ow">is</span> <span class="n">_sa_types</span><span class="o">.</span><span class="n">Text</span><span class="p">:</span>
+            <span class="n">field_cls</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">String</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">sa_column</span><span class="o">.</span><span class="n">type</span><span class="p">)</span> <span class="ow">is</span> <span class="n">_sa_types</span><span class="o">.</span><span class="n">Boolean</span><span class="p">:</span>
+            <span class="n">field_cls</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Boolean</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">sa_column</span><span class="o">.</span><span class="n">type</span><span class="p">)</span> <span class="ow">is</span> <span class="n">_sa_types</span><span class="o">.</span><span class="n">DateTime</span><span class="p">:</span>
+            <span class="n">field_cls</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">DateTime</span>
+            <span class="n">field_kwargs</span><span class="p">[</span><span class="s1">&#39;format&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">_mc_constants</span><span class="o">.</span><span class="n">DATETIME_FORMAT</span>
+        <span class="k">elif</span> <span class="nb">type</span><span class="p">(</span><span class="n">sa_column</span><span class="o">.</span><span class="n">type</span><span class="p">)</span> <span class="ow">is</span> <span class="n">_custom_sa_types</span><span class="o">.</span><span class="n">JSONEncodedDict</span><span class="p">:</span>
+            <span class="n">field_cls</span> <span class="o">=</span> <span class="n">fields</span><span class="o">.</span><span class="n">Dict</span>
+        <span class="k">assert</span> <span class="n">field_cls</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;no field class set&quot;</span>
+        <span class="k">return</span> <span class="n">field_cls</span><span class="p">(</span><span class="o">**</span><span class="n">field_kwargs</span><span class="p">)</span>
+
+    <span class="n">common_dump_only_fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;created&#39;</span><span class="p">,</span> <span class="s1">&#39;modified&#39;</span><span class="p">]</span>
+
+    <span class="n">flow_table</span> <span class="o">=</span> <span class="n">sa_schema</span><span class="p">[</span><span class="s1">&#39;tables&#39;</span><span class="p">][</span><span class="s1">&#39;Flow&#39;</span><span class="p">]</span>
+    <span class="k">class</span> <span class="nc">FlowSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">flow_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">])</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">flow_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">])</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">flow_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">])</span>
+        <span class="n">graph</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">flow_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;graph&#39;</span><span class="p">])</span>
+        <span class="n">cfg</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">flow_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;cfg&#39;</span><span class="p">])</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">flow_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">])</span>
+        <span class="n">num_tickable_tasks</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span>
+            <span class="n">flow_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;num_tickable_tasks&#39;</span><span class="p">])</span>
+        <span class="n">depth</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">flow_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;depth&#39;</span><span class="p">])</span>
+        <span class="n">claimed</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">flow_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;claimed&#39;</span><span class="p">])</span>
+        <span class="n">created</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">flow_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;created&#39;</span><span class="p">])</span>
+        <span class="n">modified</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">flow_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;modified&#39;</span><span class="p">])</span>
+        <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;label&#39;</span><span class="p">,</span> <span class="s1">&#39;graph&#39;</span><span class="p">,</span> <span class="s1">&#39;status&#39;</span><span class="p">,</span> <span class="s1">&#39;claimed&#39;</span><span class="p">,</span> <span class="s1">&#39;depth&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;created&#39;</span><span class="p">,</span> <span class="s1">&#39;modified&#39;</span><span class="p">,</span> <span class="s1">&#39;num_tickable_tasks&#39;</span><span class="p">]</span>
+            <span class="n">dump_only</span> <span class="o">=</span> <span class="n">common_dump_only_fields</span>
+    <span class="n">marshmallow_schemas</span><span class="p">[</span><span class="s1">&#39;Flow&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">FlowSchema</span><span class="p">()</span>
+
+    <span class="n">job_table</span> <span class="o">=</span> <span class="n">sa_schema</span><span class="p">[</span><span class="s1">&#39;tables&#39;</span><span class="p">][</span><span class="s1">&#39;Job&#39;</span><span class="p">]</span>
+    <span class="k">class</span> <span class="nc">JobSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">job_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">])</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">job_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">])</span>
+        <span class="n">job_spec</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">job_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;job_spec&#39;</span><span class="p">])</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">job_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">])</span>
+        <span class="n">status</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">job_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">])</span>
+        <span class="n">claimed</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">job_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;claimed&#39;</span><span class="p">])</span>
+        <span class="n">created</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">job_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;created&#39;</span><span class="p">])</span>
+        <span class="n">modified</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">job_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;modified&#39;</span><span class="p">])</span>
+        <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;label&#39;</span><span class="p">,</span> <span class="s1">&#39;job_spec&#39;</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">,</span> <span class="s1">&#39;status&#39;</span><span class="p">,</span> <span class="s1">&#39;claimed&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;created&#39;</span><span class="p">,</span> <span class="s1">&#39;modified&#39;</span><span class="p">]</span>
+            <span class="n">dump_only_fields</span> <span class="o">=</span> <span class="n">common_dump_only_fields</span>
+    <span class="n">marshmallow_schemas</span><span class="p">[</span><span class="s1">&#39;Job&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">JobSchema</span><span class="p">()</span>
+
+    <span class="n">queue_table</span> <span class="o">=</span> <span class="n">sa_schema</span><span class="p">[</span><span class="s1">&#39;tables&#39;</span><span class="p">][</span><span class="s1">&#39;Queue&#39;</span><span class="p">]</span>
+    <span class="k">class</span> <span class="nc">QueueSchema</span><span class="p">(</span><span class="n">Schema</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">queue_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">])</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">queue_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">])</span>
+        <span class="n">queue_spec</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span>
+            <span class="n">queue_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;queue_spec&#39;</span><span class="p">])</span>
+        <span class="n">created</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">queue_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;created&#39;</span><span class="p">])</span>
+        <span class="n">modified</span> <span class="o">=</span> <span class="n">sa_column_to_marshmallow_field</span><span class="p">(</span><span class="n">queue_table</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="s1">&#39;modified&#39;</span><span class="p">])</span>
+        <span class="k">class</span> <span class="nc">Meta</span><span class="p">:</span>
+            <span class="n">fields</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">,</span> <span class="s1">&#39;label&#39;</span><span class="p">,</span> <span class="s1">&#39;queue_spec&#39;</span><span class="p">,</span> <span class="s1">&#39;created&#39;</span><span class="p">,</span> <span class="s1">&#39;modified&#39;</span><span class="p">]</span>
+            <span class="n">dump_only_fields</span> <span class="o">=</span> <span class="n">common_dump_only_fields</span>
+    <span class="n">marshmallow_schemas</span><span class="p">[</span><span class="s1">&#39;Queue&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">QueueSchema</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">marshmallow_schemas</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

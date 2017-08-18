@@ -1,0 +1,329 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.job_engines.submission_builders package &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mc.orm package" href="mc.orm.html" />
+    <link rel="prev" title="mc.job_engines package" href="mc.job_engines.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.orm.html" title="mc.orm package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mc.job_engines.html" title="mc.job_engines package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="mc.job_engines.html" accesskey="U">mc.job_engines package</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-mc.job_engines.submission_builders">
+<span id="mc-job-engines-submission-builders-package"></span><h1>mc.job_engines.submission_builders package<a class="headerlink" href="#module-mc.job_engines.submission_builders" title="Permalink to this headline">¶</a></h1>
+<p>SubmissionBuilders are utility classes that help with building specific types
+of submissions.</p>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-mc.job_engines.submission_builders.bash">
+<span id="mc-job-engines-submission-builders-bash-module"></span><h2>mc.job_engines.submission_builders.bash module<a class="headerlink" href="#module-mc.job_engines.submission_builders.bash" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mc.job_engines.submission_builders.bash.BashSubmissionBuilder">
+<em class="property">class </em><code class="descclassname">mc.job_engines.submission_builders.bash.</code><code class="descname">BashSubmissionBuilder</code><span class="sig-paren">(</span><em>checkpoint_file_names=None</em>, <em>entrypoint_file_name=None</em>, <em>io_dir_names=None</em>, <em>std_log_file_names=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/bash.html#BashSubmissionBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.bash.BashSubmissionBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Creates submissions suitable for running as bash jobs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>checkpoint_file_names</strong> (<em>dict</em>) – override checkpoint file names.</li>
+<li><strong>entrypoint_file_name</strong> (<em>str</em>) – override entrypoint file name.</li>
+<li><strong>io_dir_names</strong> (<em>dict</em>) – override input/output dir names.</li>
+<li><strong>std_log_file_names</strong> (<em>dict</em>) – override standard log file names.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="mc.job_engines.submission_builders.bash.BashSubmissionBuilder.build_submission">
+<code class="descname">build_submission</code><span class="sig-paren">(</span><em>submission_spec=None</em>, <em>cfg=None</em>, <em>output_dir=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/bash.html#BashSubmissionBuilder.build_submission"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.bash.BashSubmissionBuilder.build_submission" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>submission_spec</strong> (<em>dict</em>) – <p>dict of submission params.
+Keys can include:</p>
+<ul>
+<li>shebang_line: (str, ‘#!/bin/bash’)</li>
+<li>header: (str, ”): premable to include before entrypoint
+body.</li>
+<li>env_vars: (dict, {})</li>
+<li>templates: (dict:{}): dict template specs, as per
+<a class="reference internal" href="#mc.job_engines.submission_builders.bash.BashSubmissionBuilder.write_templates" title="mc.job_engines.submission_builders.bash.BashSubmissionBuilder.write_templates"><code class="xref py py-meth docutils literal"><span class="pre">write_templates()</span></code></a>.</li>
+</ul>
+</li>
+<li><strong>cfg</strong> (<em>dict</em>) – cfg dict.</li>
+<li><strong>output_dir</strong> (<em>str</em>) – dir in which to write submission files.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><dl class="docutils">
+<dt>submission metadata dict, with these keys:</dt>
+<dd><ul class="first last simple">
+<li>dir (str): the output dir.</li>
+<li>checkpoint_file_names (dict): completed/failed checkpoint
+files.</li>
+<li>entrypoint_file_name (str): entrypoint file name.</li>
+<li>std_log_file_names (dict): standard log file names.</li>
+<li>io_dir_names (dict): input/output dir names.</li>
+</ul>
+</dd>
+</dl>
+</p>
+</td>
+</tr>
+<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">submission_meta (dict)</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mc.job_engines.submission_builders.bash.BashSubmissionBuilder.ensure_dir">
+<code class="descname">ensure_dir</code><span class="sig-paren">(</span><em>dir_path=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/bash.html#BashSubmissionBuilder.ensure_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.bash.BashSubmissionBuilder.ensure_dir" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.job_engines.submission_builders.bash.BashSubmissionBuilder.generate_body_section">
+<code class="descname">generate_body_section</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/bash.html#BashSubmissionBuilder.generate_body_section"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.bash.BashSubmissionBuilder.generate_body_section" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.job_engines.submission_builders.bash.BashSubmissionBuilder.generate_checkpoint_file_section">
+<code class="descname">generate_checkpoint_file_section</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/bash.html#BashSubmissionBuilder.generate_checkpoint_file_section"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.bash.BashSubmissionBuilder.generate_checkpoint_file_section" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.job_engines.submission_builders.bash.BashSubmissionBuilder.generate_entrypoint_content">
+<code class="descname">generate_entrypoint_content</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/bash.html#BashSubmissionBuilder.generate_entrypoint_content"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.bash.BashSubmissionBuilder.generate_entrypoint_content" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.job_engines.submission_builders.bash.BashSubmissionBuilder.generate_env_section">
+<code class="descname">generate_env_section</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/bash.html#BashSubmissionBuilder.generate_env_section"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.bash.BashSubmissionBuilder.generate_env_section" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.job_engines.submission_builders.bash.BashSubmissionBuilder.get_std_log_files">
+<code class="descname">get_std_log_files</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/bash.html#BashSubmissionBuilder.get_std_log_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.bash.BashSubmissionBuilder.get_std_log_files" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.job_engines.submission_builders.bash.BashSubmissionBuilder.render_template_spec">
+<code class="descname">render_template_spec</code><span class="sig-paren">(</span><em>template_spec=None</em>, <em>ctx=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/bash.html#BashSubmissionBuilder.render_template_spec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.bash.BashSubmissionBuilder.render_template_spec" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.job_engines.submission_builders.bash.BashSubmissionBuilder.setup_io_dirs">
+<code class="descname">setup_io_dirs</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/bash.html#BashSubmissionBuilder.setup_io_dirs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.bash.BashSubmissionBuilder.setup_io_dirs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.job_engines.submission_builders.bash.BashSubmissionBuilder.squash_kvp_list">
+<code class="descname">squash_kvp_list</code><span class="sig-paren">(</span><em>kvp_list=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/bash.html#BashSubmissionBuilder.squash_kvp_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.bash.BashSubmissionBuilder.squash_kvp_list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.job_engines.submission_builders.bash.BashSubmissionBuilder.write_entrypoint">
+<code class="descname">write_entrypoint</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/bash.html#BashSubmissionBuilder.write_entrypoint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.bash.BashSubmissionBuilder.write_entrypoint" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.job_engines.submission_builders.bash.BashSubmissionBuilder.write_template_spec">
+<code class="descname">write_template_spec</code><span class="sig-paren">(</span><em>template_spec=None</em>, <em>ctx=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/bash.html#BashSubmissionBuilder.write_template_spec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.bash.BashSubmissionBuilder.write_template_spec" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write a template for a given spec.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>template_spec</strong> (<em>dict</em>) – a dict with keys ‘target’ (the name of the
+template output file), and optionally ‘ctx’ (ctx specific to
+that template).</li>
+<li><strong>ctx</strong> (<em>dict</em><em>, </em><em>optional</em>) – additional ctx to pass to the template.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mc.job_engines.submission_builders.bash.BashSubmissionBuilder.write_templates">
+<code class="descname">write_templates</code><span class="sig-paren">(</span><em>templates=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/bash.html#BashSubmissionBuilder.write_templates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.bash.BashSubmissionBuilder.write_templates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes templates.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>templates</strong> (<em>dict</em>) – a dict with keys ‘specs’ and optionally, ‘ctx’.
+specs define individual templates. ctx defines ctx shared by
+all templates.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-mc.job_engines.submission_builders.slurm">
+<span id="mc-job-engines-submission-builders-slurm-module"></span><h2>mc.job_engines.submission_builders.slurm module<a class="headerlink" href="#module-mc.job_engines.submission_builders.slurm" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mc.job_engines.submission_builders.slurm.SlurmSubmissionBuilder">
+<em class="property">class </em><code class="descclassname">mc.job_engines.submission_builders.slurm.</code><code class="descname">SlurmSubmissionBuilder</code><span class="sig-paren">(</span><em>submission_spec=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/slurm.html#SlurmSubmissionBuilder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.slurm.SlurmSubmissionBuilder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A submission builder that builds submissions with slurm parameters.</p>
+<p>Writes #SBATCH lines, and sets submission stderr/stdout logs
+to match Slurm job stderr/stdout logs.</p>
+<dl class="method">
+<dt id="mc.job_engines.submission_builders.slurm.SlurmSubmissionBuilder.build_submission">
+<code class="descname">build_submission</code><span class="sig-paren">(</span><em>submission_spec=None</em>, <em>output_dir=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/slurm.html#SlurmSubmissionBuilder.build_submission"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.slurm.SlurmSubmissionBuilder.build_submission" title="Permalink to this definition">¶</a></dt>
+<dd><table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>submission_spec</strong> (<em>dict</em>) – a submission_spec as per
+BashSubmissionBuilder, but can also include ‘sbatch_params’
+prop.</li>
+<li><strong>output_dir</strong> (<em>str</em><em>, </em><em>optional</em>) – dir in which to write submission files.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="mc.job_engines.submission_builders.slurm.SlurmSubmissionBuilder.generate_sbatch_header">
+<code class="descname">generate_sbatch_header</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/job_engines/submission_builders/slurm.html#SlurmSubmissionBuilder.generate_sbatch_header"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.job_engines.submission_builders.slurm.SlurmSubmissionBuilder.generate_sbatch_header" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">mc.job_engines.submission_builders package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-mc.job_engines.submission_builders.bash">mc.job_engines.submission_builders.bash module</a></li>
+<li><a class="reference internal" href="#module-mc.job_engines.submission_builders.slurm">mc.job_engines.submission_builders.slurm module</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mc.job_engines.html"
+                        title="previous chapter">mc.job_engines package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mc.orm.html"
+                        title="next chapter">mc.orm package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/mc.job_engines.submission_builders.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.orm.html" title="mc.orm package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mc.job_engines.html" title="mc.job_engines package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="mc.job_engines.html" >mc.job_engines package</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,470 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.utils.commands package &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mc.utils.job_modules package" href="mc.utils.job_modules.html" />
+    <link rel="prev" title="mc.utils.artifact_processors package" href="mc.utils.artifact_processors.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.utils.job_modules.html" title="mc.utils.job_modules package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mc.utils.artifact_processors.html" title="mc.utils.artifact_processors package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="mc.utils.html" accesskey="U">mc.utils package</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-mc.utils.commands">
+<span id="mc-utils-commands-package"></span><h1>mc.utils.commands package<a class="headerlink" href="#module-mc.utils.commands" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-mc.utils.commands.argument_parser">
+<span id="mc-utils-commands-argument-parser-module"></span><h2>mc.utils.commands.argument_parser module<a class="headerlink" href="#module-mc.utils.commands.argument_parser" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mc.utils.commands.argument_parser.ArgumentParser">
+<em class="property">class </em><code class="descclassname">mc.utils.commands.argument_parser.</code><code class="descname">ArgumentParser</code><span class="sig-paren">(</span><em>cmd=None</em>, <em>formatter_class=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/argument_parser.html#ArgumentParser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.argument_parser.ArgumentParser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">argparse.ArgumentParser</span></code></p>
+<p>Customized ArgumentParser class to improve some error messages and prevent
+SystemExit in several occasions, as SystemExit is unacceptable when a
+command is called programmatically.</p>
+<dl class="method">
+<dt id="mc.utils.commands.argument_parser.ArgumentParser.error">
+<code class="descname">error</code><span class="sig-paren">(</span><em>message</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/argument_parser.html#ArgumentParser.error"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.argument_parser.ArgumentParser.error" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.commands.argument_parser.ArgumentParser.parse_args">
+<code class="descname">parse_args</code><span class="sig-paren">(</span><em>args=None</em>, <em>namespace=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/argument_parser.html#ArgumentParser.parse_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.argument_parser.ArgumentParser.parse_args" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-mc.utils.commands.base_command">
+<span id="mc-utils-commands-base-command-module"></span><h2>mc.utils.commands.base_command module<a class="headerlink" href="#module-mc.utils.commands.base_command" title="Permalink to this headline">¶</a></h2>
+<p>Base classes for writing commands.
+Adapted from django.core.management.base.py</p>
+<dl class="class">
+<dt id="mc.utils.commands.base_command.BaseCommand">
+<em class="property">class </em><code class="descclassname">mc.utils.commands.base_command.</code><code class="descname">BaseCommand</code><span class="sig-paren">(</span><em>stdout=None</em>, <em>stderr=None</em>, <em>no_color=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/base_command.html#BaseCommand"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.base_command.BaseCommand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>A base class for common command logic.</p>
+<p>Use this class if you want access to all of the mechanisms which
+parse the command-line arguments and work out what code to call in
+response; if you don’t need to change any of that behavior,
+consider using one of the subclasses defined in this file.</p>
+<p>If you are interested in overriding/customizing various aspects of
+the command-parsing and -execution behavior, the normal flow works
+as follows:</p>
+<ol class="arabic simple">
+<li>Something loads the command class and calls its <code class="docutils literal"><span class="pre">run()</span></code> method.</li>
+<li>The <code class="docutils literal"><span class="pre">run_from_argv()</span></code> method calls <code class="docutils literal"><span class="pre">create_parser()</span></code> to get
+an <code class="docutils literal"><span class="pre">ArgumentParser</span></code> for the arguments, parses them, performs
+any environment changes requested by args like
+<code class="docutils literal"><span class="pre">pythonpath</span></code>, and then calls the <code class="docutils literal"><span class="pre">execute()</span></code> method,
+passing the parsed arguments.</li>
+<li>The <code class="docutils literal"><span class="pre">execute()</span></code> method attempts to carry out the command by
+calling the <code class="docutils literal"><span class="pre">handle()</span></code> method with the parsed arguments; any
+output produced by <code class="docutils literal"><span class="pre">handle()</span></code> will be printed to standard
+output.</li>
+<li>If <code class="docutils literal"><span class="pre">handle()</span></code> or <code class="docutils literal"><span class="pre">execute()</span></code> raised any exception (e.g.
+<code class="docutils literal"><span class="pre">CommandError</span></code>), <code class="docutils literal"><span class="pre">run_from_argv()</span></code> will  instead print an error
+message to <code class="docutils literal"><span class="pre">stderr</span></code>.</li>
+</ol>
+<p>Thus, the <code class="docutils literal"><span class="pre">handle()</span></code> method is typically the starting point for
+subclasses; many built-in commands and command types either place
+all of their logic in <code class="docutils literal"><span class="pre">handle()</span></code>, or perform some additional
+parsing work in <code class="docutils literal"><span class="pre">handle()</span></code> and then delegate from it to more
+specialized methods as needed.</p>
+<p>Several attributes affect behavior at various steps along the way:</p>
+<dl class="docutils">
+<dt><code class="docutils literal"><span class="pre">help</span></code></dt>
+<dd>A short description of the command, which will be printed in
+help messages.</dd>
+</dl>
+<dl class="method">
+<dt id="mc.utils.commands.base_command.BaseCommand.add_arguments">
+<code class="descname">add_arguments</code><span class="sig-paren">(</span><em>parser=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/base_command.html#BaseCommand.add_arguments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.base_command.BaseCommand.add_arguments" title="Permalink to this definition">¶</a></dt>
+<dd><p>Entry point for subclassed commands to add custom arguments.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.commands.base_command.BaseCommand.create_parser">
+<code class="descname">create_parser</code><span class="sig-paren">(</span><em>prog_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/base_command.html#BaseCommand.create_parser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.base_command.BaseCommand.create_parser" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create and return the <code class="docutils literal"><span class="pre">ArgumentParser</span></code> which will be used to
+parse the arguments to this command.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.commands.base_command.BaseCommand.execute">
+<code class="descname">execute</code><span class="sig-paren">(</span><em>parsed_args=None</em>, <em>unparsed_args=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/base_command.html#BaseCommand.execute"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.base_command.BaseCommand.execute" title="Permalink to this definition">¶</a></dt>
+<dd><p>Try to execute this command.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.commands.base_command.BaseCommand.get_base_parser_cls">
+<code class="descname">get_base_parser_cls</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/base_command.html#BaseCommand.get_base_parser_cls"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.base_command.BaseCommand.get_base_parser_cls" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.commands.base_command.BaseCommand.get_version">
+<code class="descname">get_version</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/base_command.html#BaseCommand.get_version"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.base_command.BaseCommand.get_version" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the MC version, which should be correct for all built-in
+MC commands. User-supplied commands can override this method to
+return their own version.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.commands.base_command.BaseCommand.handle">
+<code class="descname">handle</code><span class="sig-paren">(</span><em>parsed_args=None</em>, <em>unparsed_args=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/base_command.html#BaseCommand.handle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.base_command.BaseCommand.handle" title="Permalink to this definition">¶</a></dt>
+<dd><p>The actual logic of the command. Subclasses must implement
+this method.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mc.utils.commands.base_command.BaseCommand.help">
+<code class="descname">help</code><em class="property"> = ”</em><a class="headerlink" href="#mc.utils.commands.base_command.BaseCommand.help" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.commands.base_command.BaseCommand.print_help">
+<code class="descname">print_help</code><span class="sig-paren">(</span><em>prog_name</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/base_command.html#BaseCommand.print_help"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.base_command.BaseCommand.print_help" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print the help message for this command, derived from
+<code class="docutils literal"><span class="pre">self.usage()</span></code>.</p>
+</dd></dl>
+
+<dl class="classmethod">
+<dt id="mc.utils.commands.base_command.BaseCommand.run">
+<em class="property">classmethod </em><code class="descname">run</code><span class="sig-paren">(</span><em>argv=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/base_command.html#BaseCommand.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.base_command.BaseCommand.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.commands.base_command.BaseCommand.run_from_argv">
+<code class="descname">run_from_argv</code><span class="sig-paren">(</span><em>argv</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/base_command.html#BaseCommand.run_from_argv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.base_command.BaseCommand.run_from_argv" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Set up any environment changes requested (e.g., Python path settings),</dt>
+<dd>then run this command. If the</dd>
+</dl>
+<p>command raises a <code class="docutils literal"><span class="pre">CommandError</span></code>, intercept it and print it sensibly
+to stderr. If the <code class="docutils literal"><span class="pre">--traceback</span></code> option is present or the raised
+<code class="docutils literal"><span class="pre">Exception</span></code> is not <code class="docutils literal"><span class="pre">CommandError</span></code>, raise it.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="mc.utils.commands.base_command.OutputWrapper">
+<em class="property">class </em><code class="descclassname">mc.utils.commands.base_command.</code><code class="descname">OutputWrapper</code><span class="sig-paren">(</span><em>out</em>, <em>style_func=None</em>, <em>ending=’n’</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/base_command.html#OutputWrapper"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.base_command.OutputWrapper" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">io.TextIOBase</span></code></p>
+<p>Wrapper around stdout/stderr</p>
+<dl class="method">
+<dt id="mc.utils.commands.base_command.OutputWrapper.isatty">
+<code class="descname">isatty</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/base_command.html#OutputWrapper.isatty"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.base_command.OutputWrapper.isatty" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.utils.commands.base_command.OutputWrapper.style_func">
+<code class="descname">style_func</code><a class="headerlink" href="#mc.utils.commands.base_command.OutputWrapper.style_func" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.commands.base_command.OutputWrapper.write">
+<code class="descname">write</code><span class="sig-paren">(</span><em>msg=None</em>, <em>style_func=None</em>, <em>ending=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/base_command.html#OutputWrapper.write"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.base_command.OutputWrapper.write" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="mc.utils.commands.base_command.handle_default_args">
+<code class="descclassname">mc.utils.commands.base_command.</code><code class="descname">handle_default_args</code><span class="sig-paren">(</span><em>args</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/base_command.html#handle_default_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.base_command.handle_default_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Include any default args that all commands should accept here
+so that ManagementUtility can handle them before searching for
+user commands.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-mc.utils.commands.color">
+<span id="mc-utils-commands-color-module"></span><h2>mc.utils.commands.color module<a class="headerlink" href="#module-mc.utils.commands.color" title="Permalink to this headline">¶</a></h2>
+<p>Sets up the terminal color scheme.
+Adapted from django.core.management.color .</p>
+<dl class="class">
+<dt id="mc.utils.commands.color.Style">
+<em class="property">class </em><code class="descclassname">mc.utils.commands.color.</code><code class="descname">Style</code><a class="reference internal" href="../_modules/mc/utils/commands/color.html#Style"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.color.Style" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mc.utils.commands.color.color_style">
+<code class="descclassname">mc.utils.commands.color.</code><code class="descname">color_style</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/color.html#color_style"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.color.color_style" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a Style object from a color scheme.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mc.utils.commands.color.make_style">
+<code class="descclassname">mc.utils.commands.color.</code><code class="descname">make_style</code><span class="sig-paren">(</span><em>config_string=”</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/color.html#make_style"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.color.make_style" title="Permalink to this definition">¶</a></dt>
+<dd><p>Create a Style object from the given config_string.</p>
+<p>If config_string is empty django.utils.termcolors.DEFAULT_PALETTE is used.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="mc.utils.commands.color.no_style">
+<code class="descclassname">mc.utils.commands.color.</code><code class="descname">no_style</code><a class="reference internal" href="../_modules/mc/utils/commands/color.html#no_style"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.color.no_style" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a Style object with no color scheme.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mc.utils.commands.color.supports_color">
+<code class="descclassname">mc.utils.commands.color.</code><code class="descname">supports_color</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/color.html#supports_color"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.color.supports_color" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return True if the running system’s terminal supports color,
+and False otherwise.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-mc.utils.commands.errors">
+<span id="mc-utils-commands-errors-module"></span><h2>mc.utils.commands.errors module<a class="headerlink" href="#module-mc.utils.commands.errors" title="Permalink to this headline">¶</a></h2>
+<dl class="exception">
+<dt id="mc.utils.commands.errors.CommandError">
+<em class="property">exception </em><code class="descclassname">mc.utils.commands.errors.</code><code class="descname">CommandError</code><a class="reference internal" href="../_modules/mc/utils/commands/errors.html#CommandError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.errors.CommandError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+<p>Exception class indicating a problem while executing a management
+command.</p>
+<p>If this exception is raised during the execution of a management
+command, it will be caught and turned into a nicely-printed error
+message to the appropriate output stream (i.e., stderr); as a
+result, raising this exception (with a sensible description of the
+error) is the preferred way to indicate that something has gone
+wrong in the execution of a command.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-mc.utils.commands.subcommand_command">
+<span id="mc-utils-commands-subcommand-command-module"></span><h2>mc.utils.commands.subcommand_command module<a class="headerlink" href="#module-mc.utils.commands.subcommand_command" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="mc.utils.commands.subcommand_command.SubcommandCommand">
+<em class="property">class </em><code class="descclassname">mc.utils.commands.subcommand_command.</code><code class="descname">SubcommandCommand</code><span class="sig-paren">(</span><em>stdout=None</em>, <em>stderr=None</em>, <em>no_color=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/subcommand_command.html#SubcommandCommand"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.subcommand_command.SubcommandCommand" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#mc.utils.commands.base_command.BaseCommand" title="mc.utils.commands.base_command.BaseCommand"><code class="xref py py-class docutils literal"><span class="pre">mc.utils.commands.base_command.BaseCommand</span></code></a></p>
+<dl class="exception">
+<dt id="mc.utils.commands.subcommand_command.SubcommandCommand.InvalidSubcommandError">
+<em class="property">exception </em><code class="descname">InvalidSubcommandError</code><span class="sig-paren">(</span><em>subcommand=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/subcommand_command.html#SubcommandCommand.InvalidSubcommandError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.subcommand_command.SubcommandCommand.InvalidSubcommandError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="mc.utils.commands.subcommand_command.SubcommandCommand.SubcommandExecutionError">
+<em class="property">exception </em><code class="descname">SubcommandExecutionError</code><span class="sig-paren">(</span><em>subcommand=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/subcommand_command.html#SubcommandCommand.SubcommandExecutionError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.subcommand_command.SubcommandCommand.SubcommandExecutionError" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.commands.subcommand_command.SubcommandCommand.add_arguments">
+<code class="descname">add_arguments</code><span class="sig-paren">(</span><em>parser=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/subcommand_command.html#SubcommandCommand.add_arguments"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.subcommand_command.SubcommandCommand.add_arguments" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.utils.commands.subcommand_command.SubcommandCommand.handle">
+<code class="descname">handle</code><span class="sig-paren">(</span><em>parsed_args=None</em>, <em>unparsed_args=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/subcommand_command.html#SubcommandCommand.handle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.subcommand_command.SubcommandCommand.handle" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.utils.commands.subcommand_command.SubcommandCommand.subcommands">
+<code class="descname">subcommands</code><em class="property"> = []</em><a class="headerlink" href="#mc.utils.commands.subcommand_command.SubcommandCommand.subcommands" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-mc.utils.commands.termcolors">
+<span id="mc-utils-commands-termcolors-module"></span><h2>mc.utils.commands.termcolors module<a class="headerlink" href="#module-mc.utils.commands.termcolors" title="Permalink to this headline">¶</a></h2>
+<p>termcolors.py
+Adapted from django.utils.termcolors .</p>
+<dl class="function">
+<dt id="mc.utils.commands.termcolors.colorize">
+<code class="descclassname">mc.utils.commands.termcolors.</code><code class="descname">colorize</code><span class="sig-paren">(</span><em>text=”</em>, <em>opts=()</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/termcolors.html#colorize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.termcolors.colorize" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return your text, enclosed in ANSI graphics codes.</p>
+<p>Depends on the keyword arguments ‘fg’ and ‘bg’, and the contents of
+the opts tuple/list.</p>
+<p>Return the RESET code if no parameters are given.</p>
+<dl class="docutils">
+<dt>Valid colors:</dt>
+<dd>‘black’, ‘red’, ‘green’, ‘yellow’, ‘blue’, ‘magenta’, ‘cyan’, ‘white’</dd>
+<dt>Valid options:</dt>
+<dd>‘bold’
+‘underscore’
+‘blink’
+‘reverse’
+‘conceal’
+‘noreset’ - string will not be auto-terminated with the RESET code</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>colorize(‘hello’, fg=’red’, bg=’blue’, opts=(‘blink’,))
+colorize()
+colorize(‘goodbye’, opts=(‘underscore’,))
+print(colorize(‘first line’, fg=’red’, opts=(‘noreset’,)))
+print(‘this should be red too’)
+print(colorize(‘and so should this’))
+print(‘this should not be red’)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mc.utils.commands.termcolors.make_style">
+<code class="descclassname">mc.utils.commands.termcolors.</code><code class="descname">make_style</code><span class="sig-paren">(</span><em>opts=()</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/termcolors.html#make_style"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.termcolors.make_style" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a function with default parameters for colorize()</p>
+<p class="rubric">Example</p>
+<p>bold_red = make_style(opts=(‘bold’,), fg=’red’)
+print(bold_red(‘hello’))
+KEYWORD = make_style(fg=’yellow’)
+COMMENT = make_style(fg=’blue’, opts=(‘bold’,))</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mc.utils.commands.termcolors.parse_color_setting">
+<code class="descclassname">mc.utils.commands.termcolors.</code><code class="descname">parse_color_setting</code><span class="sig-paren">(</span><em>config_string</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/termcolors.html#parse_color_setting"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.termcolors.parse_color_setting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse a DJANGO_COLORS environment variable to produce the system palette</p>
+<p>The general form of a palette definition is:</p>
+<blockquote>
+<div>“palette;role=fg;role=fg/bg;role=fg,option,option;role=fg/bg,option,option”</div></blockquote>
+<dl class="docutils">
+<dt>where:</dt>
+<dd>palette is a named palette; one of ‘light’, ‘dark’, or ‘nocolor’.
+role is a named style used by MissionControl
+fg is a background color.
+bg is a background color.
+option is a display options.</dd>
+</dl>
+<p>Specifying a named palette is the same as manually specifying the individual
+definitions for each role. Any individual definitions following the palette
+definition will augment the base palette definition.</p>
+<dl class="docutils">
+<dt>Valid roles:</dt>
+<dd>‘error’, ‘success’, ‘warning’, ‘notice’, ‘sql_field’, ‘sql_coltype’,
+‘sql_keyword’, ‘sql_table’, ‘http_info’, ‘http_success’,
+‘http_redirect’, ‘http_not_modified’, ‘http_bad_request’,
+‘http_not_found’, ‘http_server_error’, ‘migrate_heading’,
+‘migrate_label’</dd>
+<dt>Valid colors:</dt>
+<dd>‘black’, ‘red’, ‘green’, ‘yellow’, ‘blue’, ‘magenta’, ‘cyan’, ‘white’</dd>
+<dt>Valid options:</dt>
+<dd>‘bold’, ‘underscore’, ‘blink’, ‘reverse’, ‘conceal’, ‘noreset’</dd>
+</dl>
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">mc.utils.commands package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-mc.utils.commands.argument_parser">mc.utils.commands.argument_parser module</a></li>
+<li><a class="reference internal" href="#module-mc.utils.commands.base_command">mc.utils.commands.base_command module</a></li>
+<li><a class="reference internal" href="#module-mc.utils.commands.color">mc.utils.commands.color module</a></li>
+<li><a class="reference internal" href="#module-mc.utils.commands.errors">mc.utils.commands.errors module</a></li>
+<li><a class="reference internal" href="#module-mc.utils.commands.subcommand_command">mc.utils.commands.subcommand_command module</a></li>
+<li><a class="reference internal" href="#module-mc.utils.commands.termcolors">mc.utils.commands.termcolors module</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mc.utils.artifact_processors.html"
+                        title="previous chapter">mc.utils.artifact_processors package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mc.utils.job_modules.html"
+                        title="next chapter">mc.utils.job_modules package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/mc.utils.commands.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.utils.job_modules.html" title="mc.utils.job_modules package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mc.utils.artifact_processors.html" title="mc.utils.artifact_processors package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="mc.utils.html" >mc.utils package</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,670 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tasks &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Houston" href="houston.html" />
+    <link rel="prev" title="Flows" href="flows.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="houston.html" title="Houston"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="flows.html" title="Flows"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user_guide.html" accesskey="U">User Guide</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="tasks">
+<h1>Tasks<a class="headerlink" href="#tasks" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="what-is-a-task">
+<h2>What Is a Task?<a class="headerlink" href="#what-is-a-task" title="Permalink to this headline">¶</a></h2>
+<p>A MissionControl Task represents a step in a workflow.</p>
+<p>A task can do many things. In some cases a task
+runs a computation. For example, a task that transforms a JSON string
+into a YAML string.</p>
+<p>In other cases a task defines logic for how a workflow
+should proceed. For example, a task that monitors an
+optimization computation and decides whether to keep optimizing or go forward.</p>
+<p>In other cases a task wires inputs from one task to another. For example, a task
+that that collects the outputs of three separate models and passes them to an
+analysis task.</p>
+</div>
+<div class="section" id="task-lifecyle">
+<h2>Task Lifecyle<a class="headerlink" href="#task-lifecyle" title="Permalink to this headline">¶</a></h2>
+<p>The lifecycle of a task is like this:</p>
+<ol class="arabic">
+<li><p class="first">We define a task as a dict in a flow_spec:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">flow_spec</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;label&#39;</span><span class="p">:</span> <span class="s1">&#39;example_flow&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;tasks&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;task_1&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_type&#39;</span><span class="p">:</span> <span class="s1">&#39;print&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_params&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;I am task_1.&#39;</span><span class="p">},</span>
+        <span class="p">},</span>
+        <span class="o">...</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">We convert the flow_spec into a flow and run it with a FlowEngine.</p>
+</li>
+<li><p class="first">Eventually the flow reaches our task and the FlowEngine ticks our task:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">flow_engine</span><span class="o">.</span><span class="n">tick_task</span><span class="p">(</span><span class="n">task</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">task_ctx_extras</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">The FlowEngine calls the tick method of a top-level TaskHandler, and passes
+it the task and the task’s context. This context includes the
+task and its parent flow, as well as other user-provided items.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">task_ctx</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;task&#39;</span><span class="p">:</span> <span class="n">task</span><span class="p">,</span> <span class="s1">&#39;flow&#39;</span><span class="p">:</span> <span class="n">flow</span><span class="p">,</span> <span class="o">**</span><span class="n">task_ctx_extras</span><span class="p">}</span>
+<span class="n">task_handler</span><span class="o">.</span><span class="n">tick_task</span><span class="p">(</span><span class="n">task_ctx</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">The TaskHandler’s tick_task method looks up a task-specific tick function
+and calls it with the task_ctx.</p>
+</li>
+<li><p class="first">The tick function performs actions based on the task_ctx.
+The tick method often updates a task’s status to indicate whether the task
+is still running, or whether it has failed or completed.</p>
+</li>
+</ol>
+</div>
+<div class="section" id="defining-tasks">
+<h2>Defining Tasks<a class="headerlink" href="#defining-tasks" title="Permalink to this headline">¶</a></h2>
+<p>A task is defined as a dict, usually in the context of a flow spec. A task has
+several components:</p>
+<dl class="docutils">
+<dt>label</dt>
+<dd>a human-readable label for the task</dd>
+<dt>key</dt>
+<dd><p class="first">A key that uniquely identifies a task. This key is usually human-readable,
+and can be used later to access attributes of the task.</p>
+<p class="last">Keys should be formatted as valid python variable names
+(no dots or special characters).
+‘my_task’ is a valid key, while ‘my.task’ is not.</p>
+</dd>
+</dl>
+<p>task_type</p>
+<blockquote>
+<div><p id="task-type">An identifier for the type of task. MissionControl’s default task handler
+will look up an appropriate handler for the task by dispatching on the value
+of task_type.</p>
+<p>From <a class="reference internal" href="../api/mc.task_handlers.html#mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler" title="mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler"><code class="xref py py-class docutils literal"><span class="pre">mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler</span></code></a>:</p>
+<dl class="method">
+<dt id="mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler.default_task_type_to_tick_fn_dot_spec">
+<code class="descclassname">McDefaultTaskHandler.</code><code class="descname">default_task_type_to_tick_fn_dot_spec</code><span class="sig-paren">(</span><em>task_type=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/mc_default_task_handler.html#McDefaultTaskHandler.default_task_type_to_tick_fn_dot_spec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler.default_task_type_to_tick_fn_dot_spec" title="Permalink to this definition">¶</a></dt>
+<dd><p>&#64;TODO</p>
+</dd></dl>
+
+</div></blockquote>
+<dl class="docutils">
+<dt>task_params</dt>
+<dd>A dict of parameters for the task.</dd>
+<dt>data</dt>
+<dd>A dict data that the task should have.</dd>
+<dt>precursors</dt>
+<dd>A list of strings referring to keys of tasks which must complete before this
+task can run.</dd>
+<dt>successors</dt>
+<dd>A list of strings referring to keys of tasks which should not start before
+this task finishes.</dd>
+</dl>
+<p>Example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">my_task</span> <span class="o">=</span> <span class="p">{</span>
+   <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;my_task&#39;</span><span class="p">,</span>
+   <span class="s1">&#39;task_type&#39;</span><span class="p">:</span> <span class="s1">&#39;my.task.type&#39;</span><span class="p">,</span>
+   <span class="s1">&#39;task_params&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;some_param&#39;</span><span class="p">:</span> <span class="s1">&#39;some_value&#39;</span><span class="p">},</span>
+   <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;some_key&#39;</span><span class="p">:</span> <span class="s1">&#39;some_value&#39;</span><span class="p">},</span>
+   <span class="s1">&#39;precursors&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;some_task_that_should_finish_before_my_task&#39;</span><span class="p">],</span>
+   <span class="s1">&#39;successors&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;some_task_that_needs_to_wait_for_my_task&#39;</span><span class="p">],</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>A special note on precursors and successors: if neither precursors or
+successors is specified when a task is added to a flow, then the task will
+have its precursor set to be the task most recently added to the flow. This
+default behavior makes it easier to concisely define simple linear flows.</p>
+</div>
+<div class="section" id="running-tasks">
+<h2>Running Tasks<a class="headerlink" href="#running-tasks" title="Permalink to this headline">¶</a></h2>
+<p>Now that we can define tasks we can think about how to run them.</p>
+<p>We use tick functions to run tasks. A tick function’s only requirement is to
+have a signature like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">my_tick_fn</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="n">task_ctx</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>Where ‘task_ctx’ is a dict that typically has ‘task’, ‘flow’, and other
+user-specified items.</p>
+<p>Per <a class="reference internal" href="#task-type">task_type</a> above, MissionControl defines a default convention
+for loading tick functions based on values in task_ctx.</p>
+</div>
+<div class="section" id="tasks-handlers">
+<h2>Tasks Handlers<a class="headerlink" href="#tasks-handlers" title="Permalink to this headline">¶</a></h2>
+<p>There are often reasons to define a tick function as a method of a class.</p>
+<p>Some of these reasons are:</p>
+<ol class="arabic simple">
+<li>the logic for ticking a task is better expressed as a collection of
+functions, rather than as one long function.</li>
+<li>multiple tick functions share common setup/teardown logic.</li>
+<li>multiple tick functions share common logic for handling exceptions.</li>
+<li>multiple tick functions share common helper utilities and shortcuts.</li>
+</ol>
+<p>MissionControl calls a class which defines a tick function a ‘TaskHandler’.</p>
+<p>MissionControl provides a few classes which you can use as
+base classes for your own TaskHandlers.</p>
+<p>See <a class="reference internal" href="../api/mc.task_handlers.html#module-mc.task_handlers.base_task_handler" title="mc.task_handlers.base_task_handler"><code class="xref py py-class docutils literal"><span class="pre">mc.task_handlers.base_task_handler</span></code></a> to find out more about these
+base TaskHandler classes.</p>
+<p>Usually you will want to inherit from
+<a class="reference internal" href="../api/mc.task_handlers.html#mc.task_handlers.base_task_handler.BaseTaskHandler" title="mc.task_handlers.base_task_handler.BaseTaskHandler"><code class="xref py py-class docutils literal"><span class="pre">mc.task_handlers.base_task_handler.BaseTaskHandler</span></code></a> and then define
+implementations for the methods
+<a class="reference internal" href="../api/mc.task_handlers.html#mc.task_handlers.base_task_handler.BaseTaskHandler.initial_tick" title="mc.task_handlers.base_task_handler.BaseTaskHandler.initial_tick"><code class="xref py py-meth docutils literal"><span class="pre">mc.task_handlers.base_task_handler.BaseTaskHandler.initial_tick()</span></code></a> and
+<a class="reference internal" href="../api/mc.task_handlers.html#mc.task_handlers.base_task_handler.BaseTaskHandler.intermediate_tick" title="mc.task_handlers.base_task_handler.BaseTaskHandler.intermediate_tick"><code class="xref py py-meth docutils literal"><span class="pre">mc.task_handlers.base_task_handler.BaseTaskHandler.intermediate_tick()</span></code></a>.</p>
+<p>Example:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mc.task_handlers.base_task_handler</span> <span class="k">import</span> <span class="n">BaseTaskHandler</span>
+
+<span class="k">class</span> <span class="nc">CountdownTaskHandler</span><span class="p">(</span><span class="n">BaseTaskHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">initial_tick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;countdown&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;task_params&#39;</span><span class="p">][</span><span class="s1">&#39;countdown_start&#39;</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Starting countdown for task with key &#39;</span><span class="si">%s</span><span class="s2">&#39;&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">intermediate_tick</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">intermediate_tick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">countdown</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;countdown&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">countdown</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;T minus </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">countdown</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;countdown&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="mi">1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Houston, we have lift off.&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;data&#39;</span><span class="p">][</span><span class="s1">&#39;my_result&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;Lift off!&#39;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;COMPLETED&#39;</span>
+
+<span class="n">my_countdown_task</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;my_task&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;task_params&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;countdown_start&#39;</span><span class="p">:</span> <span class="mi">3</span>
+    <span class="p">},</span>
+    <span class="s1">&#39;data&#39;</span><span class="p">:</span> <span class="p">{},</span>
+<span class="p">}</span>
+
+<span class="k">while</span> <span class="n">my_countdown_task</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;COMPLETED&#39;</span><span class="p">:</span>
+    <span class="n">CountdownTaskHandler</span><span class="o">.</span><span class="n">tick_task</span><span class="p">(</span><span class="n">task_ctx</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;task&#39;</span><span class="p">:</span> <span class="n">my_countdown_task</span><span class="p">})</span>
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>Starting countdown for task with key &#39;my_task&#39;
+T minus 3
+T minus 2
+T minus 1
+Houston, we have lift off.
+</pre></div>
+</div>
+</div>
+<div class="section" id="built-in-taskhandlers">
+<h2>Built-In TaskHandlers<a class="headerlink" href="#built-in-taskhandlers" title="Permalink to this headline">¶</a></h2>
+<p>MissionControl provides a few built-in TaskHandlers for common operations:</p>
+<dl class="class">
+<dt id="mc.task_handlers.flow_task_handler.FlowTaskHandler">
+<em class="property">class </em><code class="descclassname">mc.task_handlers.flow_task_handler.</code><code class="descname">FlowTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/flow_task_handler.html#FlowTaskHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.task_handlers.flow_task_handler.FlowTaskHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>TaskHandler that creates subflows, via a flow_record client.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="mc.task_handlers.job_task_handler.JobTaskHandler">
+<em class="property">class </em><code class="descclassname">mc.task_handlers.job_task_handler.</code><code class="descname">JobTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/job_task_handler.html#JobTaskHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.task_handlers.job_task_handler.JobTaskHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates and tracks jobs.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="mc.task_handlers.log_task_handler.LogTaskHandler">
+<em class="property">class </em><code class="descclassname">mc.task_handlers.log_task_handler.</code><code class="descname">LogTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/log_task_handler.html#LogTaskHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.task_handlers.log_task_handler.LogTaskHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes a msg to a python logger.</p>
+<p>Can also dump task_ctx info, by setting dump_task_ctx, dump_flow in
+task_params.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="mc.task_handlers.mc_default_task_handler.PrintTaskHandler">
+<em class="property">class </em><code class="descclassname">mc.task_handlers.mc_default_task_handler.</code><code class="descname">PrintTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/mc_default_task_handler.html#PrintTaskHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.task_handlers.mc_default_task_handler.PrintTaskHandler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="mc.task_handlers.mc_default_task_handler.NoOpTaskHandler">
+<em class="property">class </em><code class="descclassname">mc.task_handlers.mc_default_task_handler.</code><code class="descname">NoOpTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/mc_default_task_handler.html#NoOpTaskHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.task_handlers.mc_default_task_handler.NoOpTaskHandler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="mc.task_handlers.spread_task_handler.SpreadTaskHandler">
+<em class="property">class </em><code class="descclassname">mc.task_handlers.spread_task_handler.</code><code class="descname">SpreadTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/spread_task_handler.html#SpreadTaskHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.task_handlers.spread_task_handler.SpreadTaskHandler" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="class">
+<dt id="mc.task_handlers.switch_task_handler.SwitchTaskHandler">
+<em class="property">class </em><code class="descclassname">mc.task_handlers.switch_task_handler.</code><code class="descname">SwitchTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/switch_task_handler.html#SwitchTaskHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.task_handlers.switch_task_handler.SwitchTaskHandler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Task handler that performs a conditional switch.</p>
+<dl class="docutils">
+<dt>task_params:</dt>
+<dd><p class="first">control_value: value to use when checking cases
+cases: list of case dicts, that look like:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;condition&#39;</span><span class="p">:</span> <span class="n">condition_dict</span><span class="p">,</span>
+ <span class="s1">&#39;task&#39;</span><span class="p">:</span> <span class="n">task</span> <span class="n">to</span> <span class="n">run</span> <span class="k">if</span> <span class="n">condition</span> <span class="n">matches</span><span class="p">}</span>
+</pre></div>
+</div>
+<p>where a condition_dict looks like:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span><span class="s1">&#39;op&#39;</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">operator</span> <span class="kn">from</span> <span class="nn">the</span> <span class="n">python</span> <span class="s1">&#39;op&#39;</span> <span class="n">library</span>  <span class="n">e</span><span class="o">.</span><span class="n">g</span> <span class="s1">&#39;eq&#39;</span><span class="o">&gt;</span><span class="p">,</span>
+ <span class="s1">&#39;arg&#39;</span><span class="p">:</span> <span class="mi">2</span><span class="n">nd</span> <span class="n">arg</span> <span class="n">to</span> <span class="n">operator</span><span class="p">}</span>
+</pre></div>
+</div>
+<p class="last">default_case: the case to use if no case matches.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="wiring">
+<h2>Wiring<a class="headerlink" href="#wiring" title="Permalink to this headline">¶</a></h2>
+<p>How do we share data betwen tasks?</p>
+<p>What do we mean by wiring? We mean transferring data. But this needs some more
+explanation.</p>
+<p>For example, say we want to have a flow like this:</p>
+<ol class="arabic simple">
+<li>Get records from a database.</li>
+<li>For each record: create a subflow.</li>
+</ol>
+<p>We could create (1) a task that gets the database records, and (2) a task that
+creates subflows. But how would we connect the output of our database task to
+our subflow task?</p>
+<p>Let’s think about some of the strategies we could use.</p>
+<div class="section" id="strategy-a-standard-input-output-hooks">
+<h3>Strategy A: Standard Input/Output Hooks<a class="headerlink" href="#strategy-a-standard-input-output-hooks" title="Permalink to this headline">¶</a></h3>
+<p>In this strategy we have a convention of using standard input/output hooks.
+That is, every
+task could have an ‘inputs’ property and and ‘outputs’ property. Then, when a
+task finishes, a FlowEngine would pass whatever is in the finished task’s
+‘outputs’ property to the next task.</p>
+<p>This strategy is what many unix command-line tools use. A command takes input
+on stdin and then produces output on stdout and stderr.</p>
+<dl class="docutils">
+<dt>Pros:</dt>
+<dd><ol class="first last arabic simple">
+<li>Conceptually simple.</li>
+<li>Works well for simple linear flows.</li>
+</ol>
+</dd>
+<dt>Cons:</dt>
+<dd><ol class="first last arabic simple">
+<li>Hard to get inputs from multiple sources.</li>
+<li>Hard to get inputs from previous tasks which are not direct precursors.</li>
+<li>Obscures how outputs from one task are wired to inputs. Transformations
+must be described within a task’s tick function, rather than in a task’s
+definition.</li>
+<li>We need to make intermediate ‘adapter’ tasks to transform outputs from one
+task into a suitable input format for later tasks.</li>
+<li>Tasks have to choose what to expose as outputs. If a task does not expose
+a value as an output, a later task cannot access that value.</li>
+</ol>
+</dd>
+</dl>
+</div>
+<div class="section" id="strategy-b-tasks-push-inputs-to-sucessors">
+<h3>Strategy B: Tasks Push Inputs To Sucessors<a class="headerlink" href="#strategy-b-tasks-push-inputs-to-sucessors" title="Permalink to this headline">¶</a></h3>
+<p>In this strategy a task sets inputs on its successors. That is, a task has
+references to its successors, and it can set values on its successors.</p>
+<dl class="docutils">
+<dt>Pros:</dt>
+<dd><ol class="first last arabic simple">
+<li>No need for adapter tasks. A task controls exactly what gets passed
+to its successors.</li>
+</ol>
+</dd>
+<dt>Cons:</dt>
+<dd><ol class="first last arabic simple">
+<li>A task has to know what inputs its successors expect. This leads to a high
+degree of coupling, making it hard to reuse or modify tasks.</li>
+</ol>
+</dd>
+</dl>
+<ol class="arabic simple">
+<li>Tasks have to receive or be able to lookup references to their successors.
+This couples tasks to the lookup system.</li>
+</ol>
+</div>
+<div class="section" id="strategy-c-intermediate-wiring-tasks">
+<span id="wiring-strategy"></span><h3>Strategy C: Intermediate Wiring Tasks<a class="headerlink" href="#strategy-c-intermediate-wiring-tasks" title="Permalink to this headline">¶</a></h3>
+<p>In this strategy we have two categories of tasks: ‘work’ tasks that do the work
+of our flow, and ‘wiring’ tasks that pipe data between ‘work’ tasks.</p>
+<p>Our work tasks are ignorant and don’t know where their inputs come from.
+And they don’t make any decisions about what outputs to expose. Their logic only
+deals with how to do their work.</p>
+<p>On the other hand, our wiring tasks are knowledgeable. They know which
+work tasks they pull data from, and what shape of data those source work tasks
+expose. Our wiring tasks also know which work tasks they push data to, and what
+data formats those target tasks expect.</p>
+<p>There is coupling between the wiring tasks and work tasks,
+but not between work tasks and other work tasks.  This means that work tasks
+can be reused and modified without having to worry about other work tasks.</p>
+<p>In addition, our wirings are explicit in the definitions of the wiring tasks.
+So we can see them in our flows.</p>
+<dl class="docutils">
+<dt>Pros:</dt>
+<dd><ol class="first last arabic simple">
+<li>Work Task Simplicity: A work task’s definition can focus exclusively on the
+work its need to do; work tasks no longer need to worry about formatting
+inputs and setting outputs.</li>
+<li>Decoupling: work tasks can be reused and modified without worrying about
+breaking other work tasks.</li>
+<li>Multiple Input Sources: a wiring task can aggregate data from multiple
+work tasks into one input.</li>
+<li>Explicit Connections in Flow Definitions: a wiring task’s definition shows
+how data moves through flow, making our flows easier to understand.</li>
+</ol>
+</dd>
+<dt>Cons:</dt>
+<dd><ol class="first last arabic simple">
+<li>We need to define the intermediate wiring tasks, which can add verbosity.</li>
+</ol>
+</dd>
+</dl>
+</div>
+<div class="section" id="which-strategy-to-use">
+<h3>Which Strategy to Use?<a class="headerlink" href="#which-strategy-to-use" title="Permalink to this headline">¶</a></h3>
+<p>The MissionControl authors recommend the wiring strategy. We think that this
+strategy gives the most control, and makes it easier to reuse and compose
+tasks. In addition, we think wiring tasks make flows more comprehensible by
+explicitly showing how data moves from one task to another.</p>
+<p>To help with creating wiring tasks, MissionControl provides a special
+TaskHandler,
+the <code class="xref py py-class docutils literal"><span class="pre">WireTaskHandler</span></code>.</p>
+<p>To learn more about wirings see the documentation for
+<code class="xref py py-class docutils literal"><span class="pre">WireTaskHandler</span></code>,
+and look at the wiring examples.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;link to wiring examples&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="interpolations">
+<h2>Interpolations<a class="headerlink" href="#interpolations" title="Permalink to this headline">¶</a></h2>
+<p>The primary con of the wiring strategy is that it adds verbosity to a flow.</p>
+<p>For example, a simple wiring like ‘connect task_a.prop_1 to task_b.prop_2’
+requires an entire task definition:</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;make verbose definition&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>MissionControl provides a utility called ‘interpolation’ to help reduce this
+verbosity for simple wirings.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Make inline interpolation example&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The logic for interpolation is defined in the
+<a class="reference internal" href="../api/mc.task_handlers.html#mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler" title="mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler"><code class="xref py py-class docutils literal"><span class="pre">mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler</span></code></a> class.
+See the <a class="reference internal" href="../api/mc.task_handlers.html#mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler.get_interpolated_task_ctx" title="mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler.get_interpolated_task_ctx"><code class="xref py py-meth docutils literal"><span class="pre">mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler.get_interpolated_task_ctx()</span></code></a> method,
+and the interpolation examples.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s1">&#39;Link to interpolation examples&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="proxying-tasks">
+<h2>Proxying Tasks<a class="headerlink" href="#proxying-tasks" title="Permalink to this headline">¶</a></h2>
+<p>Sometimes we want to create tasks that involve complex definitions. Or we want
+to create tasks which change their behavior based on the parameters they
+receive.</p>
+<p>We could create such tasks by making large, complex task dicts. But these task
+dicts can be hard to understand. And if we want to reuse the logic of these
+tasks in different flows, we would need to copy-and-paste their task dicts
+into our flows.</p>
+<p>Is there a better way? Yes! Proxying tasks to the rescue!</p>
+<p>Proxying tasks are tasks which act as simplified interfaces to an underlying
+complex task. We can pass simple parameters to a proxying task, and then have
+the proxying task dynamically create an underlying complex task from our
+parameters.</p>
+<p>The way we create a proxying task is by creating a normal task with a special
+dict item named ‘proxied_task’. The value of this item is another task dict.</p>
+<p>When our FlowEngine encounters a task that has a ‘proxied_task’ component it
+will tick the proxied_task instead.</p>
+<p>Let’s see an example.</p>
+<div class="section" id="proxying-tasks-example">
+<h3>Proxying Tasks Example<a class="headerlink" href="#proxying-tasks-example" title="Permalink to this headline">¶</a></h3>
+<p>Here’s a task with a little complexity. It prints (1) a given message and (2)
+the number of characters in the message.</p>
+<p>Let’s first implement without using a proxying task.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mc.task_handlers.base_task_handler</span> <span class="k">import</span> <span class="n">BaseTaskHandler</span>
+
+<span class="k">class</span> <span class="nc">MessageStatsTaskHandler</span><span class="p">(</span><span class="n">BaseTaskHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">initial_tick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">orig_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;task_params&#39;</span><span class="p">][</span><span class="s1">&#39;msg&#39;</span><span class="p">]</span>
+        <span class="n">altered_msg</span> <span class="o">=</span> <span class="n">orig_msg</span> <span class="o">+</span> <span class="s2">&quot; (</span><span class="si">%s</span><span class="s2"> chars)&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">orig_msg</span><span class="p">)</span>
+
+        <span class="c1"># Add an additional task to print the altered message.</span>
+        <span class="n">flow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task_ctx</span><span class="p">[</span><span class="s1">&#39;flow&#39;</span><span class="p">]</span>
+        <span class="n">flow</span><span class="o">.</span><span class="n">add_task</span><span class="p">({</span>
+            <span class="s1">&#39;task_type&#39;</span><span class="p">:</span> <span class="s1">&#39;print&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_params&#39;</span><span class="p">:</span> <span class="p">{</span>
+              <span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="n">altered_msg</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;precursors&#39;</span><span class="p">:</span> <span class="p">[</span>
+                <span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;precursors&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;key&#39;</span><span class="p">]</span>
+            <span class="p">]</span>
+        <span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;COMPLETED&#39;</span>
+
+<span class="n">flow_spec</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s1">&#39;tasks&#39;</span><span class="p">:</span> <span class="p">[</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;task_type&#39;</span><span class="p">:</span> <span class="s1">&#39;message_stats&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_params&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;I am short msg&#39;</span><span class="p">},</span>
+        <span class="p">},</span>
+        <span class="p">{</span>
+            <span class="s1">&#39;task_type&#39;</span><span class="p">:</span> <span class="s1">&#39;message_stats&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_params&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="s1">&#39;I am looooooooong msg&#39;</span><span class="p">},</span>
+        <span class="p">},</span>
+    <span class="p">]</span>
+<span class="p">}</span>
+
+<span class="kn">from</span> <span class="nn">mc.flows.flow_engine</span> <span class="k">import</span> <span class="n">FlowEngine</span>
+<span class="n">my_flow_engine</span> <span class="o">=</span> <span class="n">FlowEngine</span><span class="p">()</span>
+<span class="n">my_flow_engine</span><span class="o">.</span><span class="n">run_flow</span><span class="p">(</span>
+    <span class="n">flow</span><span class="o">=</span><span class="n">my_flow_engine</span><span class="o">.</span><span class="n">flow_spec_to_flow</span><span class="p">(</span><span class="n">flow_spec</span><span class="p">),</span>
+    <span class="n">tick_kwargs</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;tick_fn_for_task_ctx_overrides&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;message_stats&#39;</span><span class="p">:</span> <span class="n">MessageStatsTaskHandler</span><span class="o">.</span><span class="n">tick_task</span>
+         <span class="p">}</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>I am short msg (14 chars)
+I am looooooooong msg (21 chars)
+</pre></div>
+</div>
+<p>Our implementation feels a bit kludgy. We’re altering the structure of our flow
+by adding a new task. This is ok for this example. But such an alteration could
+cause problems in other cases. What if other tasks needed to wait until our
+altered message was printed? How would they know to use our newly added task as
+a successor? How would they be able to get data from it?</p>
+<p>Here’s a different implementation of our example above. What’s different is
+that we using a proxying task.</p>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">ProxyingMessageStatsTaskHandler</span><span class="p">(</span><span class="n">BaseTaskHandler</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">initial_tick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">orig_msg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;task_params&#39;</span><span class="p">][</span><span class="s1">&#39;msg&#39;</span><span class="p">]</span>
+        <span class="n">altered_msg</span> <span class="o">=</span> <span class="n">orig_msg</span> <span class="o">+</span> <span class="s2">&quot; (</span><span class="si">%s</span><span class="s2"> chars)&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">orig_msg</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;proxied_task&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;task_type&#39;</span><span class="p">:</span> <span class="s1">&#39;print&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;task_params&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;msg&#39;</span><span class="p">:</span> <span class="n">altered_msg</span><span class="p">}</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">intermediate_tick</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;status&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">task</span><span class="p">[</span><span class="s1">&#39;proxied_task&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span>
+
+<span class="n">my_flow_engine</span><span class="o">.</span><span class="n">run_flow</span><span class="p">(</span>
+    <span class="n">flow</span><span class="o">=</span><span class="n">my_flow_engine</span><span class="o">.</span><span class="n">flow_spec_to_flow</span><span class="p">(</span><span class="n">flow_spec</span><span class="p">),</span>
+    <span class="n">tick_kwargs</span><span class="o">=</span><span class="p">{</span>
+        <span class="s1">&#39;tick_fn_for_task_ctx_overrides&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;message_stats&#39;</span><span class="p">:</span> <span class="n">ProxyingMessageStatsTaskHandler</span><span class="o">.</span><span class="n">tick_task</span>
+         <span class="p">}</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>I am short msg (14 chars)
+I am looooooooong msg (21 chars)
+</pre></div>
+</div>
+<p>This feels cleaner! The structure of our flow doesn’t change, and we don’t have
+to interact with the flow inside our initial_tick method.</p>
+<p>We can trim this down even more if we inherit from MissionControl’s
+<a class="reference internal" href="../api/mc.task_handlers.html#mc.task_handlers.base_proxying_task_handler.BaseProxyingTaskHandler" title="mc.task_handlers.base_proxying_task_handler.BaseProxyingTaskHandler"><code class="xref py py-class docutils literal"><span class="pre">mc.task_handlers.base_proxying_task_handler.BaseProxyingTaskHandler</span></code></a>
+class. This class defines a hook for creating the proxied task, and tasks care
+of propagating attributes from the proxied task to the proxying task.</p>
+<p>Expected output:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>I am short msg (14 chars)
+I am looooooooong msg (21 chars)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="recommended-practices-for-tasks">
+<h2>Recommended Practices for Tasks<a class="headerlink" href="#recommended-practices-for-tasks" title="Permalink to this headline">¶</a></h2>
+<ol class="arabic simple">
+<li>Use TaskHandler classes for non-trivial tick functions.</li>
+<li>Test your tick functions and task handlers.</li>
+<li>Use intermediate wiring tasks to move data between tasks.</li>
+<li>Use proxying tasks to abstract complex task logic and create reusable tasks.</li>
+</ol>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Tasks</a><ul>
+<li><a class="reference internal" href="#what-is-a-task">What Is a Task?</a></li>
+<li><a class="reference internal" href="#task-lifecyle">Task Lifecyle</a></li>
+<li><a class="reference internal" href="#defining-tasks">Defining Tasks</a></li>
+<li><a class="reference internal" href="#running-tasks">Running Tasks</a></li>
+<li><a class="reference internal" href="#tasks-handlers">Tasks Handlers</a></li>
+<li><a class="reference internal" href="#built-in-taskhandlers">Built-In TaskHandlers</a></li>
+<li><a class="reference internal" href="#wiring">Wiring</a><ul>
+<li><a class="reference internal" href="#strategy-a-standard-input-output-hooks">Strategy A: Standard Input/Output Hooks</a></li>
+<li><a class="reference internal" href="#strategy-b-tasks-push-inputs-to-sucessors">Strategy B: Tasks Push Inputs To Sucessors</a></li>
+<li><a class="reference internal" href="#strategy-c-intermediate-wiring-tasks">Strategy C: Intermediate Wiring Tasks</a></li>
+<li><a class="reference internal" href="#which-strategy-to-use">Which Strategy to Use?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#interpolations">Interpolations</a></li>
+<li><a class="reference internal" href="#proxying-tasks">Proxying Tasks</a><ul>
+<li><a class="reference internal" href="#proxying-tasks-example">Proxying Tasks Example</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#recommended-practices-for-tasks">Recommended Practices for Tasks</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="flows.html"
+                        title="previous chapter">Flows</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="houston.html"
+                        title="next chapter">Houston</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/user_guide/tasks.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="houston.html" title="Houston"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="flows.html" title="Flows"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user_guide.html" >User Guide</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

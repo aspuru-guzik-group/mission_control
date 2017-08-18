@@ -1,0 +1,388 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.utils.tests.test_context_value_setter &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mc.utils.tests.test_context_value_setter</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">collections</span>
+<span class="kn">import</span> <span class="nn">unittest</span>
+<span class="kn">from</span> <span class="nn">unittest.mock</span> <span class="k">import</span> <span class="n">call</span><span class="p">,</span> <span class="n">MagicMock</span><span class="p">,</span> <span class="n">patch</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="k">import</span> <span class="n">context_value_setter</span>
+
+
+<div class="viewcode-block" id="BaseTestCase"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.BaseTestCase">[docs]</a><span class="k">class</span> <span class="nc">BaseTestCase</span><span class="p">(</span><span class="n">unittest</span><span class="o">.</span><span class="n">TestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="BaseTestCase.setUp"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.BaseTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setter</span> <span class="o">=</span> <span class="n">context_value_setter</span><span class="o">.</span><span class="n">ContextValueSetter</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_specs</span> <span class="o">=</span> <span class="p">[</span><span class="n">MagicMock</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span></div>
+
+<div class="viewcode-block" id="BaseTestCase.setup_mocks"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.BaseTestCase.setup_mocks">[docs]</a>    <span class="k">def</span> <span class="nf">setup_mocks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">patchers</span> <span class="o">=</span> <span class="p">{</span><span class="n">attr</span><span class="p">:</span> <span class="n">patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">context_value_setter</span><span class="p">,</span> <span class="n">attr</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">}</span>
+        <span class="n">mocks</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">patcher</span> <span class="ow">in</span> <span class="n">patchers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">addCleanup</span><span class="p">(</span><span class="n">patcher</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
+            <span class="n">mocks</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">patcher</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">mocks</span></div>
+
+<div class="viewcode-block" id="BaseTestCase.setup_setter_mocks"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.BaseTestCase.setup_setter_mocks">[docs]</a>    <span class="k">def</span> <span class="nf">setup_setter_mocks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attrs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="n">attrs</span><span class="p">:</span> <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">MagicMock</span><span class="p">())</span></div></div>
+
+<div class="viewcode-block" id="SeContextValuesTestCase"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.SeContextValuesTestCase">[docs]</a><span class="k">class</span> <span class="nc">SeContextValuesTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="SeContextValuesTestCase.setUp"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.SeContextValuesTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_setter_mocks</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;set_context_value&#39;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="SeContextValuesTestCase.test_calls_set_context_value_for_value_specs"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.SeContextValuesTestCase.test_calls_set_context_value_for_value_specs">[docs]</a>    <span class="k">def</span> <span class="nf">test_calls_set_context_value_for_value_specs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">set_context_values</span><span class="p">(</span><span class="n">value_specs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">value_specs</span><span class="p">,</span>
+                                       <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">set_context_value</span><span class="o">.</span><span class="n">call_args_list</span><span class="p">,</span>
+            <span class="p">[</span><span class="n">call</span><span class="p">(</span><span class="n">value_spec</span><span class="o">=</span><span class="n">value_spec</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+             <span class="k">for</span> <span class="n">value_spec</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_specs</span><span class="p">]</span>
+        <span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="SetContextValueTestCase"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.SetContextValueTestCase">[docs]</a><span class="k">class</span> <span class="nc">SetContextValueTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="SetContextValueTestCase.setUp"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.SetContextValueTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_spec</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_setter_mocks</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">[</span>
+            <span class="s1">&#39;compile_value_spec&#39;</span><span class="p">,</span> <span class="s1">&#39;get_value_for_value_spec&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;transform_value_for_value_spec&#39;</span><span class="p">,</span> <span class="s1">&#39;set_context_dest_value&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">set_context_value</span><span class="p">(</span><span class="n">value_spec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">value_spec</span><span class="p">,</span>
+                                      <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_compiled_value_spec</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">compile_value_spec</span>
+                                             <span class="o">.</span><span class="n">return_value</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SetContextValueTestCase.test_compiles_value_spec"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.SetContextValueTestCase.test_compiles_value_spec">[docs]</a>    <span class="k">def</span> <span class="nf">test_compiles_value_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">compile_value_spec</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="n">value_spec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">value_spec</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="SetContextValueTestCase.test_gets_source_value"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.SetContextValueTestCase.test_gets_source_value">[docs]</a>    <span class="k">def</span> <span class="nf">test_gets_source_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">get_value_for_value_spec</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="n">value_spec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_compiled_value_spec</span><span class="p">,</span>
+                 <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SetContextValueTestCase.test_transforms_value"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.SetContextValueTestCase.test_transforms_value">[docs]</a>    <span class="k">def</span> <span class="nf">test_transforms_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">transform_value_for_value_spec</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">get_value_for_value_spec</span><span class="o">.</span><span class="n">return_value</span><span class="p">,</span>
+                 <span class="n">value_spec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_compiled_value_spec</span><span class="p">,</span>
+                 <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="SetContextValueTestCase.test_sets_dest_value_on_context"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.SetContextValueTestCase.test_sets_dest_value_on_context">[docs]</a>    <span class="k">def</span> <span class="nf">test_sets_dest_value_on_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">set_context_dest_value</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span>
+                 <span class="n">dest</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_compiled_value_spec</span><span class="p">[</span><span class="s1">&#39;dest&#39;</span><span class="p">],</span>
+                 <span class="n">value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">transform_value_for_value_spec</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span>
+        <span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="CompileValueSpecTestCase"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.CompileValueSpecTestCase">[docs]</a><span class="k">class</span> <span class="nc">CompileValueSpecTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="CompileValueSpecTestCase.test_parses_str_value_spec"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.CompileValueSpecTestCase.test_parses_str_value_spec">[docs]</a>    <span class="k">def</span> <span class="nf">test_parses_str_value_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">value_spec</span> <span class="o">=</span> <span class="s1">&#39;my.source =&gt; my.dest&#39;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">compile_value_spec</span><span class="p">(</span><span class="n">value_spec</span><span class="o">=</span><span class="n">value_spec</span><span class="p">)</span>
+        <span class="n">expected_result</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;my.source&#39;</span><span class="p">,</span> <span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="s1">&#39;my.dest&#39;</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">,</span>  <span class="n">expected_result</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CompileValueSpecTestCase.test_raises_exception_if_cant_parse_str"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.CompileValueSpecTestCase.test_raises_exception_if_cant_parse_str">[docs]</a>    <span class="k">def</span> <span class="nf">test_raises_exception_if_cant_parse_str</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">bad_value_spec</span> <span class="o">=</span> <span class="s1">&#39;foogobble&#39;</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">assertRaises</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">InvalidValueSpecError</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">compile_value_spec</span><span class="p">(</span><span class="n">value_spec</span><span class="o">=</span><span class="n">bad_value_spec</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="CompileValueSpecTestCase.test_passes_through_non_str_value_specs"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.CompileValueSpecTestCase.test_passes_through_non_str_value_specs">[docs]</a>    <span class="k">def</span> <span class="nf">test_passes_through_non_str_value_specs</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">value_spec</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">compile_value_spec</span><span class="p">(</span><span class="n">value_spec</span><span class="o">=</span><span class="n">value_spec</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">value_spec</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="GetValueForValueSpecTestCase"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.GetValueForValueSpecTestCase">[docs]</a><span class="k">class</span> <span class="nc">GetValueForValueSpecTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="GetValueForValueSpecTestCase.setUp"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.GetValueForValueSpecTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_spec</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="n">MagicMock</span><span class="p">,</span>
+                                                  <span class="o">**</span><span class="p">{</span><span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="n">MagicMock</span><span class="p">()})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_get_value_for_value_spec</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">get_value_for_value_spec</span><span class="p">(</span><span class="n">value_spec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">value_spec</span><span class="p">,</span>
+                                                    <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+
+<div class="viewcode-block" id="GetValueForValueSpecTestCase.test_handles_from_value"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.GetValueForValueSpecTestCase.test_handles_from_value">[docs]</a>    <span class="k">def</span> <span class="nf">test_handles_from_value</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_spec</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_value_for_value_spec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">value_spec</span><span class="p">[</span><span class="s1">&#39;value&#39;</span><span class="p">])</span></div>
+
+<div class="viewcode-block" id="GetValueForValueSpecTestCase.test_handles_from_source"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.GetValueForValueSpecTestCase.test_handles_from_source">[docs]</a>    <span class="k">def</span> <span class="nf">test_handles_from_source</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_spec</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">get_value_from_dot_spec</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_value_for_value_spec</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">,</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">get_value_from_dot_spec</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">get_value_from_dot_spec</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="n">obj</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;ctx&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">},</span>
+                              <span class="n">dot_spec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">value_spec</span><span class="p">[</span><span class="s1">&#39;source&#39;</span><span class="p">]))</span></div></div>
+
+<div class="viewcode-block" id="TransformValueForValueSpecTestCase"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.TransformValueForValueSpecTestCase">[docs]</a><span class="k">class</span> <span class="nc">TransformValueForValueSpecTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="TransformValueForValueSpecTestCase.setUp"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.TransformValueForValueSpecTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_spec</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="n">MagicMock</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span></div>
+
+    <span class="k">def</span> <span class="nf">_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">value_spec_updates</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value_spec</span><span class="o">.</span><span class="n">update</span><span class="p">((</span><span class="n">value_spec_updates</span> <span class="ow">or</span> <span class="p">{}))</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">transform_value_for_value_spec</span><span class="p">(</span>
+            <span class="n">value</span><span class="o">=</span><span class="p">(</span><span class="n">value</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">),</span> <span class="n">value_spec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">value_spec</span><span class="p">,</span>
+            <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+
+<div class="viewcode-block" id="TransformValueForValueSpecTestCase.test_returns_value_if_no_transform_given"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.TransformValueForValueSpecTestCase.test_returns_value_if_no_transform_given">[docs]</a>    <span class="k">def</span> <span class="nf">test_returns_value_if_no_transform_given</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transform</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TransformValueForValueSpecTestCase.test_json_dumps"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.TransformValueForValueSpecTestCase.test_json_dumps">[docs]</a>    <span class="nd">@patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">context_value_setter</span><span class="p">,</span> <span class="s1">&#39;json&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">test_json_dumps</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_json</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transform</span><span class="p">(</span><span class="n">value_spec_updates</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;transform&#39;</span><span class="p">:</span> <span class="s1">&#39;json.dumps&#39;</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">_json</span><span class="o">.</span><span class="n">dumps</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span> <span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">_json</span><span class="o">.</span><span class="n">dumps</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TransformValueForValueSpecTestCase.test_json_loads"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.TransformValueForValueSpecTestCase.test_json_loads">[docs]</a>    <span class="nd">@patch</span><span class="o">.</span><span class="n">object</span><span class="p">(</span><span class="n">context_value_setter</span><span class="p">,</span> <span class="s1">&#39;json&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">test_json_loads</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_json</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transform</span><span class="p">(</span><span class="n">value_spec_updates</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;transform&#39;</span><span class="p">:</span> <span class="s1">&#39;json.loads&#39;</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">_json</span><span class="o">.</span><span class="n">loads</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span> <span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">_json</span><span class="o">.</span><span class="n">loads</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="TransformValueForValueSpecTestCase.test_mapping_transform"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.TransformValueForValueSpecTestCase.test_mapping_transform">[docs]</a>    <span class="k">def</span> <span class="nf">test_mapping_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">execute_mapping_transform</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="n">transform</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;mapping&#39;</span><span class="p">}</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_transform</span><span class="p">(</span><span class="n">value_spec_updates</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;transform&#39;</span><span class="p">:</span> <span class="n">transform</span><span class="p">})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">execute_mapping_transform</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">,</span>
+                         <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">execute_mapping_transform</span><span class="o">.</span><span class="n">return_value</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="ExecuteMappingTransformTestCase"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.ExecuteMappingTransformTestCase">[docs]</a><span class="k">class</span> <span class="nc">ExecuteMappingTransformTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="ExecuteMappingTransformTestCase.setUp"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.ExecuteMappingTransformTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="n">MagicMock</span><span class="p">()</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_setter_mocks</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;map_item&#39;</span><span class="p">,</span>
+                                       <span class="s1">&#39;get_iterator_for_mapping_source&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_iterator</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">get_iterator_for_mapping_source</span><span class="o">.</span><span class="n">return_value</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">expected_iterator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">execute_mapping_transform</span><span class="p">(</span>
+            <span class="n">value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ExecuteMappingTransformTestCase.test_gets_iterator"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.ExecuteMappingTransformTestCase.test_gets_iterator">[docs]</a>    <span class="k">def</span> <span class="nf">test_gets_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">get_iterator_for_mapping_source</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="n">mapping_source</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="ExecuteMappingTransformTestCase.test_returns_mapped_items"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.ExecuteMappingTransformTestCase.test_returns_mapped_items">[docs]</a>    <span class="k">def</span> <span class="nf">test_returns_mapped_items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">map_item</span><span class="o">.</span><span class="n">call_args_list</span><span class="p">,</span>
+            <span class="p">[</span>
+                <span class="n">call</span><span class="p">(</span><span class="n">item</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span> <span class="s1">&#39;idx&#39;</span><span class="p">:</span> <span class="n">idx</span><span class="p">},</span>
+                     <span class="n">items</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                     <span class="n">mapping_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">[</span><span class="s1">&#39;params&#39;</span><span class="p">],</span>
+                     <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_iterator</span><span class="p">)</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> 
+            <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">map_item</span><span class="o">.</span><span class="n">return_value</span>
+             <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected_iterator</span><span class="p">]</span>
+        <span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="MapItemTestCase"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.MapItemTestCase">[docs]</a><span class="k">class</span> <span class="nc">MapItemTestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="MapItemTestCase.setUp"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.MapItemTestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">item</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="n">MagicMock</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mapping_params</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span>
+            <span class="n">MagicMock</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="s1">&#39;skeleton&#39;</span><span class="p">:</span> <span class="n">MagicMock</span><span class="p">(),</span> <span class="s1">&#39;wirings&#39;</span><span class="p">:</span> <span class="n">MagicMock</span><span class="p">()})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">defaultdict</span><span class="p">(</span><span class="n">MagicMock</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_setter_mocks</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;set_context_values&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_mocks</span><span class="p">(</span><span class="n">attrs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;copy&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_copy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mocks</span><span class="p">[</span><span class="s1">&#39;copy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">deepcopy</span><span class="o">.</span><span class="n">return_value</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">expected_context</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="s1">&#39;item&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">item</span><span class="p">,</span> <span class="s1">&#39;items&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">,</span>
+            <span class="s1">&#39;skeleton&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected_copy</span>
+        <span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">map_item</span><span class="p">(</span><span class="n">item</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">item</span><span class="p">,</span> <span class="n">items</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">,</span>
+                                           <span class="n">mapping_params</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mapping_params</span><span class="p">,</span>
+                                           <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="MapItemTestCase.test_makes_deep_copy_of_the_skeleton"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.MapItemTestCase.test_makes_deep_copy_of_the_skeleton">[docs]</a>    <span class="k">def</span> <span class="nf">test_makes_deep_copy_of_the_skeleton</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mocks</span><span class="p">[</span><span class="s1">&#39;copy&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">deepcopy</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+                         <span class="n">call</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mapping_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;skeleton&#39;</span><span class="p">)))</span></div>
+
+<div class="viewcode-block" id="MapItemTestCase.test_applies_wirings_with_expected_context"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.MapItemTestCase.test_applies_wirings_with_expected_context">[docs]</a>    <span class="k">def</span> <span class="nf">test_applies_wirings_with_expected_context</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">set_context_values</span><span class="o">.</span><span class="n">call_args</span><span class="p">,</span>
+            <span class="n">call</span><span class="p">(</span><span class="n">value_specs</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mapping_params</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;wirings&#39;</span><span class="p">),</span>
+                 <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">expected_context</span><span class="p">)</span>
+        <span class="p">)</span></div>
+
+<div class="viewcode-block" id="MapItemTestCase.test_returns_skeleton_copy"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.MapItemTestCase.test_returns_skeleton_copy">[docs]</a>    <span class="k">def</span> <span class="nf">test_returns_skeleton_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">result</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">expected_copy</span><span class="p">)</span></div></div>
+
+<div class="viewcode-block" id="ExecuteMappingTransformE2ETestCase"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.ExecuteMappingTransformE2ETestCase">[docs]</a><span class="k">class</span> <span class="nc">ExecuteMappingTransformE2ETestCase</span><span class="p">(</span><span class="n">BaseTestCase</span><span class="p">):</span>
+<div class="viewcode-block" id="ExecuteMappingTransformE2ETestCase.setUp"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.ExecuteMappingTransformE2ETestCase.setUp">[docs]</a>    <span class="k">def</span> <span class="nf">setUp</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setUp</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;ctx_prop_</span><span class="si">{i}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="n">i</span><span class="p">):</span> <span class="s1">&#39;ctx_</span><span class="si">{i}</span><span class="s1">_val&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">skeleton</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;prop_</span><span class="si">{i}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="n">i</span><span class="p">):</span> <span class="s1">&#39;skel_</span><span class="si">{i}</span><span class="s1">_val&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+                         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">4</span><span class="p">)}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;mapping&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;params&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;skeleton&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">skeleton</span><span class="p">,</span>
+                <span class="s1">&#39;wirings&#39;</span><span class="p">:</span> <span class="p">[</span>
+                    <span class="p">{</span><span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;ctx.item.idx&#39;</span><span class="p">,</span> <span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="s1">&#39;ctx.skeleton.idx&#39;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;ctx.item.key&#39;</span><span class="p">,</span> <span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="s1">&#39;ctx.skeleton.key&#39;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;ctx.item.value.prop_0&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="s1">&#39;ctx.skeleton.prop_0&#39;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s1">&#39;value&#39;</span><span class="p">:</span> <span class="s1">&#39;new_prop_1_val&#39;</span><span class="p">,</span> <span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="s1">&#39;ctx.skeleton.prop_1&#39;</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s1">&#39;source&#39;</span><span class="p">:</span> <span class="s1">&#39;ctx.ctx_prop_2&#39;</span><span class="p">,</span> <span class="s1">&#39;dest&#39;</span><span class="p">:</span> <span class="s1">&#39;ctx.skeleton.prop_2&#39;</span><span class="p">},</span>
+                <span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span></div>
+
+    <span class="k">def</span> <span class="nf">_execute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">setter</span><span class="o">.</span><span class="n">execute_mapping_transform</span><span class="p">(</span>
+            <span class="n">value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ExecuteMappingTransformE2ETestCase.test_sequence_mapping_source"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.ExecuteMappingTransformE2ETestCase.test_sequence_mapping_source">[docs]</a>    <span class="k">def</span> <span class="nf">test_sequence_mapping_source</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s1">&#39;prop_</span><span class="si">{i}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="n">i</span><span class="p">):</span> <span class="s1">&#39;item_</span><span class="si">{idx}</span><span class="s1">_val_</span><span class="si">{i}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">idx</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> <span class="n">i</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)}</span>
+            <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+        <span class="p">]</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute</span><span class="p">()</span>
+        <span class="n">expected_result</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s1">&#39;idx&#39;</span><span class="p">:</span> <span class="n">idx</span><span class="p">,</span>
+                <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span>
+                <span class="s1">&#39;prop_0&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">[</span><span class="s1">&#39;prop_0&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;prop_1&#39;</span><span class="p">:</span> <span class="s1">&#39;new_prop_1_val&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;prop_2&#39;</span><span class="p">:</span> <span class="s1">&#39;ctx_2_val&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;prop_3&#39;</span><span class="p">:</span> <span class="s1">&#39;skel_3_val&#39;</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">))</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">expected_result</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ExecuteMappingTransformE2ETestCase.test_mapping_mapping_source"><a class="viewcode-back" href="../../../../api/mc.utils.tests.html#mc.utils.tests.test_context_value_setter.ExecuteMappingTransformE2ETestCase.test_mapping_mapping_source">[docs]</a>    <span class="k">def</span> <span class="nf">test_mapping_mapping_source</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="n">collections</span><span class="o">.</span><span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="p">[</span><span class="s1">&#39;item_</span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">idx</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;prop_</span><span class="si">{i}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="o">=</span><span class="n">i</span><span class="p">):</span> <span class="s1">&#39;item_</span><span class="si">{idx}</span><span class="s1">_val_</span><span class="si">{i}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">idx</span><span class="o">=</span><span class="n">idx</span><span class="p">,</span> <span class="n">i</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+            <span class="p">}</span> 
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_execute</span><span class="p">()</span>
+        <span class="n">expected_result</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span>
+                <span class="s1">&#39;idx&#39;</span><span class="p">:</span> <span class="n">idx</span><span class="p">,</span>
+                <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span>
+                <span class="s1">&#39;prop_0&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">[</span><span class="s1">&#39;prop_0&#39;</span><span class="p">],</span>
+                <span class="s1">&#39;prop_1&#39;</span><span class="p">:</span> <span class="s1">&#39;new_prop_1_val&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;prop_2&#39;</span><span class="p">:</span> <span class="s1">&#39;ctx_2_val&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;prop_3&#39;</span><span class="p">:</span> <span class="s1">&#39;skel_3_val&#39;</span><span class="p">,</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">idx</span><span class="p">,</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span><span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">assertEqual</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">expected_result</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,272 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.daos.sqlalchemy_dao &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mc.daos.sqlalchemy_dao</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">types</span> <span class="k">import</span> <span class="n">SimpleNamespace</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">sqlalchemy</span> <span class="k">as</span> <span class="nn">_sqla</span>
+
+<span class="kn">from</span> <span class="nn">.base_dao</span> <span class="k">import</span> <span class="n">BaseDao</span>
+
+<div class="viewcode-block" id="SqlAlchemyDao"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao">[docs]</a><span class="k">class</span> <span class="nc">SqlAlchemyDao</span><span class="p">(</span><span class="n">BaseDao</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A SqlAlchemy implementation of a MissionControl DAO.&quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sa_schema</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">marsh_schemas</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">db_uri</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">engine</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">logger</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Args:</span>
+<span class="sd">            sa_schema (dict, optional): a dict representing a sqlalchemy schema,</span>
+<span class="sd">                in this shape: ::</span>
+
+<span class="sd">                    {</span>
+<span class="sd">                        &#39;metadata&#39;: sqlalchemy metadata obj,</span>
+<span class="sd">                        &#39;tables&#39;: a dict of sqlalchemy tables objects</span>
+<span class="sd">                    }</span>
+
+<span class="sd">                If empty, will use default schema.</span>
+<span class="sd">            marsh_schemas (dict, optional): a dict representing Marshmallow</span>
+<span class="sd">                serializers. If empty, will use default schema.</span>
+<span class="sd">            db_uri (str, optional): SqlAlchemy db_uri string. &#39;sqlite://&#39;.</span>
+<span class="sd">                If engine is provided, this will be ignored.</span>
+<span class="sd">            engine (SqlAlchemy engine, optional): SqlAlchemy engine object.</span>
+<span class="sd">                If empty, will attempt to create engine from db_uri.</span>
+<span class="sd">            logger (logging.Logger, optional): Logger instance. If empty,</span>
+<span class="sd">                will create logger.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="n">logger</span> <span class="ow">or</span> <span class="n">logging</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">db_uri</span> <span class="o">=</span> <span class="n">db_uri</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sa_schema</span> <span class="o">=</span> <span class="n">sa_schema</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_default_sa_schema</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">marsh_schemas</span> <span class="o">=</span> <span class="n">marsh_schemas</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_default_marsh_schemas</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">engine</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">engine</span>
+
+<div class="viewcode-block" id="SqlAlchemyDao.get_default_sa_schema"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.get_default_sa_schema">[docs]</a>    <span class="k">def</span> <span class="nf">get_default_sa_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">mc.orm</span> <span class="k">import</span> <span class="n">sqlalchemy</span> <span class="k">as</span> <span class="n">_mc_sa</span>
+        <span class="k">return</span> <span class="n">_mc_sa</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.get_default_marsh_schemas"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.get_default_marsh_schemas">[docs]</a>    <span class="k">def</span> <span class="nf">get_default_marsh_schemas</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">mc.orm</span> <span class="k">import</span> <span class="n">marshmallow</span> <span class="k">as</span> <span class="n">_mc_marsh</span>
+        <span class="k">return</span> <span class="n">_mc_marsh</span><span class="o">.</span><span class="n">sa_schema_to_marsh_schemas</span><span class="p">(</span><span class="n">sa_schema</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sa_schema</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.ensure_tables"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.ensure_tables">[docs]</a>    <span class="k">def</span> <span class="nf">ensure_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_tables</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.create_tables"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.create_tables">[docs]</a>    <span class="k">def</span> <span class="nf">create_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sa_schema</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.drop_tables"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.drop_tables">[docs]</a>    <span class="k">def</span> <span class="nf">drop_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">sa_schema</span><span class="p">[</span><span class="s1">&#39;metadata&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">drop_all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.create_item"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.create_item">[docs]</a>    <span class="k">def</span> <span class="nf">create_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_item_table</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="n">item_type</span><span class="p">)</span>
+        <span class="n">statement</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">insert</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">return_defaults</span><span class="p">()</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span><span class="o">.</span><span class="n">inserted_primary_key</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_item_by_key</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="n">item_type</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.serialize_items"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.serialize_items">[docs]</a>    <span class="k">def</span> <span class="nf">serialize_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">items</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">serializer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_marsh_schema</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="n">item_type</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">serializer</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">SimpleNamespace</span><span class="p">(</span><span class="o">**</span><span class="n">item</span><span class="p">))</span><span class="o">.</span><span class="n">data</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">items</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.get_marsh_schema"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.get_marsh_schema">[docs]</a>    <span class="k">def</span> <span class="nf">get_marsh_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">marsh_schemas</span><span class="p">[</span><span class="n">item_type</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.get_item_table"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.get_item_table">[docs]</a>    <span class="k">def</span> <span class="nf">get_item_table</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">sa_schema</span><span class="p">[</span><span class="s1">&#39;tables&#39;</span><span class="p">][</span><span class="n">item_type</span><span class="p">]</span></div>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">engine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_engine&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_engine</span> <span class="o">=</span> <span class="n">_sqla</span><span class="o">.</span><span class="n">create_engine</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">db_uri</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_engine</span>
+
+    <span class="nd">@engine</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">engine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_engine</span> <span class="o">=</span> <span class="n">value</span>
+
+<div class="viewcode-block" id="SqlAlchemyDao.get_items"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.get_items">[docs]</a>    <span class="k">def</span> <span class="nf">get_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">statement</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_items_statement</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="n">item_type</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">statement_to_dicts</span><span class="p">(</span><span class="n">statement</span><span class="o">=</span><span class="n">statement</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.statement_to_dicts"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.statement_to_dicts">[docs]</a>    <span class="k">def</span> <span class="nf">statement_to_dicts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">statement</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;execute statement and return results as dicts.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">row_to_dict</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()]</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.row_to_dict"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.row_to_dict">[docs]</a>    <span class="k">def</span> <span class="nf">row_to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">):</span> <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">row</span><span class="p">))</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.get_items_statement"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.get_items_statement">[docs]</a>    <span class="k">def</span> <span class="nf">get_items_statement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;get statement for items query.&quot;&quot;&quot;</span>
+        <span class="n">query</span> <span class="o">=</span> <span class="n">query</span> <span class="ow">or</span> <span class="p">{}</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_item_table</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="n">item_type</span><span class="p">)</span>
+        <span class="n">statement</span> <span class="o">=</span> <span class="n">table</span><span class="o">.</span><span class="n">select</span><span class="p">()</span>
+        <span class="n">statement</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">add_wheres_to_statement</span><span class="p">(</span><span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">,</span>
+                                                 <span class="n">statement</span><span class="o">=</span><span class="n">statement</span><span class="p">,</span>
+                                                 <span class="n">columns</span><span class="o">=</span><span class="n">table</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">statement</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.add_wheres_to_statement"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.add_wheres_to_statement">[docs]</a>    <span class="k">def</span> <span class="nf">add_wheres_to_statement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">statement</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                <span class="n">columns</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">_filter</span> <span class="ow">in</span> <span class="n">query</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;filters&#39;</span><span class="p">,</span> <span class="p">[]):</span>
+            <span class="n">clause</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">col</span> <span class="o">=</span> <span class="n">columns</span><span class="p">[</span><span class="n">_filter</span><span class="p">[</span><span class="s1">&#39;prop&#39;</span><span class="p">]]</span>
+            <span class="n">op</span> <span class="o">=</span> <span class="n">_filter</span><span class="p">[</span><span class="s1">&#39;op&#39;</span><span class="p">]</span>
+            <span class="n">arg</span> <span class="o">=</span> <span class="n">_filter</span><span class="p">[</span><span class="s1">&#39;arg&#39;</span><span class="p">]</span>
+            <span class="n">negate</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="n">op</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;!&#39;</span><span class="p">):</span>
+                <span class="n">op</span>  <span class="o">=</span> <span class="n">op</span><span class="p">[</span><span class="mi">2</span><span class="p">:]</span>
+                <span class="n">negate</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="k">if</span> <span class="n">op</span> <span class="o">==</span> <span class="s1">&#39;IN&#39;</span><span class="p">:</span>
+                <span class="n">op_fn</span> <span class="o">=</span> <span class="n">col</span><span class="o">.</span><span class="n">in_</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">arg</span><span class="p">:</span> <span class="n">clause</span> <span class="o">=</span> <span class="n">_sqla</span><span class="o">.</span><span class="n">false</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span> <span class="n">op_fn</span> <span class="o">=</span> <span class="n">col</span><span class="o">.</span><span class="n">op</span><span class="p">(</span><span class="n">op</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">clause</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span> <span class="n">clause</span> <span class="o">=</span> <span class="n">op_fn</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">negate</span><span class="p">:</span> <span class="n">clause</span> <span class="o">=</span> <span class="o">~</span><span class="n">clause</span>
+            <span class="n">statement</span> <span class="o">=</span> <span class="n">statement</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">clause</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">statement</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.patch_item"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.patch_item">[docs]</a>    <span class="k">def</span> <span class="nf">patch_item</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">patches</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_item_table</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="n">item_type</span><span class="p">)</span>
+        <span class="n">statement</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">table</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">key</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">values</span><span class="p">(</span><span class="n">patches</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">statement</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_item_by_key</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="n">item_type</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.flush_mc_db"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.flush_mc_db">[docs]</a>    <span class="k">def</span> <span class="nf">flush_mc_db</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_types</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;clear the db tables.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">item_type</span> <span class="ow">in</span> <span class="p">(</span><span class="n">item_types</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">ITEM_TYPES</span><span class="p">):</span>
+            <span class="n">table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_item_table</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="n">item_type</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">table</span><span class="o">.</span><span class="n">delete</span><span class="p">())</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.get_flow_queue_items_to_claim"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.get_flow_queue_items_to_claim">[docs]</a>    <span class="k">def</span> <span class="nf">get_flow_queue_items_to_claim</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">queue</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Gets flow queue items.</span>
+
+<span class="sd">        Checks for lock records on items.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">filtered_flows_q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_items_statement</span><span class="p">(</span>
+            <span class="n">item_type</span><span class="o">=</span><span class="n">queue</span><span class="p">[</span><span class="s1">&#39;queue_spec&#39;</span><span class="p">][</span><span class="s1">&#39;item_type&#39;</span><span class="p">],</span>
+            <span class="n">query</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;filters&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_default_claiming_filters</span><span class="p">()}</span>
+        <span class="p">)</span>
+        <span class="n">lock_count_subq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_lock_count_subq</span><span class="p">()</span>
+        <span class="n">joined</span> <span class="o">=</span> <span class="n">filtered_flows_q</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">lock_count_subq</span><span class="p">,</span>
+            <span class="n">isouter</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">onclause</span><span class="o">=</span><span class="p">(</span><span class="n">filtered_flows_q</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">key</span> <span class="o">==</span> <span class="n">lock_count_subq</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">lockee_key</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="n">statement</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">_sqla</span><span class="o">.</span><span class="n">select</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">select_from</span><span class="p">(</span><span class="n">joined</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                <span class="p">(</span><span class="n">joined</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">num_tickable_tasks</span> <span class="o">==</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="o">|</span> <span class="p">(</span><span class="n">joined</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">lock_count</span> <span class="o">==</span> <span class="kc">None</span><span class="p">)</span>
+                <span class="o">|</span> <span class="p">(</span><span class="n">joined</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">num_tickable_tasks</span> <span class="o">&gt;</span> <span class="n">joined</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">lock_count</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">statement_to_dicts</span><span class="p">(</span><span class="n">statement</span><span class="o">=</span><span class="n">statement</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.get_lock_count_subq"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.get_lock_count_subq">[docs]</a>    <span class="k">def</span> <span class="nf">get_lock_count_subq</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">lock_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_item_table</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="s1">&#39;Lock&#39;</span><span class="p">)</span>
+        <span class="n">subq</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">_sqla</span><span class="o">.</span><span class="n">select</span><span class="p">([</span><span class="n">_sqla</span><span class="o">.</span><span class="n">func</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s1">&#39;key&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">label</span><span class="p">(</span><span class="s1">&#39;lock_count&#39;</span><span class="p">),</span>
+                          <span class="n">lock_table</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">lockee_key</span><span class="p">])</span>
+            <span class="o">.</span><span class="n">group_by</span><span class="p">(</span><span class="n">lock_table</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">lockee_key</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">subq</span></div>
+
+<div class="viewcode-block" id="SqlAlchemyDao.delete_items"><a class="viewcode-back" href="../../../api/mc.daos.html#mc.daos.sqlalchemy_dao.SqlAlchemyDao.delete_items">[docs]</a>    <span class="k">def</span> <span class="nf">delete_items</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">item_table</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_item_table</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="n">item_type</span><span class="p">)</span>
+        <span class="n">keys_subq</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_items_statement</span><span class="p">(</span><span class="n">item_type</span><span class="o">=</span><span class="n">item_type</span><span class="p">,</span> <span class="n">query</span><span class="o">=</span><span class="n">query</span><span class="p">)</span>
+            <span class="o">.</span><span class="n">with_only_columns</span><span class="p">([</span><span class="n">item_table</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">key</span><span class="p">])</span>
+        <span class="p">)</span>
+        <span class="n">delete_statement</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">item_table</span><span class="o">.</span><span class="n">delete</span><span class="p">()</span>
+            <span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">item_table</span><span class="o">.</span><span class="n">c</span><span class="o">.</span><span class="n">key</span><span class="o">.</span><span class="n">in_</span><span class="p">(</span><span class="n">keys_subq</span><span class="p">))</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">delete_statement</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

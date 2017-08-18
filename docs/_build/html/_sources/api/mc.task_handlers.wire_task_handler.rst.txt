@@ -1,0 +1,7 @@
+mc\.task\_handlers\.wire\_task\_handler module
+==============================================
+
+.. automodule:: mc.task_handlers.wire_task_handler
+    :members:
+    :undoc-members:
+    :show-inheritance:

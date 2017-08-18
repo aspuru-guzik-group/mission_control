@@ -1,0 +1,30 @@
+mc.examples.queued_flows package
+================================
+
+Submodules
+----------
+
+mc.examples.queued_flows.entrypoint module
+------------------------------------------
+
+.. automodule:: mc.examples.queued_flows.entrypoint
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+mc.examples.queued_flows.test_example module
+--------------------------------------------
+
+.. automodule:: mc.examples.queued_flows.test_example
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: mc.examples.queued_flows
+    :members:
+    :undoc-members:
+    :show-inheritance:

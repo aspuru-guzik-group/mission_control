@@ -1,0 +1,289 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Houston &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="EntityDB" href="entity_db.html" />
+    <link rel="prev" title="Tasks" href="tasks.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="entity_db.html" title="EntityDB"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tasks.html" title="Tasks"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user_guide.html" accesskey="U">User Guide</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="houston">
+<h1>Houston<a class="headerlink" href="#houston" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="concept-checklist">
+<h2>Concept Checklist<a class="headerlink" href="#concept-checklist" title="Permalink to this headline">¶</a></h2>
+<p>This page covers these concepts:</p>
+<ol class="arabic simple">
+<li>[ ] What is Houston?</li>
+<li>[ ] Why use Houston?</li>
+<li>[ ] Running commands with Houston</li>
+<li>[ ] Houston utils</li>
+<li>[ ] Configuring Houston</li>
+</ol>
+</div>
+<div class="section" id="what-is-houston">
+<h2>What is Houston?<a class="headerlink" href="#what-is-houston" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="../api/mc.houston.html#mc.houston.houston.Houston" title="mc.houston.houston.Houston"><code class="xref py py-mod docutils literal"><span class="pre">Houston</span></code></a> is a high-level interface to MissionControl.</p>
+<div class="section" id="an-analogy">
+<h3>An Analogy<a class="headerlink" href="#an-analogy" title="Permalink to this headline">¶</a></h3>
+<p>Think of a car. A car is a system of many components.
+There’s an engine, brakes, gears, wheels, and many other parts.
+But when you drive a car, you don’t think about each little part;
+it would be too overwhelming! Instead,
+you just use the steering wheel and the pedals. These are your interface to
+the car.</p>
+<p>MissionControl is also a system of many components. There are jobs, flows,
+databases, utility classes, and many other parts. When we use MissionControl,
+we don’t want to have to know about all of the little parts. We want something
+that hides the details. Houston is a set of functions and utilities that lets
+us use MissionControl without having to know about all the little parts.
+Houston is like a steering wheel for MissionControl.</p>
+</div>
+</div>
+<div class="section" id="why-use-houston">
+<h2>Why use Houston?<a class="headerlink" href="#why-use-houston" title="Permalink to this headline">¶</a></h2>
+<p>We use Houston for several reasons:</p>
+<ol class="arabic simple">
+<li>It makes it easier for us to write programs that interact with
+MissionControl.</li>
+<li>It gives us a way to consolidate configuration in one place.</li>
+<li>It gives us a framework to extend MissionControl with new commands.</li>
+</ol>
+</div>
+<div class="section" id="configuring-houston">
+<h2>Configuring Houston<a class="headerlink" href="#configuring-houston" title="Permalink to this headline">¶</a></h2>
+<p>Houston takes a ‘cfg’ object as a parameter. This cfg object can be a dict that
+maps config keys to values. Or it can be a python object that has config keys
+as attributes.</p>
+<p>This allows you to use both normal dicts and python modules as config sources.</p>
+<div class="section" id="config-as-dict">
+<h3>Config as Dict<a class="headerlink" href="#config-as-dict" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mc.houston</span> <span class="k">import</span> <span class="n">Houston</span>
+<span class="n">my_config</span> <span class="o">=</span> <span class="p">{</span>
+   <span class="s1">&#39;SOME_CFG_KEY&#39;</span><span class="p">:</span> <span class="s1">&#39;SOME_CFG_VALUE&#39;</span>
+<span class="p">}</span>
+<span class="n">houston</span> <span class="o">=</span> <span class="n">Houston</span><span class="p">(</span><span class="n">cfg</span><span class="o">=</span><span class="n">my_config</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">houston</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;SOME_CFG_KEY&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>SOME_CFG_VALUE
+</pre></div>
+</div>
+</div>
+<div class="section" id="config-as-object">
+<h3>Config as Object<a class="headerlink" href="#config-as-object" title="Permalink to this headline">¶</a></h3>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">types</span>
+<span class="n">my_config</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">SimpleNamespace</span><span class="p">()</span>
+<span class="n">my_config</span><span class="o">.</span><span class="n">SOME_CFG_KEY</span> <span class="o">=</span> <span class="s1">&#39;SOME_CFG_VALUE&#39;</span>
+<span class="n">houston</span> <span class="o">=</span> <span class="n">Houston</span><span class="p">(</span><span class="n">cfg</span><span class="o">=</span><span class="n">my_config</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">houston</span><span class="o">.</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;SOME_CFG_KEY&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Expected output:</p>
+<div class="highlight-none"><div class="highlight"><pre><span></span>SOME_CFG_VALUE
+</pre></div>
+</div>
+</div>
+<div class="section" id="common-config-keys">
+<h3>Common Config Keys<a class="headerlink" href="#common-config-keys" title="Permalink to this headline">¶</a></h3>
+<p>These are some of the common config keys used by Houston.</p>
+<dl class="docutils">
+<dt>MC_DB_URI</dt>
+<dd>The database connection url for the MissionControl database. See
+<a class="reference external" href="http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls">http://docs.sqlalchemy.org/en/latest/core/engines.html#database-urls</a> for
+valid url formats.</dd>
+<dt>FLOW_QUEUE</dt>
+<dd><p class="first">Flow queue config. Only needed if you use Houston.utils.flow_runner.</p>
+<p>Example:</p>
+<div class="last highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;my_flow_queue&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;queue_kwargs&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;queue_spec&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;item_type&#39;</span><span class="p">:</span> <span class="s1">&#39;Flow&#39;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+<dt>JOB_QUEUE</dt>
+<dd><p class="first">Job queue config. Only needed if you use Houston.utils.job_runner.</p>
+<p>Example:</p>
+<div class="last highlight-default"><div class="highlight"><pre><span></span><span class="p">{</span>
+    <span class="s1">&#39;key&#39;</span><span class="p">:</span> <span class="s1">&#39;my_job_queue&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;queue_kwargs&#39;</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">&#39;queue_spec&#39;</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">&#39;item_type&#39;</span><span class="p">:</span> <span class="s1">&#39;Job&#39;</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</dd>
+<dt>USE_LOCKS</dt>
+<dd>Set to True to enable the use of locks when claiming flows.
+Default: True.</dd>
+<dt>ARTIFACT_HANDLER</dt>
+<dd>An instance of an artifact handler to use for converting dirs to artifacts.</dd>
+<dt>JOB_DIRS_ROOT</dt>
+<dd>The root path to use for job dirs.</dd>
+<dt>JOBMAN_CFG</dt>
+<dd>A jobman cfg specification.</dd>
+</dl>
+</div>
+</div>
+<div class="section" id="running-commands-with-houston">
+<h2>Running Commands with Houston<a class="headerlink" href="#running-commands-with-houston" title="Permalink to this headline">¶</a></h2>
+<p>Normally you use Houston to call MissionControl commands.</p>
+<p>The typical way to run a command is to use Houston’s ‘run_command’ function.</p>
+<dl class="docutils">
+<dt>Example:</dt>
+<dd><div class="first last highlight-default"><div class="highlight"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">houston</span><span class="o">.</span><span class="n">run_command</span><span class="p">(</span>
+   <span class="s1">&#39;some_command&#39;</span><span class="p">,</span>
+   <span class="n">some_kwarg</span><span class="o">=...</span><span class="p">,</span>
+   <span class="n">some_other_kwarg</span><span class="o">=...</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</dd>
+</dl>
+<p>Note: there is also a ‘call_command’ function. That function is intended for
+use with command-line calls.</p>
+</div>
+<div class="section" id="houston-utilities">
+<h2>Houston Utilities<a class="headerlink" href="#houston-utilities" title="Permalink to this headline">¶</a></h2>
+<p>If you want to interact directly with MissionControl components you can
+usually access them through Houston’s ‘utils’ attribute. The ‘utils’ attribute
+is an instance of <code class="xref py py-mod docutils literal"><span class="pre">mc.houston.houston.utils.HoustonUtils</span></code>. You can view
+the source of that module to see what things are provided by utils.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Houston</a><ul>
+<li><a class="reference internal" href="#concept-checklist">Concept Checklist</a></li>
+<li><a class="reference internal" href="#what-is-houston">What is Houston?</a><ul>
+<li><a class="reference internal" href="#an-analogy">An Analogy</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#why-use-houston">Why use Houston?</a></li>
+<li><a class="reference internal" href="#configuring-houston">Configuring Houston</a><ul>
+<li><a class="reference internal" href="#config-as-dict">Config as Dict</a></li>
+<li><a class="reference internal" href="#config-as-object">Config as Object</a></li>
+<li><a class="reference internal" href="#common-config-keys">Common Config Keys</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#running-commands-with-houston">Running Commands with Houston</a></li>
+<li><a class="reference internal" href="#houston-utilities">Houston Utilities</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="tasks.html"
+                        title="previous chapter">Tasks</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="entity_db.html"
+                        title="next chapter">EntityDB</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/user_guide/houston.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="entity_db.html" title="EntityDB"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tasks.html" title="Tasks"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../user_guide.html" >User Guide</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

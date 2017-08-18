@@ -1,0 +1,241 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc package &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mc.artifact_processors package" href="mc.artifact_processors.html" />
+    <link rel="prev" title="mc" href="modules.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.artifact_processors.html" title="mc.artifact_processors package"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="modules.html" title="mc"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" accesskey="U">mc</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="mc-package">
+<h1>mc package<a class="headerlink" href="#mc-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="mc.artifact_processors.html">mc.artifact_processors package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mc.artifact_processors.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.artifact_processors.html#module-mc.artifact_processors.base_artifact_processor">mc.artifact_processors.base_artifact_processor module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.artifact_processors.html#module-mc.artifact_processors.dispatch_artifact_processor">mc.artifact_processors.dispatch_artifact_processor module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.artifact_processors.html#module-mc.artifact_processors.local_path_artifact_processor">mc.artifact_processors.local_path_artifact_processor module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.artifact_processors.html#module-mc.artifact_processors.tgz_artifact_processor">mc.artifact_processors.tgz_artifact_processor module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.artifact_processors.html#module-mc.artifact_processors">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mc.clients.html">mc.clients package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mc.clients.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.clients.html#module-mc.clients.flow_record_client">mc.clients.flow_record_client module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.clients.html#module-mc.clients.job_record_client">mc.clients.job_record_client module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.clients.html#module-mc.clients">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mc.daos.html">mc.daos package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mc.daos.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.daos.html#module-mc.daos.base_dao">mc.daos.base_dao module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.daos.html#module-mc.daos.sa_dao">mc.daos.sa_dao module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.daos.html#module-mc.daos">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mc.flows.html">mc.flows package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mc.flows.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.flows.html#module-mc.flows.flow">mc.flows.flow module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.flows.html#module-mc.flows.flow_engine">mc.flows.flow_engine module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.flows.html#module-mc.flows">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mc.job_engines.html">mc.job_engines package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mc.job_engines.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mc.job_engines.submission_builders.html">mc.job_engines.submission_builders package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="mc.job_engines.submission_builders.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mc.job_engines.submission_builders.html#module-mc.job_engines.submission_builders.bash">mc.job_engines.submission_builders.bash module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mc.job_engines.submission_builders.html#module-mc.job_engines.submission_builders.slurm">mc.job_engines.submission_builders.slurm module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mc.job_engines.submission_builders.html#module-mc.job_engines.submission_builders">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mc.job_engines.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.job_engines.html#module-mc.job_engines.base_job_submission_builder">mc.job_engines.base_job_submission_builder module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.job_engines.html#module-mc.job_engines.base_job_submission_runner">mc.job_engines.base_job_submission_runner module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.job_engines.html#module-mc.job_engines.cli">mc.job_engines.cli module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.job_engines.html#module-mc.job_engines.constants">mc.job_engines.constants module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.job_engines.html#module-mc.job_engines.dispatch_job_submission_builder">mc.job_engines.dispatch_job_submission_builder module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.job_engines.html#module-mc.job_engines.job_engine">mc.job_engines.job_engine module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.job_engines.html#module-mc.job_engines.utils">mc.job_engines.utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.job_engines.html#module-mc.job_engines">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mc.runners.html">mc.runners package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mc.runners.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="mc.runners.flow_runner.html">mc.runners.flow_runner package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="mc.runners.flow_runner.html#subpackages">Subpackages</a><ul class="simple">
+</ul>
+</li>
+<li class="toctree-l4"><a class="reference internal" href="mc.runners.flow_runner.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mc.runners.flow_runner.html#module-mc.runners.flow_runner.flow_runner">mc.runners.flow_runner.flow_runner module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="mc.runners.flow_runner.html#module-mc.runners.flow_runner">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="mc.runners.html#module-mc.runners">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mc.task_handlers.html">mc.task_handlers package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mc.task_handlers.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.task_handlers.html#module-mc.task_handlers.base_flow_task_handler">mc.task_handlers.base_flow_task_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.task_handlers.html#module-mc.task_handlers.base_proxying_task_handler">mc.task_handlers.base_proxying_task_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.task_handlers.html#module-mc.task_handlers.base_task_handler">mc.task_handlers.base_task_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.task_handlers.html#module-mc.task_handlers.constants">mc.task_handlers.constants module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.task_handlers.html#module-mc.task_handlers.flow_task_handler">mc.task_handlers.flow_task_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.task_handlers.html#module-mc.task_handlers.inline_flow_task_handler">mc.task_handlers.inline_flow_task_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.task_handlers.html#module-mc.task_handlers.job_task_handler">mc.task_handlers.job_task_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.task_handlers.html#module-mc.task_handlers.log_task_handler">mc.task_handlers.log_task_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.task_handlers.html#module-mc.task_handlers.mc_default_task_handler">mc.task_handlers.mc_default_task_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.task_handlers.html#module-mc.task_handlers.switch_task_handler">mc.task_handlers.switch_task_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.task_handlers.html#module-mc.task_handlers.wire_task_handler">mc.task_handlers.wire_task_handler module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.task_handlers.html#module-mc.task_handlers">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="mc.utils.html">mc.utils package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="mc.utils.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.utils.html#module-mc.utils.context_value_setter">mc.utils.context_value_setter module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.utils.html#module-mc.utils.debug_utils">mc.utils.debug_utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.utils.html#module-mc.utils.dot_spec_loader">mc.utils.dot_spec_loader module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.utils.html#module-mc.utils.mc_sandbox">mc.utils.mc_sandbox module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.utils.html#module-mc.utils.test_utils">mc.utils.test_utils module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="mc.utils.html#module-mc.utils">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-mc.constants">
+<span id="mc-constants-module"></span><h2>mc.constants module<a class="headerlink" href="#module-mc.constants" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-mc">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-mc" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="../index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">mc package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-mc.constants">mc.constants module</a></li>
+<li><a class="reference internal" href="#module-mc">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="modules.html"
+                        title="previous chapter">mc</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mc.artifact_processors.html"
+                        title="next chapter">mc.artifact_processors package</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/mc.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.artifact_processors.html" title="mc.artifact_processors package"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="modules.html" title="mc"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="modules.html" >mc</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

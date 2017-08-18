@@ -1,0 +1,70 @@
+mc.task_handlers.tests package
+==============================
+
+Submodules
+----------
+
+mc.task_handlers.tests.test_base_flow_task_handler module
+---------------------------------------------------------
+
+.. automodule:: mc.task_handlers.tests.test_base_flow_task_handler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+mc.task_handlers.tests.test_flow_task_handler module
+----------------------------------------------------
+
+.. automodule:: mc.task_handlers.tests.test_flow_task_handler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+mc.task_handlers.tests.test_inline_flow_task_handler module
+-----------------------------------------------------------
+
+.. automodule:: mc.task_handlers.tests.test_inline_flow_task_handler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+mc.task_handlers.tests.test_job_task_handler module
+---------------------------------------------------
+
+.. automodule:: mc.task_handlers.tests.test_job_task_handler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+mc.task_handlers.tests.test_mc_default_task_handler module
+----------------------------------------------------------
+
+.. automodule:: mc.task_handlers.tests.test_mc_default_task_handler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+mc.task_handlers.tests.test_switch_task_handler module
+------------------------------------------------------
+
+.. automodule:: mc.task_handlers.tests.test_switch_task_handler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+mc.task_handlers.tests.test_wire_task_handler module
+----------------------------------------------------
+
+.. automodule:: mc.task_handlers.tests.test_wire_task_handler
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: mc.task_handlers.tests
+    :members:
+    :undoc-members:
+    :show-inheritance:

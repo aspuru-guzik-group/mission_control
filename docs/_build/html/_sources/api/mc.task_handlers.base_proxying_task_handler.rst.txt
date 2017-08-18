@@ -1,0 +1,7 @@
+mc\.task\_handlers\.base\_proxying\_task\_handler module
+========================================================
+
+.. automodule:: mc.task_handlers.base_proxying_task_handler
+    :members:
+    :undoc-members:
+    :show-inheritance:

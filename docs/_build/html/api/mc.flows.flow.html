@@ -1,0 +1,233 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.flows.flow module &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="mc.flows.flow_engine module" href="mc.flows.flow_engine.html" />
+    <link rel="prev" title="mc.flows package" href="mc.flows.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.flows.flow_engine.html" title="mc.flows.flow_engine module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mc.flows.html" title="mc.flows package"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="mc.flows.html" accesskey="U">mc.flows package</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="module-mc.flows.flow">
+<span id="mc-flows-flow-module"></span><h1>mc.flows.flow module<a class="headerlink" href="#module-mc.flows.flow" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="mc.flows.flow.Flow">
+<em class="property">class </em><code class="descclassname">mc.flows.flow.</code><code class="descname">Flow</code><span class="sig-paren">(</span><em>key=None</em>, <em>cfg=None</em>, <em>data=None</em>, <em>label=None</em>, <em>status=None</em>, <em>depth=0</em>, <em>add_root_task=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="mc.flows.flow.Flow.ROOT_TASK_KEY">
+<code class="descname">ROOT_TASK_KEY</code><em class="property"> = ‘ROOT’</em><a class="headerlink" href="#mc.flows.flow.Flow.ROOT_TASK_KEY" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="mc.flows.flow.Flow.SIMPLE_ATTRS">
+<code class="descname">SIMPLE_ATTRS</code><em class="property"> = {‘status’, ‘key’, ‘label’, ‘data’, ‘depth’, ‘cfg’}</em><a class="headerlink" href="#mc.flows.flow.Flow.SIMPLE_ATTRS" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.flows.flow.Flow.add_default_connections_to_task">
+<code class="descname">add_default_connections_to_task</code><span class="sig-paren">(</span><em>task=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.add_default_connections_to_task"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.add_default_connections_to_task" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.flows.flow.Flow.add_edge">
+<code class="descname">add_edge</code><span class="sig-paren">(</span><em>edge=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.add_edge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.add_edge" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.flows.flow.Flow.add_root_task">
+<code class="descname">add_root_task</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.add_root_task"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.add_root_task" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.flows.flow.Flow.add_task">
+<code class="descname">add_task</code><span class="sig-paren">(</span><em>task=None</em>, <em>add_default_connections=True</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.add_task"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.add_task" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.flows.flow.Flow.filter_tasks">
+<code class="descname">filter_tasks</code><span class="sig-paren">(</span><em>filters=None</em>, <em>include_root_task=False</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.filter_tasks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.filter_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="mc.flows.flow.Flow.from_flow_dict">
+<em class="property">classmethod </em><code class="descname">from_flow_dict</code><span class="sig-paren">(</span><em>flow_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.from_flow_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.from_flow_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="mc.flows.flow.Flow.from_flow_spec">
+<em class="property">classmethod </em><code class="descname">from_flow_spec</code><span class="sig-paren">(</span><em>flow_spec=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.from_flow_spec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.from_flow_spec" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.flows.flow.Flow.generate_key">
+<code class="descname">generate_key</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.generate_key"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.generate_key" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.flows.flow.Flow.get_nearest_tickable_pending_tasks">
+<code class="descname">get_nearest_tickable_pending_tasks</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.get_nearest_tickable_pending_tasks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.get_nearest_tickable_pending_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.flows.flow.Flow.get_precursors">
+<code class="descname">get_precursors</code><span class="sig-paren">(</span><em>task=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.get_precursors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.get_precursors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.flows.flow.Flow.get_running_tasks">
+<code class="descname">get_running_tasks</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.get_running_tasks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.get_running_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.flows.flow.Flow.get_successors">
+<code class="descname">get_successors</code><span class="sig-paren">(</span><em>task=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.get_successors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.get_successors" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.flows.flow.Flow.get_tail_tasks">
+<code class="descname">get_tail_tasks</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.get_tail_tasks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.get_tail_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.flows.flow.Flow.get_tasks_by_status">
+<code class="descname">get_tasks_by_status</code><span class="sig-paren">(</span><em>status=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.get_tasks_by_status"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.get_tasks_by_status" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.flows.flow.Flow.get_tickable_tasks">
+<code class="descname">get_tickable_tasks</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.get_tickable_tasks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.get_tickable_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.flows.flow.Flow.has_edge">
+<code class="descname">has_edge</code><span class="sig-paren">(</span><em>src_key=None</em>, <em>dest_key=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.has_edge"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.has_edge" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.flows.flow.Flow.has_incomplete_tasks">
+<code class="descname">has_incomplete_tasks</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.has_incomplete_tasks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.has_incomplete_tasks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="mc.flows.flow.Flow.sanitize_flow_kwargs">
+<em class="property">static </em><code class="descname">sanitize_flow_kwargs</code><span class="sig-paren">(</span><em>flow_kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.sanitize_flow_kwargs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.sanitize_flow_kwargs" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="mc.flows.flow.Flow.to_flow_dict">
+<code class="descname">to_flow_dict</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/flows/flow.html#Flow.to_flow_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.flows.flow.Flow.to_flow_dict" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="mc.flows.html"
+                        title="previous chapter">mc.flows package</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="mc.flows.flow_engine.html"
+                        title="next chapter">mc.flows.flow_engine module</a></p>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/api/mc.flows.flow.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="mc.flows.flow_engine.html" title="mc.flows.flow_engine module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mc.flows.html" title="mc.flows package"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../api.html" >API Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="mc.flows.html" >mc.flows package</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+mc\.examples\.job\_engine\.basic\_job\_module package
+=====================================================
+
+Submodules
+----------
+
+mc\.examples\.job\_engine\.basic\_job\_module\.entrypoint module
+----------------------------------------------------------------
+
+.. automodule:: mc.examples.job_engine.basic_job_module.entrypoint
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+mc\.examples\.job\_engine\.basic\_job\_module\.test\_example module
+-------------------------------------------------------------------
+
+.. automodule:: mc.examples.job_engine.basic_job_module.test_example
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: mc.examples.job_engine.basic_job_module
+    :members:
+    :undoc-members:
+    :show-inheritance:

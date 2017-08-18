@@ -1,0 +1,167 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mc.utils.commands.color &#8212; MissionControl 0.0.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '0.0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true,
+        SOURCELINK_SUFFIX: '.txt'
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.0/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+  </head>
+  <body>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &#187;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for mc.utils.commands.color</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Sets up the terminal color scheme.</span>
+<span class="sd">Adapted from django.core.management.color .</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">functools</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+
+<span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">termcolors</span>
+
+
+<div class="viewcode-block" id="supports_color"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.color.supports_color">[docs]</a><span class="k">def</span> <span class="nf">supports_color</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return True if the running system&#39;s terminal supports color,</span>
+<span class="sd">    and False otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">plat</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">platform</span>
+    <span class="n">supported_platform</span> <span class="o">=</span> <span class="n">plat</span> <span class="o">!=</span> <span class="s1">&#39;Pocket PC&#39;</span> <span class="ow">and</span> <span class="p">(</span>
+        <span class="n">plat</span> <span class="o">!=</span> <span class="s1">&#39;win32&#39;</span> <span class="ow">or</span> <span class="s1">&#39;ANSICON&#39;</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">)</span>
+
+    <span class="c1"># isatty is not always implemented, #6223.</span>
+    <span class="n">is_a_tty</span> <span class="o">=</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="s1">&#39;isatty&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">isatty</span><span class="p">()</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">supported_platform</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">is_a_tty</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="Style"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.color.Style">[docs]</a><span class="k">class</span> <span class="nc">Style</span><span class="p">:</span>
+    <span class="k">pass</span></div>
+
+
+<div class="viewcode-block" id="make_style"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.color.make_style">[docs]</a><span class="k">def</span> <span class="nf">make_style</span><span class="p">(</span><span class="n">config_string</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Create a Style object from the given config_string.</span>
+
+<span class="sd">    If config_string is empty django.utils.termcolors.DEFAULT_PALETTE is used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">style</span> <span class="o">=</span> <span class="n">Style</span><span class="p">()</span>
+
+    <span class="n">color_settings</span> <span class="o">=</span> <span class="n">termcolors</span><span class="o">.</span><span class="n">parse_color_setting</span><span class="p">(</span><span class="n">config_string</span><span class="p">)</span>
+
+    <span class="c1"># The nocolor palette has all available roles.</span>
+    <span class="c1"># Use that palette as the basis for populating</span>
+    <span class="c1"># the palette as defined in the environment.</span>
+    <span class="k">for</span> <span class="n">role</span> <span class="ow">in</span> <span class="n">termcolors</span><span class="o">.</span><span class="n">PALETTES</span><span class="p">[</span><span class="n">termcolors</span><span class="o">.</span><span class="n">NOCOLOR_PALETTE</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">color_settings</span><span class="p">:</span>
+            <span class="nb">format</span> <span class="o">=</span> <span class="n">color_settings</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">role</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="n">style_func</span> <span class="o">=</span> <span class="n">termcolors</span><span class="o">.</span><span class="n">make_style</span><span class="p">(</span><span class="o">**</span><span class="nb">format</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">def</span> <span class="nf">style_func</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">x</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">style</span><span class="p">,</span> <span class="n">role</span><span class="p">,</span> <span class="n">style_func</span><span class="p">)</span>
+
+    <span class="c1"># For backwards compatibility,</span>
+    <span class="c1"># set style for ERROR_OUTPUT == ERROR</span>
+    <span class="n">style</span><span class="o">.</span><span class="n">ERROR_OUTPUT</span> <span class="o">=</span> <span class="n">style</span><span class="o">.</span><span class="n">ERROR</span>
+
+    <span class="k">return</span> <span class="n">style</span></div>
+
+
+<div class="viewcode-block" id="no_style"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.color.no_style">[docs]</a><span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">no_style</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return a Style object with no color scheme.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">make_style</span><span class="p">(</span><span class="s1">&#39;nocolor&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="color_style"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.color.color_style">[docs]</a><span class="k">def</span> <span class="nf">color_style</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return a Style object from a color scheme.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">supports_color</span><span class="p">():</span> <span class="k">return</span> <span class="n">no_style</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">make_style</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MC_COLORS&#39;</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">))</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">MissionControl 0.0.1 documentation</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &#187;</li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2017, A. Dorsk.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.6.2.
+    </div>
+  </body>
+</html>

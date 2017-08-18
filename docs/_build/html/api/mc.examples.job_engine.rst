@@ -1,0 +1,19 @@
+mc\.examples\.job\_engine package
+=================================
+
+Subpackages
+-----------
+
+.. toctree::
+
+    mc.examples.job_engine.basic_job_module
+    mc.examples.job_engine.external_job_module
+    mc.examples.job_engine.submission_builders
+
+Module contents
+---------------
+
+.. automodule:: mc.examples.job_engine
+    :members:
+    :undoc-members:
+    :show-inheritance:
