@@ -92,7 +92,6 @@
             
             
               <ul>
-<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../user_guide.html">User Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples.html">Examples</a></li>
 </ul>
@@ -348,12 +347,12 @@ this method.</p>
 <dl class="method">
 <dt id="mc.utils.commands.base_command.BaseCommand.run_from_argv">
 <code class="descname">run_from_argv</code><span class="sig-paren">(</span><em>argv</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/utils/commands/base_command.html#BaseCommand.run_from_argv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.utils.commands.base_command.BaseCommand.run_from_argv" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Set up any environment changes requested (e.g., Python path settings),</dt>
-<dd>then run this command. If the</dd>
-</dl>
-<p>command raises a <code class="docutils literal"><span class="pre">CommandError</span></code>, intercept it and print it sensibly
-to stderr. If the <code class="docutils literal"><span class="pre">--traceback</span></code> option is present or the raised
+<dd><p>Run command with given argv</p>
+<p>Set up any environment changes requested (e.g., Python path settings),
+then run this command.</p>
+<p>If the command raises a <code class="docutils literal"><span class="pre">CommandError</span></code>, intercept it and print it
+sensibly to stderr.</p>
+<p>If the <code class="docutils literal"><span class="pre">--traceback</span></code> option is present or the raised
 <code class="docutils literal"><span class="pre">Exception</span></code> is not <code class="docutils literal"><span class="pre">CommandError</span></code>, raise it.</p>
 </dd></dl>
 

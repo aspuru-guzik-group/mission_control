@@ -92,12 +92,11 @@
             
             
               <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../user_guide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="components.html">Components</a></li>
 <li class="toctree-l2"><a class="reference internal" href="jobs.html">Jobs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="flows.html">Flows</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Tasks</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#what-is-a-task">What Is a Task?</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#task-lifecyle">Task Lifecyle</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#defining-tasks">Defining Tasks</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#running-tasks">Running Tasks</a></li>
@@ -199,8 +198,6 @@
             
   <div class="section" id="tasks">
 <h1>Tasks<a class="headerlink" href="#tasks" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="what-is-a-task">
-<h2>What Is a Task?<a class="headerlink" href="#what-is-a-task" title="Permalink to this headline">¶</a></h2>
 <p>A MissionControl Task represents a step in a workflow.</p>
 <p>A task can do many things. In some cases a task
 runs a computation. For example, a task that transforms a JSON string
@@ -211,7 +208,6 @@ optimization computation and decides whether to keep optimizing or go forward.</
 <p>In other cases a task wires inputs from one task to another. For example, a task
 that that collects the outputs of three separate models and passes them to an
 analysis task.</p>
-</div>
 <div class="section" id="task-lifecyle">
 <h2>Task Lifecyle<a class="headerlink" href="#task-lifecyle" title="Permalink to this headline">¶</a></h2>
 <p>The lifecycle of a task is like this:</p>
@@ -277,8 +273,8 @@ will look up an appropriate handler for the task by dispatching on the value
 of task_type.</p>
 <p>From <a class="reference internal" href="../api/mc.task_handlers.html#mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler" title="mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler"><code class="xref py py-class docutils literal"><span class="pre">mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler</span></code></a>:</p>
 <dl class="method">
-<dt id="mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler.default_task_type_to_tick_fn_dot_spec">
-<code class="descclassname">McDefaultTaskHandler.</code><code class="descname">default_task_type_to_tick_fn_dot_spec</code><span class="sig-paren">(</span><em>task_type=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/mc_default_task_handler.html#McDefaultTaskHandler.default_task_type_to_tick_fn_dot_spec"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler.default_task_type_to_tick_fn_dot_spec" title="Permalink to this definition">¶</a></dt>
+<dt>
+<code class="descclassname">McDefaultTaskHandler.</code><code class="descname">default_task_type_to_tick_fn_dot_spec</code><span class="sig-paren">(</span><em>task_type=None</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/mc_default_task_handler.html#McDefaultTaskHandler.default_task_type_to_tick_fn_dot_spec"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>&#64;TODO</p>
 </dd></dl>
 
@@ -392,43 +388,43 @@ Houston, we have lift off.
 <h2>Built-In TaskHandlers<a class="headerlink" href="#built-in-taskhandlers" title="Permalink to this headline">¶</a></h2>
 <p>MissionControl provides a few built-in TaskHandlers for common operations:</p>
 <dl class="class">
-<dt id="mc.task_handlers.flow_task_handler.FlowTaskHandler">
-<em class="property">class </em><code class="descclassname">mc.task_handlers.flow_task_handler.</code><code class="descname">FlowTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/flow_task_handler.html#FlowTaskHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.task_handlers.flow_task_handler.FlowTaskHandler" title="Permalink to this definition">¶</a></dt>
+<dt>
+<em class="property">class </em><code class="descclassname">mc.task_handlers.flow_task_handler.</code><code class="descname">FlowTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/flow_task_handler.html#FlowTaskHandler"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>TaskHandler that creates subflows, via a flow_record client.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="mc.task_handlers.job_task_handler.JobTaskHandler">
-<em class="property">class </em><code class="descclassname">mc.task_handlers.job_task_handler.</code><code class="descname">JobTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/job_task_handler.html#JobTaskHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.task_handlers.job_task_handler.JobTaskHandler" title="Permalink to this definition">¶</a></dt>
+<dt>
+<em class="property">class </em><code class="descclassname">mc.task_handlers.job_task_handler.</code><code class="descname">JobTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/job_task_handler.html#JobTaskHandler"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Creates and tracks jobs.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="mc.task_handlers.log_task_handler.LogTaskHandler">
-<em class="property">class </em><code class="descclassname">mc.task_handlers.log_task_handler.</code><code class="descname">LogTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/log_task_handler.html#LogTaskHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.task_handlers.log_task_handler.LogTaskHandler" title="Permalink to this definition">¶</a></dt>
+<dt>
+<em class="property">class </em><code class="descclassname">mc.task_handlers.log_task_handler.</code><code class="descname">LogTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/log_task_handler.html#LogTaskHandler"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Writes a msg to a python logger.</p>
 <p>Can also dump task_ctx info, by setting dump_task_ctx, dump_flow in
 task_params.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="mc.task_handlers.mc_default_task_handler.PrintTaskHandler">
-<em class="property">class </em><code class="descclassname">mc.task_handlers.mc_default_task_handler.</code><code class="descname">PrintTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/mc_default_task_handler.html#PrintTaskHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.task_handlers.mc_default_task_handler.PrintTaskHandler" title="Permalink to this definition">¶</a></dt>
+<dt>
+<em class="property">class </em><code class="descclassname">mc.task_handlers.mc_default_task_handler.</code><code class="descname">PrintTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/mc_default_task_handler.html#PrintTaskHandler"><span class="viewcode-link">[source]</span></a></dt>
 <dd></dd></dl>
 
 <dl class="class">
-<dt id="mc.task_handlers.mc_default_task_handler.NoOpTaskHandler">
-<em class="property">class </em><code class="descclassname">mc.task_handlers.mc_default_task_handler.</code><code class="descname">NoOpTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/mc_default_task_handler.html#NoOpTaskHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.task_handlers.mc_default_task_handler.NoOpTaskHandler" title="Permalink to this definition">¶</a></dt>
+<dt>
+<em class="property">class </em><code class="descclassname">mc.task_handlers.mc_default_task_handler.</code><code class="descname">NoOpTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/mc_default_task_handler.html#NoOpTaskHandler"><span class="viewcode-link">[source]</span></a></dt>
 <dd></dd></dl>
 
 <dl class="class">
-<dt id="mc.task_handlers.spread_task_handler.SpreadTaskHandler">
-<em class="property">class </em><code class="descclassname">mc.task_handlers.spread_task_handler.</code><code class="descname">SpreadTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/spread_task_handler.html#SpreadTaskHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.task_handlers.spread_task_handler.SpreadTaskHandler" title="Permalink to this definition">¶</a></dt>
+<dt>
+<em class="property">class </em><code class="descclassname">mc.task_handlers.spread_task_handler.</code><code class="descname">SpreadTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/spread_task_handler.html#SpreadTaskHandler"><span class="viewcode-link">[source]</span></a></dt>
 <dd></dd></dl>
 
 <dl class="class">
-<dt id="mc.task_handlers.switch_task_handler.SwitchTaskHandler">
-<em class="property">class </em><code class="descclassname">mc.task_handlers.switch_task_handler.</code><code class="descname">SwitchTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/switch_task_handler.html#SwitchTaskHandler"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#mc.task_handlers.switch_task_handler.SwitchTaskHandler" title="Permalink to this definition">¶</a></dt>
+<dt>
+<em class="property">class </em><code class="descclassname">mc.task_handlers.switch_task_handler.</code><code class="descname">SwitchTaskHandler</code><span class="sig-paren">(</span><em>task_ctx=None</em>, <em>logger=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/mc/task_handlers/switch_task_handler.html#SwitchTaskHandler"><span class="viewcode-link">[source]</span></a></dt>
 <dd><p>Task handler that performs a conditional switch.</p>
 <dl class="docutils">
 <dt>task_params:</dt>

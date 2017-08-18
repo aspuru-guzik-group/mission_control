@@ -4,9 +4,9 @@ Flows
 A MissionControl Flow represents a set of tasks that run in a specific
 sequence.
 
-============
+=============
 Flow Lifecyle
-============
+=============
 The lifecycle of a flow is like this:
 
 #. Define a flow in terms of an abstract spec. Example: a dictionary that

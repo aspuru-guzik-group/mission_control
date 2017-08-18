@@ -18,14 +18,11 @@ class Db(object):
             self.engine = engine
         else:
             self.db_uri = db_uri
-        self.schema = schema or self._get_default_schema()
+        if schema:
+            self.schema = schema
         if ensure_tables:
             self.ensure_tables()
         self.query_builder = QueryBuilder()
-
-    def _get_default_schema(self):
-        from . import schema
-        return schema
 
     @property
     def engine(self):
@@ -38,6 +35,19 @@ class Db(object):
 
     @engine.setter
     def engine(self, value): self._engine = value
+
+    @property
+    def schema(self):
+        if not hasattr(self, '_schema'):
+            self._schema = self._get_default_schema()
+        return self._schema
+
+    @schema.setter
+    def schema(self, value): self._schema = value
+
+    def _get_default_schema(self):
+        from . import schema
+        return schema
 
     @property
     def session(self):
@@ -57,7 +67,9 @@ class Db(object):
     @Session.setter
     def Session(self, value): self._Session = value
 
-    def ensure_tables(self): self.create_tables()
+    def ensure_tables(self):
+        assert self.schema is not None
+        self.create_tables()
 
     def create_tables(self):
         self.schema.metadata.create_all(self.engine)

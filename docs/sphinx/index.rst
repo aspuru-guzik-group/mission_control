@@ -33,7 +33,9 @@ Install
 -------
 
 #. Install via pip:
+
    ::
+
      pip install git+https://github.com/aspuru-guzik-group/mission_control.git
 
 #. Verify the install:

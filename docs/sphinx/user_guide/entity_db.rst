@@ -459,9 +459,9 @@ Let's see an example.
    child.ancestors:  ['family_1:grandparent_0', 'family_1:grandparent_1', 'family_1:grandparent_2', 'family_1:grandparent_3', 'family_1:parent_0', 'family_1:parent_1']
    child.descendants:  []
 
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 Filtering by Lineage
-~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~
 We can filter ents by their lineage.
 
 Note that unlike props or tags, we filter on the direct lineage attributes. The

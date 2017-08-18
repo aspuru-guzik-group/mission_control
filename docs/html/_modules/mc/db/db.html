@@ -90,7 +90,6 @@
             
             
               <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../user_guide.html">User Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../examples.html">Examples</a></li>
 </ul>
@@ -180,14 +179,11 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">engine</span> <span class="o">=</span> <span class="n">engine</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">db_uri</span> <span class="o">=</span> <span class="n">db_uri</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="n">schema</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_default_schema</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">schema</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="n">schema</span>
         <span class="k">if</span> <span class="n">ensure_tables</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ensure_tables</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">query_builder</span> <span class="o">=</span> <span class="n">QueryBuilder</span><span class="p">()</span>
-
-    <span class="k">def</span> <span class="nf">_get_default_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">schema</span>
-        <span class="k">return</span> <span class="n">schema</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">engine</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -200,6 +196,19 @@
 
     <span class="nd">@engine</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">engine</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">_engine</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">schema</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_schema&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_default_schema</span><span class="p">()</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_schema</span>
+
+    <span class="nd">@schema</span><span class="o">.</span><span class="n">setter</span>
+    <span class="k">def</span> <span class="nf">schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">_schema</span> <span class="o">=</span> <span class="n">value</span>
+
+    <span class="k">def</span> <span class="nf">_get_default_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="kn">from</span> <span class="nn">.</span> <span class="k">import</span> <span class="n">schema</span>
+        <span class="k">return</span> <span class="n">schema</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">session</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -219,7 +228,9 @@
     <span class="nd">@Session</span><span class="o">.</span><span class="n">setter</span>
     <span class="k">def</span> <span class="nf">Session</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">_Session</span> <span class="o">=</span> <span class="n">value</span>
 
-<div class="viewcode-block" id="Db.ensure_tables"><a class="viewcode-back" href="../../../api/mc.db.html#mc.db.db.Db.ensure_tables">[docs]</a>    <span class="k">def</span> <span class="nf">ensure_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_tables</span><span class="p">()</span></div>
+<div class="viewcode-block" id="Db.ensure_tables"><a class="viewcode-back" href="../../../api/mc.db.html#mc.db.db.Db.ensure_tables">[docs]</a>    <span class="k">def</span> <span class="nf">ensure_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_tables</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="Db.create_tables"><a class="viewcode-back" href="../../../api/mc.db.html#mc.db.db.Db.create_tables">[docs]</a>    <span class="k">def</span> <span class="nf">create_tables</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">create_all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">engine</span><span class="p">)</span></div>

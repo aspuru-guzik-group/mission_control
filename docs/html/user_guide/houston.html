@@ -92,26 +92,24 @@
             
             
               <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../quickstart.html">Quickstart</a></li>
 <li class="toctree-l1 current"><a class="reference internal" href="../user_guide.html">User Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="components.html">Components</a></li>
 <li class="toctree-l2"><a class="reference internal" href="jobs.html">Jobs</a></li>
 <li class="toctree-l2"><a class="reference internal" href="flows.html">Flows</a></li>
 <li class="toctree-l2"><a class="reference internal" href="tasks.html">Tasks</a></li>
 <li class="toctree-l2 current"><a class="current reference internal" href="#">Houston</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#concept-checklist">Concept Checklist</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#what-is-houston">What is Houston?</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#an-analogy">An Analogy</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#an-analogy">An Analogy</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#why-use-houston">Why use Houston?</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#configuring-houston">Configuring Houston</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#why-use-houston">Why use Houston?</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#configuring-houston">Configuring Houston</a><ul>
-<li class="toctree-l4"><a class="reference internal" href="#config-as-dict">Config as Dict</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#config-as-object">Config as Object</a></li>
-<li class="toctree-l4"><a class="reference internal" href="#common-config-keys">Common Config Keys</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config-as-dict">Config as Dict</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#config-as-object">Config as Object</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#common-config-keys">Common Config Keys</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#running-commands-with-houston">Running Commands with Houston</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#houston-utilities">Houston Utilities</a></li>
 </ul>
 </li>
-<li class="toctree-l3"><a class="reference internal" href="#running-commands-with-houston">Running Commands with Houston</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#houston-utilities">Houston Utilities</a></li>
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="entity_db.html">EntityDB</a></li>
@@ -194,22 +192,9 @@
             
   <div class="section" id="houston">
 <h1>Houston<a class="headerlink" href="#houston" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="concept-checklist">
-<h2>Concept Checklist<a class="headerlink" href="#concept-checklist" title="Permalink to this headline">¶</a></h2>
-<p>This page covers these concepts:</p>
-<ol class="arabic simple">
-<li>[ ] What is Houston?</li>
-<li>[ ] Why use Houston?</li>
-<li>[ ] Running commands with Houston</li>
-<li>[ ] Houston utils</li>
-<li>[ ] Configuring Houston</li>
-</ol>
-</div>
-<div class="section" id="what-is-houston">
-<h2>What is Houston?<a class="headerlink" href="#what-is-houston" title="Permalink to this headline">¶</a></h2>
 <p><a class="reference internal" href="../api/mc.houston.html#mc.houston.houston.Houston" title="mc.houston.houston.Houston"><code class="xref py py-mod docutils literal"><span class="pre">Houston</span></code></a> is a high-level interface to MissionControl.</p>
 <div class="section" id="an-analogy">
-<h3>An Analogy<a class="headerlink" href="#an-analogy" title="Permalink to this headline">¶</a></h3>
+<h2>An Analogy<a class="headerlink" href="#an-analogy" title="Permalink to this headline">¶</a></h2>
 <p>Think of a car. A car is a system of many components.
 There’s an engine, brakes, gears, wheels, and many other parts.
 But when you drive a car, you don’t think about each little part;
@@ -222,10 +207,8 @@ we don’t want to have to know about all of the little parts. We want something
 that hides the details. Houston is a set of functions and utilities that lets
 us use MissionControl without having to know about all the little parts.
 Houston is like a steering wheel for MissionControl.</p>
-</div>
-</div>
 <div class="section" id="why-use-houston">
-<h2>Why use Houston?<a class="headerlink" href="#why-use-houston" title="Permalink to this headline">¶</a></h2>
+<h3>Why use Houston?<a class="headerlink" href="#why-use-houston" title="Permalink to this headline">¶</a></h3>
 <p>We use Houston for several reasons:</p>
 <ol class="arabic simple">
 <li>It makes it easier for us to write programs that interact with
@@ -235,13 +218,15 @@ MissionControl.</li>
 </ol>
 </div>
 <div class="section" id="configuring-houston">
-<h2>Configuring Houston<a class="headerlink" href="#configuring-houston" title="Permalink to this headline">¶</a></h2>
+<h3>Configuring Houston<a class="headerlink" href="#configuring-houston" title="Permalink to this headline">¶</a></h3>
 <p>Houston takes a ‘cfg’ object as a parameter. This cfg object can be a dict that
 maps config keys to values. Or it can be a python object that has config keys
 as attributes.</p>
 <p>This allows you to use both normal dicts and python modules as config sources.</p>
+</div>
+</div>
 <div class="section" id="config-as-dict">
-<h3>Config as Dict<a class="headerlink" href="#config-as-dict" title="Permalink to this headline">¶</a></h3>
+<h2>Config as Dict<a class="headerlink" href="#config-as-dict" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">mc.houston</span> <span class="k">import</span> <span class="n">Houston</span>
 <span class="n">my_config</span> <span class="o">=</span> <span class="p">{</span>
    <span class="s1">&#39;SOME_CFG_KEY&#39;</span><span class="p">:</span> <span class="s1">&#39;SOME_CFG_VALUE&#39;</span>
@@ -256,7 +241,7 @@ as attributes.</p>
 </div>
 </div>
 <div class="section" id="config-as-object">
-<h3>Config as Object<a class="headerlink" href="#config-as-object" title="Permalink to this headline">¶</a></h3>
+<h2>Config as Object<a class="headerlink" href="#config-as-object" title="Permalink to this headline">¶</a></h2>
 <div class="highlight-default"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">types</span>
 <span class="n">my_config</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">SimpleNamespace</span><span class="p">()</span>
 <span class="n">my_config</span><span class="o">.</span><span class="n">SOME_CFG_KEY</span> <span class="o">=</span> <span class="s1">&#39;SOME_CFG_VALUE&#39;</span>
@@ -270,7 +255,7 @@ as attributes.</p>
 </div>
 </div>
 <div class="section" id="common-config-keys">
-<h3>Common Config Keys<a class="headerlink" href="#common-config-keys" title="Permalink to this headline">¶</a></h3>
+<h2>Common Config Keys<a class="headerlink" href="#common-config-keys" title="Permalink to this headline">¶</a></h2>
 <p>These are some of the common config keys used by Houston.</p>
 <dl class="docutils">
 <dt>MC_DB_URI</dt>
@@ -315,10 +300,8 @@ Default: True.</dd>
 <dt>JOBMAN_CFG</dt>
 <dd>A jobman cfg specification.</dd>
 </dl>
-</div>
-</div>
 <div class="section" id="running-commands-with-houston">
-<h2>Running Commands with Houston<a class="headerlink" href="#running-commands-with-houston" title="Permalink to this headline">¶</a></h2>
+<h3>Running Commands with Houston<a class="headerlink" href="#running-commands-with-houston" title="Permalink to this headline">¶</a></h3>
 <p>Normally you use Houston to call MissionControl commands.</p>
 <p>The typical way to run a command is to use Houston’s ‘run_command’ function.</p>
 <dl class="docutils">
@@ -336,11 +319,12 @@ Default: True.</dd>
 use with command-line calls.</p>
 </div>
 <div class="section" id="houston-utilities">
-<h2>Houston Utilities<a class="headerlink" href="#houston-utilities" title="Permalink to this headline">¶</a></h2>
+<h3>Houston Utilities<a class="headerlink" href="#houston-utilities" title="Permalink to this headline">¶</a></h3>
 <p>If you want to interact directly with MissionControl components you can
 usually access them through Houston’s ‘utils’ attribute. The ‘utils’ attribute
 is an instance of <code class="xref py py-mod docutils literal"><span class="pre">mc.houston.houston.utils.HoustonUtils</span></code>. You can view
 the source of that module to see what things are provided by utils.</p>
+</div>
 </div>
 </div>
 

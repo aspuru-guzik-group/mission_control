@@ -90,7 +90,6 @@
             
             
               <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../../quickstart.html">Quickstart</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../user_guide.html">User Guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../examples.html">Examples</a></li>
 </ul>
@@ -164,6 +163,7 @@
 <span class="sd">Base classes for writing commands.</span>
 <span class="sd">Adapted from django.core.management.base.py</span>
 <span class="sd">&quot;&quot;&quot;</span>
+
 <span class="kn">import</span> <span class="nn">io</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">sys</span>
@@ -330,11 +330,15 @@
         <span class="n">parser</span><span class="o">.</span><span class="n">print_help</span><span class="p">()</span></div>
 
 <div class="viewcode-block" id="BaseCommand.run_from_argv"><a class="viewcode-back" href="../../../../api/mc.utils.commands.html#mc.utils.commands.base_command.BaseCommand.run_from_argv">[docs]</a>    <span class="k">def</span> <span class="nf">run_from_argv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">argv</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;</span>
+        <span class="sd">&quot;&quot;&quot;Run command with given argv</span>
+
 <span class="sd">        Set up any environment changes requested (e.g., Python path settings),</span>
-<span class="sd">         then run this command. If the</span>
-<span class="sd">        command raises a ``CommandError``, intercept it and print it sensibly</span>
-<span class="sd">        to stderr. If the ``--traceback`` option is present or the raised</span>
+<span class="sd">        then run this command.</span>
+
+<span class="sd">        If the command raises a ``CommandError``, intercept it and print it</span>
+<span class="sd">        sensibly to stderr.</span>
+
+<span class="sd">        If the ``--traceback`` option is present or the raised</span>
 <span class="sd">        ``Exception`` is not ``CommandError``, raise it.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">parser</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">create_parser</span><span class="p">(</span><span class="n">argv</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>

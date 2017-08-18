@@ -60,9 +60,9 @@ Expected output:
   SOME_CFG_VALUE
 
 
---------------
+----------------
 Config as Object
---------------
+----------------
 
 .. testcode ::
 

@@ -2,6 +2,7 @@
 Base classes for writing commands.
 Adapted from django.core.management.base.py
 """
+
 import io
 import os
 import sys
@@ -168,11 +169,15 @@ class BaseCommand(object):
         parser.print_help()
 
     def run_from_argv(self, argv):
-        """
+        """Run command with given argv
+
         Set up any environment changes requested (e.g., Python path settings),
-         then run this command. If the
-        command raises a ``CommandError``, intercept it and print it sensibly
-        to stderr. If the ``--traceback`` option is present or the raised
+        then run this command.
+
+        If the command raises a ``CommandError``, intercept it and print it
+        sensibly to stderr.
+
+        If the ``--traceback`` option is present or the raised
         ``Exception`` is not ``CommandError``, raise it.
         """
         parser = self.create_parser(argv[0])

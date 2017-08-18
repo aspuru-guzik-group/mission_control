@@ -224,6 +224,7 @@ There are several ways to run a job. We outline a few here.
 Strategy A: Run Locally
 -----------------------
 In this strategy, you simply execute bash commands to execute a job. Example:
+
   ::
 
     bash my_job_dir/entrypoint.sh
@@ -246,6 +247,7 @@ Strategy B: Run on an External Computation Resource
 ---------------------------------------------------
 In this strategy, you submit jobs directly to an external resource, such as 
 a computing cluster, or an EC2 instance. Example:
+
   ::
 
     scp my_job_dir me@cluster_x:my_jobs
@@ -272,6 +274,7 @@ In this strategy, you submit jobs directly to a meta-scheduler, such as
 `jobman.` The meta-scheduler runs jobs locally or submits them to external
 resources, depending on what resources are available. The meta-scheduler can
 also create batches of jobs and optimize file transfers.
+
   ::
 
     python -m jobman.cli submit_job_dir my_job_dir
@@ -349,6 +352,7 @@ In this strategy, we write a builder for each environment in which we expect to
 run our job.
 
 For example, our code might look something like this:
+
   ::
 
     # <chem_builder_a.py>
@@ -377,6 +381,7 @@ For example, our code might look something like this:
 
 And then when we build our job directories, we just specify which builder to
 use:
+
   ::
 
     import my_chem_builder_a
@@ -399,21 +404,26 @@ Pros
 #. It's often easier for new users of our code to add new code. "I just copy
    from the previous example!"
 
-
 Cons
 ~~~~
 #. Maximizing Cluster Use:
+
    #. We have to know where our job will run at the time we build it. This
       means we would have to check cluster availability at job build time,
       rather than at job run time.
+
    #. We can't make batches of heterogenous jobs ahead of run time, because
       we would have to check that all the jobs have been built for the same
       cluster.
+
 #. Maintenance:
+
    #. If our '_generate_common_content' function signature changes,
       we will have to find all the places where is called.
+
    #. If another type of job uses the same chemstry library, we will have to
       repeat our configurations in the builder for that type of job.
+
 #. Testing: we have to test each of our builders.
 
 

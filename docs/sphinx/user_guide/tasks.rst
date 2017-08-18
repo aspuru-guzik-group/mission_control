@@ -88,6 +88,7 @@ task_type
   From :class:`mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler`:
 
   .. automethod:: mc.task_handlers.mc_default_task_handler.McDefaultTaskHandler.default_task_type_to_tick_fn_dot_spec
+    :noindex:
 
 task_params
   A dict of parameters for the task.
@@ -222,18 +223,25 @@ Built-In TaskHandlers
 MissionControl provides a few built-in TaskHandlers for common operations:
 
 .. autoclass:: mc.task_handlers.flow_task_handler.FlowTaskHandler
+   :noindex:
 
 .. autoclass:: mc.task_handlers.job_task_handler.JobTaskHandler
+   :noindex:
 
 .. autoclass:: mc.task_handlers.log_task_handler.LogTaskHandler
+   :noindex:
 
 .. autoclass:: mc.task_handlers.mc_default_task_handler.PrintTaskHandler
+   :noindex:
 
 .. autoclass:: mc.task_handlers.mc_default_task_handler.NoOpTaskHandler
+   :noindex:
 
 .. autoclass:: mc.task_handlers.spread_task_handler.SpreadTaskHandler
+   :noindex:
 
 .. autoclass:: mc.task_handlers.switch_task_handler.SwitchTaskHandler
+   :noindex:
 
 ======
 Wiring
