@@ -49,7 +49,7 @@ def html_page_context(app, pagename, templatename, context, doctree):
     context['github_version'] = app.config.edit_on_github_branch + '/'
     context['github_repo'] = app.config.edit_on_github_project.split('/')[1]
     context['source_suffix'] = app.config.source_suffix[0]
-    context['meta'].setdefault('github_url', edit_url)
+    context['meta'].setdefault('github_url', show_url)
 
 
 def setup(app):
